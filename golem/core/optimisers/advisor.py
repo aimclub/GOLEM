@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 
 from golem.core.optimisers.graph import OptNode
 from golem.core.utilities.data_structures import ComparableEnum as Enum

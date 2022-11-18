@@ -17,19 +17,31 @@ CLASS_PATH_KEY = '_class_path'
 
 # Mapping between class paths for backward compatibility for renamed/moved classes
 LEGACY_CLASS_PATHS = {
-    'fedot.core.optimisers.genetic.individual/Individual':
-        'fedot.core.optimisers.opt_history_objects.individual/Individual',
-    'fedot.core.optimisers.genetic.individual/ParentOperator':
-        'fedot.core.optimisers.opt_history_objects.parent_operator/ParentOperator',
+    'fedot.core.optimisers.gp_comp.individual/Individual':
+        'golem.core.optimisers.opt_history_objects.individual/Individual',
+    'fedot.core.optimisers.gp_comp.individual/ParentOperator':
+        'golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator',
     'fedot.core.optimisers.opt_history/OptHistory':
-        'fedot.core.optimisers.opt_history_objects.opt_history/OptHistory',
+        'golem.core.optimisers.opt_history_objects.opt_history/OptHistory',
 
     'fedot.core.dag.graph_node/GraphNode':
-        'fedot.core.dag.linked_graph_node/LinkedGraphNode',
+        'golem.core.dag.linked_graph_node/LinkedGraphNode',
     'fedot.core.dag.graph_operator/GraphOperator':
-        'fedot.core.dag.linked_graph/LinkedGraph',
+        'golem.core.dag.linked_graph/LinkedGraph',
     'fedot.core.dag.graph_operator/GraphOperator._empty_postprocess':
-        'fedot.core.dag.linked_graph/LinkedGraph._empty_postprocess',
+        'golem.core.dag.linked_graph/LinkedGraph._empty_postprocess',
+}
+
+# for fedot->golem transition
+# NB: must be ordered from specific to top-level modules
+LEGACY_MODULE_PATHS = {
+    'fedot.core.optimisers.gp_comp.individual': 'golem.core.optimisers.opt_history_objects.individual',
+    'fedot.core.optimisers.opt_history_objects': 'golem.core.optimisers.opt_history_objects',
+    'fedot.core.optimisers.gp_comp': 'golem.core.optimisers.genetic',
+    'fedot.core.optimisers.graph': 'golem.core.optimisers.graph',
+    'fedot.core.optimisers.objective.objective': 'golem.core.optimisers.objective.objective',
+    'fedot.core.optimisers.fitness': 'golem.core.optimisers.fitness',
+    'fedot.core.utilities': 'golem.core.utilities',
 }
 
 
@@ -208,10 +220,19 @@ class Serializer(JSONEncoder, JSONDecoder):
         """
         class_path = LEGACY_CLASS_PATHS.get(class_path, class_path)
         module_name, class_name = class_path.split(MODULE_X_NAME_DELIMITER)
+        module_name = Serializer._legacy_module_map(module_name)
+
         obj_cls = import_module(module_name)
         for sub in class_name.split('.'):
             obj_cls = getattr(obj_cls, sub)
         return obj_cls
+
+    @staticmethod
+    def _legacy_module_map(module_path: str) -> str:
+        for legacy_prefix, new_prefix in LEGACY_MODULE_PATHS.items():
+            if module_path.startswith(legacy_prefix):
+                return module_path.replace(legacy_prefix, new_prefix)
+        return module_path
 
     @staticmethod
     def _is_bound_method(method: Callable) -> bool:

@@ -3,7 +3,7 @@ from os import PathLike
 from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
 
 from golem.core.dag.graph_node import GraphNode
-from golem.visualisation import GraphVisualizer, NodeColorType
+from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
 
 NodeType = TypeVar('NodeType', bound=GraphNode, covariant=False, contravariant=False)
 
