@@ -30,6 +30,12 @@ LEGACY_CLASS_PATHS = {
         'golem.core.dag.linked_graph/LinkedGraph',
     'fedot.core.dag.graph_operator/GraphOperator._empty_postprocess':
         'golem.core.dag.linked_graph/LinkedGraph._empty_postprocess',
+
+    # for fedot->golem transition
+    'fedot.core.optimisers.objective.objective/Objective':
+        'golem.core.optimisers.objective.objective/Objective',
+    'fedot.core.optimisers.fitness.fitness/Fitness':
+        'golem.core.optimisers.fitness.fitness/Fitness',
 }
 
 # for fedot->golem transition
@@ -41,6 +47,10 @@ LEGACY_MODULE_PATHS = {
     'fedot.core.optimisers.graph': 'golem.core.optimisers.graph',
     'fedot.core.optimisers.objective.objective': 'golem.core.optimisers.objective.objective',
     'fedot.core.optimisers.fitness': 'golem.core.optimisers.fitness',
+
+    'fedot.core.log': 'golem.core.log',
+    'fedot.core.adapter': 'golem.core.adapter',
+    'fedot.core.dag': 'golem.core.dag',
     'fedot.core.utilities': 'golem.core.utilities',
 }
 
