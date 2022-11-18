@@ -1,1 +1,0 @@
-from fedot import *
