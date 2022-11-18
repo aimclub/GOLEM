@@ -12,7 +12,7 @@ from matplotlib.widgets import Button
 from golem.core.log import default_log
 from golem.core.optimisers.fitness import null_fitness
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.utils import default_data_dir
+from golem.core.paths import default_data_dir
 from golem.visualisation.opt_history.history_visualization import HistoryVisualization
 from golem.visualisation.opt_history.utils import show_or_save_figure
 

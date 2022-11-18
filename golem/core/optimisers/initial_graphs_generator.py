@@ -2,7 +2,7 @@ from functools import partial
 from typing import Callable, Optional, Sequence, Union, Iterable
 
 from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
-from golem.core.constants import MAXIMAL_ATTEMPTS_NUMBER
+from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_operators import random_graph
@@ -51,7 +51,7 @@ class InitialPopulationGenerator(InitialGraphsGenerator):
             if new_graph not in population and self.graph_generation_params.verifier(new_graph):
                 population.append(new_graph)
             n_iter += 1
-            if n_iter >= MAXIMAL_ATTEMPTS_NUMBER:
+            if n_iter >= MAX_GRAPH_GEN_ATTEMPTS:
                 self.log.warning(f'Exceeded max number of attempts for generating initial graphs, stopping.'
                                  f'Generated {len(population)} instead of {pop_size} graphs.')
                 break

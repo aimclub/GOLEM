@@ -2,7 +2,7 @@ import datetime
 from dataclasses import dataclass, field
 from typing import Optional
 
-from golem.core.utils import default_data_dir
+from golem.core.paths import default_data_dir
 
 
 @dataclass

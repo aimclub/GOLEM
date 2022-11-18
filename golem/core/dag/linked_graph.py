@@ -8,7 +8,7 @@ from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
-from golem.core.utils import copy_doc
+from golem.core.paths import copy_doc
 
 NodePostprocessCallable = Callable[[Graph, Sequence[GraphNode]], Any]
 

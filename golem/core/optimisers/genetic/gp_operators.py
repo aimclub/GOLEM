@@ -2,7 +2,7 @@ from copy import deepcopy
 from random import randint
 from typing import Any, List, Optional, Tuple
 
-from golem.core.constants import MAXIMAL_ATTEMPTS_NUMBER
+from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level
 from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
 from golem.core.optimisers.graph import OptGraph, OptNode
@@ -32,7 +32,7 @@ def random_graph(graph_generation_params: GraphGenerationParams,
 
         is_correct_graph = graph_generation_params.verifier(graph)
         n_iter += 1
-        if n_iter > MAXIMAL_ATTEMPTS_NUMBER:
+        if n_iter > MAX_GRAPH_GEN_ATTEMPTS:
             raise ValueError(f'Could not generate random graph for {n_iter} '
                              f'iterations with requirements {requirements}')
     return graph

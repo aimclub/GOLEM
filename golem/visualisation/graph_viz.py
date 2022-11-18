@@ -18,7 +18,7 @@ from seaborn import color_palette
 from golem.core.dag.graph_utils import distance_to_primary_level
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.log import default_log
-from golem.core.utils import default_data_dir
+from golem.core.paths import default_data_dir
 
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph

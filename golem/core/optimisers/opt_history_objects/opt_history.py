@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.generation import Generation
 
-from golem.core.utils import default_data_dir
+from golem.core.paths import default_data_dir
 from golem.serializers.serializer import default_load, default_save
 from golem.visualisation.opt_viz import OptHistoryVisualizer
 

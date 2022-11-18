@@ -15,7 +15,7 @@ from golem.core.dag.graph import Graph
 from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.core.utils import default_data_dir
+from golem.core.paths import default_data_dir
 from golem.visualisation.graph_viz import GraphVisualizer
 from golem.utilities.requirements_notificator import warn_requirement
 

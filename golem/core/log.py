@@ -8,7 +8,7 @@ from logging.handlers import RotatingFileHandler
 from typing import Optional, Tuple, Union
 
 from golem.core.utilities.singleton_meta import SingletonMeta
-from golem.core.utils import default_data_dir
+from golem.core.paths import default_data_dir
 
 DEFAULT_LOG_PATH = pathlib.Path(default_data_dir(), 'log.log')
 

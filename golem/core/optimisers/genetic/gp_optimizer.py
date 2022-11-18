@@ -2,7 +2,7 @@ from copy import copy, deepcopy
 from random import choice
 from typing import Sequence, Callable
 
-from golem.core.constants import MAXIMAL_ATTEMPTS_NUMBER, EVALUATION_ATTEMPTS_NUMBER
+from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
@@ -22,6 +22,8 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
 
+
+EVALUATION_ATTEMPTS_NUMBER = 5
 
 class EvoGraphOptimizer(PopulationalOptimizer):
     """
@@ -83,7 +85,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             if new_graph not in initial_graphs and self.graph_generation_params.verifier(new_graph):
                 initial_individuals.append(new_ind)
                 initial_graphs.append(new_graph)
-            if iter_num > MAXIMAL_ATTEMPTS_NUMBER:
+            if iter_num > MAX_GRAPH_GEN_ATTEMPTS:
                 self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
                                  f'Current size {len(self.initial_individuals)} '
                                  f'instead of {self.graph_optimizer_params.pop_size} graphs.')
