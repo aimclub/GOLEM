@@ -173,7 +173,7 @@ class OperationsAnimatedBar(HistoryVisualization):
         ax.tick_params(axis='y', which='major', labelsize=label_size)
         ax.set_title(title)
         ax.set_xlim(0, 1)
-        ax.set_xlabel(f'Fraction of pipelines containing the operation')
+        ax.set_xlabel(f'Fraction of graphs containing the operation')
         ax.xaxis.grid(True)
         ax.set_ylabel(operation_column_name)
         ax.invert_yaxis()

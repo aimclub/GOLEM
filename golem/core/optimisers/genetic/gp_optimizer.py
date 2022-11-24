@@ -4,7 +4,7 @@ from typing import Sequence, Callable
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
+from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
 from golem.core.optimisers.genetic.operators.inheritance import Inheritance
@@ -15,7 +15,7 @@ from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -33,9 +33,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Sequence[OptGraph],
-                 requirements: PipelineComposerRequirements,
+                 requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
-                 graph_optimizer_params: GPGraphOptimizerParameters):
+                 graph_optimizer_params: GPAlgorithmParameters):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         # Define genetic operators
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)

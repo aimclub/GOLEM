@@ -6,7 +6,7 @@ from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
-    from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
+    from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
 
 class GeneticSchemeTypesEnum(Enum):
@@ -16,7 +16,7 @@ class GeneticSchemeTypesEnum(Enum):
 
 
 class Inheritance(Operator):
-    def __init__(self, parameters: 'GPGraphOptimizerParameters',
+    def __init__(self, parameters: 'GPAlgorithmParameters',
                  selection: Selection):
         super().__init__(parameters=parameters)
         self.selection = selection

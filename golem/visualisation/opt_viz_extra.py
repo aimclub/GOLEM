@@ -37,9 +37,9 @@ class OptHistoryExtraVisualizer:
         if 'composing_history' not in os.listdir(data_dir):
             os.mkdir(self.temp_path)
         self.log = default_log(self)
-        self.pipelines_imgs = []
+        self.graphs_imgs = []
         self.convergence_imgs = []
-        self.best_pipelines_imgs = []
+        self.best_graphs_imgs = []
         self.merged_imgs = []
         self.graph_visualizer = GraphVisualizer()
 
@@ -67,25 +67,25 @@ class OptHistoryExtraVisualizer:
 
     def _visualise_graphs(self, graphs: List[Graph], fitnesses: List[float]):
         fitnesses = deepcopy(fitnesses)
-        last_best_pipeline = graphs[0]
+        last_best_graph = graphs[0]
         prev_fit = fitnesses[0]
         fig = plt.figure(figsize=(10, 10))
         for ch_id, graph in enumerate(graphs):
             self.graph_visualizer.draw_nx_dag(graph)
             fig.canvas.draw()
             img = figure_to_array(fig)
-            self.pipelines_imgs.append(img)
+            self.graphs_imgs.append(img)
             plt.clf()
             if fitnesses[ch_id] > prev_fit:
                 fitnesses[ch_id] = prev_fit
             else:
-                last_best_pipeline = graph
+                last_best_graph = graph
             prev_fit = fitnesses[ch_id]
             plt.clf()
-            self.graph_visualizer.draw_nx_dag(last_best_pipeline)
+            self.graph_visualizer.draw_nx_dag(last_best_graph)
             fig.canvas.draw()
             img = figure_to_array(fig)
-            self.best_pipelines_imgs.append(img)
+            self.best_graphs_imgs.append(img)
             plt.clf()
         plt.close('all')
 
@@ -104,7 +104,7 @@ class OptHistoryExtraVisualizer:
         plt.rcParams['axes.titlesize'] = 20
         plt.rcParams['axes.labelsize'] = 20
         for ts in ts_set:
-            plt.plot(df['ts'], df['fitness'], label='Composer')
+            plt.plot(df['ts'], df['fitness'], label='Optimizer')
             plt.xlabel('Evaluation', fontsize=18)
             plt.ylabel('Best metric', fontsize=18)
             plt.axvline(x=ts, color='black')
@@ -132,9 +132,9 @@ class OptHistoryExtraVisualizer:
     def _merge_images(self):
         from PIL import Image
 
-        for i in range(1, len(self.pipelines_imgs)):
-            im1 = self.pipelines_imgs[i]
-            im2 = self.best_pipelines_imgs[i]
+        for i in range(1, len(self.graphs_imgs)):
+            im1 = self.graphs_imgs[i]
+            im2 = self.best_graphs_imgs[i]
             im3 = self.convergence_imgs[i]
             imgs = (im1, im2, im3)
             merged = np.concatenate(imgs, axis=1)

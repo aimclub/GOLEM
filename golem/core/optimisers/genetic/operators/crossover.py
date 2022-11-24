@@ -6,7 +6,7 @@ from golem.core.adapter import register_native
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
@@ -14,7 +14,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
-    from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
+    from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
 
 class CrossoverTypesEnum(Enum):
@@ -28,8 +28,8 @@ CrossoverCallable = Callable[[OptGraph, OptGraph, int], Tuple[OptGraph, OptGraph
 
 class Crossover(Operator):
     def __init__(self,
-                 parameters: 'GPGraphOptimizerParameters',
-                 requirements: PipelineComposerRequirements,
+                 parameters: 'GPAlgorithmParameters',
+                 requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams):
         super().__init__(parameters, requirements)
         self.graph_generation_params = graph_generation_params
@@ -63,7 +63,7 @@ class Crossover(Operator):
                     return new_individuals
 
             self.log.debug('Number of crossover attempts exceeded. '
-                           'Please check composer requirements for correctness.')
+                           'Please check optimization parameters for correctness.')
 
         return ind_first, ind_second
 

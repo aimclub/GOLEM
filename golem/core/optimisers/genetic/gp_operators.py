@@ -4,14 +4,14 @@ from typing import Any, List, Optional, Tuple
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.optimizer import GraphGenerationParams
 
 
 def random_graph(graph_generation_params: GraphGenerationParams,
-                 requirements: PipelineComposerRequirements,
+                 requirements: GraphRequirements,
                  max_depth: Optional[int] = None) -> OptGraph:
     max_depth = max_depth if max_depth else requirements.max_depth
     is_correct_graph = False
@@ -38,7 +38,7 @@ def random_graph(graph_generation_params: GraphGenerationParams,
     return graph
 
 
-def adjust_requirements(requirements: PipelineComposerRequirements) -> PipelineComposerRequirements:
+def adjust_requirements(requirements: GraphRequirements) -> GraphRequirements:
     """Function returns modified copy of the requirements if necessary.
     Example: Graph with only one primary node should consist of only one primary node
     without duplication, because this causes errors. Therefore minimum and maximum arity
@@ -53,7 +53,7 @@ def adjust_requirements(requirements: PipelineComposerRequirements) -> PipelineC
 def graph_growth(graph: OptGraph,
                  node_parent: OptNode,
                  node_factory: OptNodeFactory,
-                 requirements: PipelineComposerRequirements,
+                 requirements: GraphRequirements,
                  max_depth: int):
     """Function create a graph and links between nodes"""
     offspring_size = randint(requirements.min_arity, requirements.max_arity)

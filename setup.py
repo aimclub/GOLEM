@@ -10,7 +10,8 @@ HERE = Path(__file__).parent.resolve()
 NAME = 'golem'
 VERSION = '0.0.1'
 AUTHOR = 'NSS Lab'
-SHORT_DESCRIPTION = 'Automated machine learning framework for composite pipelines'
+SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutionary Methods'
+
 README = Path(HERE, 'README.rst').read_text(encoding='utf-8')
 URL = 'https://github.com/aimclub/GOLEM'
 REQUIRES_PYTHON = '>=3.7'

@@ -9,7 +9,7 @@ from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.log import default_log
 from golem.core.optimisers.advisor import DefaultChangeAdvisor
 from golem.core.optimisers.archive import GenerationKeeper
-from golem.core.optimisers.composer_requirements import ComposerRequirements
+from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.genetic.evaluation import DelegateEvaluator
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.graph import OptGraph
@@ -25,8 +25,9 @@ def do_nothing_callback(*args, **kwargs):
 
 
 @dataclass
-class GraphOptimizerParameters:
-    """Base class for definition of optimizer parameters. Can be extended for custom optimizers.
+class AlgorithmParameters:
+    """Base class for definition of optimizers-specific parameters.
+    Can be extended for custom optimizers.
 
     :param multi_objective: defines if the optimizer must be multi-criterial
     :param offspring_rate: offspring rate used on next population
@@ -49,10 +50,12 @@ class GraphGenerationParams:
     """
     This dataclass is for defining the parameters using in graph generation process
 
-    :param adapter: the function for processing of external object that should be optimized
-    :param rules_for_constraint: collection of constraints
-    :param advisor: class of task-specific advices for graph changes
-    :param node_factory: class of generating nodes while mutation
+    :param adapter: instance of domain graph adapter for adaptation
+     between domain and optimization graphs
+    :param rules_for_constraint: collection of constraints for graph verification
+    :param advisor: instance providing task and context-specific advices for graph changes
+    :param node_factory: instance for generating new nodes in the process of graph search
+    :param remote_evaluator: instance of delegate evaluator for evaluation of graphs
     """
     adapter: BaseOptimizationAdapter
     verifier: GraphVerifier
@@ -97,15 +100,15 @@ class GraphOptimizer:
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Optional[Sequence[Graph]] = None,
-                 requirements: Optional[ComposerRequirements] = None,
+                 requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_parameters: Optional[GraphOptimizerParameters] = None):
+                 graph_optimizer_parameters: Optional[AlgorithmParameters] = None):
         self.log = default_log(self)
         self.initial_graphs = initial_graphs
         self._objective = objective
-        self.requirements = requirements or ComposerRequirements()
+        self.requirements = requirements or OptimizationParameters()
         self.graph_generation_params = graph_generation_params
-        self.graph_optimizer_params = graph_optimizer_parameters or GraphOptimizerParameters()
+        self.graph_optimizer_params = graph_optimizer_parameters or AlgorithmParameters()
         self._optimisation_callback: OptimisationCallback = do_nothing_callback
         mo = False if not graph_optimizer_parameters else graph_optimizer_parameters.multi_objective
         self.history = OptHistory(mo, requirements.history_dir) \

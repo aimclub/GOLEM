@@ -14,7 +14,7 @@ class RemoveType(Enum):
 
 class DefaultChangeAdvisor:
     """
-    Class for advising of pipeline changes during evolution
+    Class for advising of graph changes during evolution
     """
 
     def __init__(self, task=None):

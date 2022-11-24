@@ -17,7 +17,7 @@ class Graph(ABC):
         """Adds new node to the graph together with its parent nodes.
 
         Args:
-            nodes: pipeline nodes
+            nodes: graph nodes
         """
         raise NotImplementedError()
 
@@ -77,8 +77,8 @@ class Graph(ABC):
         """Adds edge between ``parent`` and ``child``
 
         Args:
-            node_parent: acts like parent in pipeline connection relations
-            node_child:  acts like child in pipeline connection relations
+            node_parent: acts like parent in graph connection relations
+            node_child:  acts like child in graph connection relations
         """
         raise NotImplementedError()
 

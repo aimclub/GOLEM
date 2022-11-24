@@ -11,7 +11,7 @@ from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
 from golem.core.optimisers.genetic.gp_operators import random_graph
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
@@ -19,7 +19,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
-    from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
+    from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
 
 class MutationStrengthEnum(Enum):
@@ -43,8 +43,8 @@ class MutationTypesEnum(Enum):
 
 class Mutation(Operator):
     def __init__(self,
-                 parameters: 'GPGraphOptimizerParameters',
-                 requirements: PipelineComposerRequirements,
+                 parameters: 'GPAlgorithmParameters',
+                 requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams):
         super().__init__(parameters, requirements)
         self.graph_generation_params = graph_generation_params
@@ -87,7 +87,7 @@ class Mutation(Operator):
                 return Individual(new_graph, parent_operator)
 
         self.log.debug('Number of mutation attempts exceeded. '
-                       'Please check composer requirements for correctness.')
+                       'Please check optimization parameters for correctness.')
 
         return individual
 

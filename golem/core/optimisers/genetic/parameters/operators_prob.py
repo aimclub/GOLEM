@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
+from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.genetic.parameters.mutation_prob import AdaptiveMutationProb
@@ -37,7 +37,7 @@ class AdaptiveVariationProb(VariationOperatorProb):
         return self._mutation_prob, self._crossover_prob
 
 
-def init_adaptive_operators_prob(parameters: GPGraphOptimizerParameters) -> VariationOperatorProb:
+def init_adaptive_operators_prob(parameters: GPAlgorithmParameters) -> VariationOperatorProb:
     """Returns static or adaptive parameter for mutation & crossover probabilities depending on genetic type scheme."""
     if parameters.genetic_scheme_type == GeneticSchemeTypesEnum.parameter_free:
         operators_prob = AdaptiveVariationProb()

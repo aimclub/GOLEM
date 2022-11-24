@@ -109,9 +109,9 @@ class LinkedGraph(Graph, Copyable):
         node_child.nodes_from.append(node_parent)
 
     def _clean_up_leftovers(self, node: GraphNode):
-        """Removes nodes and edges that do not affect the result of the pipeline.
+        """Removes nodes and edges that do not affect the result of the graph.
         Leftovers are edges and nodes that remain after the removal of the edge / node
-            and do not affect the result of the pipeline.
+            and do not affect the result of the graph.
 
         :param node: node to be deleted with all of its parents
         """

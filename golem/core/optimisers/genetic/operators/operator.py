@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
 
 from golem.core.log import default_log
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.opt_history_objects.individual import Individual
 
 if TYPE_CHECKING:
-    from golem.core.optimisers.optimizer import GraphOptimizerParameters
+    from golem.core.optimisers.optimizer import AlgorithmParameters
 
 PopulationT = Sequence[Individual]
 EvaluationOperator = Callable[[PopulationT], PopulationT]
@@ -24,8 +24,8 @@ class Operator(ABC):
     """
 
     def __init__(self,
-                 parameters: Optional['GraphOptimizerParameters'] = None,
-                 requirements: Optional[PipelineComposerRequirements] = None):
+                 parameters: Optional['AlgorithmParameters'] = None,
+                 requirements: Optional[GraphRequirements] = None):
         self.requirements = requirements
         self.parameters = parameters
         self.log = default_log(self)
@@ -35,8 +35,8 @@ class Operator(ABC):
         pass
 
     def update_requirements(self,
-                            parameters: Optional['GraphOptimizerParameters'] = None,
-                            requirements: Optional[PipelineComposerRequirements] = None):
+                            parameters: Optional['AlgorithmParameters'] = None,
+                            requirements: Optional[GraphRequirements] = None):
         if requirements:
             self.requirements = requirements
         if parameters:

@@ -43,8 +43,8 @@ class FitnessBox(HistoryVisualization):
             ax.xaxis.set_major_locator(ticker.MultipleLocator(5))
             ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
             ax.xaxis.grid(True)
-        str_fraction_of_pipelines = 'all' if best_fraction is None else f'top {best_fraction * 100}% of'
-        ax.set_ylabel(f'Fitness of {str_fraction_of_pipelines} generation pipelines')
+        str_fraction_of_graphs = 'all' if best_fraction is None else f'top {best_fraction * 100}% of'
+        ax.set_ylabel(f'Fitness of {str_fraction_of_graphs} generation graphs')
         ax.yaxis.grid(True)
 
         show_or_save_figure(fig, save_path, dpi)

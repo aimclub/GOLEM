@@ -8,11 +8,11 @@ from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.objective.objective import Objective
-from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, GraphOptimizerParameters
+from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.utilities.grouped_condition import GroupedCondition
 
@@ -36,9 +36,9 @@ class PopulationalOptimizer(GraphOptimizer):
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Sequence[Graph],
-                 requirements: PipelineComposerRequirements,
+                 requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
-                 graph_optimizer_params: Optional['GraphOptimizerParameters'] = None,
+                 graph_optimizer_params: Optional['AlgorithmParameters'] = None,
                  ):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.population = None
@@ -46,7 +46,7 @@ class PopulationalOptimizer(GraphOptimizer):
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
         self.eval_dispatcher = MultiprocessingDispatcher(adapter=graph_generation_params.adapter,
                                                          n_jobs=requirements.n_jobs,
-                                                         graph_cleanup_fn=_unfit_pipeline,
+                                                         graph_cleanup_fn=_try_unfit_graph,
                                                          delegate_evaluator=graph_generation_params.remote_evaluator)
 
         # early_stopping_iterations and early_stopping_timeout may be None, so use some obvious max number
@@ -143,7 +143,7 @@ class PopulationalOptimizer(GraphOptimizer):
 
 
 # TODO: remove this hack (e.g. provide smth like FitGraph with fit/unfit interface)
-def _unfit_pipeline(graph: Any):
+def _try_unfit_graph(graph: Any):
     if hasattr(graph, 'unfit'):
         graph.unfit()
 

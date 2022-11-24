@@ -72,7 +72,7 @@ class OperationsKDE(HistoryVisualization):
         ax = plt.gca()
         ax.set_xticks(range(len(self.history.individuals)))
         ax.locator_params(nbins=10)
-        str_fraction_of_pipelines = 'all' if best_fraction is None else f'top {best_fraction * 100}% of'
-        ax.set_ylabel(f'Fraction in {str_fraction_of_pipelines} generation pipelines')
+        str_fraction_of_graphs = 'all' if best_fraction is None else f'top {best_fraction * 100}% of'
+        ax.set_ylabel(f'Fraction in {str_fraction_of_graphs} generation graphs')
 
         show_or_save_figure(fig, save_path, dpi)

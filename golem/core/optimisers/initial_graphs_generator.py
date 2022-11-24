@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Callable, Optional, Sequence, Union, Iterable
 
-from golem.core.optimisers.genetic.pipeline_composer_requirements import PipelineComposerRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
@@ -18,13 +18,13 @@ class InitialPopulationGenerator(InitialGraphsGenerator):
     One is with initial graphs.
     Another is with initial graphs generation function which generates a graph
     that will be added to initial population.
-    The third way is random graphs generation according to GraphGenerationParameters and ComposerRequirements.
+    The third way is random graphs generation according to GraphGenerationParameters and OptimizationParameters.
     The last approach is applied when neither initial graphs nor initial graphs generation function were provided."""
 
     def __init__(self,
                  population_size: int,
                  generation_params: GraphGenerationParams,
-                 requirements: PipelineComposerRequirements):
+                 requirements: GraphRequirements):
         self.pop_size = population_size
         self.requirements = requirements
         self.graph_generation_params = generation_params

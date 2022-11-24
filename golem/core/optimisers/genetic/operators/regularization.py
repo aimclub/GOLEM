@@ -10,7 +10,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
-    from golem.core.optimisers.genetic.gp_params import GPGraphOptimizerParameters
+    from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
 
 class RegularizationTypesEnum(Enum):
@@ -19,7 +19,7 @@ class RegularizationTypesEnum(Enum):
 
 
 class Regularization(Operator):
-    def __init__(self, parameters: 'GPGraphOptimizerParameters',
+    def __init__(self, parameters: 'GPAlgorithmParameters',
                  graph_generation_params: GraphGenerationParams):
         super().__init__(parameters=parameters)
         self.graph_generation_params = graph_generation_params

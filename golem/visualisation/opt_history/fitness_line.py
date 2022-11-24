@@ -219,7 +219,7 @@ class FitnessLineInteractive(HistoryVisualization):
                 ax_graph.imshow(self.graph_images[self.index])
                 x = self.best_x[self.index]
                 fitness = self.best_individuals[self.index].fitness
-                ax_graph.set_title(f'The best pipeline at {x_template.format(x)}, fitness={fitness}')
+                ax_graph.set_title(f'The best graph at {x_template.format(x)}, fitness={fitness}')
 
             def update_time_line(self):
                 self.time_line.set_xdata(self.best_x[self.index])

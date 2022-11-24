@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence, Union, Any
 
-from golem.core.optimisers.optimizer import GraphOptimizerParameters
+from golem.core.optimisers.optimizer import AlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.elitism import ElitismTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
@@ -11,7 +11,7 @@ from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 
 
 @dataclass
-class GPGraphOptimizerParameters(GraphOptimizerParameters):
+class GPAlgorithmParameters(AlgorithmParameters):
     """
     Defines parameters of evolutionary operators and the algorithm of genetic optimizer.
 
