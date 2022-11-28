@@ -149,5 +149,5 @@ class GenerationKeeper(ImprovementWatcher):
 
     def __str__(self) -> str:
         ff = self._objective.format_fitness
-        return (f'{self.archive.__class__.__name__} archive fitness: '
-                f'{[ff(ind.fitness) for ind in self.best_individuals]}')
+        fitnesses = [ff(ind.fitness) for ind in self.best_individuals]
+        return f'{self.archive.__class__.__name__} archive fitness ({len(fitnesses)}): {fitnesses}'
