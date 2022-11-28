@@ -16,19 +16,18 @@
    * - support
      - | |tg|
 
-
 .. end-badges
 
 **GOLEM**: Graph Optimization and Learning by Evolutionary Methods
 
-GOLEM is an open-source AI framework for optimization and learning of structured graph-based models with meta-heuristic methods.
-
-GOLEM is centered around 2 ideas:
+GOLEM is an open-source AI framework for optimization and learning of structured graph-based models with meta-heuristic methods. It is centered around 2 ideas:
 
 1. Potential of meta-heuristic methods in complex problem spaces.
+
 Focus on meta-heuristics allows approaching kinds of problems where gradient-based learning methods (notably, neural networks) can't be easily applied, like optimization problems with multiple conflicting objectives or having combinatorial character.
 
 2. Importance of structured models in many problem domains.
+
 Graph-based learning enables solutions in the form of structured and hybrid probabilistic models, not to mention that a wide range of domain-specific problems have a natural formulation in the form of graphs.
 
 Together this constitutes an approach to AI that potentially leads to structured, intuitive, interpretable methods and solutions for a wide range of tasks.
@@ -37,19 +36,20 @@ Together this constitutes an approach to AI that potentially leads to structured
 Core Features
 =============
 
-- **Structured** models with joint optimization of graph structure (connections) and properties (node attributes) for directed graphs.
-- **Metaheuristic** methods (notably, evolutionary graph optimizer), applicable for any task with defined objective.
-- **Multi-objective** optimization that can take into account both quality & complexity metrics.
+- **Structured** models with joint optimization of graph structure and properties (node attributes).
+- **Metaheuristic** methods (notably, evolutionary) applicable for any task with well-defined objective.
+- **Multi-objective** optimization that can take into account both quality and complexity.
 - **Constrained** optimization with support for arbitrary domain-specific constraints.
-- **Extensible** to new problem domains with a flexible adaptation subsystem that transforms domain structures into optimized graphs.
-- **Interpretable** thanks to the use of meta-heuristics and structured models together with visualisation facilities.
+- **Extensible** to new domains.
+- **Interpretable** thanks to meta-heuristics, structured models, adn visualisation tools.
 - **Reproducible** thanks to rich optimization history and model serialization.
 
 
-GOLEM Applications
+Applications
 ==================
 
 GOLEM is potentially applicable for any optimization problem structures
+
 - that can be represented as directed graphs;
 - with some clearly defined fitness function on them.
 
