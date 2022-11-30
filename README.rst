@@ -1,4 +1,4 @@
-.. image:: docs/golem_logo.png
+.. image:: docs/img/golem_logo.png
    :alt: Logo of GOLEM framework
 
 .. start-badges
