@@ -24,4 +24,3 @@ Content:
    about
 
 .. |logo| image:: ../img/golem_logo.png
-   :scale: 70 %
