@@ -125,18 +125,19 @@ automodule:: <module_name> section which describes all the code in the module.
 
    2. Add a Header underlined with “=” sign. It’s crucial.
 
-   3. Add automodule description for each of your scripts. ::
+   3. Add automodule description for each of your scripts.
 
-       .. automodule:: GOLEM.core.your.first.script.path
-          :members:
-          :undoc-members:
-          :show-inheritance:
+      .. code::
 
-       .. automodule:: GOLEM.core.your.second.script.path
-          :members:
-          :undoc-members:
-          :show-inheritance:
-       ...
+         .. automodule:: GOLEM.core.your.first.script.path
+            :members:
+            :undoc-members:
+            :show-inheritance:
+
+         .. automodule:: GOLEM.core.your.second.script.path
+            :members:
+            :undoc-members:
+            :show-inheritance:
 
    4. Add your_name_for_file to the toctree at docs/source/GOLEM/index.rst
 

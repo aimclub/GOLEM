@@ -1,5 +1,6 @@
 .. image:: docs/img/golem_logo.png
    :alt: Logo of GOLEM framework
+   :scale: 70 %
 
 .. start-badges
 .. list-table::
@@ -130,9 +131,9 @@ If you use our project in your work or research, we would appreciate citations.
 
 Other papers - in `ResearchGate <https://www.researchgate.net/project/Evolutionary-multi-modal-AutoML-with-FEDOT-framework>`_.
 
-.. |docs| image:: https://readthedocs.org/projects/ebonite/badge/?style=flat
-   :target: https://fedot.readthedocs.io/en/latest/
-   :alt: Documentation Status
+.. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
+    :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. |build| image:: https://github.com/nccr-itmo/FEDOT/workflows/Build/badge.svg?branch=master
    :alt: Build Status

@@ -5,6 +5,9 @@ Welcome to GOLEM's documentation!
 
    | |logo|
    | There is contained main documentation for the `GOLEM framework <https://github.com/ITMO-NSS-team/GOLEM>`__.
+   |
+   | **GOLEM**: Graph Optimization and Learning by Evolutionary Methods
+
 
 Content:
 ========
@@ -20,6 +23,5 @@ Content:
    faq
    about
 
-**GOLEM**: Graph Optimization and Learning by Evolutionary Methods
-
 .. |logo| image:: ../img/golem_logo.png
+   :scale: 70 %
