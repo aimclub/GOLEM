@@ -18,6 +18,7 @@ from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.visualisation.opt_history.graphs_interactive import GraphsInteractive
 
 NumNodes = int
 DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
@@ -81,6 +82,7 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
                 print('found graph stats: ', nxgraph_stats(found_nx_graph))
                 # nx.draw(target_graph)
                 nx.draw_kamada_kawai(target_graph, arrows=True)
+                GraphsInteractive(history).visualize()
                 history.show.fitness_line_interactive()
 
 
