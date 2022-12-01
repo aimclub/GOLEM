@@ -3,9 +3,9 @@ from typing import Sequence, Optional, Dict, Any, Iterable
 
 import networkx as nx
 
-from fedot.core.adapter import BaseOptimizationAdapter
-from fedot.core.dag.graph_node import GraphNode
-from fedot.core.optimisers.graph import OptGraph, OptNode
+from golem.core.adapter import BaseOptimizationAdapter
+from golem.core.dag.graph_node import GraphNode
+from golem.core.optimisers.graph import OptGraph, OptNode
 
 
 class BaseNetworkxAdapter(BaseOptimizationAdapter[nx.DiGraph]):
