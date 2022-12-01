@@ -47,14 +47,14 @@ class OptHistoryVisualizer:
         default_visuals_params = dict(dpi=100)
         default_visuals_params.update(visuals_params)
 
-        self.history = history
         self.visuals_params = default_visuals_params
+        self.history = history
 
-        self.fitness_box = FitnessBox(self).visualize
-        self.fitness_line = FitnessLine(self).visualize
-        self.fitness_line_interactive = FitnessLineInteractive(self).visualize
-        self.operations_kde = OperationsKDE(self).visualize
-        self.operations_animated_bar = OperationsAnimatedBar(self).visualize
+        self.fitness_box = FitnessBox(history, self.visuals_params).visualize
+        self.fitness_line = FitnessLine(history, self.visuals_params).visualize
+        self.fitness_line_interactive = FitnessLineInteractive(history, self.visuals_params).visualize
+        self.operations_kde = OperationsKDE(history, self.visuals_params).visualize
+        self.operations_animated_bar = OperationsAnimatedBar(history, self.visuals_params).visualize
 
         self.log = default_log(self)
 

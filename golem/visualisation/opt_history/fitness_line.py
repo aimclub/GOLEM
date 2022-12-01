@@ -177,7 +177,7 @@ class FitnessLineInteractive(HistoryVisualization):
         per_time = per_time if per_time is not None else self.get_predefined_value('per_time') or False
         graph_show_kwargs = graph_show_kwargs or self.get_predefined_value('graph_show_params') or {}
 
-        graph_show_kwargs = graph_show_kwargs or self.visualizer.visuals_params.get('graph_show_params') or {}
+        graph_show_kwargs = graph_show_kwargs or self.visuals_params.get('graph_show_params') or {}
 
         fig, axes = plt.subplots(1, 2, figsize=(15, 10))
         ax_fitness, ax_graph = axes

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Any
 
 from golem.core.log import default_log
 from golem.visualisation.opt_history.arg_constraint_wrapper import ArgConstraintWrapper
 
 if TYPE_CHECKING:
-    from golem.visualisation.opt_viz import OptHistoryVisualizer
+    from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 
 class HistoryVisualization(metaclass=ArgConstraintWrapper):
@@ -24,9 +24,9 @@ class HistoryVisualization(metaclass=ArgConstraintWrapper):
     """
     constraint_checkers = []  # Use this for class-specific constraint checkers.
 
-    def __init__(self, visualizer: OptHistoryVisualizer):
-        self.visualizer = visualizer
-        self.history = visualizer.history
+    def __init__(self, history: 'OptHistory', visuals_params: Dict[str, Any] = None):
+        self.visuals_params = visuals_params or {}
+        self.history = history
         self.log = default_log(self)
 
     @abstractmethod
@@ -34,4 +34,4 @@ class HistoryVisualization(metaclass=ArgConstraintWrapper):
         raise NotImplementedError()
 
     def get_predefined_value(self, param: str):
-        return self.visualizer.visuals_params.get(param)
+        return self.visuals_params.get(param)
