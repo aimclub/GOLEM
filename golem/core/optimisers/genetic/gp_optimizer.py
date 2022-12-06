@@ -25,6 +25,7 @@ from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, 
 
 EVALUATION_ATTEMPTS_NUMBER = 5
 
+
 class EvoGraphOptimizer(PopulationalOptimizer):
     """
     Multi-objective evolutionary graph optimizer named GPComp
