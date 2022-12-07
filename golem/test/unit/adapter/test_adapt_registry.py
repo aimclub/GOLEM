@@ -7,7 +7,7 @@ import pytest
 from golem.core.adapter import register_native, AdaptRegistry
 from golem.core.optimisers.fitness import SingleObjFitness, Fitness
 from golem.core.optimisers.graph import OptGraph, OptNode
-from golem.test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure
+from golem.test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode
 from golem.test.unit.utils import graphs_same
 
 
@@ -20,23 +20,23 @@ def decorated_native_func_add_node(graph: OptGraph):
     if not isinstance(graph, OptGraph):
         raise TypeError()
     new_graph = deepcopy(graph)
-    new_graph.add_node(OptNode({'name': 'knn'}))
+    new_graph.add_node(OptNode({'name': 'b'}))
     return new_graph
 
 
 def native_func_add_node(graph: OptGraph):
-    if not isinstance(graph, OptGraph):
+    if not type(graph) is OptGraph:
         raise TypeError()
     new_graph = deepcopy(graph)
-    new_graph.add_node(OptNode({'name': 'scaling'}))
+    new_graph.add_node(OptNode({'name': 'a'}))
     return new_graph
 
 
 def domain_func_add_node(struct: MockDomainStructure):
     if not isinstance(struct, MockDomainStructure):
         raise TypeError()
-    new_struct = MockDomainStructure(struct.nodes)
-    new_struct.nodes.append(OptNode({'name': 'knn'}))
+    new_struct = MockDomainStructure(struct.root_nodes())
+    new_struct.nodes.append(MockNode({'name': 'b'}))
     return new_struct
 
 
@@ -46,21 +46,21 @@ class CustomOperator:
         if not isinstance(graph, OptGraph):
             raise TypeError()
         new_graph = deepcopy(graph)
-        new_graph.add_node(OptNode({'name': 'knn'}))
+        new_graph.add_node(OptNode({'name': 'b'}))
         return new_graph
 
     def native_func_add_node(self, graph: OptGraph):
-        if not isinstance(graph, OptGraph):
+        if not type(graph) is OptGraph:
             raise TypeError()
         new_graph = deepcopy(graph)
-        new_graph.add_node(OptNode({'name': 'scaling'}))
+        new_graph.add_node(OptNode({'name': 'a'}))
         return new_graph
 
     def domain_func_add_node(self, struct: MockDomainStructure):
         if not isinstance(struct, MockDomainStructure):
             raise TypeError()
-        new_struct = MockDomainStructure(struct.nodes)
-        new_struct.nodes.append(OptNode({'name': 'knn'}))
+        new_struct = MockDomainStructure(struct.root_nodes())
+        new_struct.nodes.append(MockNode({'name': 'b'}))
         return new_struct
 
 
@@ -74,7 +74,7 @@ def domain_func_4args(arg1: int, struct1: MockDomainStructure, flag: bool, struc
 
 
 def domain_func_return1():
-    return MockDomainStructure(nodes=[OptNode({'name': 'knn'})])
+    return MockDomainStructure(nodes=[MockNode({'name': 'b'})])
 
 
 def domain_func_return3(struct: MockDomainStructure):
@@ -88,8 +88,9 @@ def domain_func_return_same(struct: MockDomainStructure):
 
 
 def get_graphs() -> Tuple[OptGraph, MockDomainStructure]:
-    opt_graph = OptGraph(OptNode({'name': 'knn'}, [OptNode({'name': 'scaling'})]))
-    dom_struct = MockDomainStructure(opt_graph.nodes)
+    opt_graph = OptGraph(OptNode({'name': 'b'}, [OptNode({'name': 'a'})]))
+    domain_nodes = list([MockNode(node.content, node.nodes_from) for node in opt_graph.root_nodes()])
+    dom_struct = MockDomainStructure(domain_nodes)
     return opt_graph, dom_struct
 
 
@@ -122,7 +123,7 @@ def test_adapt_returned_same():
 
     # sanity check
     returned_graph = func(dom_struct)
-    assert returned_graph == dom_struct
+    assert graphs_same(returned_graph, dom_struct)
 
     returned_graph = restored_func(opt_graph)
     assert graphs_same(returned_graph, opt_graph)

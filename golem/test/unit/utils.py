@@ -1,5 +1,5 @@
 from random import randint
-from typing import Sequence, Optional, List
+from typing import Sequence, Optional, List, Callable
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_delegate import GraphDelegate
@@ -21,7 +21,16 @@ def find_same_node(nodes: List[GraphNode], target: GraphNode) -> Optional[GraphN
     return next(filter(lambda n: n.descriptive_id == target.descriptive_id, nodes), None)
 
 
+def find_first(graph, predicate: Callable[[GraphNode], bool]) -> Optional[GraphNode]:
+    return next(filter(predicate, graph.nodes), None)
+
+
 def graph_first():
+    # a   b c   d
+    #  \ /   \ /
+    #   e     f
+    #     \ /
+    #      g
     node_a_primary = LinkedGraphNode('a')
     node_b_primary = LinkedGraphNode('b')
     node_c_primary = LinkedGraphNode('c')
@@ -37,6 +46,15 @@ def graph_first():
 
 
 def graph_second():
+    # a   b
+    #  \ /
+    #   c   d
+    #    \ /
+    #     e
+    #     |
+    #     f
+    #     |
+    #     e
     node_a_primary = LinkedGraphNode('a')
     node_b_primary = LinkedGraphNode('b')
 
@@ -54,15 +72,23 @@ def graph_second():
 
 
 def graph_third():
+    # a
+    # |
+    # b
     node_a_primary = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
-    node_c = LinkedGraphNode('c', nodes_from=[node_b])
-    node_d = LinkedGraphNode('d', nodes_from=[node_c])
-    graph = GraphDelegate(node_d)
+    graph = GraphDelegate(node_b)
     return graph
 
 
 def graph_fourth():
+    # a   b
+    # |   |
+    # c   d
+    #  \ /
+    #   e
+    #   |
+    #   f
     node_a_primary = LinkedGraphNode('a')
     node_b_primary = LinkedGraphNode('b')
 
@@ -78,6 +104,13 @@ def graph_fourth():
 
 
 def graph_fifth():
+    # a   b
+    #  \ /
+    #   c
+    #   |
+    #   d
+    #   |
+    #   e
     node_a_primary = LinkedGraphNode('a')
     node_b_primary = LinkedGraphNode('b')
 
@@ -87,6 +120,36 @@ def graph_fifth():
     node_e = LinkedGraphNode('e', nodes_from=[node_d])
 
     graph = GraphDelegate(node_e)
+    return graph
+
+
+def graph_with_single_node():
+    node = LinkedGraphNode('a')
+    graph = GraphDelegate(node)
+    return graph
+
+
+def simple_linear_graph():
+    node_a_primary = LinkedGraphNode('a')
+    node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
+    node_c = LinkedGraphNode('c', nodes_from=[node_b])
+
+    graph = GraphDelegate(node_c)
+    return graph
+
+
+def tree_graph():
+    # a   b
+    #  \ /
+    #   c
+    #   |
+    #   d
+    node_a_primary = LinkedGraphNode('a')
+    node_b_primary = LinkedGraphNode('b')
+
+    node_c = LinkedGraphNode('c', nodes_from=[node_a_primary, node_b_primary])
+    node_d = LinkedGraphNode('d', nodes_from=[node_c])
+    graph = GraphDelegate(node_d)
     return graph
 
 

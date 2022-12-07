@@ -69,7 +69,7 @@ def test_dispatchers_with_faulty_objectives(objective, dispatcher):
 def test_dispatcher_with_timeout(dispatcher: ObjectiveEvaluationDispatcher):
     adapter, population = set_up_tests()
 
-    timeout = datetime.timedelta(seconds=0.0001)
+    timeout = datetime.timedelta(seconds=0.00001)
     with OptimisationTimer(timeout=timeout) as t:
         evaluator = dispatcher.dispatch(get_objective, timer=t)
         evaluated_population = evaluator(population)
