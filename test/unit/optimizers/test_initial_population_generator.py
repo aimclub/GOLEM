@@ -7,7 +7,7 @@ from golem.core.adapter import DirectAdapter
 from golem.core.optimisers.initial_graphs_generator import InitialPopulationGenerator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.test.unit.utils import graph_first, graph_second, graph_third
+from test.unit.utils import graph_first, graph_second, graph_third
 
 
 def setup_test(pop_size):

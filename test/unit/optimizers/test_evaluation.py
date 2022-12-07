@@ -10,8 +10,7 @@ from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, 
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.timer import OptimisationTimer
-
-from golem.test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, RandomMetric
+from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, RandomMetric
 
 
 def set_up_tests():

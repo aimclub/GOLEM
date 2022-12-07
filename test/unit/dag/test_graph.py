@@ -8,7 +8,7 @@ from golem.core.dag.graph import Graph
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.dag.linked_graph_node import LinkedGraphNode
-from golem.test.unit.utils import find_same_node, nodes_same
+from test.unit.utils import find_same_node, nodes_same
 
 seed(1)
 np.random.seed(1)

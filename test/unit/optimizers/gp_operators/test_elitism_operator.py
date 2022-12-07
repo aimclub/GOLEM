@@ -5,15 +5,15 @@ from golem.core.optimisers.fitness import SingleObjFitness
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.elitism import Elitism, ElitismTypesEnum
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.test.unit.optimizers.gp_operators.test_selection_operators import obj_function
-from golem.test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth
+from test.unit.optimizers.gp_operators.test_selection_operators import obj_function
+from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
 
 @pytest.fixture()
 def set_up():
     adapter = DirectAdapter()
     graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
-    population = [Individual(adapter.adapt(pipeline)) for pipeline in graphs]
+    population = [Individual(adapter.adapt(graph)) for graph in graphs]
     for ind in population:
         ind.set_evaluation_result(SingleObjFitness(obj_function()))
     population, best_individuals = population[:3], population[3:]

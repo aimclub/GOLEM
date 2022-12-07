@@ -3,13 +3,13 @@ from golem.core.optimisers.fitness import SingleObjFitness
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.selection import Selection, SelectionTypesEnum, random_selection
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth, RandomMetric
+from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth, RandomMetric
 
 
 def get_population():
     adapter = DirectAdapter()
     graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
-    population = [Individual(adapter.adapt(pipeline)) for pipeline in graphs]
+    population = [Individual(adapter.adapt(graph)) for graph in graphs]
     for ind in population:
         ind.set_evaluation_result(SingleObjFitness(obj_function()))
     return population

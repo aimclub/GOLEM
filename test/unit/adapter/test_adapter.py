@@ -4,15 +4,10 @@ from random import choice
 import numpy as np
 import pytest
 
-from golem.core.adapter import DirectAdapter
-from golem.core.dag.graph_delegate import GraphDelegate
-from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_verifier import GraphVerifier
-from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
-from golem.test.unit.adapter.mock_adapter import MockAdapter, MockNode, MockDomainStructure
-from golem.test.unit.utils import graph_with_single_node, simple_linear_graph, graph_fourth, graph_second, find_first
+from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure, MockAdapter
 
 
 def get_graphs():

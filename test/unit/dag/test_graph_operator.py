@@ -2,7 +2,6 @@ from copy import deepcopy
 
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph_delegate import GraphDelegate
-from golem.core.dag.graph_utils import distance_to_root_level, nodes_from_layer
 from golem.core.dag.linked_graph import LinkedGraph, get_distance_between
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 
@@ -16,38 +15,14 @@ def get_graph() -> GraphDelegate:
     first_level_one = LinkedGraphNode('l1_n1', nodes_from=[second_level_one, second_level_two])
 
     root = LinkedGraphNode('l0_n1', nodes_from=[first_level_one])
-    pipeline = GraphDelegate(root)
+    graph = GraphDelegate(root)
 
-    return pipeline
+    return graph
 
 
 def test_graph_operator_init():
     graph = get_graph()
     assert type(graph.operator) is LinkedGraph
-
-
-def test_distance_to_root_level():
-    # given
-    graph = get_graph()
-    selected_node = graph.nodes[2]
-
-    # when
-    height = distance_to_root_level(graph, selected_node)
-
-    # then
-    assert height == 2
-
-
-def test_nodes_from_layer():
-    # given
-    graph = get_graph()
-    desired_layer = 2
-
-    # when
-    nodes_from_desired_layer = nodes_from_layer(graph, desired_layer)
-
-    # then
-    assert len(nodes_from_desired_layer) == 2
 
 
 def test_actualise_old_node_children():
@@ -99,7 +74,7 @@ def test_node_children():
 # ------------------------------------------------------------------------------
 # Tests for distance_to_other method
 
-def test_distance_to_same_pipeline_restored():
+def test_distance_to_same_graph_restored():
     # given
     adapter = DirectAdapter()
     graph = get_graph()
@@ -125,7 +100,7 @@ def test_known_distances():
     graph_c_with_alt_params = GraphDelegate(node_c_with_alt_params)  # a -> c_alt_params
 
     assert get_distance_between(graph_1=graph_c,
-                                graph_2=graph_c) == 0  # the same pipeline
+                                graph_2=graph_c) == 0  # the same graph
     assert get_distance_between(graph_1=graph_c,
                                 graph_2=graph_a) == 2  # changes: 1 node (operation) + 1 edge
     assert get_distance_between(graph_1=graph_c,
@@ -258,7 +233,7 @@ def test_disconnect_nodes_method_fourth():
 def test_disconnect_nodes_method_fifth():
     graph = get_initial_graph()
 
-    # Try to disconnect nodes that are not in this pipeline
+    # Try to disconnect nodes that are not in this graph
     res_graph = deepcopy(graph)
 
     node_k = LinkedGraphNode('k')

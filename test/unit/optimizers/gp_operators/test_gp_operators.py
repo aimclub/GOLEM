@@ -6,15 +6,7 @@ from golem.core.optimisers.archive import ParetoFront
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.gp_operators import filter_duplicates, replace_subtrees
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.test.unit.utils import graph_first, graph_second, graph_third, graph_fourth
-
-
-def test_nodes_from_height():
-    graph = graph_first()
-    found_nodes = nodes_from_layer(graph, 1)
-    true_nodes = [node for node in graph.root_node.nodes_from]
-    assert all([node_model == found_node for node_model, found_node in
-                zip(true_nodes, found_nodes)])
+from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth
 
 
 def test_filter_duplicates():

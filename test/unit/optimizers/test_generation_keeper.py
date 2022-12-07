@@ -6,7 +6,7 @@ from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.test.unit.utils import RandomMetric, DepthMetric
+from test.unit.utils import RandomMetric, DepthMetric
 
 
 def create_individual(fitness: Fitness = None) -> Individual:

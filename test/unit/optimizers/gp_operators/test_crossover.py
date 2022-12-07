@@ -4,7 +4,7 @@ from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.test.unit.utils import graph_first, graph_second, graph_with_single_node
+from test.unit.utils import graph_first, graph_second, graph_with_single_node
 
 
 def test_crossover():

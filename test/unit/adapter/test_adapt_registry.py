@@ -7,8 +7,8 @@ import pytest
 from golem.core.adapter import register_native, AdaptRegistry
 from golem.core.optimisers.fitness import SingleObjFitness, Fitness
 from golem.core.optimisers.graph import OptGraph, OptNode
-from golem.test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode
-from golem.test.unit.utils import graphs_same
+from test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode
+from test.unit.utils import graphs_same
 
 
 def adapt(fun: Callable):

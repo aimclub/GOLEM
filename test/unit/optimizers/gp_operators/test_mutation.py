@@ -7,7 +7,7 @@ from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum, 
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.test.unit.utils import simple_linear_graph, tree_graph, graph_with_single_node, graph_first, \
+from test.unit.utils import simple_linear_graph, tree_graph, graph_with_single_node, graph_first, \
     graph_fifth
 
 

@@ -1,14 +1,13 @@
 import pytest
 
-from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
-from golem.test.unit.adapter.mock_adapter import MockDomainStructure, MockAdapter
+from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure, MockAdapter
 
 
 def get_valid_graph():
-    first_node = LinkedGraphNode(content='n1')
-    second_node = LinkedGraphNode(content='n2', nodes_from=[first_node])
-    third_node = LinkedGraphNode(content='n3', nodes_from=[second_node])
+    first_node = MockNode(content='n1')
+    second_node = MockNode(content='n2', nodes_from=[first_node])
+    third_node = MockNode(content='n3', nodes_from=[second_node])
 
     graph = MockDomainStructure([third_node])
     adapter = MockAdapter()

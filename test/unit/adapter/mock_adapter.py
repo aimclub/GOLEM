@@ -6,7 +6,7 @@ from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.graph_utils import map_dag_nodes
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.optimisers.graph import OptGraph, OptNode
-from golem.test.unit.utils import nodes_same
+from test.unit.utils import nodes_same
 
 
 class MockNode(LinkedGraphNode):
@@ -20,7 +20,6 @@ class MockDomainStructure(GraphDelegate):
 
     def __init__(self, nodes: Iterable[MockNode], *args, **kwargs):
         super().__init__(nodes, *args, **kwargs)
-        # self.nodes = copy(nodes)
 
     def __eq__(self, other):
         return nodes_same(self.nodes, other.nodes)
