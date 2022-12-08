@@ -25,18 +25,17 @@ def nxgraph_stats(graph: nx.Graph):
 
 
 def get_edit_dist_metric(target_graph: nx.DiGraph,
-                         requirements: Optional[GraphRequirements] = None,
                          timeout=timedelta(seconds=60),
+                         upper_bound: Optional[int] = None,
+                         requirements: Optional[GraphRequirements] = None,
                          ) -> Callable[[nx.DiGraph], float]:
     def node_match(node_content_1: Dict, node_content_2: Dict) -> bool:
         operations_do_match = node_content_1.get('name') == node_content_2.get('name')
         return True or operations_do_match
 
     if requirements:
-        upper_bound = int(np.sqrt(requirements.max_depth * requirements.max_arity)),
+        upper_bound = upper_bound or int(np.sqrt(requirements.max_depth * requirements.max_arity)),
         timeout = timeout or requirements.max_graph_fit_time
-    else:
-        upper_bound = None
 
     def metric(graph: nx.DiGraph) -> float:
         ged = graph_edit_distance(target_graph, graph,

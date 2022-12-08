@@ -6,8 +6,7 @@ from typing import Callable, Sequence, Optional, Dict
 import networkx as nx
 import numpy as np
 
-from examples.synthetic_graph_evolution.graph_metrics import spectral_dist, size_diff, \
-    nxgraph_stats
+from examples.synthetic_graph_evolution.graph_metrics import *
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.optimization_parameters import OptimizationParameters, GraphRequirements
@@ -53,13 +52,23 @@ graph_generators: Dict[str, DiGraphGenerator] = {
     '2ring': lambda n: nx_to_directed(nx.circular_ladder_graph(n)),
     'hypercube': lambda n: nx_to_directed(nx.hypercube_graph(int(np.log2(n).round()))),
     'gnp': lambda n: nx.gnp_random_graph(n, p=0.15)
-    # 'growing-network': nx.gn_graph,
 }
+
+
+def get_all_quality_metrics(target_graph):
+    quality_metrics = {
+        'edit_distance': get_edit_dist_metric(target_graph),
+        'matrix_edit_dist': partial(matrix_edit_dist, target_graph),
+        'sp_adj': partial(spectral_dist, target_graph, kind='adjacency'),
+        'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
+        'sp_lapl_norm': partial(spectral_dist, target_graph, kind='laplacian_norm'),
+        'graph_size': partial(size_diff, target_graph),
+    }
+    return quality_metrics
 
 
 def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
                     graph_sizes: Sequence[int] = (30, 100, 300),
-                    num_node_kinds: int = 10,
                     num_trials: int = 1,
                     trial_timeout: Optional[int] = None,
                     visualize: bool = False,
@@ -77,9 +86,9 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
             duration = datetime.now() - start_time
             print(f'Trial #{i} finished, spent time: {duration}')
+            print('target graph stats: ', nxgraph_stats(target_graph))
+            print('found graph stats: ', nxgraph_stats(found_nx_graph))
             if visualize:
-                print('target graph stats: ', nxgraph_stats(target_graph))
-                print('found graph stats: ', nxgraph_stats(found_nx_graph))
                 # nx.draw(target_graph)
                 nx.draw_kamada_kawai(target_graph, arrows=True)
                 GraphsInteractive(history).visualize()
@@ -89,17 +98,9 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 def run_experiment(target_graph: nx.DiGraph,
                    num_nodes: int,
                    timeout: Optional[timedelta] = None):
-    num_node_kinds: int = 3
-    nodes_types = [f'V{i}' for i in range(1, num_node_kinds+1)] * 5
-    # TODO: simple initial pop
-    initial = [OptGraph(OptNode(node_type)) for node_type in nodes_types]
-    # initial = [BaseNetworkxAdapter().restore(ind) for ind in initial]
-    # initial = [nx.star_graph(num_nodes)] * 5
-
     requirements = GraphRequirements(
         max_arity=num_nodes,
         max_depth=num_nodes,
-
         keep_n_best=10,
         early_stopping_timeout=5,
         early_stopping_iterations=1000,
@@ -110,22 +111,21 @@ def run_experiment(target_graph: nx.DiGraph,
 
     optimiser_parameters = GPAlgorithmParameters(
         multi_objective=True,
-
         pop_size=10,
         max_pop_size=200,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
-        # adaptive_depth=True,
-        # adaptive_depth_max_stagnation=50,
-
         mutation_types=[
             MutationTypesEnum.simple,
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_edge,
             MutationTypesEnum.single_drop,
-            # MutationTypesEnum.reduce,
-            # MutationTypesEnum.local_growth,
         ]
     )
+
+    # Generate simple initial population with single-node graphs
+    num_node_kinds = optimiser_parameters.pop_size
+    nodes_types = [f'V{i}' for i in range(num_node_kinds)]
+    initial_graphs = [OptGraph(OptNode(node_type)) for node_type in nodes_types]
 
     graph_generation_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
@@ -135,12 +135,8 @@ def run_experiment(target_graph: nx.DiGraph,
 
     objective = Objective(
         quality_metrics={
-            # 'edit_distance': get_edit_dist_metric(target_graph, requirements),
-            # 'matrix_edit_dist': partial(matrix_edit_dist, target_graph),
             'sp_adj': partial(spectral_dist, target_graph, kind='adjacency'),
-            # 'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
-            'sp_lapl_norm': partial(spectral_dist, target_graph, kind='laplacian_norm'),
-            # 'graph_size': partial(size_diff, target_graph),
+            'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
         },
         complexity_metrics={
             'graph_size': partial(size_diff, target_graph),
@@ -150,14 +146,13 @@ def run_experiment(target_graph: nx.DiGraph,
 
     optimiser = EvoGraphOptimizer(
         objective=objective,
-        initial_graphs=initial,
+        initial_graphs=initial_graphs,
         requirements=requirements,
         graph_optimizer_params=optimiser_parameters,
         graph_generation_params=graph_generation_params,
     )
 
     found_graphs = optimiser.optimise(objective)
-    # found_networks = [graph_generation_params.adapter.restore(g) for g in found_graphs]
 
     return found_graphs[0], optimiser.history
 
