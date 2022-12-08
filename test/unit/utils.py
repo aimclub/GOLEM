@@ -1,3 +1,4 @@
+import time
 from random import randint
 from typing import Sequence, Optional, List, Callable
 
@@ -26,80 +27,73 @@ def find_first(graph, predicate: Callable[[GraphNode], bool]) -> Optional[GraphN
 
 
 def graph_first():
-    # a   b c   d
-    #  \ /   \ /
-    #   e     f
-    #     \ /
-    #      g
-    node_a_primary = LinkedGraphNode('a')
-    node_b_primary = LinkedGraphNode('b')
-    node_c_primary = LinkedGraphNode('c')
-    node_d_primary = LinkedGraphNode('d')
+    #    a
+    #  |     \
+    #  a       b
+    # |  \    |  \
+    # c   d   c   d
+    graph = GraphDelegate()
 
-    node_e = LinkedGraphNode('e', nodes_from=[node_a_primary, node_b_primary])
-    node_f = LinkedGraphNode('f', nodes_from=[node_c_primary, node_d_primary])
+    root_of_tree, root_child_first, root_child_second = \
+        [LinkedGraphNode(oper) for oper in ('a', 'a', 'b')]
 
-    node_g_root = LinkedGraphNode('g', nodes_from=[node_e, node_f])
+    for root_node_child in (root_child_first, root_child_second):
+        for requirement_oper in ('c', 'd'):
+            new_node = LinkedGraphNode(requirement_oper)
+            root_node_child.nodes_from.append(new_node)
+            graph.add_node(new_node)
+        graph.add_node(root_node_child)
+        root_of_tree.nodes_from.append(root_node_child)
 
-    graph = GraphDelegate(node_g_root)
+    graph.add_node(root_of_tree)
     return graph
 
 
 def graph_second():
-    # a   b
-    #  \ /
-    #   c   d
-    #    \ /
-    #     e
-    #     |
-    #     f
-    #     |
-    #     e
-    node_a_primary = LinkedGraphNode('a')
-    node_b_primary = LinkedGraphNode('b')
+    #      a
+    #   |      \
+    #   a        b
+    #  |  \     |  \
+    #  c   a    c    d
+    #     |  \
+    #     b   d
 
-    node_c = LinkedGraphNode('c', nodes_from=[node_a_primary, node_b_primary])
-    node_d_primary = LinkedGraphNode('d')
-
-    node_e = LinkedGraphNode('e', nodes_from=[node_c, node_d_primary])
-
-    node_f = LinkedGraphNode('f', nodes_from=[node_e])
-
-    node_e_root = LinkedGraphNode('e', nodes_from=[node_f])
-
-    graph = GraphDelegate(node_e_root)
+    new_node = LinkedGraphNode('a')
+    for oper_type in ('b', 'd'):
+        new_node.nodes_from.append(LinkedGraphNode(oper_type))
+    graph = graph_first()
+    graph.update_subtree(graph.root_node.nodes_from[0].nodes_from[1], new_node)
     return graph
 
 
 def graph_third():
-    # a
-    # |
-    # b
-    node_a_primary = LinkedGraphNode('a')
-    node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
-    graph = GraphDelegate(node_b)
+    #      a
+    #   /  |  \
+    #  b   d   b
+    root_of_tree = LinkedGraphNode('a')
+    for oper_type in ('b', 'd', 'b'):
+        root_of_tree.nodes_from.append(LinkedGraphNode(oper_type))
+    graph = GraphDelegate()
+
+    for node in root_of_tree.nodes_from:
+        graph.add_node(node)
+    graph.add_node(root_of_tree)
+
     return graph
 
 
 def graph_fourth():
-    # a   b
-    # |   |
-    # c   d
-    #  \ /
-    #   e
-    #   |
-    #   f
-    node_a_primary = LinkedGraphNode('a')
-    node_b_primary = LinkedGraphNode('b')
+    #      a
+    #   |  \  \
+    #  b   a   b
+    #      |  \
+    #      b   b
 
-    node_c = LinkedGraphNode('c', nodes_from=[node_a_primary])
-    node_d = LinkedGraphNode('d', nodes_from=[node_b_primary])
+    graph = graph_third()
+    new_node = LinkedGraphNode('a')
+    [new_node.nodes_from.append(LinkedGraphNode('b')) for _ in range(2)]
+    graph.update_subtree(graph.root_node.nodes_from[1], new_node)
 
-    node_e = LinkedGraphNode('e', nodes_from=[node_c, node_d])
-
-    node_f = LinkedGraphNode('f', nodes_from=[node_e])
-
-    graph = GraphDelegate(node_f)
     return graph
 
 
@@ -155,7 +149,8 @@ def tree_graph():
 
 class RandomMetric:
     @staticmethod
-    def get_value(*args, **kvargs) -> float:
+    def get_value(graph, *args, delay=0, **kwargs) -> float:
+        time.sleep(delay)
         return randint(0, 1000)
 
 

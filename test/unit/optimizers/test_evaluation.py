@@ -1,4 +1,5 @@
 import datetime
+from functools import partial
 
 import pytest
 
@@ -20,8 +21,8 @@ def set_up_tests():
     return adapter, population
 
 
-def get_objective(graph: Graph) -> Fitness:
-    objective = Objective({'random_metric': RandomMetric.get_value})
+def get_objective(graph: Graph, delay=0) -> Fitness:
+    objective = Objective({'random_metric': partial(RandomMetric.get_value, delay=delay)})
     return objective(graph)
 
 
@@ -68,9 +69,9 @@ def test_dispatchers_with_faulty_objectives(objective, dispatcher):
 def test_dispatcher_with_timeout(dispatcher: ObjectiveEvaluationDispatcher):
     adapter, population = set_up_tests()
 
-    timeout = datetime.timedelta(seconds=0.00001)
+    timeout = datetime.timedelta(seconds=0.01)
     with OptimisationTimer(timeout=timeout) as t:
-        evaluator = dispatcher.dispatch(get_objective, timer=t)
+        evaluator = dispatcher.dispatch(partial(get_objective, delay=0.1), timer=t)
         evaluated_population = evaluator(population)
     fitness = [x.fitness for x in evaluated_population]
     assert all(x.valid for x in fitness), "At least one fitness value is invalid"

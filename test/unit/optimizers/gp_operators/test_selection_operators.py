@@ -1,9 +1,9 @@
 from golem.core.adapter import DirectAdapter
-from golem.core.optimisers.fitness import SingleObjFitness
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.selection import Selection, SelectionTypesEnum, random_selection
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth, RandomMetric
+from test.unit.optimizers.test_evaluation import get_objective
+from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
 
 def get_population():
@@ -11,13 +11,8 @@ def get_population():
     graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
     population = [Individual(adapter.adapt(graph)) for graph in graphs]
     for ind in population:
-        ind.set_evaluation_result(SingleObjFitness(obj_function()))
+        ind.set_evaluation_result(get_objective(ind.graph))
     return population
-
-
-def obj_function() -> float:
-    metric_function = RandomMetric.get_value
-    return metric_function()
 
 
 def test_tournament_selection():

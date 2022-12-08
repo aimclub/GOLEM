@@ -4,7 +4,7 @@ from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph_utils import nodes_from_layer
 from golem.core.optimisers.archive import ParetoFront
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
-from golem.core.optimisers.genetic.gp_operators import filter_duplicates, replace_subtrees
+from golem.core.optimisers.genetic.gp_operators import filter_duplicates, replace_subtrees, equivalent_subtree
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth
 
@@ -53,3 +53,21 @@ def test_replace_subtree():
     assert graph_1.depth <= max_depth
     assert graph_1 == passed_graph_1
     assert graph_2.depth <= max_depth
+
+
+def test_graphs_equivalent_subtree():
+    c_first = graph_first()
+    c_second = graph_second()
+    c_third = graph_third()
+
+    similar_nodes_first_and_second = equivalent_subtree(c_first, c_second)
+    assert len(similar_nodes_first_and_second) == 7
+
+    similar_nodes_first_and_third = equivalent_subtree(c_first, c_third)
+    assert not similar_nodes_first_and_third
+
+    similar_nodes_second_and_third = equivalent_subtree(c_second, c_third)
+    assert not similar_nodes_second_and_third
+
+    similar_nodes_third = equivalent_subtree(c_third, c_third)
+    assert len(similar_nodes_third) == 4

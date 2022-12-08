@@ -1,4 +1,6 @@
-from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level
+import pytest
+
+from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy
 from test.unit.dag.test_graph_operator import get_graph
 from test.unit.utils import graph_first
 from golem.core.dag.graph_utils import distance_to_primary_level
@@ -53,3 +55,26 @@ def test_nodes_from_layer():
 
     # then
     assert len(nodes_from_desired_layer) == 2
+
+
+def test_ordered_subnodes_hierarchy():
+    first_node = LinkedGraphNode('a')
+    second_node = LinkedGraphNode('b')
+    third_node = LinkedGraphNode('c', nodes_from=[first_node, second_node])
+    root = LinkedGraphNode('d', nodes_from=[third_node])
+
+    ordered_nodes = ordered_subnodes_hierarchy(root)
+
+    assert len(ordered_nodes) == 4
+    assert ordered_nodes == [root, third_node, first_node, second_node]
+
+
+def test_ordered_subnodes_cycle():
+    cycle_node = LinkedGraphNode('knn')
+    second_node = LinkedGraphNode('knn')
+    third_node = LinkedGraphNode('lda', nodes_from=[cycle_node, second_node])
+    root = LinkedGraphNode('logit', nodes_from=[third_node])
+    cycle_node.nodes_from = [root]
+
+    with pytest.raises(ValueError, match='cycle'):
+        ordered_subnodes_hierarchy(root)
