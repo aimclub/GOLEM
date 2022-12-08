@@ -109,7 +109,7 @@ def run_experiment(target_graph: nx.DiGraph,
         n_jobs=-1,
     )
 
-    optimiser_parameters = GPAlgorithmParameters(
+    gp_params = GPAlgorithmParameters(
         multi_objective=True,
         pop_size=10,
         max_pop_size=200,
@@ -122,17 +122,12 @@ def run_experiment(target_graph: nx.DiGraph,
         ]
     )
 
-    # Generate simple initial population with single-node graphs
-    num_node_kinds = optimiser_parameters.pop_size
-    nodes_types = [f'V{i}' for i in range(num_node_kinds)]
-    initial_graphs = [OptGraph(OptNode(node_type)) for node_type in nodes_types]
-
-    graph_generation_params = GraphGenerationParams(
+    graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
         rules_for_constraint=[has_no_self_cycled_nodes,],
-        available_node_types=nodes_types,
     )
 
+    # Setup objective that measures some graph-theoretic similarity measure
     objective = Objective(
         quality_metrics={
             'sp_adj': partial(spectral_dist, target_graph, kind='adjacency'),
@@ -143,15 +138,10 @@ def run_experiment(target_graph: nx.DiGraph,
         },
         is_multi_objective=True
     )
+    # Generate simple initial population with single-node graphs
+    initial_graphs = [OptGraph(OptNode(f'Node{i}')) for i in range(gp_params.pop_size)]
 
-    optimiser = EvoGraphOptimizer(
-        objective=objective,
-        initial_graphs=initial_graphs,
-        requirements=requirements,
-        graph_optimizer_params=optimiser_parameters,
-        graph_generation_params=graph_generation_params,
-    )
-
+    optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     found_graphs = optimiser.optimise(objective)
 
     return found_graphs[0], optimiser.history
@@ -162,7 +152,7 @@ if __name__ == '__main__':
     # random.seed(seed)
     # np.random.seed(seed)
 
-    run_experiments(['2ring', 'hypercube'],
-                    graph_sizes=(50,),
+    run_experiments(['2ring', 'hypercube', 'gnp'],
+                    graph_sizes=(10, 50,),
                     trial_timeout=10,
                     visualize=True)
