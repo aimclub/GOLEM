@@ -96,23 +96,19 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
 
 def run_experiment(target_graph: nx.DiGraph,
-                   num_nodes: int,
+                   num_nodes: int = 50,
                    timeout: Optional[timedelta] = None):
+    # Setup parameters
     requirements = GraphRequirements(
         max_arity=num_nodes,
         max_depth=num_nodes,
-        keep_n_best=10,
         early_stopping_timeout=5,
         early_stopping_iterations=1000,
         timeout=timeout,
-        max_graph_fit_time=timedelta(seconds=30),
         n_jobs=-1,
     )
-
     gp_params = GPAlgorithmParameters(
         multi_objective=True,
-        pop_size=10,
-        max_pop_size=200,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
             MutationTypesEnum.simple,
@@ -121,7 +117,6 @@ def run_experiment(target_graph: nx.DiGraph,
             MutationTypesEnum.single_drop,
         ]
     )
-
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
         rules_for_constraint=[has_no_self_cycled_nodes,],
@@ -141,6 +136,7 @@ def run_experiment(target_graph: nx.DiGraph,
     # Generate simple initial population with single-node graphs
     initial_graphs = [OptGraph(OptNode(f'Node{i}')) for i in range(gp_params.pop_size)]
 
+    # Run the optimizer
     optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     found_graphs = optimiser.optimise(objective)
 
