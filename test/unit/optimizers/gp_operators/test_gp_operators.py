@@ -10,7 +10,7 @@ from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth
 
 
 def test_filter_duplicates():
-    archive = ParetoFront()
+    archive = ParetoFront(maxsize=3)
     adapter = DirectAdapter()
 
     archive_items = [Individual(adapter.adapt(g)) for g in [graph_first(), graph_second(), graph_third()]]
