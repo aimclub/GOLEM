@@ -1,6 +1,8 @@
 from copy import deepcopy
 from typing import Sequence, Optional
 
+import numpy as np
+
 from golem.core.adapter import DirectAdapter
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum, MutationStrengthEnum, Mutation
@@ -11,12 +13,15 @@ from test.unit.utils import simple_linear_graph, tree_graph, graph_with_single_n
     graph_fifth
 
 
+available_node_types = ['a', 'b', 'c', 'd', 'e', 'f']
+
+
 def get_mutation_operator(mutation_types: Sequence[MutationTypesEnum] = None,
                           requirements: Optional[GraphRequirements] = None,
                           mutation_prob: float = 1.0,
                           mutation_strength: Optional[MutationStrengthEnum] = MutationStrengthEnum.mean):
     requirements = requirements or GraphRequirements()
-    graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c', 'd', 'e', 'f'])
+    graph_generation_params = GraphGenerationParams(available_node_types=available_node_types)
     mutation_types = mutation_types or (MutationTypesEnum.simple,
                                         MutationTypesEnum.reduce,
                                         MutationTypesEnum.growth,
@@ -149,11 +154,11 @@ def test_replace_mutation_for_linear_graph():
     Tests single_change mutation can change node to another
     """
     graph = simple_linear_graph()
-    new_graph = deepcopy(graph)
     mutation = get_mutation_operator()
 
-    new_graph = mutation._single_change_mutation(new_graph)
-    assert graph.descriptive_id != new_graph.descriptive_id
+    new_graph = mutation._single_change_mutation(graph)
+    operations = [node.content['name'] for node in new_graph.nodes]
+    assert np.all([operation in available_node_types for operation in operations])
 
 
 def test_mutation_with_single_node():

@@ -22,6 +22,10 @@ def test_adapt_verification_rules_dag(rule):
     and shouldn't change them on the call to adapt."""
 
     opt_graph, graph, adapter = get_valid_graph()
+
+    # sanity check
+    assert rule(graph)
+
     adapted_rule = adapter.adapt_func(rule)
 
     assert adapted_rule(opt_graph)

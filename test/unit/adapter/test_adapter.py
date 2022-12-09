@@ -4,10 +4,12 @@ from random import choice
 import numpy as np
 import pytest
 
+from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
 from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure, MockAdapter
+from test.unit.utils import find_first
 
 
 def get_graphs():
@@ -47,6 +49,17 @@ def graph_with_custom_parameters(alpha_value):
     return graph
 
 
+def get_complex_graph():
+    node_a = MockNode('a')
+    node_b = MockNode('b', nodes_from=[node_a])
+    node_c = MockNode('c', nodes_from=[node_b])
+    node_d = MockNode('d', nodes_from=[node_b, node_c])
+    node_e = MockNode('e', nodes_from=[node_d])
+    node_final = MockNode('a', nodes_from=[node_c, node_e])
+    graph = MockDomainStructure([node_final])
+    return graph
+
+
 def test_adapters_params_correct():
     """ Checking the correct conversion of hyperparameters in nodes when nodes
     are passing through adapter
@@ -57,7 +70,7 @@ def test_adapters_params_correct():
     # Convert into OptGraph object
     adapter = MockAdapter()
     opt_graph = adapter.adapt(graph)
-    # Get Pipeline object back
+    # Get graph object back
     restored_graph = adapter.restore(opt_graph)
     # Get hyperparameter value after graph restoration
     restored_alpha = restored_graph.root_node.content['params']['alpha']
@@ -132,6 +145,14 @@ def test_changes_to_transformed_dont_affect_origin(graph):
     # assert that changes to the restored graph don't affect original graph
     assert opt_graph.descriptive_id != restored_graph.descriptive_id
     assert opt_graph.descriptive_id == original_opt_graph.descriptive_id
+
+
+def test_no_opt_or_graph_nodes_after_adapt_so_complex_graph():
+    adapter = MockAdapter()
+    pipeline = get_complex_graph()
+    adapter.adapt(pipeline)
+
+    assert not find_first(pipeline, lambda n: type(n) in (GraphNode, OptNode))
 
 
 def _check_nodes_references_correct(graph):

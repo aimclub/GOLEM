@@ -1,4 +1,4 @@
-from golem.core.utilities.data_structures import UniqueList
+from golem.core.utilities.data_structures import UniqueList, ensure_wrapped_in_sequence
 
 
 def test_init():
@@ -57,3 +57,21 @@ def test_insert():
     xs[3] = 12
     assert len(xs) == len(previous)
     assert xs[3] == 12
+
+
+def test_ensure_wrapped_in_sequence():
+    cases = [
+        str(),
+        int(),
+        (i for i in range(5)),
+        [int()],
+        (int(),),
+    ]
+
+    container_types = [list, tuple, set]
+
+    for case in cases:
+        for container_type in container_types:
+            assert isinstance(ensure_wrapped_in_sequence(case, container_type), container_type)
+
+    assert ensure_wrapped_in_sequence(None) is None

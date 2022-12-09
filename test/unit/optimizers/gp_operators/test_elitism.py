@@ -4,7 +4,7 @@ from golem.core.adapter import DirectAdapter
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.elitism import Elitism, ElitismTypesEnum
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from test.unit.optimizers.gp_operators.test_selection_operators import get_objective
+from test.unit.optimizers.gp_operators.test_selection import get_objective
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
 
@@ -15,7 +15,7 @@ def set_up():
     population = [Individual(adapter.adapt(graph)) for graph in graphs]
     for ind in population:
         ind.set_evaluation_result(get_objective(ind.graph))
-    population, best_individuals = population[:3], population[3:]
+    population, best_individuals = population[:4], population[4:]
 
     return best_individuals, population
 

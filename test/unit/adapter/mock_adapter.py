@@ -1,11 +1,12 @@
-from copy import copy, deepcopy
-from typing import Optional, Dict, Any, Union, List, Iterable
+from copy import deepcopy
+from typing import Optional, Dict, Any, Union, Iterable
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.graph_utils import map_dag_nodes
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from test.unit.utils import nodes_same
 
 
