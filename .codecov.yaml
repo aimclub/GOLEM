@@ -1,0 +1,9 @@
+coverage:
+  status:
+    project:
+      default:
+        threshold: 1%
+    patch: false
+ignore:
+  - "golem/remote"  # external computational client can not be fully tested
+  - "golem/visualisation" # complicated to test in unit-like way, tested in integration tests
