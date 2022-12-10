@@ -1,15 +1,12 @@
-from datetime import timedelta, datetime
+from datetime import datetime
 from functools import partial
 from itertools import product
-from typing import Callable, Sequence, Optional, Dict
-
-import networkx as nx
-import numpy as np
+from typing import Sequence
 
 from examples.synthetic_graph_evolution.graph_metrics import *
-from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
+from golem.core.adapter.nx_adapter import BaseNetworkxAdapter, nx_to_directed
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
-from golem.core.optimisers.optimization_parameters import OptimizationParameters, GraphRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
@@ -21,30 +18,6 @@ from golem.visualisation.opt_history.graphs_interactive import GraphsInteractive
 
 NumNodes = int
 DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
-
-
-def nx_to_directed(graph: nx.Graph) -> nx.DiGraph:
-    """Randomly chooses a direction for each edge."""
-    dedges = set()
-    digraph = nx.DiGraph()
-
-    for node, data in graph.nodes(data=True):
-        digraph.add_node(node, **data)
-
-    for u, v, data in graph.edges.data():
-        edge = (u, v)
-        inv_edge = (v, u)
-        if edge in dedges or inv_edge in dedges:
-            continue
-
-        if np.random.default_rng().random() > 0.5:
-            digraph.add_edge(*edge, **data)
-            dedges.add(edge)
-        else:
-            digraph.add_edge(*inv_edge, **data)
-            dedges.add(inv_edge)
-    return digraph
-
 
 graph_generators: Dict[str, DiGraphGenerator] = {
     'star': lambda n: nx_to_directed(nx.star_graph(n)),
