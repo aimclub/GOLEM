@@ -93,8 +93,7 @@ class OptHistory:
         try:
             last_gen_id = self.generations_count - 1
             last_gen = self.individuals[last_gen_id]
-            last_gen_history = self.historical_fitness[last_gen_id]
-            for individual, ind_fitness in zip(last_gen, last_gen_history):
+            for individual in last_gen:
                 ind_path = Path(save_dir, str(last_gen_id), str(individual.uid))
                 if not os.path.isdir(ind_path):
                     os.makedirs(ind_path)
