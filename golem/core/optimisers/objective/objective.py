@@ -1,6 +1,6 @@
 import itertools
 from numbers import Real
-from typing import Any, Optional, Iterable, Callable, Sequence, TypeVar, Dict, Tuple
+from typing import Any, Optional, Iterable, Callable, Sequence, TypeVar, Dict, Tuple, Union
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
@@ -45,10 +45,11 @@ class Objective:
     def metric_names(self) -> Sequence[str]:
         return [str(metric_id) for metric_id, _ in self.metrics]
 
-    def format_fitness(self, fitness: Fitness) -> str:
+    def format_fitness(self, fitness: Union[Fitness, Sequence[float]]) -> str:
         """Returns formatted fitness string.
         Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""
-        fitness_info = zip(self.metric_names, fitness.values)
+        values = fitness.values if isinstance(fitness, Fitness) else fitness
+        fitness_info = zip(self.metric_names, values)
         fitness_info_str = [f'{name}={value:.3f}' for name, value in fitness_info]
         return f"<{' '.join(fitness_info_str)}>"
 

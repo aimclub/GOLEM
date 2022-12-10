@@ -79,8 +79,7 @@ class GraphGenerationParams:
         elif available_node_types:
             self.node_factory = DefaultOptNodeFactory(available_node_types)
         else:
-            raise AttributeError('Required arguments not provided, please provide '
-                                 'custom node factory or collection of available node types.')
+            self.node_factory = DefaultOptNodeFactory()
 
 
 class GraphOptimizer:

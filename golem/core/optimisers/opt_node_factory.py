@@ -1,3 +1,4 @@
+import random
 from abc import abstractmethod, ABC
 from random import choice
 from typing import Optional, Iterable
@@ -35,8 +36,16 @@ class OptNodeFactory(ABC):
 
 
 class DefaultOptNodeFactory(OptNodeFactory):
-    def __init__(self, available_node_types: Iterable[str]):
-        self._available_nodes = tuple(available_node_types)
+    """Default node factory that either randomly selects
+    one node from the provided lists of available nodes
+    or returns a node with a random numeric node name
+    in the range from 0 to `num_node_types`."""
+
+    def __init__(self,
+                 available_node_types: Optional[Iterable[str]] = None,
+                 num_node_types: Optional[int] = None):
+        self._available_nodes = tuple(available_node_types) if available_node_types else None
+        self._num_node_types = num_node_types or 1000
 
     def exchange_node(self, node: OptNode) -> OptNode:
         return node
@@ -45,4 +54,7 @@ class DefaultOptNodeFactory(OptNodeFactory):
         return self.get_node(**kwargs)
 
     def get_node(self, **kwargs) -> OptNode:
-        return OptNode(content={'name': choice(self._available_nodes)})
+        chosen_node_type = choice(self._available_nodes) \
+            if self._available_nodes \
+            else random.randint(0, self._num_node_types)
+        return OptNode(content={'name': chosen_node_type})

@@ -23,3 +23,7 @@ psutil>=5.9.2
 # Tests
 pytest>=6.2.*
 testfixtures>=6.18.*
+
+# Examples
+netcomp
+pyemd

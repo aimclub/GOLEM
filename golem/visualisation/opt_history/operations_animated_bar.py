@@ -34,8 +34,8 @@ class OperationsAnimatedBar(HistoryVisualization):
         dpi = dpi or self.get_predefined_value('dpi')
         best_fraction = best_fraction or self.get_predefined_value('best_fraction')
         show_fitness = show_fitness if show_fitness is not None else self.get_predefined_value('show_fitness') or True
-        tags_map = tags_map or self.visualizer.visuals_params.get('tags_map')
-        palette = palette or self.visualizer.visuals_params.get('palette')
+        tags_map = tags_map or self.visuals_params.get('tags_map')
+        palette = palette or self.visuals_params.get('palette')
 
         def interpolate_points(point_1, point_2, smoothness=18, power=4) -> List[np.array]:
             t_interp = np.linspace(0, 1, smoothness)

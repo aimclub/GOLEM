@@ -29,8 +29,8 @@ class OperationsKDE(HistoryVisualization):
         save_path = save_path or self.get_predefined_value('save_path')
         dpi = dpi or self.get_predefined_value('dpi')
         best_fraction = best_fraction or self.get_predefined_value('best_fraction')
-        tags_map = tags_map or self.visualizer.visuals_params.get('tags_map')
-        palette = palette or self.visualizer.visuals_params.get('palette')
+        tags_map = tags_map or self.visuals_params.get('tags_map')
+        palette = palette or self.visuals_params.get('palette')
 
         generation_column_name = 'Generation'
         operation_column_name = 'Operation'
