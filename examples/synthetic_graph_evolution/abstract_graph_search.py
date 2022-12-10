@@ -75,13 +75,16 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
                     ):
     for graph_name, num_nodes in product(graph_names, graph_sizes):
         graph_generator = graph_generators[graph_name]
+        experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
+        trial_results = []
         for i in range(num_trials):
             start_time = datetime.now()
-            print(f'Trial #{i} with graph={graph_name} graph_size={num_nodes} at time {start_time}')
+            print(f'\nTrial #{i} of {experiment_id} started at {start_time}')
 
             target_graph = graph_generator(num_nodes)
-            found_graph, history = run_experiment(target_graph, num_nodes,
-                                                  timeout=timedelta(minutes=trial_timeout))
+            found_graph, history, objective = run_trial(target_graph, num_nodes,
+                                                        timeout=timedelta(minutes=trial_timeout))
+            trial_results.extend(history.final_choices)
             found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
 
             duration = datetime.now() - start_time
@@ -94,10 +97,20 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
                 GraphsInteractive(history).visualize()
                 history.show.fitness_line_interactive()
 
+        # Compute mean & std for metrics of trials
+        ff = objective.format_fitness
+        trial_metrics = np.array([ind.fitness.values for ind in trial_results])
+        trial_metrics_mean = trial_metrics.mean(axis=0)
+        trial_metrics_std = trial_metrics.std(axis=0)
+        print(f'{experiment_id} finished with metrics:\n'
+              f'mean={ff(trial_metrics_mean)}\n'
+              f' std={ff(trial_metrics_std)}')
+        return trial_metrics_mean, trial_metrics_std
 
-def run_experiment(target_graph: nx.DiGraph,
-                   num_nodes: int = 50,
-                   timeout: Optional[timedelta] = None):
+
+def run_trial(target_graph: nx.DiGraph,
+              num_nodes: int = 50,
+              timeout: Optional[timedelta] = None):
     # Setup parameters
     requirements = GraphRequirements(
         max_arity=num_nodes,
@@ -140,15 +153,17 @@ def run_experiment(target_graph: nx.DiGraph,
     optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     found_graphs = optimiser.optimise(objective)
 
-    return found_graphs[0], optimiser.history
+    return found_graphs[0], optimiser.history, objective
 
 
 if __name__ == '__main__':
+    # Setup the seed for reproducible experiments
     # seed = 321
     # random.seed(seed)
     # np.random.seed(seed)
 
-    run_experiments(['2ring', 'hypercube', 'gnp'],
+    run_experiments(graph_names=['2ring', 'hypercube', 'gnp'],
                     graph_sizes=(10, 50,),
+                    num_trials=3,
                     trial_timeout=10,
-                    visualize=True)
+                    visualize=False)
