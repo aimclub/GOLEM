@@ -157,11 +157,6 @@ def run_trial(target_graph: nx.DiGraph,
 
 
 if __name__ == '__main__':
-    # Setup the seed for reproducible experiments
-    # seed = 321
-    # random.seed(seed)
-    # np.random.seed(seed)
-
     run_experiments(graph_names=['2ring', 'hypercube', 'gnp'],
                     graph_sizes=(10, 50,),
                     num_trials=3,
