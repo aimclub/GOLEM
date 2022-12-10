@@ -6,16 +6,14 @@ import numpy as np
 
 from examples.synthetic_graph_evolution import mmd
 from examples.synthetic_graph_evolution.mmd import compute_mmd
-from examples.synthetic_graph_evolution.orbits_count_metric import motif_stats_graph
 
 
 def compute_all_stats(graph_prediction: Sequence[nx.Graph],
-                      graph_target: Sequence[nx.Graph]) -> Tuple[float, float, float]:
+                      graph_target: Sequence[nx.Graph]) -> Tuple[float, float]:
     mmd_degree = degree_stats(graph_prediction, graph_target)
     mmd_clustering = clustering_stats(graph_prediction, graph_target)
-    mmd_motifs = motif_stats(graph_prediction, graph_target)
 
-    return mmd_degree, mmd_clustering, mmd_motifs
+    return mmd_degree, mmd_clustering
 
 
 def degree_stats(graph_prediction: Sequence[nx.Graph],
@@ -28,13 +26,6 @@ def clustering_stats(graph_prediction: Sequence[nx.Graph],
     bins = 100
     return mmd_stats(clustering_stats_graph, graph_prediction, graph_target,
                      sigma=0.1, distance_scaling=bins, normalize=False)
-
-
-def motif_stats(graph_prediction: Sequence[nx.Graph],
-                graph_target: Sequence[nx.Graph]) -> float:
-    graph_prediction = [g for g in graph_prediction if len(g) > 0]
-    return mmd_stats(motif_stats_graph, graph_prediction, graph_target,
-                     kernel=mmd.gaussian, normalize=False)
 
 
 def mmd_stats(stat_function: Callable[[nx.Graph], np.ndarray],
