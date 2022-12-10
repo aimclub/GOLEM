@@ -158,7 +158,7 @@ def run_trial(target_graph: nx.DiGraph,
 
 if __name__ == '__main__':
     run_experiments(graph_names=['2ring', 'hypercube', 'gnp'],
-                    graph_sizes=(10, 50,),
+                    graph_sizes=(20, 50,),
                     num_trials=3,
-                    trial_timeout=10,
+                    trial_timeout=5,
                     visualize=False)
