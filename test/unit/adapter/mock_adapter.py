@@ -2,20 +2,21 @@ from copy import deepcopy
 from typing import Optional, Dict, Any, Union, Iterable
 
 from golem.core.adapter import BaseOptimizationAdapter
-from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.graph_utils import map_dag_nodes
+from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.optimisers.graph import OptGraph, OptNode
-from golem.core.optimisers.opt_node_factory import OptNodeFactory
+from golem.core.optimisers.objective import ObjectiveEvaluate
 from test.unit.utils import nodes_same
 
 
 class MockNode(LinkedGraphNode):
     def __init__(self, content: Union[dict, str], nodes_from: Optional[Iterable['MockNode']] = None):
         super().__init__(content, nodes_from=nodes_from)
+        self.content['intermadiate_metric'] = None
 
 
-class MockDomainStructure(GraphDelegate):
+class MockDomainStructure(LinkedGraph):
     """Mock domain structure for testing adapt/restore logic.
     Represents just a list of nodes."""
 
@@ -45,3 +46,10 @@ class MockAdapter(BaseOptimizationAdapter[MockDomainStructure]):
     @staticmethod
     def _opt_to_mock_node(node: OptNode):
         return MockNode(deepcopy(node.content))
+
+
+class MockObjectiveEvaluate(ObjectiveEvaluate):
+    def evaluate_intermediate_metrics(self, graph: MockDomainStructure):
+        for node in graph.nodes:
+            intermediate_graph = MockDomainStructure([node])
+            node.content['intermediate_metric'] = self._objective(intermediate_graph)

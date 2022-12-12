@@ -1,7 +1,7 @@
 import pytest
 
 from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy
-from test.unit.dag.test_graph_operator import get_graph
+from test.unit.dag.test_graph_operator import graph
 from test.unit.utils import graph_first
 from golem.core.dag.graph_utils import distance_to_primary_level
 from golem.core.dag.linked_graph_node import LinkedGraphNode
@@ -33,9 +33,8 @@ def test_nodes_from_height():
                 zip(true_nodes, found_nodes)])
 
 
-def test_distance_to_root_level():
+def test_distance_to_root_level(graph):
     # given
-    graph = get_graph()
     selected_node = graph.nodes[2]
 
     # when
@@ -45,9 +44,8 @@ def test_distance_to_root_level():
     assert height == 2
 
 
-def test_nodes_from_layer():
+def test_nodes_from_layer(graph):
     # given
-    graph = get_graph()
     desired_layer = 2
 
     # when

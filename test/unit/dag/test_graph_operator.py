@@ -1,12 +1,15 @@
 from copy import deepcopy
 
+import pytest
+
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph import LinkedGraph, get_distance_between
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 
 
-def get_graph() -> GraphDelegate:
+@pytest.fixture()
+def graph() -> GraphDelegate:
     third_level_one = LinkedGraphNode('l3_n1')
 
     second_level_one = LinkedGraphNode('l2_n1', nodes_from=[third_level_one])
@@ -20,14 +23,12 @@ def get_graph() -> GraphDelegate:
     return graph
 
 
-def test_graph_operator_init():
-    graph = get_graph()
+def test_graph_operator_init(graph):
     assert type(graph.operator) is LinkedGraph
 
 
-def test_actualise_old_node_children():
+def test_actualise_old_node_children(graph):
     # given
-    graph = get_graph()
     selected_node = graph.nodes[2]
     new_node = LinkedGraphNode('new_node')
 
@@ -40,9 +41,8 @@ def test_actualise_old_node_children():
     assert new_node in updated_parent.nodes_from
 
 
-def test_sort_nodes():
+def test_sort_nodes(graph):
     # given
-    graph = get_graph()
     selected_node = graph.nodes[2]
     original_length = graph.length
     new_node = LinkedGraphNode('new_n1')
@@ -58,9 +58,8 @@ def test_sort_nodes():
     assert graph.nodes[5] is new_node
 
 
-def test_node_children():
+def test_node_children(graph):
     # given
-    graph = get_graph()
     selected_node = graph.nodes[2]
 
     # when
@@ -74,10 +73,9 @@ def test_node_children():
 # ------------------------------------------------------------------------------
 # Tests for distance_to_other method
 
-def test_distance_to_same_graph_restored():
+def test_distance_to_same_graph_restored(graph):
     # given
     adapter = DirectAdapter()
-    graph = get_graph()
     opt_graph = adapter.adapt(graph)
 
     # when
@@ -246,8 +244,7 @@ def test_disconnect_nodes_method_fifth():
 # ------------------------------------------------------------------------------
 # Test for get_edges method
 
-def test_get_edges():
-    graph = get_graph()
+def test_get_edges(graph):
     print(graph.nodes)
 
     l3_n1 = graph.nodes[3]

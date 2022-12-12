@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Sequence, Optional
 
 import numpy as np
+import pytest
 
 from golem.core.adapter import DirectAdapter
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -173,16 +174,15 @@ def test_mutation_with_single_node():
     assert graph == new_graph
 
 
-def test_mutation_with_zero_prob():
+@pytest.mark.parametrize('mutation_type', MutationTypesEnum)
+def test_mutation_with_zero_prob(mutation_type):
+    adapter = DirectAdapter()
+    mutation = get_mutation_operator([mutation_type], mutation_prob=0)
 
-    for mutation_type in MutationTypesEnum:
-        adapter = DirectAdapter()
-        mutation = get_mutation_operator([mutation_type], mutation_prob=0)
+    ind = Individual(adapter.adapt(graph_first()))
+    new_ind = mutation(ind)
+    assert new_ind.graph == ind.graph
 
-        ind = Individual(adapter.adapt(graph_first()))
-        new_ind = mutation(ind)
-        assert new_ind.graph == ind.graph
-
-        ind = Individual(adapter.adapt(graph_fifth()))
-        new_ind = mutation(ind)
-        assert new_ind.graph == ind.graph
+    ind = Individual(adapter.adapt(graph_fifth()))
+    new_ind = mutation(ind)
+    assert new_ind.graph == ind.graph

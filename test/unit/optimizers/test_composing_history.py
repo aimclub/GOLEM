@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from golem.core.dag.graph import Graph
-from golem.core.optimisers.fitness.fitness import SingleObjFitness
+from golem.core.optimisers.fitness.fitness import SingleObjFitness, null_fitness
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
+from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
@@ -20,7 +20,7 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
-from test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode
+from test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
 from test.unit.serialization.mocks.history_mocks import CustomMockNode, CustomMockGraph
 from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
@@ -35,14 +35,15 @@ def create_mock_graph_individual():
     return individual
 
 
-def create_individual():
+def create_individual(evaluated=True):
     first = OptNode(content={'name': 'logit'})
     second = OptNode(content={'name': 'lda'})
     final = OptNode(content={'name': 'knn'},
                     nodes_from=[first, second])
 
     individual = Individual(graph=OptGraph(final))
-    individual.set_evaluation_result(SingleObjFitness(1))
+    if evaluated:
+        individual.set_evaluation_result(SingleObjFitness(1))
     return individual
 
 
@@ -284,3 +285,28 @@ def test_history_correct_serialization():
     assert history.individuals == reloaded_history.individuals
     assert dumped_history_json == reloaded_history.save(), 'The history is not equal to itself after reloading!'
     _test_individuals_in_history(reloaded_history)
+
+
+def test_collect_intermediate_metric():
+    metric = RandomMetric.get_value
+    graph_gen_params = GraphGenerationParams(available_node_types=['a', 'b', 'c'],
+                                             adapter=MockAdapter())
+
+    objective_eval = MockObjectiveEvaluate(Objective({'rand_metric': metric}))
+    dispatcher = MultiprocessingDispatcher(graph_gen_params.adapter)
+    dispatcher.set_evaluation_callback(objective_eval.evaluate_intermediate_metrics)
+    evaluate = dispatcher.dispatch(objective_eval)
+
+    population = [create_individual(evaluated=False)]
+    evaluated_pipeline = evaluate(population)[0].graph
+    restored_pipeline = graph_gen_params.adapter.restore(evaluated_pipeline)
+
+    assert_intermediate_metrics(restored_pipeline)
+
+
+def assert_intermediate_metrics(graph: MockDomainStructure):
+    seen_metrics = []
+    for node in graph.nodes:
+        assert node.content['intermediate_metric'] is not None
+        assert node.content['intermediate_metric'] not in seen_metrics
+        seen_metrics.append(node.content['intermediate_metric'])

@@ -18,11 +18,11 @@ if __name__ == '__main__':
     arguments = dict(timeout=datetime.timedelta(minutes=0.5), visualisation=False)
     path = os.path.join(os.path.expanduser("~"), 'memory_profiler')
     MemoryProfiler(run_custom_example, kwargs=arguments,
-                   path=path, roots=[run_custom_example], max_depth=8)
+                   path=path, roots=[run_custom_example], max_depth=8, visualization=True)
 
     # EXAMPLE of TimeProfiler.
 
     profiler = TimeProfiler()
     run_custom_example(timeout=datetime.timedelta(minutes=0.5), visualisation=False)
     path = os.path.join(os.path.expanduser("~"), 'time_profiler')
-    profiler.profile(path=path, node_percent=0.5, edge_percent=0.1, open_web=False)
+    profiler.profile(path=path, node_percent=0.5, edge_percent=0.1, open_web=True)
