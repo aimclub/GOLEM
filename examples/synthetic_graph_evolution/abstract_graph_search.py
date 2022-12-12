@@ -134,4 +134,4 @@ if __name__ == '__main__':
                     graph_sizes=(20, 50,),
                     num_trials=3,
                     trial_timeout=5,
-                    visualize=False)
+                    visualize=True)

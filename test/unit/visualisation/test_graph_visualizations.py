@@ -31,8 +31,9 @@ def graph(request):
     return graph_type(nodes[-1])
 
 
-@pytest.mark.parametrize('engine', ('matplotlib', 'pyvis', 'graphviz'))
-def test_graph_show_saving_plots(graph, engine, tmp_path):
+# @pytest.mark.parametrize('engine', ('matplotlib', 'pyvis', 'graphviz'))
+def test_graph_show_saving_plots(graph, tmp_path):
+    engine = 'matplotlib'
     save_path = Path(tmp_path, engine)
     save_path = save_path.with_suffix('.html') if engine == 'pyvis' else save_path.with_suffix('.png')
     try:
