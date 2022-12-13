@@ -152,9 +152,9 @@ Other papers - in `ResearchGate <https://www.researchgate.net/project/Evolutiona
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. |build| image:: https://github.com/nccr-itmo/FEDOT/workflows/Build/badge.svg?branch=master
+.. |build| image:: https://github.com/ITMO-NSS-team/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=master
    :alt: Build Status
-   :target: https://github.com/nccr-itmo/FEDOT/actions
+   :target: https://github.com/ITMO-NSS-team/GOLEM/actions/workflows/unit-build.yml
 
 .. |coverage| image:: https://codecov.io/gh/nccr-itmo/FEDOT/branch/master/graph/badge.svg
    :alt: Coverage Status
