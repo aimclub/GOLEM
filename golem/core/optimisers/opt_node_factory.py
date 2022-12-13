@@ -48,7 +48,7 @@ class DefaultOptNodeFactory(OptNodeFactory):
         self._num_node_types = num_node_types or 1000
 
     def exchange_node(self, node: OptNode) -> OptNode:
-        return node
+        return self.get_node()
 
     def get_parent_node(self, node: OptNode, **kwargs) -> OptNode:
         return self.get_node(**kwargs)

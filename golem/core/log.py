@@ -17,7 +17,6 @@ class Log(metaclass=SingletonMeta):
     """Log object to store logger singleton and log adapters
 
     Args:
-        logger_name: name of the logger
         config_json_file: ``json`` file from which to collect the logger if specified
         output_logging_level: logging levels are the same as in 'logging'
 
@@ -190,10 +189,7 @@ def default_log(prefix: Optional[object] = 'default') -> 'LoggerAdapter':
     """ Default logger
 
     Args:
-        class_object: instance of class
         prefix: adapter prefix to add it to log messages
-        logging_level: logging levels are the same as in 'logging'
-        write_logs: bool indicating whenever to write logs in console or not
 
     Returns:
         :obj:`LoggerAdapter`: :obj:`LoggerAdapter` object

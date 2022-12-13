@@ -1,0 +1,2408 @@
+{
+    "_default_save_dir": "C:\\Users\\admin\\AppData\\Local\\Temp\\GOLEM",
+    "_is_multi_objective": false,
+    "_tuning_result": null,
+    "archive_history": [
+        [
+            "8c1f48ee-d20a-48a9-9b52-b094df2d1060"
+        ],
+        [
+            "8c1f48ee-d20a-48a9-9b52-b094df2d1060"
+        ],
+        [
+            "f3a050c5-3206-4830-b1f8-9df294e61c17"
+        ],
+        [
+            "f3a050c5-3206-4830-b1f8-9df294e61c17"
+        ],
+        [
+            "f3a050c5-3206-4830-b1f8-9df294e61c17"
+        ],
+        [
+            "f3a050c5-3206-4830-b1f8-9df294e61c17"
+        ]
+    ],
+    "individuals": [
+        {
+            "data": [
+                "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                "e3002042-94f7-41f0-af0c-5e3c56edb1a2",
+                "e95a354f-2e04-449c-84df-cde16ac95de1",
+                "ed6dccb9-11f5-43ea-b117-03a6f32b033b",
+                "fc2e8d86-4674-481d-a28f-1f924fefcd5f"
+            ],
+            "generation_num": 0,
+            "label": "initial_assumptions",
+            "metadata": {},
+            "_class_path": "golem.core.optimisers.opt_history_objects.generation/Generation"
+        },
+        {
+            "data": [
+                "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                "d87b6f6b-a470-40d0-9caf-ece5b0874832",
+                "0a5a39f9-659d-4840-9de9-ba829645437e",
+                "3dc22f00-f684-42b0-af2d-5d5eee16381d"
+            ],
+            "generation_num": 1,
+            "label": "",
+            "metadata": {},
+            "_class_path": "golem.core.optimisers.opt_history_objects.generation/Generation"
+        },
+        {
+            "data": [
+                "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                "f3a050c5-3206-4830-b1f8-9df294e61c17",
+                "9f65cd18-d0c8-4f8d-8bc7-db5fc0c7bb0d",
+                "5969cf92-2030-4f2f-9f48-0a522f8acbc3"
+            ],
+            "generation_num": 2,
+            "label": "",
+            "metadata": {},
+            "_class_path": "golem.core.optimisers.opt_history_objects.generation/Generation"
+        },
+        {
+            "data": [
+                "f3a050c5-3206-4830-b1f8-9df294e61c17",
+                "0068d4c8-3497-4689-833f-f4c8cc224bb8",
+                "6dfc4330-9ce1-4b3c-a4cf-9aa9fee52160",
+                "950f717e-67ad-4089-9e12-ad49c3b9be87"
+            ],
+            "generation_num": 3,
+            "label": "",
+            "metadata": {},
+            "_class_path": "golem.core.optimisers.opt_history_objects.generation/Generation"
+        },
+        {
+            "data": [
+                "f3a050c5-3206-4830-b1f8-9df294e61c17",
+                "e359ca77-7537-49b3-b4c5-7609c844bc27",
+                "f28d180b-c625-4b1d-8f6a-498ceb1122a3",
+                "a4942d81-1ebd-4056-bb8a-6bf69423043b"
+            ],
+            "generation_num": 4,
+            "label": "",
+            "metadata": {},
+            "_class_path": "golem.core.optimisers.opt_history_objects.generation/Generation"
+        },
+        {
+            "data": [
+                "f3a050c5-3206-4830-b1f8-9df294e61c17"
+            ],
+            "generation_num": 5,
+            "label": "final_choices",
+            "metadata": {},
+            "_class_path": "golem.core.optimisers.opt_history_objects.generation/Generation"
+        }
+    ],
+    "individuals_pool": [
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "16f2529a-d322-4aee-9991-772be9760c36",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.one_point"
+                ],
+                "parent_individuals": [
+                    "e95a354f-2e04-449c-84df-cde16ac95de1",
+                    "ed6dccb9-11f5-43ea-b117-03a6f32b033b"
+                ],
+                "type_": "crossover",
+                "uid": "3b1f77ad-adbf-4996-9620-49e730e829c8",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "d3c0b7c3-6a57-449d-8f83-8b44b6fdc672",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "a73025b9-ea4a-4205-94ea-bc9fa26abcec",
+                                "d4cd76e2-20c6-47f0-bf1d-bb744bbab028"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "8a7f5652-ae6e-4b20-9eb6-1a1106bb9c1a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "c99c367a-6134-4550-add6-b1589d7d5401",
+                                "ea6e75d8-3934-45f2-b848-892c589475b0"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "a73025b9-ea4a-4205-94ea-bc9fa26abcec",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "c99c367a-6134-4550-add6-b1589d7d5401",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "7c0cca21-1832-4027-8845-d82303bb1db5",
+                                "455a7a60-4832-4d50-8336-cd8d1ae27034"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "ea6e75d8-3934-45f2-b848-892c589475b0",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "7c0cca21-1832-4027-8845-d82303bb1db5",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "455a7a60-4832-4d50-8336-cd8d1ae27034",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "f21b12a0-6b14-4fcf-99a1-59cef6958869",
+                                "a8a1173d-8525-4153-9935-fe1957574766"
+                            ],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "d4cd76e2-20c6-47f0-bf1d-bb744bbab028",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "f21b12a0-6b14-4fcf-99a1-59cef6958869",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "a8a1173d-8525-4153-9935-fe1957574766",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.one_point"
+                ],
+                "parent_individuals": [
+                    "e95a354f-2e04-449c-84df-cde16ac95de1",
+                    "ed6dccb9-11f5-43ea-b117-03a6f32b033b"
+                ],
+                "type_": "crossover",
+                "uid": "3b1f77ad-adbf-4996-9620-49e730e829c8",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "3f4aa558-6670-4071-9bfe-7e24ebf11434",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "66dd9724-125b-4ff8-b0bf-729f1aec7927"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "1f6d79a7-4b25-4ced-813c-7e0a3aafd44b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "384d9720-c07e-4d99-a799-755986ac622b"
+                            ],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "66dd9724-125b-4ff8-b0bf-729f1aec7927",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                                "2ebd7093-8369-447e-bac0-1da1f27820db"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "384d9720-c07e-4d99-a799-755986ac622b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "2ebd7093-8369-447e-bac0-1da1f27820db",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.one_point"
+                ],
+                "parent_individuals": [
+                    "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                    "e3002042-94f7-41f0-af0c-5e3c56edb1a2"
+                ],
+                "type_": "crossover",
+                "uid": "bc46cac3-50b4-4e74-a940-b6e9e08e10a5",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "346efbfa-f409-4109-890e-6c65fde2b475",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.one_point"
+                ],
+                "parent_individuals": [
+                    "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                    "d87b6f6b-a470-40d0-9caf-ece5b0874832"
+                ],
+                "type_": "crossover",
+                "uid": "68ca7d0f-ebf9-42f7-aeda-14ca20140e47",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "1697cbc2-5a2c-485c-ab3d-873500addd88",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.one_point"
+                ],
+                "parent_individuals": [
+                    "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                    "d87b6f6b-a470-40d0-9caf-ece5b0874832"
+                ],
+                "type_": "crossover",
+                "uid": "68ca7d0f-ebf9-42f7-aeda-14ca20140e47",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "fa82135b-9846-4894-b2f6-75ee2dff8677",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "66dd9724-125b-4ff8-b0bf-729f1aec7927"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "1f6d79a7-4b25-4ced-813c-7e0a3aafd44b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "384d9720-c07e-4d99-a799-755986ac622b"
+                            ],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "66dd9724-125b-4ff8-b0bf-729f1aec7927",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                                "2ebd7093-8369-447e-bac0-1da1f27820db"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "384d9720-c07e-4d99-a799-755986ac622b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "2ebd7093-8369-447e-bac0-1da1f27820db",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "0a5a39f9-659d-4840-9de9-ba829645437e",
+                    "3dc22f00-f684-42b0-af2d-5d5eee16381d"
+                ],
+                "type_": "crossover",
+                "uid": "52642c3b-59ab-4112-b2f1-ac2a07f80c1d",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "b29039df-9118-427e-8034-899524df4881",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "9f65cd18-d0c8-4f8d-8bc7-db5fc0c7bb0d",
+                    "5969cf92-2030-4f2f-9f48-0a522f8acbc3"
+                ],
+                "type_": "crossover",
+                "uid": "359f81ae-a80e-44af-9a72-2f181921358f",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "35ae8af9-d4b9-44e9-a349-7babbaff9846",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "66dd9724-125b-4ff8-b0bf-729f1aec7927"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "1f6d79a7-4b25-4ced-813c-7e0a3aafd44b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "66dd9724-125b-4ff8-b0bf-729f1aec7927",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                    "f3a050c5-3206-4830-b1f8-9df294e61c17"
+                ],
+                "type_": "crossover",
+                "uid": "de71aba2-712a-44ed-af39-12d48dfbf376",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "7ddf73af-8fd5-4fdb-8e1b-7ce5cd0547ca",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+                    "f3a050c5-3206-4830-b1f8-9df294e61c17"
+                ],
+                "type_": "crossover",
+                "uid": "de71aba2-712a-44ed-af39-12d48dfbf376",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "dcd20836-e18e-4c1e-80eb-1783776d746b",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "529f7a2e-8793-4593-bfb1-c0582e11ee34"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "529f7a2e-8793-4593-bfb1-c0582e11ee34",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "6dfc4330-9ce1-4b3c-a4cf-9aa9fee52160",
+                    "950f717e-67ad-4089-9e12-ad49c3b9be87"
+                ],
+                "type_": "crossover",
+                "uid": "03e5f967-caba-4ace-8dde-da340d9a3774",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "ac1a3fa0-6e65-4e81-aad1-3037ec4ce54d",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "51e5e5f9-9260-420d-bd65-d82bdb6cf403"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "51e5e5f9-9260-420d-bd65-d82bdb6cf403",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "f3a050c5-3206-4830-b1f8-9df294e61c17",
+                    "0068d4c8-3497-4689-833f-f4c8cc224bb8"
+                ],
+                "type_": "crossover",
+                "uid": "1e8f5153-4712-4b16-9811-ed84357735a5",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "6c46309e-fcab-4591-81ca-d3a7b5aff3c6",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    null
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "51e5e5f9-9260-420d-bd65-d82bdb6cf403"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "51e5e5f9-9260-420d-bd65-d82bdb6cf403",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {},
+            "native_generation": null,
+            "parent_operator": {
+                "operators": [
+                    "CrossoverTypesEnum.subtree"
+                ],
+                "parent_individuals": [
+                    "f3a050c5-3206-4830-b1f8-9df294e61c17",
+                    "0068d4c8-3497-4689-833f-f4c8cc224bb8"
+                ],
+                "type_": "crossover",
+                "uid": "1e8f5153-4712-4b16-9811-ed84357735a5",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "a8ebf804-a86b-425b-9cd5-ff5077a6e60f",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    145
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "66dd9724-125b-4ff8-b0bf-729f1aec7927"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "1f6d79a7-4b25-4ced-813c-7e0a3aafd44b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "384d9720-c07e-4d99-a799-755986ac622b"
+                            ],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "66dd9724-125b-4ff8-b0bf-729f1aec7927",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                                "2ebd7093-8369-447e-bac0-1da1f27820db"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "384d9720-c07e-4d99-a799-755986ac622b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "2ebd7093-8369-447e-bac0-1da1f27820db",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.04074040000000023,
+                "evaluation_time_iso": "2022-12-09T11:15:49.833749"
+            },
+            "native_generation": 0,
+            "parent_operator": null,
+            "uid": "8c1f48ee-d20a-48a9-9b52-b094df2d1060",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    878
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "d48fb735-b2af-4bc0-bb85-a27fc433d69a",
+                                "fa31096c-2856-4916-979b-6fc37fd2f7d6",
+                                "ee1a15fc-8114-4fa3-932a-72efee9206f6"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "51265ea5-2e7f-4bad-9f43-6d33d0f119ef",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "d48fb735-b2af-4bc0-bb85-a27fc433d69a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "a538b4a9-8e1d-4887-a202-a1e1e0117a9f",
+                                "fa3642ff-ca01-4ae9-845f-32f8417b4f95"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "fa31096c-2856-4916-979b-6fc37fd2f7d6",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "a538b4a9-8e1d-4887-a202-a1e1e0117a9f",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fa3642ff-ca01-4ae9-845f-32f8417b4f95",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "ee1a15fc-8114-4fa3-932a-72efee9206f6",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03837720000000022,
+                "evaluation_time_iso": "2022-12-09T11:15:49.872242"
+            },
+            "native_generation": 0,
+            "parent_operator": null,
+            "uid": "e3002042-94f7-41f0-af0c-5e3c56edb1a2",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    569
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "16f2529a-d322-4aee-9991-772be9760c36",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03685559999999999,
+                "evaluation_time_iso": "2022-12-09T11:15:49.909783"
+            },
+            "native_generation": 0,
+            "parent_operator": null,
+            "uid": "e95a354f-2e04-449c-84df-cde16ac95de1",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    580
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "a73025b9-ea4a-4205-94ea-bc9fa26abcec",
+                                "d4cd76e2-20c6-47f0-bf1d-bb744bbab028"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "8a7f5652-ae6e-4b20-9eb6-1a1106bb9c1a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "c99c367a-6134-4550-add6-b1589d7d5401",
+                                "ea6e75d8-3934-45f2-b848-892c589475b0"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "a73025b9-ea4a-4205-94ea-bc9fa26abcec",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "c99c367a-6134-4550-add6-b1589d7d5401",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "7c0cca21-1832-4027-8845-d82303bb1db5",
+                                "455a7a60-4832-4d50-8336-cd8d1ae27034"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "ea6e75d8-3934-45f2-b848-892c589475b0",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "7c0cca21-1832-4027-8845-d82303bb1db5",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "455a7a60-4832-4d50-8336-cd8d1ae27034",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "f21b12a0-6b14-4fcf-99a1-59cef6958869",
+                                "a8a1173d-8525-4153-9935-fe1957574766"
+                            ],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "d4cd76e2-20c6-47f0-bf1d-bb744bbab028",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "f21b12a0-6b14-4fcf-99a1-59cef6958869",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "a8a1173d-8525-4153-9935-fe1957574766",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.036909400000000314,
+                "evaluation_time_iso": "2022-12-09T11:15:49.946129"
+            },
+            "native_generation": 0,
+            "parent_operator": null,
+            "uid": "ed6dccb9-11f5-43ea-b117-03a6f32b033b",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    654
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "2e5a5552-39e8-48b4-9ba7-b5a61443c098",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "7a4ac51e-43ce-41ab-8d0b-eea9b0113a4a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "2e5a5552-39e8-48b4-9ba7-b5a61443c098",
+                                "7a4ac51e-43ce-41ab-8d0b-eea9b0113a4a"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "fba23596-1a1d-4a42-91bc-5202849590a8",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9b1eb805-e5fb-47e8-a062-80aa75aefc94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "0e848b05-5079-42a3-a09e-d690afd5b9b7",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "9b1eb805-e5fb-47e8-a062-80aa75aefc94",
+                                "0e848b05-5079-42a3-a09e-d690afd5b9b7"
+                            ],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bf36d8f9-dc57-4195-a11f-b119b1f25d7a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fba23596-1a1d-4a42-91bc-5202849590a8",
+                                "bf36d8f9-dc57-4195-a11f-b119b1f25d7a"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "9181c5f4-9d50-4091-af34-05f758c9bb94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03667979999999993,
+                "evaluation_time_iso": "2022-12-09T11:15:49.983486"
+            },
+            "native_generation": 0,
+            "parent_operator": null,
+            "uid": "fc2e8d86-4674-481d-a28f-1f924fefcd5f",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    264
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.037213799999999964,
+                "evaluation_time_iso": "2022-12-09T11:15:50.087447"
+            },
+            "native_generation": 1,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_change",
+                    "MutationTypesEnum.single_add"
+                ],
+                "parent_individuals": [
+                    "d3c0b7c3-6a57-449d-8f83-8b44b6fdc672"
+                ],
+                "type_": "mutation",
+                "uid": "54a607d0-24f6-4afa-80ad-796fd5c3490e",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "d87b6f6b-a470-40d0-9caf-ece5b0874832",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    970
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "a73025b9-ea4a-4205-94ea-bc9fa26abcec",
+                                "d4cd76e2-20c6-47f0-bf1d-bb744bbab028"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "8a7f5652-ae6e-4b20-9eb6-1a1106bb9c1a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "c99c367a-6134-4550-add6-b1589d7d5401",
+                                "ea6e75d8-3934-45f2-b848-892c589475b0"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "a73025b9-ea4a-4205-94ea-bc9fa26abcec",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "c99c367a-6134-4550-add6-b1589d7d5401",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "7c0cca21-1832-4027-8845-d82303bb1db5",
+                                "455a7a60-4832-4d50-8336-cd8d1ae27034"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "ea6e75d8-3934-45f2-b848-892c589475b0",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "7c0cca21-1832-4027-8845-d82303bb1db5",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "455a7a60-4832-4d50-8336-cd8d1ae27034",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "f21b12a0-6b14-4fcf-99a1-59cef6958869",
+                                "a8a1173d-8525-4153-9935-fe1957574766"
+                            ],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "d4cd76e2-20c6-47f0-bf1d-bb744bbab028",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "f21b12a0-6b14-4fcf-99a1-59cef6958869",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "a8a1173d-8525-4153-9935-fe1957574766",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03961780000000026,
+                "evaluation_time_iso": "2022-12-09T11:15:50.050445"
+            },
+            "native_generation": 1,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_add"
+                ],
+                "parent_individuals": [
+                    "3f4aa558-6670-4071-9bfe-7e24ebf11434"
+                ],
+                "type_": "mutation",
+                "uid": "bfea10f7-afbd-4153-9a36-e21fe09309aa",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "0a5a39f9-659d-4840-9de9-ba829645437e",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    834
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "66dd9724-125b-4ff8-b0bf-729f1aec7927"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "1f6d79a7-4b25-4ced-813c-7e0a3aafd44b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "384d9720-c07e-4d99-a799-755986ac622b"
+                            ],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "66dd9724-125b-4ff8-b0bf-729f1aec7927",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                                "2ebd7093-8369-447e-bac0-1da1f27820db"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "384d9720-c07e-4d99-a799-755986ac622b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "2ebd7093-8369-447e-bac0-1da1f27820db",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.037339300000000186,
+                "evaluation_time_iso": "2022-12-09T11:15:50.162439"
+            },
+            "native_generation": 1,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_add"
+                ],
+                "parent_individuals": [
+                    "346efbfa-f409-4109-890e-6c65fde2b475"
+                ],
+                "type_": "mutation",
+                "uid": "f7099dd2-39db-45e0-aa03-786accad1ad1",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "3dc22f00-f684-42b0-af2d-5d5eee16381d",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    4
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03925819999999991,
+                "evaluation_time_iso": "2022-12-09T11:15:50.356366"
+            },
+            "native_generation": 2,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_change",
+                    "MutationTypesEnum.simple",
+                    "MutationTypesEnum.reduce"
+                ],
+                "parent_individuals": [
+                    "1697cbc2-5a2c-485c-ab3d-873500addd88"
+                ],
+                "type_": "mutation",
+                "uid": "30e28a98-8ea7-487d-a140-2d7223291ba2",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "f3a050c5-3206-4830-b1f8-9df294e61c17",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    956
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "40c7a7c6-ee26-411f-b624-9f879cd3e600",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.04155870000000039,
+                "evaluation_time_iso": "2022-12-09T11:15:50.316738"
+            },
+            "native_generation": 2,
+            "parent_operator": {
+                "operators": [],
+                "parent_individuals": [
+                    "fa82135b-9846-4894-b2f6-75ee2dff8677"
+                ],
+                "type_": "mutation",
+                "uid": "24f65f65-5f88-486e-8a27-941c8c671f99",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "9f65cd18-d0c8-4f8d-8bc7-db5fc0c7bb0d",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    903
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "66dd9724-125b-4ff8-b0bf-729f1aec7927"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "1f6d79a7-4b25-4ced-813c-7e0a3aafd44b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "384d9720-c07e-4d99-a799-755986ac622b"
+                            ],
+                            "content": {
+                                "name": "d"
+                            },
+                            "uid": "66dd9724-125b-4ff8-b0bf-729f1aec7927",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                                "2ebd7093-8369-447e-bac0-1da1f27820db"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "384d9720-c07e-4d99-a799-755986ac622b",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "dc3e36f0-d521-47d6-8306-6cca03f2822a",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "2ebd7093-8369-447e-bac0-1da1f27820db",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.04339129999999969,
+                "evaluation_time_iso": "2022-12-09T11:15:50.224852"
+            },
+            "native_generation": 2,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_add"
+                ],
+                "parent_individuals": [
+                    "b29039df-9118-427e-8034-899524df4881"
+                ],
+                "type_": "mutation",
+                "uid": "c5e141db-d516-4b86-b4c9-2528fe1d22dd",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "5969cf92-2030-4f2f-9f48-0a522f8acbc3",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    46
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "51e5e5f9-9260-420d-bd65-d82bdb6cf403"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "51e5e5f9-9260-420d-bd65-d82bdb6cf403",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.037489600000000234,
+                "evaluation_time_iso": "2022-12-09T11:15:50.447976"
+            },
+            "native_generation": 3,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.reduce",
+                    "MutationTypesEnum.reduce"
+                ],
+                "parent_individuals": [
+                    "35ae8af9-d4b9-44e9-a349-7babbaff9846"
+                ],
+                "type_": "mutation",
+                "uid": "33ca9ece-7f50-4f60-8115-b1324a995b6f",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "0068d4c8-3497-4689-833f-f4c8cc224bb8",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    193
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "529f7a2e-8793-4593-bfb1-c0582e11ee34"
+                            ],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "9d4f9b74-d5ab-4c0d-b25e-c1673677d019",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "529f7a2e-8793-4593-bfb1-c0582e11ee34",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03919220000000001,
+                "evaluation_time_iso": "2022-12-09T11:15:50.524058"
+            },
+            "native_generation": 3,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.simple",
+                    "MutationTypesEnum.simple"
+                ],
+                "parent_individuals": [
+                    "7ddf73af-8fd5-4fdb-8e1b-7ce5cd0547ca"
+                ],
+                "type_": "mutation",
+                "uid": "a49e3789-b878-437e-80d3-a5e5426f842d",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "6dfc4330-9ce1-4b3c-a4cf-9aa9fee52160",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    414
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "9717392f-75f2-480e-910e-ea8db99f4e94"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.03683650000000016,
+                "evaluation_time_iso": "2022-12-09T11:15:50.484974"
+            },
+            "native_generation": 3,
+            "parent_operator": {
+                "operators": [],
+                "parent_individuals": [
+                    "dcd20836-e18e-4c1e-80eb-1783776d746b"
+                ],
+                "type_": "mutation",
+                "uid": "922146fe-68e3-4b13-b10b-6494998ce09d",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "950f717e-67ad-4089-9e12-ad49c3b9be87",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    457
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "529f7a2e-8793-4593-bfb1-c0582e11ee34"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "bc2de4d2-ca40-46a8-9202-ffd75c62a3de"
+                            ],
+                            "content": {
+                                "name": "e"
+                            },
+                            "uid": "529f7a2e-8793-4593-bfb1-c0582e11ee34",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "bc2de4d2-ca40-46a8-9202-ffd75c62a3de",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.040783900000000095,
+                "evaluation_time_iso": "2022-12-09T11:15:50.582246"
+            },
+            "native_generation": 4,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_add",
+                    "MutationTypesEnum.single_add"
+                ],
+                "parent_individuals": [
+                    "ac1a3fa0-6e65-4e81-aad1-3037ec4ce54d"
+                ],
+                "type_": "mutation",
+                "uid": "c069fd18-d315-4416-9d9f-5c77f817f98a",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "e359ca77-7537-49b3-b4c5-7609c844bc27",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    427
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "75e539da-987f-4209-b80d-bb458024fbc2"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "9717392f-75f2-480e-910e-ea8db99f4e94",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "51e5e5f9-9260-420d-bd65-d82bdb6cf403",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "51e5e5f9-9260-420d-bd65-d82bdb6cf403"
+                            ],
+                            "content": {
+                                "name": "f"
+                            },
+                            "uid": "75e539da-987f-4209-b80d-bb458024fbc2",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.0393956000000002,
+                "evaluation_time_iso": "2022-12-09T11:15:50.725442"
+            },
+            "native_generation": 4,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_add"
+                ],
+                "parent_individuals": [
+                    "6c46309e-fcab-4591-81ca-d3a7b5aff3c6"
+                ],
+                "type_": "mutation",
+                "uid": "e94298cf-bc92-4425-85a3-9553e2cd5188",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "f28d180b-c625-4b1d-8f6a-498ceb1122a3",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        },
+        {
+            "fitness": {
+                "_values": [
+                    48
+                ],
+                "_class_path": "golem.core.optimisers.fitness.fitness/SingleObjFitness"
+            },
+            "graph": {
+                "operator": {
+                    "_nodes": [
+                        {
+                            "_nodes_from": [
+                                "3cdd56d6-16d1-4446-abde-b7f709bfe57c"
+                            ],
+                            "content": {
+                                "name": "c"
+                            },
+                            "uid": "56748700-34a6-4bf4-9dc3-3830a15464da",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [
+                                "fca2a281-5f88-4745-9641-900cc96ff896",
+                                "51e5e5f9-9260-420d-bd65-d82bdb6cf403"
+                            ],
+                            "content": {
+                                "name": "a"
+                            },
+                            "uid": "3cdd56d6-16d1-4446-abde-b7f709bfe57c",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "fca2a281-5f88-4745-9641-900cc96ff896",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        },
+                        {
+                            "_nodes_from": [],
+                            "content": {
+                                "name": "b"
+                            },
+                            "uid": "51e5e5f9-9260-420d-bd65-d82bdb6cf403",
+                            "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+                        }
+                    ],
+                    "_postprocess_nodes": {
+                        "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+                    },
+                    "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+                },
+                "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+            },
+            "metadata": {
+                "computation_time_in_seconds": 0.04720069999999987,
+                "evaluation_time_iso": "2022-12-09T11:15:50.685829"
+            },
+            "native_generation": 4,
+            "parent_operator": {
+                "operators": [
+                    "MutationTypesEnum.single_change"
+                ],
+                "parent_individuals": [
+                    "a8ebf804-a86b-425b-9cd5-ff5077a6e60f"
+                ],
+                "type_": "mutation",
+                "uid": "8762aaac-8d6a-4a76-939e-1ca5c4a09103",
+                "_class_path": "golem.core.optimisers.opt_history_objects.parent_operator/ParentOperator"
+            },
+            "uid": "a4942d81-1ebd-4056-bb8a-6bf69423043b",
+            "_class_path": "golem.core.optimisers.opt_history_objects.individual/Individual"
+        }
+    ],
+    "_class_path": "golem.core.optimisers.opt_history_objects.opt_history/OptHistory"
+}
