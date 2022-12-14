@@ -106,7 +106,7 @@ class GraphOptimizer:
         self.initial_graphs = initial_graphs
         self._objective = objective
         self.requirements = requirements or OptimizationParameters()
-        self.graph_generation_params = graph_generation_params
+        self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_parameters or AlgorithmParameters()
         self._optimisation_callback: OptimisationCallback = do_nothing_callback
         mo = False if not graph_optimizer_parameters else graph_optimizer_parameters.multi_objective
