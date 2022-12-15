@@ -235,10 +235,7 @@ def test_newly_generated_history(n_jobs: int):
     init_graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
     requirements = GraphRequirements(num_of_generations=num_of_gens)
     graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c', 'd', 'e', 'f'])
-    opt_params = GPAlgorithmParameters(pop_size=5, mutation_types=(MutationTypesEnum.simple,
-                                                                   MutationTypesEnum.reduce,
-                                                                   MutationTypesEnum.single_add,
-                                                                   MutationTypesEnum.single_change))
+    opt_params = GPAlgorithmParameters(pop_size=5)
     opt = EvoGraphOptimizer(objective, init_graphs, requirements, graph_generation_params, opt_params)
     obj_eval = ObjectiveEvaluate(objective)
     opt.optimise(obj_eval)

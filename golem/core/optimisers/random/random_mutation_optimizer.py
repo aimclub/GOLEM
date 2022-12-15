@@ -26,15 +26,7 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
                  graph_generation_params: Optional[GraphGenerationParams] = None,
                  graph_optimizer_parameters: Optional[GPAlgorithmParameters] = None):
         requirements = requirements or GraphRequirements()
-        # TODO @YamLyubov remove specific MutationTypesEnums after randon_graph refactoring for general case
-        graph_optimizer_parameters = graph_optimizer_parameters or GPAlgorithmParameters(mutation_types=[
-            MutationTypesEnum.simple,
-            MutationTypesEnum.single_change,
-            MutationTypesEnum.single_add,
-            MutationTypesEnum.single_drop,
-            MutationTypesEnum.reduce,
-            MutationTypesEnum.single_edge
-        ])
+        graph_optimizer_parameters = graph_optimizer_parameters or GPAlgorithmParameters()
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_parameters)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
         self.current_iteration_num = 0

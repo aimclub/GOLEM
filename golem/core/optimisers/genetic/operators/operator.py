@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 from golem.core.log import default_log
 from golem.core.optimisers.optimization_parameters import GraphRequirements

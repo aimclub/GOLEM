@@ -16,6 +16,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
+from golem.core.optimisers.random_graph_factory import BaseRandomOptGraphFactory, DefaultRandomOptGraphFactory
 
 OptimisationCallback = Callable[[PopulationT, GenerationKeeper], Any]
 
@@ -61,12 +62,14 @@ class GraphGenerationParams:
     verifier: GraphVerifier
     advisor: DefaultChangeAdvisor
     node_factory: OptNodeFactory
+    random_graph_factory: BaseRandomOptGraphFactory
     remote_evaluator: Optional[DelegateEvaluator] = None
 
     def __init__(self, adapter: Optional[BaseOptimizationAdapter] = None,
                  rules_for_constraint: Sequence[VerifierRuleType] = tuple(DEFAULT_DAG_RULES),
                  advisor: Optional[DefaultChangeAdvisor] = None,
                  node_factory: Optional[OptNodeFactory] = None,
+                 random_graph_factory: Optional[BaseRandomOptGraphFactory] = None,
                  available_node_types: Optional[Sequence[Any]] = None,
                  remote_evaluator: Optional[DelegateEvaluator] = None,
                  ):
@@ -80,6 +83,8 @@ class GraphGenerationParams:
             self.node_factory = DefaultOptNodeFactory(available_node_types)
         else:
             self.node_factory = DefaultOptNodeFactory()
+        self.random_graph_factory = random_graph_factory or DefaultRandomOptGraphFactory(self.verifier,
+                                                                                         self.node_factory)
 
 
 class GraphOptimizer:
