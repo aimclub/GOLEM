@@ -2,6 +2,7 @@ from typing import Optional, Tuple, Sequence
 
 from golem.core.optimisers.fitness import Fitness
 from golem.core.optimisers.genetic.evaluation import SimpleDispatcher
+from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -52,11 +53,12 @@ class RandomSearchOptimizer(GraphOptimizer):
         self.history.add_to_history([best_ind], 'final_choices')
         return [best_graph]
 
-    def _init_assumption(self, evaluator) -> Tuple[Fitness, Individual]:
+    def _init_assumption(self, evaluator: EvaluationOperator) -> Tuple[Fitness, Individual]:
         new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
         new_ind = Individual(new_graph)
         evaluator([new_ind])
         self.history.add_to_history([new_ind], 'initial_assumptions')
         self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
-        self.log.info(f'Initial graph fitness: {self._objective.format_fitness(new_ind.fitness)} with num nodes {new_graph.length}')
+        self.log.info(f'Initial graph fitness: {self._objective.format_fitness(new_ind.fitness)} '
+                      f'with num nodes {new_graph.length}')
         return new_ind.fitness, new_ind
