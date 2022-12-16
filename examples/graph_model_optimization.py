@@ -4,6 +4,8 @@ import random
 
 import numpy as np
 import pandas as pd
+from typing import Type
+
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
@@ -16,7 +18,9 @@ from golem.core.optimisers.genetic.operators.regularization import Regularizatio
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.core.paths import project_root
 
 random.seed(1)
@@ -63,7 +67,8 @@ def custom_mutation(graph: CustomGraphModel, **kwargs) -> CustomGraphModel:
     return graph
 
 
-def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool = True):
+def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, timeout: datetime.timedelta = None,
+                       visualisation: bool = True):
     if not timeout:
         timeout = datetime.timedelta(minutes=1)
 
@@ -77,7 +82,6 @@ def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool =
     requirements = GraphRequirements(
         max_arity=10,
         max_depth=10,
-        num_of_generations=5,
         timeout=timeout)
 
     optimiser_parameters = GPAlgorithmParameters(
@@ -96,12 +100,26 @@ def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool =
         available_node_types=nodes_types)
 
     objective = Objective({'custom': custom_metric})
-    optimiser = EvoGraphOptimizer(
-        graph_generation_params=graph_generation_params,
-        objective=objective,
-        graph_optimizer_params=optimiser_parameters,
-        requirements=requirements,
-        initial_graphs=initial)
+
+    if optimizer == RandomSearchOptimizer:
+        optimiser = optimizer(
+            graph_generation_params=graph_generation_params,
+            objective=objective,
+            requirements=requirements)
+    elif optimizer == RandomMutationSearchOptimizer:
+        optimiser = RandomMutationSearchOptimizer(
+            graph_generation_params=graph_generation_params,
+            objective=objective,
+            graph_optimizer_params=optimiser_parameters,
+            requirements=requirements,
+            initial_graphs=initial)
+    else:
+        optimiser = EvoGraphOptimizer(
+            graph_generation_params=graph_generation_params,
+            objective=objective,
+            graph_optimizer_params=optimiser_parameters,
+            requirements=requirements,
+            initial_graphs=initial)
 
     objective_eval = ObjectiveEvaluate(objective, data=data, visualisation=visualisation)
     optimized_graphs = optimiser.optimise(objective_eval)
@@ -111,4 +129,4 @@ def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool =
 
 
 if __name__ == '__main__':
-    run_custom_example(visualisation=True)
+    run_custom_example(optimizer=EvoGraphOptimizer, visualisation=True)

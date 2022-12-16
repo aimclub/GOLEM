@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from random import randint
+from random import randint, choices
 from typing import Optional
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
@@ -70,5 +70,6 @@ def graph_growth(graph: OptGraph,
         height = distance_to_root_level(graph, node)
         is_max_depth_exceeded = height >= max_depth - 1
         if not is_max_depth_exceeded:
-            if randint(0, 1):
+            # lower proba of further growth reduces time of graph generation
+            if choices([0, 1], weights=[0.7, 0.3])[0]:
                 graph_growth(graph, node, node_factory, requirements, max_depth)

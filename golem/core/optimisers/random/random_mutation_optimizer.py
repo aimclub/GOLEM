@@ -6,6 +6,7 @@ from golem.core.optimisers.genetic.evaluation import SimpleDispatcher
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
+from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -24,10 +25,10 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
                  initial_graphs: Union[Graph, Sequence[Graph]],
                  requirements: Optional[GraphRequirements] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_parameters: Optional[GPAlgorithmParameters] = None):
+                 graph_optimizer_params: Optional[GPAlgorithmParameters] = None):
         requirements = requirements or GraphRequirements()
-        graph_optimizer_parameters = graph_optimizer_parameters or GPAlgorithmParameters()
-        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_parameters)
+        graph_optimizer_params = graph_optimizer_params or GPAlgorithmParameters()
+        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
         self.current_iteration_num = 0
         self.stop_optimization = \
@@ -39,14 +40,14 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
                         self.current_iteration_num >= requirements.num_of_generations,
                 'Optimisation stopped: Max number of iterations reached')
 
-    def optimise(self, objective: ObjectiveFunction) -> Graph:
+    def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
 
         dispatcher = SimpleDispatcher(self.graph_generation_params.adapter)
         evaluator = dispatcher.dispatch(objective, self.timer)
 
         self.current_iteration_num = 0
 
-        with self.timer as t:
+        with self.timer:
             best = self._eval_initial_individual(evaluator)
             while not self.stop_optimization():
                 mutation = Mutation(self.graph_optimizer_params, self.requirements, self.graph_generation_params)
@@ -61,12 +62,12 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
                 self.history.add_to_history([best])
 
                 self.current_iteration_num += 1
-
-        return best.graph
+        self.history.add_to_history([best], 'final_choices')
+        return [best.graph]
 
     def _eval_initial_individual(self, evaluator: EvaluationOperator) -> Individual:
         initial_individuals = [Individual(graph) for graph in self.initial_graphs]
         best = choice(initial_individuals)
         evaluator([best])
-        self.history.add_to_history([best])
+        self.history.add_to_history([best], 'initial_assumptions')
         return best

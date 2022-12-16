@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Tuple, Sequence
 
-from golem.core.dag.graph import Graph
-from golem.core.optimisers.fitness import null_fitness
+from golem.core.optimisers.fitness import Fitness
 from golem.core.optimisers.genetic.evaluation import SimpleDispatcher
+from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -28,26 +28,35 @@ class RandomSearchOptimizer(GraphOptimizer):
                         self.current_iteration_num >= requirements.num_of_generations,
                 'Optimisation stopped: Max number of iterations reached')
 
-    def optimise(self, objective: ObjectiveFunction) -> Graph:
+    def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
 
-        best_fitness = null_fitness()
         dispatcher = SimpleDispatcher(self.graph_generation_params.adapter)
         evaluator = dispatcher.dispatch(objective, self.timer)
         self.current_iteration_num = 0
-
-        with self.timer as t:
+        with self.timer:
+            best_fitness, best_ind = self._init_assumption(evaluator)
             while not self.stop_optimization():
                 new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
                 new_ind = Individual(new_graph)
                 evaluator([new_ind])
                 if new_ind.fitness > best_fitness:
                     best_fitness = new_ind.fitness
-                    best_ind = new_ind
-
-                self.history.add_to_history([best_ind])
-                self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
-                self.log.info(f'Iter {self.current_iteration_num}: '
-                              f'best fitness {self._objective.format_fitness(best_fitness)},'
-                              f'try {self._objective.format_fitness(new_ind.fitness)} with num nodes {new_graph.length}')
+                    best_graph = new_graph
+                if new_ind.fitness.value:
+                    self.history.add_to_history([best_ind])
+                    self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
+                    self.log.info(f'Iter {self.current_iteration_num}: '
+                                  f'best fitness {self._objective.format_fitness(best_fitness)},'
+                                  f'try {self._objective.format_fitness(new_ind.fitness)} with num nodes {new_graph.length}')
                 self.current_iteration_num += 1
-        return best_ind.graph
+        self.history.add_to_history([best_ind], 'final_choices')
+        return [best_graph]
+
+    def _init_assumption(self, evaluator) -> Tuple[Fitness, Individual]:
+        new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
+        new_ind = Individual(new_graph)
+        evaluator([new_ind])
+        self.history.add_to_history([new_ind], 'initial_assumptions')
+        self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
+        self.log.info(f'Initial graph fitness: {self._objective.format_fitness(new_ind.fitness)} with num nodes {new_graph.length}')
+        return new_ind.fitness, new_ind
