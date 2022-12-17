@@ -68,7 +68,7 @@ def matrix_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
 
 def spectral_dist(target_graph: nx.DiGraph, graph: nx.DiGraph,
                   k: int = 20, kind: str = 'laplacian',
-                  size_diff_penalty: float = 0.1,
+                  size_diff_penalty: float = 0.2,
                   match_size: bool = False,
                   ) -> float:
     target_adj = nx.adjacency_matrix(target_graph)

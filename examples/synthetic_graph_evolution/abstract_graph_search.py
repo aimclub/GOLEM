@@ -4,6 +4,7 @@ from itertools import product
 from typing import Sequence
 
 from examples.synthetic_graph_evolution.graph_metrics import *
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter, nx_to_directed
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -14,7 +15,6 @@ from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.visualisation.opt_history.graphs_interactive import GraphsInteractive
 
 NumNodes = int
 DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
@@ -55,7 +55,7 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
             print(f'\nTrial #{i} of {experiment_id} started at {start_time}')
 
             target_graph = graph_generator(num_nodes)
-            found_graph, history, objective = run_trial(target_graph, num_nodes,
+            found_graph, history, objective = run_trial(target_graph,
                                                         timeout=timedelta(minutes=trial_timeout))
             trial_results.extend(history.final_choices)
             found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
@@ -65,10 +65,8 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
             print('target graph stats: ', nxgraph_stats(target_graph))
             print('found graph stats: ', nxgraph_stats(found_nx_graph))
             if visualize:
-                # nx.draw(target_graph)
-                nx.draw_kamada_kawai(target_graph, arrows=True)
-                GraphsInteractive(history).visualize()
-                history.show.fitness_line_interactive()
+                draw_graphs_subplots(target_graph, found_nx_graph)
+                history.show.fitness_box()
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness
@@ -82,9 +80,9 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
 
 def run_trial(target_graph: nx.DiGraph,
-              num_nodes: int = 50,
               timeout: Optional[timedelta] = None):
     # Setup parameters
+    num_nodes = target_graph.number_of_nodes()
     requirements = GraphRequirements(
         max_arity=num_nodes,
         max_depth=num_nodes,
@@ -130,8 +128,8 @@ def run_trial(target_graph: nx.DiGraph,
 
 
 if __name__ == '__main__':
-    run_experiments(graph_names=['2ring', 'hypercube', 'gnp'],
-                    graph_sizes=(20, 50,),
-                    num_trials=3,
-                    trial_timeout=5,
+    run_experiments(graph_names=['grid2d', 'gnp'],
+                    graph_sizes=(30, 100,),
+                    num_trials=2,
+                    trial_timeout=1,
                     visualize=True)

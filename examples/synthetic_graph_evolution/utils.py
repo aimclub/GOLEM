@@ -1,8 +1,10 @@
+from collections.abc import Sequence
 from datetime import datetime
 from functools import partial
 
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 from networkx import gn_graph, gnp_random_graph
 
 from examples.synthetic_graph_evolution.graph_metrics import (
@@ -19,6 +21,19 @@ def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
     GraphVisualizer.draw_nx_dag(adapter.adapt(g), ax,
                                 node_size_scale=0.2, font_size_scale=0.25,
                                 edge_curvature_scale=0.5)
+
+
+def draw_graphs_subplots(*graphs: Sequence[nx.Graph],
+                         draw_fn=nx.draw_kamada_kawai,
+                         size=10):
+    ncols = int(np.ceil(np.sqrt(len(graphs))))
+    nrows = len(graphs) // ncols
+    aspect = nrows / ncols
+    figsize = (size, int(size * aspect))
+    fig, axs = plt.subplots(nrows, ncols, figsize=figsize)
+    for ax, graph in zip(axs, graphs):
+        draw_fn(graph, arrows=True, ax=ax)
+    plt.show()
 
 
 def measure_graphs(target_graph, graph, vis=False):
