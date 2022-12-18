@@ -1,18 +1,13 @@
 from collections.abc import Sequence
 from datetime import datetime
-from functools import partial
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from networkx import gn_graph, gnp_random_graph
+from networkx import gnp_random_graph
 
-from examples.synthetic_graph_evolution.graph_metrics import (
-    get_edit_dist_metric,
-    spectral_dist, spectral_dists_all
-)
+from examples.synthetic_graph_evolution.graph_metrics import spectral_dists_all
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
-from golem.core.optimisers.objective import Objective
 from golem.visualisation.graph_viz import GraphVisualizer
 
 
@@ -37,18 +32,8 @@ def draw_graphs_subplots(*graphs: Sequence[nx.Graph],
 
 
 def measure_graphs(target_graph, graph, vis=False):
-    ged = get_edit_dist_metric(target_graph, timeout=None)
-    objective = Objective(quality_metrics={
-        # 'edit_distance': ged,
-        # 'matrix_edit_dist': partial(matrix_edit_dist, target_graph),
-        'spectral_adjacency': partial(spectral_dist, target_graph, kind='adjacency'),
-        'spectral_laplacian': partial(spectral_dist, target_graph, kind='laplacian'),
-        'spectral_laplacian_norm': partial(spectral_dist, target_graph, kind='laplacian_norm'),
-    })
-
     start = datetime.now()
     print("Computing metric...")
-    # fitness = objective(graph)
     fitness = spectral_dists_all(target_graph, graph)
     fitness2 = spectral_dists_all(target_graph, graph, match_size=False)
     fitness3 = spectral_dists_all(target_graph, graph, k=10)
@@ -71,12 +56,9 @@ def measure_graphs(target_graph, graph, vis=False):
 def try_random(n=100, it=1):
     for i in range(it):
         for p in [0.05, 0.15, 0.3]:
-            # g1 = gnp_random_graph(n, p)
-            g1 = gn_graph(n)
-            # g2 = gnp_random_graph(n, p)
-            # measure_graphs(g1, g2, vis=False)
-            g2small = gnp_random_graph(n // 2, p)
-            measure_graphs(g1, g2small, vis=False)
+            g1 = gnp_random_graph(n, p)
+            g2 = gnp_random_graph(n, p)
+            measure_graphs(g1, g2, vis=False)
 
 
 if __name__ == "__main__":
