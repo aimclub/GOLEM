@@ -46,6 +46,7 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
                     graph_sizes: Sequence[int] = (30, 100, 300),
                     num_trials: int = 1,
                     trial_timeout: Optional[int] = None,
+                    trial_iterations: Optional[int] = None,
                     visualize: bool = False,
                     ):
     log = StringIO()
@@ -59,7 +60,8 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
             target_graph = graph_generator(num_nodes)
             found_graph, history, objective = run_trial(target_graph,
-                                                        timeout=timedelta(minutes=trial_timeout))
+                                                        timeout=timedelta(minutes=trial_timeout),
+                                                        num_iterations=trial_iterations)
             trial_results.extend(history.final_choices)
             found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
 
@@ -86,7 +88,8 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
 
 def run_trial(target_graph: nx.DiGraph,
-              timeout: Optional[timedelta] = None):
+              timeout: Optional[timedelta] = None,
+              num_iterations: Optional[int] = None):
     # Setup parameters
     num_nodes = target_graph.number_of_nodes()
     requirements = GraphRequirements(
@@ -96,6 +99,7 @@ def run_trial(target_graph: nx.DiGraph,
         early_stopping_iterations=1000,
         keep_n_best=5,
         timeout=timeout,
+        num_of_generations=num_iterations,
         n_jobs=-1,
         history_dir=None,
     )
@@ -138,7 +142,8 @@ def run_trial(target_graph: nx.DiGraph,
 if __name__ == '__main__':
     results_log = run_experiments(graph_names=['2ring', 'gnp'],
                                   graph_sizes=[30, 100],
-                                  num_trials=3,
-                                  trial_timeout=10,
+                                  num_trials=1,
+                                  trial_timeout=30,
+                                  trial_iterations=2000,
                                   visualize=True)
     print(results_log)
