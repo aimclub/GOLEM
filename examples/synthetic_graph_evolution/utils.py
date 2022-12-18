@@ -5,10 +5,81 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from networkx import gnp_random_graph
+from typing import Tuple, Optional
 
 from examples.synthetic_graph_evolution.graph_metrics import spectral_dists_all
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer
+
+
+def plot_histories():
+    num_min = 30
+    labels = ['random', 'parameterfree']
+
+    history_paths = [f'./results/hist_gnp_n30_{num_min}min_{label}.json' for label in labels]
+    histories = [OptHistory.load(path) for path in history_paths]
+
+    plot_fitness_comparison(histories,
+                            titles=labels,
+                            total_minutes=num_min)
+    plt.show()
+
+
+def fitness_to_stats(history: OptHistory,
+                     target_metric_index: int = 0) -> Tuple[np.ndarray, np.ndarray]:
+    all_metrics = history.historical_fitness
+    if history._is_multi_objective:
+        quality = [[metrics[target_metric_index] for metrics in pop]
+                   for pop in all_metrics]
+    else:
+        quality = all_metrics
+
+    quality = np.array(quality)
+    if quality.shape[1] == 1:
+        # reshape array to get nontrivial samples for computing mean/std
+        sample_size = 20
+        shape = (len(quality) // sample_size, sample_size)
+        num_elements = shape[0] * shape[1]
+        quality = quality.squeeze()[:num_elements].reshape(shape)
+
+    mean = np.mean(quality, axis=1)
+    std = np.std(quality, axis=1)
+    return mean, std
+
+
+def plot_fitness_comparison(histories: Sequence[OptHistory],
+                            target_metric_index: int = 0,
+                            titles: Optional[Sequence[str]] = None,
+                            total_minutes: Optional[float] = None,
+                            ):
+    stats = [fitness_to_stats(h, target_metric_index) for h in histories]
+
+    if not titles:
+        titles = [f'history_{i}' for i in range(len(histories))]
+    common_len = min(len(mean) for mean, std in stats)
+    xs = np.arange(0, common_len) if not total_minutes else np.linspace(0, total_minutes, common_len)
+
+    fig, ax = plt.subplots()
+    ax.set_title('Historical fitness comparison')
+    ax.set_xlabel('minutes')
+    ax.set_ylabel('fitness')
+    ax.legend()
+    fig.tight_layout()
+
+    def resample(arr):
+        old_indices = np.arange(0, len(arr))
+        new_indices = np.linspace(0, len(arr), common_len)
+        return np.interp(new_indices, old_indices, arr)
+
+    for title, (mean, std) in zip(titles, stats):
+        mean = resample(mean)
+        std = resample(std)
+
+        ax.plot(xs, mean, '-', label=title)
+        ax.fill_between(xs, mean - std, mean + std, alpha=0.25)
+
+    return fig, ax
 
 
 def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
@@ -62,4 +133,4 @@ def try_random(n=100, it=1):
 
 
 if __name__ == "__main__":
-    try_random(n=30, it=3)
+    plot_histories()
