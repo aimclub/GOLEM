@@ -35,25 +35,25 @@ class RandomSearchOptimizer(GraphOptimizer):
         evaluator = dispatcher.dispatch(objective, self.timer)
         self.current_iteration_num = 0
         with self.timer:
-            best_fitness, best_ind = self._init_assumption(evaluator)
+            best_ind = self._init_assumption(evaluator)
             while not self.stop_optimization():
                 new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
                 new_ind = Individual(new_graph)
                 evaluator([new_ind])
-                if new_ind.fitness > best_fitness:
-                    best_fitness = new_ind.fitness
-                    best_graph = new_graph
+                if new_ind.fitness > best_ind.fitness:
+                    best_ind = new_ind
+                self.history.add_to_history([best_ind])
                 if new_ind.fitness.value:
-                    self.history.add_to_history([best_ind])
                     self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
                     self.log.info(f'Iter {self.current_iteration_num}: '
-                                  f'best fitness {self._objective.format_fitness(best_fitness)},'
-                                  f'try {self._objective.format_fitness(new_ind.fitness)} with num nodes {new_graph.length}')
+                                  f'best fitness {self._objective.format_fitness(best_ind.fitness)},'
+                                  f'try {self._objective.format_fitness(new_ind.fitness)} '
+                                  f'with num nodes {new_graph.length}')
                 self.current_iteration_num += 1
         self.history.add_to_history([best_ind], 'final_choices')
-        return [best_graph]
+        return [best_ind.graph]
 
-    def _init_assumption(self, evaluator: EvaluationOperator) -> Tuple[Fitness, Individual]:
+    def _init_assumption(self, evaluator: EvaluationOperator) -> Individual:
         new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
         new_ind = Individual(new_graph)
         evaluator([new_ind])
@@ -61,4 +61,4 @@ class RandomSearchOptimizer(GraphOptimizer):
         self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
         self.log.info(f'Initial graph fitness: {self._objective.format_fitness(new_ind.fitness)} '
                       f'with num nodes {new_graph.length}')
-        return new_ind.fitness, new_ind
+        return new_ind

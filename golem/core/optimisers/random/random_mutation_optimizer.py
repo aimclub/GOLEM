@@ -29,6 +29,7 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
         requirements = requirements or GraphRequirements()
         graph_optimizer_params = graph_optimizer_params or GPAlgorithmParameters()
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+        self.mutation = Mutation(self.graph_optimizer_params, self.requirements, self.graph_generation_params)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
         self.current_iteration_num = 0
         self.stop_optimization = \
@@ -50,8 +51,7 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
         with self.timer:
             best = self._eval_initial_individual(evaluator)
             while not self.stop_optimization():
-                mutation = Mutation(self.graph_optimizer_params, self.requirements, self.graph_generation_params)
-                new = mutation(best)
+                new = self.mutation(best)
                 evaluator([new])
                 if new.fitness > best.fitness:
                     best = new

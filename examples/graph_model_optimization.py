@@ -84,7 +84,7 @@ def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, time
         max_depth=10,
         timeout=timeout)
 
-    optimiser_parameters = GPAlgorithmParameters(
+    optimizer_parameters = GPAlgorithmParameters(
         pop_size=5,
         crossover_prob=0.8, mutation_prob=0.9,
         genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
@@ -102,27 +102,21 @@ def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, time
     objective = Objective({'custom': custom_metric})
 
     if optimizer == RandomSearchOptimizer:
-        optimiser = optimizer(
+        optimizer = optimizer(
             graph_generation_params=graph_generation_params,
             objective=objective,
             requirements=requirements)
-    elif optimizer == RandomMutationSearchOptimizer:
-        optimiser = RandomMutationSearchOptimizer(
-            graph_generation_params=graph_generation_params,
+    elif optimizer in [RandomMutationSearchOptimizer, EvoGraphOptimizer]:
+        optimizer = optimizer(
             objective=objective,
-            graph_optimizer_params=optimiser_parameters,
+            initial_graphs=initial,
             requirements=requirements,
-            initial_graphs=initial)
-    else:
-        optimiser = EvoGraphOptimizer(
             graph_generation_params=graph_generation_params,
-            objective=objective,
-            graph_optimizer_params=optimiser_parameters,
-            requirements=requirements,
-            initial_graphs=initial)
+            graph_optimizer_params=optimizer_parameters
+            )
 
     objective_eval = ObjectiveEvaluate(objective, data=data, visualisation=visualisation)
-    optimized_graphs = optimiser.optimise(objective_eval)
+    optimized_graphs = optimizer.optimise(objective_eval)
     optimized_network = adapter.restore(optimized_graphs[0])
     if visualisation:
         optimized_network.show()

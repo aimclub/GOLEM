@@ -1,26 +1,19 @@
-from abc import ABC, abstractmethod
 from random import randint, choices
-from typing import Optional
+from typing import Optional, Callable
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
+from golem.core.dag.graph import Graph
 from golem.core.dag.graph_utils import distance_to_root_level
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 
-
-class BaseRandomOptGraphFactory(ABC):
-    """ Class for generation of random optimisation graphs """
-    @abstractmethod
-    def __call__(self, requirements: GraphRequirements) -> OptGraph:
-        """ Returns random optimization graph """
-
-        pass
+RandomGraphFactory = Callable[[GraphRequirements], Graph]
 
 
-class DefaultRandomOptGraphFactory(BaseRandomOptGraphFactory):
-    """ Default realisation of random graph factory """
+class RandomGrowthGraphFactory(RandomGraphFactory):
+    """ Default realisation of random graph factory. Generates DAG graph using random growth. """
     def __init__(self,
                  verifier: GraphVerifier,
                  node_factory: OptNodeFactory):
@@ -34,7 +27,8 @@ class DefaultRandomOptGraphFactory(BaseRandomOptGraphFactory):
 def random_graph(verifier: GraphVerifier,
                  node_factory: OptNodeFactory,
                  requirements: GraphRequirements,
-                 max_depth: Optional[int] = None) -> OptGraph:
+                 max_depth: Optional[int] = None,
+                 growth_proba: float = 0.3) -> OptGraph:
     max_depth = max_depth if max_depth else requirements.max_depth
     is_correct_graph = False
     graph = None
@@ -45,7 +39,7 @@ def random_graph(verifier: GraphVerifier,
         graph_root = node_factory.get_node()
         graph.add_node(graph_root)
         if requirements.max_depth > 1:
-            graph_growth(graph, graph_root, node_factory, requirements, max_depth)
+            graph_growth(graph, graph_root, node_factory, requirements, max_depth, growth_proba)
 
         is_correct_graph = verifier(graph)
         n_iter += 1
@@ -59,7 +53,8 @@ def graph_growth(graph: OptGraph,
                  node_parent: OptNode,
                  node_factory: OptNodeFactory,
                  requirements: GraphRequirements,
-                 max_depth: int):
+                 max_depth: int,
+                 growth_proba: float):
     """Function create a graph and links between nodes"""
     offspring_size = randint(requirements.min_arity, requirements.max_arity)
 
@@ -71,5 +66,5 @@ def graph_growth(graph: OptGraph,
         is_max_depth_exceeded = height >= max_depth - 1
         if not is_max_depth_exceeded:
             # lower proba of further growth reduces time of graph generation
-            if choices([0, 1], weights=[0.7, 0.3])[0]:
-                graph_growth(graph, node, node_factory, requirements, max_depth)
+            if choices([0, 1], weights=[1 - growth_proba, growth_proba])[0]:
+                graph_growth(graph, node, node_factory, requirements, max_depth, growth_proba)
