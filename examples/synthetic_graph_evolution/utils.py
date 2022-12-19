@@ -1,29 +1,16 @@
 from collections.abc import Sequence
 from datetime import datetime
+from typing import Tuple, Optional
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from networkx import gnp_random_graph
-from typing import Tuple, Optional
 
 from examples.synthetic_graph_evolution.graph_metrics import spectral_dists_all
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer
-
-
-def plot_histories():
-    num_min = 30
-    labels = ['random', 'parameterfree']
-
-    history_paths = [f'./results/hist_gnp_n30_{num_min}min_{label}.json' for label in labels]
-    histories = [OptHistory.load(path) for path in history_paths]
-
-    plot_fitness_comparison(histories,
-                            titles=labels,
-                            total_minutes=num_min)
-    plt.show()
 
 
 def fitness_to_stats(history: OptHistory,
@@ -133,4 +120,4 @@ def try_random(n=100, it=1):
 
 
 if __name__ == "__main__":
-    plot_histories()
+    try_random()
