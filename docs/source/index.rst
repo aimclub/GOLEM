@@ -23,4 +23,4 @@ Content:
    faq
    about
 
-.. |logo| image:: ../img/golem_logo.png
+.. |logo| image:: ../img/golem_logo-02.png
