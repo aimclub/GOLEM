@@ -1,21 +1,16 @@
-from random import choice
 from typing import Union, Optional, Sequence
 
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.genetic.evaluation import SimpleDispatcher
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationTypesEnum
-from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
-from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.objective import Objective, ObjectiveFunction
+from golem.core.optimisers.genetic.operators.mutation import Mutation
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphOptimizer, GraphGenerationParams
-from golem.core.optimisers.timer import OptimisationTimer
-from golem.core.utilities.grouped_condition import GroupedCondition
+from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 
 
-class RandomMutationSearchOptimizer(GraphOptimizer):
+class RandomMutationSearchOptimizer(RandomSearchOptimizer):
     """
     Random search-based graph models optimizer
     """
@@ -30,44 +25,6 @@ class RandomMutationSearchOptimizer(GraphOptimizer):
         graph_optimizer_params = graph_optimizer_params or GPAlgorithmParameters()
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.mutation = Mutation(self.graph_optimizer_params, self.requirements, self.graph_generation_params)
-        self.timer = OptimisationTimer(timeout=self.requirements.timeout)
-        self.current_iteration_num = 0
-        self.stop_optimization = \
-            GroupedCondition(results_as_message=True).add_condition(
-                lambda: self.timer.is_time_limit_reached(self.current_iteration_num),
-                'Optimisation stopped: Time limit is reached'
-            ).add_condition(
-                lambda: requirements.num_of_generations is not None and
-                        self.current_iteration_num >= requirements.num_of_generations,
-                'Optimisation stopped: Max number of iterations reached')
 
-    def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
-
-        dispatcher = SimpleDispatcher(self.graph_generation_params.adapter)
-        evaluator = dispatcher.dispatch(objective, self.timer)
-
-        self.current_iteration_num = 0
-
-        with self.timer:
-            best = self._eval_initial_individual(evaluator)
-            while not self.stop_optimization():
-                new = self.mutation(best)
-                evaluator([new])
-                if new.fitness > best.fitness:
-                    best = new
-                    self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
-                    self.log.info(f'Iteration num: {self.current_iteration_num}')
-                    self.log.info(f'Best individual fitness: {self._objective.format_fitness(best.fitness)}')
-
-                self.history.add_to_history([best])
-
-                self.current_iteration_num += 1
-        self.history.add_to_history([best], 'final_choices')
-        return [best.graph]
-
-    def _eval_initial_individual(self, evaluator: EvaluationOperator) -> Individual:
-        initial_individuals = [Individual(graph) for graph in self.initial_graphs]
-        best = choice(initial_individuals)
-        evaluator([best])
-        self.history.add_to_history([best], 'initial_assumptions')
-        return best
+    def _generate_new_individual(self) -> Individual:
+        return self.mutation(self.best_individual)

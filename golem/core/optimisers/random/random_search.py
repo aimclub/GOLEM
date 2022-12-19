@@ -1,7 +1,9 @@
-from typing import Optional, Tuple, Sequence
+from random import choice
+from typing import Optional, Sequence
 
-from golem.core.optimisers.fitness import Fitness
+from golem.core.dag.graph import Graph
 from golem.core.optimisers.genetic.evaluation import SimpleDispatcher
+from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
@@ -14,12 +16,16 @@ from golem.core.utilities.grouped_condition import GroupedCondition
 
 class RandomSearchOptimizer(GraphOptimizer):
 
-    def __init__(self, objective: Objective,
-                 requirements: GraphRequirements,
-                 graph_generation_params: Optional[GraphGenerationParams] = None):
-        super().__init__(objective, requirements=requirements, graph_generation_params=graph_generation_params)
+    def __init__(self,
+                 objective: Objective,
+                 initial_graphs: Sequence[Graph] = None,
+                 requirements: Optional[GraphRequirements] = None,
+                 graph_generation_params: Optional[GraphGenerationParams] = None,
+                 graph_optimizer_params: Optional[GPAlgorithmParameters] = None):
+        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
         self.current_iteration_num = 0
+        self.best_individual = None
         self.stop_optimization = \
             GroupedCondition(results_as_message=True).add_condition(
                 lambda: self.timer.is_time_limit_reached(self.current_iteration_num),
@@ -33,32 +39,36 @@ class RandomSearchOptimizer(GraphOptimizer):
 
         dispatcher = SimpleDispatcher(self.graph_generation_params.adapter)
         evaluator = dispatcher.dispatch(objective, self.timer)
-        self.current_iteration_num = 0
-        with self.timer:
-            best_ind = self._init_assumption(evaluator)
-            while not self.stop_optimization():
-                new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
-                new_ind = Individual(new_graph)
-                evaluator([new_ind])
-                if new_ind.fitness > best_ind.fitness:
-                    best_ind = new_ind
-                self.history.add_to_history([best_ind])
-                if new_ind.fitness.value:
-                    self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
-                    self.log.info(f'Iter {self.current_iteration_num}: '
-                                  f'best fitness {self._objective.format_fitness(best_ind.fitness)},'
-                                  f'try {self._objective.format_fitness(new_ind.fitness)} '
-                                  f'with num nodes {new_graph.length}')
-                self.current_iteration_num += 1
-        self.history.add_to_history([best_ind], 'final_choices')
-        return [best_ind.graph]
 
-    def _init_assumption(self, evaluator: EvaluationOperator) -> Individual:
-        new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
-        new_ind = Individual(new_graph)
-        evaluator([new_ind])
-        self.history.add_to_history([new_ind], 'initial_assumptions')
+        self.current_iteration_num = 0
+
+        with self.timer:
+            self.best_individual = self._eval_initial_individual(evaluator)
+            self._update_best_individual(self.best_individual, 'initial_assumptions')
+            while not self.stop_optimization():
+                new_individual = self._generate_new_individual()
+                evaluator([new_individual])
+                self._update_best_individual(new_individual)
+                self.current_iteration_num += 1
+        self._update_best_individual(self.best_individual, 'final_choices')
+        return [self.best_individual.graph]
+
+    def _update_best_individual(self, new_individual: Individual, label: Optional[str] = None):
+        if new_individual.fitness > self.best_individual.fitness:
+            self.best_individual = new_individual
+
         self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
-        self.log.info(f'Initial graph fitness: {self._objective.format_fitness(new_ind.fitness)} '
-                      f'with num nodes {new_graph.length}')
-        return new_ind
+        self.log.info(f'Iteration num {self.current_iteration_num}: '
+                      f'Best individual fitness {self._objective.format_fitness(self.best_individual.fitness)}')
+
+        self.history.add_to_history([new_individual], label)
+        self.history.add_to_archive_history([self.best_individual])
+
+    def _eval_initial_individual(self, evaluator: EvaluationOperator) -> Individual:
+        init_ind = Individual(choice(self.initial_graphs)) if self.initial_graphs else self._generate_new_individual()
+        evaluator([init_ind])
+        return init_ind
+
+    def _generate_new_individual(self) -> Individual:
+        new_graph = self.graph_generation_params.random_graph_factory(self.requirements)
+        return Individual(new_graph)

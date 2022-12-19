@@ -9,7 +9,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 
-RandomGraphFactory = Callable[[GraphRequirements], Graph]
+RandomGraphFactory = Callable[[GraphRequirements, int], Graph]
 
 
 class RandomGrowthGraphFactory(RandomGraphFactory):

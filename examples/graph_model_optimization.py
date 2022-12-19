@@ -70,7 +70,7 @@ def custom_mutation(graph: CustomGraphModel, **kwargs) -> CustomGraphModel:
 def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, timeout: datetime.timedelta = None,
                        visualisation: bool = True):
     if not timeout:
-        timeout = datetime.timedelta(minutes=1)
+        timeout = datetime.timedelta(minutes=3)
 
     data = pd.read_csv(os.path.join(project_root(), 'examples', 'data', 'custom_encoded.csv'))
     nodes_types = ['V1', 'V2', 'V3',
@@ -101,13 +101,7 @@ def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, time
 
     objective = Objective({'custom': custom_metric})
 
-    if optimizer == RandomSearchOptimizer:
-        optimizer = optimizer(
-            graph_generation_params=graph_generation_params,
-            objective=objective,
-            requirements=requirements)
-    elif optimizer in [RandomMutationSearchOptimizer, EvoGraphOptimizer]:
-        optimizer = optimizer(
+    optimizer = optimizer(
             objective=objective,
             initial_graphs=initial,
             requirements=requirements,
@@ -123,4 +117,8 @@ def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, time
 
 
 if __name__ == '__main__':
-    run_custom_example(optimizer=EvoGraphOptimizer, visualisation=True)
+    visualisation = False
+    timeout = datetime.timedelta(minutes=1)
+    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]
+    for optimizer in optimizers:
+        run_custom_example(optimizer, timeout, visualisation)
