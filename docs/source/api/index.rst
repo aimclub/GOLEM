@@ -7,10 +7,10 @@ This is automatically generated API reference.
    :glob:
    :maxdepth: 1
 
-    adapter
-    graph
-    optimizer
-    objective
-    parameters
-    profiler
-    logging
+   adapter
+   graph
+   optimizer
+   objective
+   parameters
+   profiler
+   logging
