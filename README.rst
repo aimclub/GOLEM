@@ -1,4 +1,4 @@
-.. image:: docs/img/golem_logo-02.png
+.. image:: docs/source/img/golem_logo-02.png
    :alt: Logo of GOLEM framework
    :align: center
    :width: 500
@@ -56,16 +56,15 @@ Examples of GOLEM applications:
 
 As GOLEM is a general-purpose, it's easy to imagine fore potential applications, for example, finite state automata search for robotics control or molecular graph learning for drug discovery, and more.
 
-..
-    TODO:
-    Installation
-    ============
 
-    GOLEM can be installed with ``pip``:
+Installation
+============
 
-    .. code-block::
+GOLEM can be installed with ``pip``:
 
-      $ pip install golem
+.. code-block::
+
+  $ pip install golem
 
 
 Project Structure

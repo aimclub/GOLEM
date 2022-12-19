@@ -11,5 +11,4 @@ Advanced Topics
    narrow_search
    multi_obj_search
    serialization
-   interpolation
-   
+   nx-interop
