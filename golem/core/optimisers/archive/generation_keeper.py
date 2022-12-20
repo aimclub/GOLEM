@@ -10,7 +10,8 @@ from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from .individuals_containers import HallOfFame, ParetoFront
 
-PARETO_MAX_POP_SIZE_MULTIPLIER = 10
+PARETO_MAX_POP_SIZE_MULTIPLIER = 5
+
 
 
 class ImprovementWatcher(ABC):

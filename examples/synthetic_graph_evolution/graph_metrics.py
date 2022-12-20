@@ -8,6 +8,7 @@ from netcomp import laplacian_matrix, normalized_laplacian_eig
 from netcomp.linalg import _eigs
 from networkx import graph_edit_distance
 
+from examples.synthetic_graph_evolution.graph_features import degree_stats
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 
 
@@ -22,6 +23,10 @@ def nxgraph_stats(graph: nx.Graph):
         degrees_hist_norm=degrees_norm,
     )
     return stats
+
+
+def degree_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
+    return degree_stats([graph], [target_graph])
 
 
 def get_edit_dist_metric(target_graph: nx.DiGraph,
@@ -68,7 +73,7 @@ def matrix_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
 
 def spectral_dist(target_graph: nx.DiGraph, graph: nx.DiGraph,
                   k: int = 20, kind: str = 'laplacian',
-                  size_diff_penalty: float = 0.1,
+                  size_diff_penalty: float = 0.2,
                   match_size: bool = False,
                   ) -> float:
     target_adj = nx.adjacency_matrix(target_graph)
