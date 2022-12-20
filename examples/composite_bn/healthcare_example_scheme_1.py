@@ -31,31 +31,6 @@ from itertools import chain
 from composite_model import CompositeModel
 from composite_node import CompositeNode
 from ML import ML_models
-from sklearn.metrics import accuracy_score
-
-from catboost import CatBoostClassifier, CatBoostRegressor
-from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-from sklearn.cluster import KMeans as SklearnKmeans
-from sklearn.ensemble import (
-    AdaBoostRegressor,
-    ExtraTreesRegressor,
-    GradientBoostingRegressor,
-    RandomForestClassifier,
-    RandomForestRegressor
-)
-from sklearn.linear_model import (
-    Lasso as SklearnLassoReg,
-    LinearRegression as SklearnLinReg,
-    LogisticRegression as SklearnLogReg,
-    Ridge,
-    SGDRegressor as SklearnSGD
-)
-from sklearn.naive_bayes import BernoulliNB as SklearnBernoulliNB, MultinomialNB as SklearnMultinomialNB
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import LinearSVR as SklearnSVR
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from xgboost import XGBClassifier, XGBRegressor
-from sklearn.linear_model import (LinearRegression , LogisticRegression )
 
 
 # задаем fitness-функцию
