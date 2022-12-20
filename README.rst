@@ -1,3 +1,4 @@
+
 .. image:: docs/img/golem_logo.png
    :alt: Logo of GOLEM framework
    :scale: 70 %
@@ -10,6 +11,8 @@
      - | |pypi| |py_7| |py_8| |py_9|
    * - tests
      - | |build|
+   * - coverage
+     - | |coverage|
    * - docs
      - |docs|
    * - license
@@ -156,9 +159,9 @@ Other papers - in `ResearchGate <https://www.researchgate.net/project/Evolutiona
    :alt: Build Status
    :target: https://github.com/ITMO-NSS-team/GOLEM/actions/workflows/unit-build.yml
 
-.. |coverage| image:: https://codecov.io/gh/nccr-itmo/FEDOT/branch/master/graph/badge.svg
+.. |coverage| image:: https://codecov.io/gh/ITMO-NSS-team/GOLEM/branch/main/graph/badge.svg
    :alt: Coverage Status
-   :target: https://codecov.io/gh/nccr-itmo/FEDOT
+   :target: https://codecov.io/gh/ITMO-NSS-team/GOLEM
 
 .. |pypi| image:: https://badge.fury.io/py/fedot.svg
    :alt: Supported Python Versions

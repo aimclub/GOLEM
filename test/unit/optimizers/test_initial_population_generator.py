@@ -17,6 +17,19 @@ def setup_test(pop_size):
     return requirements, graph_generation_params, generator
 
 
+def test_random_initial_population():
+    requirements, graph_generation_params, initial_population_generator = setup_test(pop_size=3)
+    generated_population = initial_population_generator()
+    max_depth = requirements.max_depth
+    print(max_depth)
+    verifier = graph_generation_params.verifier
+    assert len(generated_population) == 3, \
+        "If no initial graphs provided InitialPopulationGenerator returns randomly generated graphs."
+    print(list([graph.depth for graph in generated_population]))
+    assert all(graph.depth <= max_depth for graph in generated_population)
+    assert all(verifier(graph) for graph in generated_population)
+
+
 def test_initial_graphs_as_initial_population():
     adapter = DirectAdapter()
     initial_graphs = adapter.adapt([graph_first(), graph_second(), graph_third()])

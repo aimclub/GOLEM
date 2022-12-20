@@ -1,76 +1,7 @@
 from copy import deepcopy
-from random import randint
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Tuple
 
-from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
-from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level
-from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.graph import OptGraph, OptNode
-from golem.core.optimisers.opt_node_factory import OptNodeFactory
-from golem.core.optimisers.optimizer import GraphGenerationParams
-
-
-def random_graph(graph_generation_params: GraphGenerationParams,
-                 requirements: GraphRequirements,
-                 max_depth: Optional[int] = None) -> OptGraph:
-    max_depth = max_depth if max_depth else requirements.max_depth
-    is_correct_graph = False
-    graph = None
-    n_iter = 0
-    requirements = adjust_requirements(requirements)
-    node_factory = graph_generation_params.node_factory
-
-    while not is_correct_graph:
-        graph = OptGraph()
-        if requirements.max_depth == 1:
-            graph_root = node_factory.get_node(is_primary=True)
-            graph.add_node(graph_root)
-        else:
-            graph_root = node_factory.get_node(is_primary=False)
-            graph.add_node(graph_root)
-            graph_growth(graph, graph_root, node_factory, requirements, max_depth)
-
-        is_correct_graph = graph_generation_params.verifier(graph)
-        n_iter += 1
-        if n_iter > MAX_GRAPH_GEN_ATTEMPTS:
-            raise ValueError(f'Could not generate random graph for {n_iter} '
-                             f'iterations with requirements {requirements}')
-    return graph
-
-
-def adjust_requirements(requirements: GraphRequirements) -> GraphRequirements:
-    """Function returns modified copy of the requirements if necessary.
-    Example: Graph with only one primary node should consist of only one primary node
-    without duplication, because this causes errors. Therefore minimum and maximum arity
-    become equal to one.
-    """
-    requirements = deepcopy(requirements)
-    if len(requirements.primary) == 1 and requirements.max_arity > 1:
-        requirements.min_arity = requirements.max_arity = 1
-    return requirements
-
-
-def graph_growth(graph: OptGraph,
-                 node_parent: OptNode,
-                 node_factory: OptNodeFactory,
-                 requirements: GraphRequirements,
-                 max_depth: int):
-    """Function create a graph and links between nodes"""
-    offspring_size = randint(requirements.min_arity, requirements.max_arity)
-
-    for offspring_node in range(offspring_size):
-        height = distance_to_root_level(graph, node_parent)
-        is_max_depth_exceeded = height >= max_depth - 2
-        is_primary_node_selected = height < max_depth - 1 and randint(0, 1)
-        if is_max_depth_exceeded or is_primary_node_selected:
-            primary_node = node_factory.get_node(is_primary=True)
-            node_parent.nodes_from.append(primary_node)
-            graph.add_node(primary_node)
-        else:
-            secondary_node = node_factory.get_node(is_primary=False)
-            graph.add_node(secondary_node)
-            node_parent.nodes_from.append(secondary_node)
-            graph_growth(graph, secondary_node, node_factory, requirements, max_depth)
+from golem.core.dag.graph_utils import distance_to_primary_level
 
 
 def equivalent_subtree(graph_first: Any, graph_second: Any) -> List[Tuple[Any, Any]]:

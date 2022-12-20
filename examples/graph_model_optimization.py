@@ -4,6 +4,8 @@ import random
 
 import numpy as np
 import pandas as pd
+from typing import Type
+
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
@@ -16,7 +18,9 @@ from golem.core.optimisers.genetic.operators.regularization import Regularizatio
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.core.paths import project_root
 
 random.seed(1)
@@ -63,9 +67,10 @@ def custom_mutation(graph: CustomGraphModel, **kwargs) -> CustomGraphModel:
     return graph
 
 
-def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool = True):
+def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, timeout: datetime.timedelta = None,
+                       visualisation: bool = True):
     if not timeout:
-        timeout = datetime.timedelta(minutes=1)
+        timeout = datetime.timedelta(minutes=3)
 
     data = pd.read_csv(os.path.join(project_root(), 'examples', 'data', 'custom_encoded.csv'))
     nodes_types = ['V1', 'V2', 'V3',
@@ -77,10 +82,9 @@ def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool =
     requirements = GraphRequirements(
         max_arity=10,
         max_depth=10,
-        num_of_generations=5,
         timeout=timeout)
 
-    optimiser_parameters = GPAlgorithmParameters(
+    optimizer_parameters = GPAlgorithmParameters(
         pop_size=5,
         crossover_prob=0.8, mutation_prob=0.9,
         genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
@@ -96,19 +100,25 @@ def run_custom_example(timeout: datetime.timedelta = None, visualisation: bool =
         available_node_types=nodes_types)
 
     objective = Objective({'custom': custom_metric})
-    optimiser = EvoGraphOptimizer(
-        graph_generation_params=graph_generation_params,
-        objective=objective,
-        graph_optimizer_params=optimiser_parameters,
-        requirements=requirements,
-        initial_graphs=initial)
+
+    optimizer = optimizer_cls(
+            objective=objective,
+            initial_graphs=initial,
+            requirements=requirements,
+            graph_generation_params=graph_generation_params,
+            graph_optimizer_params=optimizer_parameters
+            )
 
     objective_eval = ObjectiveEvaluate(objective, data=data, visualisation=visualisation)
-    optimized_graphs = optimiser.optimise(objective_eval)
+    optimized_graphs = optimizer.optimise(objective_eval)
     optimized_network = adapter.restore(optimized_graphs[0])
     if visualisation:
         optimized_network.show()
 
 
 if __name__ == '__main__':
-    run_custom_example(visualisation=True)
+    visualisation = False
+    timeout = datetime.timedelta(minutes=1)
+    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]
+    for optimizer_cls in optimizers:
+        run_custom_example(optimizer_cls, timeout, visualisation)

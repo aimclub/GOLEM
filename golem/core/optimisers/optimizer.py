@@ -16,6 +16,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
+from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
 
 OptimisationCallback = Callable[[PopulationT, GenerationKeeper], Any]
 
@@ -61,12 +62,14 @@ class GraphGenerationParams:
     verifier: GraphVerifier
     advisor: DefaultChangeAdvisor
     node_factory: OptNodeFactory
+    random_graph_factory: RandomGraphFactory
     remote_evaluator: Optional[DelegateEvaluator] = None
 
     def __init__(self, adapter: Optional[BaseOptimizationAdapter] = None,
                  rules_for_constraint: Sequence[VerifierRuleType] = tuple(DEFAULT_DAG_RULES),
                  advisor: Optional[DefaultChangeAdvisor] = None,
                  node_factory: Optional[OptNodeFactory] = None,
+                 random_graph_factory: Optional[RandomGraphFactory] = None,
                  available_node_types: Optional[Sequence[Any]] = None,
                  remote_evaluator: Optional[DelegateEvaluator] = None,
                  ):
@@ -80,6 +83,8 @@ class GraphGenerationParams:
             self.node_factory = DefaultOptNodeFactory(available_node_types)
         else:
             self.node_factory = DefaultOptNodeFactory()
+        self.random_graph_factory = random_graph_factory or RandomGrowthGraphFactory(self.verifier,
+                                                                                     self.node_factory)
 
 
 class GraphOptimizer:
@@ -93,7 +98,7 @@ class GraphOptimizer:
     :param initial_graphs: graphs which were initialized outside the optimizer
     :param requirements: implementation-independent requirements for graph optimizer
     :param graph_generation_params: parameters for new graph generation
-    :param graph_optimizer_parameters: parameters for specific implementation of graph optimizer
+    :param graph_optimizer_params: parameters for specific implementation of graph optimizer
     """
 
     def __init__(self,
@@ -101,15 +106,15 @@ class GraphOptimizer:
                  initial_graphs: Optional[Sequence[Graph]] = None,
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_parameters: Optional[AlgorithmParameters] = None):
+                 graph_optimizer_params: Optional[AlgorithmParameters] = None):
         self.log = default_log(self)
         self.initial_graphs = initial_graphs
         self._objective = objective
         self.requirements = requirements or OptimizationParameters()
-        self.graph_generation_params = graph_generation_params
-        self.graph_optimizer_params = graph_optimizer_parameters or AlgorithmParameters()
+        self.graph_generation_params = graph_generation_params or GraphGenerationParams()
+        self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()
         self._optimisation_callback: OptimisationCallback = do_nothing_callback
-        mo = False if not graph_optimizer_parameters else graph_optimizer_parameters.multi_objective
+        mo = False if not graph_optimizer_params else graph_optimizer_params.multi_objective
         self.history = OptHistory(mo, requirements.history_dir) \
             if requirements and requirements.keep_history else None
 

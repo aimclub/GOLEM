@@ -105,7 +105,7 @@ def run_trial(target_graph: nx.DiGraph,
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
-        rules_for_constraint=[has_no_self_cycled_nodes,],
+        rules_for_constraint=[has_no_self_cycled_nodes],
     )
 
     # Setup objective that measures some graph-theoretic similarity measure
