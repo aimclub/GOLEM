@@ -7,7 +7,7 @@ import setuptools
 HERE = Path(__file__).parent.resolve()
 
 # The text of the README file
-NAME = 'golem'
+NAME = 'nss-golem'
 VERSION = '0.1.0'
 AUTHOR = 'NSS Lab'
 SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutionary Methods'
@@ -49,7 +49,7 @@ setuptools.setup(
     install_requires=_get_requirements('requirements.txt'),
     extras_require={
         key: _get_requirements(Path('other_requirements', f'{key}.txt'))
-        for key in ('docs', 'profilers')
+        for key in ('docs', 'examples', 'profilers')
     },
     classifiers=[
         'License :: OSI Approved :: BSD License',
