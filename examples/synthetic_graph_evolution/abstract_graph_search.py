@@ -2,7 +2,7 @@ from datetime import datetime
 from functools import partial
 from io import StringIO
 from itertools import product
-from typing import Sequence
+from typing import Sequence, Type
 
 from examples.synthetic_graph_evolution.graph_metrics import *
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
@@ -15,7 +15,9 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
-from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 
 NumNodes = int
 DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
@@ -42,7 +44,8 @@ def get_all_quality_metrics(target_graph):
     return quality_metrics
 
 
-def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
+def run_experiments(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
+                    graph_names: Sequence[str] = tuple(graph_generators.keys()),
                     graph_sizes: Sequence[int] = (30, 100, 300),
                     num_trials: int = 1,
                     trial_timeout: Optional[int] = None,
@@ -60,6 +63,7 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
             target_graph = graph_generator(num_nodes)
             found_graph, history, objective = run_trial(target_graph,
+                                                        optimizer_cls=optimizer_cls,
                                                         timeout=timedelta(minutes=trial_timeout),
                                                         num_iterations=trial_iterations)
             trial_results.extend(history.final_choices)
@@ -88,6 +92,7 @@ def run_experiments(graph_names: Sequence[str] = tuple(graph_generators.keys()),
 
 
 def run_trial(target_graph: nx.DiGraph,
+              optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
               timeout: Optional[timedelta] = None,
               num_iterations: Optional[int] = None):
     # Setup parameters
@@ -133,14 +138,15 @@ def run_trial(target_graph: nx.DiGraph,
     initial_graphs = [OptGraph(OptNode(f'Node{i}')) for i in range(gp_params.pop_size)]
 
     # Run the optimizer
-    optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
+    optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     found_graphs = optimiser.optimise(objective)
 
     return found_graphs[0], optimiser.history, objective
 
 
 if __name__ == '__main__':
-    results_log = run_experiments(graph_names=['2ring', 'gnp'],
+    results_log = run_experiments(optimizer_cls=EvoGraphOptimizer,
+                                  graph_names=['2ring', 'gnp'],
                                   graph_sizes=[30, 100],
                                   num_trials=1,
                                   trial_timeout=30,
