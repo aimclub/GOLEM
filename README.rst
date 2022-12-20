@@ -1,28 +1,15 @@
-
-.. image:: docs/img/golem_logo.png
+.. image:: docs/source/img/golem_logo-02.png
    :alt: Logo of GOLEM framework
-   :scale: 70 %
+   :align: center
+   :width: 500
 
-.. start-badges
-.. list-table::
-   :stub-columns: 1
+.. class:: center
 
-   * - package
-     - | |pypi| |py_7| |py_8| |py_9|
-   * - tests
-     - | |build|
-   * - coverage
-     - | |coverage|
-   * - docs
-     - |docs|
-   * - license
-     - | |license|
-   * - support
-     - | |tg|
+    |python| |pypi| |build| |docs| |license| |tg|
 
-.. end-badges
 
-**GOLEM**: Graph Optimization and Learning by Evolutionary Methods
+Graph Optimization and Learning by Evolutionary Methods
+-------------------------------------------------------
 
 GOLEM is an open-source AI framework for optimization and learning of structured graph-based models with meta-heuristic methods. It is centered around 2 ideas:
 
@@ -69,16 +56,15 @@ Examples of GOLEM applications:
 
 As GOLEM is a general-purpose, it's easy to imagine fore potential applications, for example, finite state automata search for robotics control or molecular graph learning for drug discovery, and more.
 
-..
-    TODO:
-    Installation
-    ============
 
-    GOLEM can be installed with ``pip``:
+Installation
+============
 
-    .. code-block::
+GOLEM can be installed with ``pip``:
 
-      $ pip install golem
+.. code-block::
+
+  $ pip install golem
 
 
 Project Structure
@@ -155,37 +141,33 @@ Other papers - in `ResearchGate <https://www.researchgate.net/project/Evolutiona
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. |build| image:: https://github.com/ITMO-NSS-team/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=main
+.. |build| image:: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=main
    :alt: Build Status
-   :target: https://github.com/ITMO-NSS-team/GOLEM/actions/workflows/unit-build.yml
+   :target: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml
 
-.. |coverage| image:: https://codecov.io/gh/ITMO-NSS-team/GOLEM/branch/main/graph/badge.svg
+.. |coverage| image:: https://codecov.io/gh/aimclub/GOLEM/branch/main/graph/badge.svg
    :alt: Coverage Status
-   :target: https://codecov.io/gh/ITMO-NSS-team/GOLEM
+   :target: https://codecov.io/gh/aimclub/GOLEM
 
-.. |pypi| image:: https://badge.fury.io/py/fedot.svg
+.. |pypi| image:: https://img.shields.io/pypi/v/golem.svg
+   :alt: PyPI Package Version
+   :target: https://img.shields.io/pypi/v/golem
+
+.. |python| image:: https://img.shields.io/pypi/pyversions/fedot.svg
    :alt: Supported Python Versions
-   :target: https://badge.fury.io/py/fedot
+   :target: https://img.shields.io/pypi/pyversions/fedot
 
-.. |py_7| image:: https://img.shields.io/badge/python_3.7-passing-success
+.. |license| image:: https://img.shields.io/github/license/aimclub/GOLEM
    :alt: Supported Python Versions
-   :target: https://img.shields.io/badge/python_3.7-passing-success
+   :target: https://github.com/aimclub/GOLEM/blob/main/LICENSE.md
 
-.. |py_8| image:: https://img.shields.io/badge/python_3.8-passing-success
-   :alt: Supported Python Versions
-   :target: https://img.shields.io/badge/python_3.8-passing-success
-
-.. |py_9| image:: https://img.shields.io/badge/python_3.9-passing-success
-   :alt: Supported Python Versions
-   :target: https://img.shields.io/badge/python_3.9-passing-success
-
-.. |license| image:: https://img.shields.io/github/license/nccr-itmo/FEDOT
-   :alt: Supported Python Versions
-   :target: https://github.com/nccr-itmo/FEDOT/blob/master/LICENSE.md
-
-.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/fedot?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
-   :target: https://pepy.tech/project/fedot
+.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/golem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
+   :target: https://pepy.tech/project/golem
 
 .. |tg| image:: https://img.shields.io/badge/Telegram-Group-blue.svg
-          :target: https://t.me/FEDOT_helpdesk
-          :alt: Telegram Chat
+   :alt: Telegram Chat
+   :target: https://t.me/FEDOT_helpdesk
+
+.. |by-golem| image:: http://img.shields.io/badge/powered%20by-GOLEM-orange.svg?style=flat
+   :target: http://github.com/aimclub/GOLEM
+   :alt: Powered by GOLEM
