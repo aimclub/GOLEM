@@ -13,4 +13,4 @@ Graph-based learning enables solutions in the form of structured and hybrid prob
 
 Together this constitutes an approach to AI that potentially leads to structured, intuitive, interpretable methods and solutions for a wide range of tasks.
 
-To see how you can use GOLEM go to the :doc:`Quick Start Guide </quick_start>`_.
+To see how you can use GOLEM go to the :doc:`Quick Start Guide </quick_start>`.

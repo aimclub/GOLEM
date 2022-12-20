@@ -1,5 +1,5 @@
 Parameter classes
-=====
+=================
 
 .. autoclass:: golem.core.optimisers.optimizer.AlgorithmParameters
    :members:

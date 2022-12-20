@@ -13,16 +13,23 @@ class OptimizationParameters:
     (like stop condition, validation, timeout, logging etc.)
 
     Options related to stop condition:
+
     :param num_of_generations: maximum number of optimizer generations
     :param timeout: max time in minutes available for composition process
-    :param early_stopping_iterations: optional max number of stagnating
-     iterations for early stopping. If both early_stopping options are None,
-     then do not use early stopping.
-    :param early_stopping_timeout: optional duration (in minutes) of stagnating
-     optimization for early stopping. If both early_stopping options are None,
-     then do not use early stopping.
+    :param early_stopping_iterations: for early stopping.
+
+        Optional max number of stagnating
+        iterations for early stopping. If both early_stopping options are None,
+        then do not use early stopping.
+
+    :param early_stopping_timeout: for early stopping.
+
+        Optional duration (in minutes) of stagnating
+        optimization for early stopping. If both early_stopping options are None,
+        then do not use early stopping.
 
     Infrastructure options (logging, performance)
+
     :param keep_n_best: number of the best individuals of previous generation to keep in next generation
     :param max_graph_fit_time: time constraint for evaluation of each graph (datetime.timedelta)
     :param n_jobs: num of n_jobs
@@ -30,11 +37,13 @@ class OptimizationParameters:
     :param collect_intermediate_metric: save metrics for intermediate (non-root) nodes in graph
 
     History options:
+
     :param keep_history: if True, then save generations to history; if False, don't keep history.
     :param history_dir: directory for saving optimization history, optional.
-      If the path is relative, then save relative to `default_data_dir`.
-      If absolute -- then save directly by specified path.
-      If None -- do not save the history to disk and keep it only in-memory.
+
+        If the path is relative, then save relative to `default_data_dir`.
+        If absolute -- then save directly by specified path.
+        If None -- do not save the history to disk and keep it only in-memory.
     """
 
     num_of_generations: Optional[int] = None
@@ -57,6 +66,7 @@ class GraphRequirements(OptimizationParameters):
     """Defines restrictions and requirements on final graphs.
 
     Restrictions on final graphs:
+
     :param start_depth: start value of adaptive tree depth
     :param max_depth: max depth of the resulting graph
     :param min_arity: min number of parents for node

@@ -18,20 +18,7 @@ class Log(metaclass=SingletonMeta):
 
     Args:
         config_json_file: ``json`` file from which to collect the logger if specified
-        output_logging_level: logging levels are the same as in 'logging'
-
-            .. details:: more details..
-
-                * ``50`` -> critical
-                * ``40`` -> error
-                * ``30`` -> warning
-                * ``20`` -> info
-                * ``10`` -> debug
-                * ``0`` -> nonset
-
-                Attention!
-                    logs with a level HIGHER than set will be displayed
-
+        output_logging_level: logging levels are the same as in standard python module 'logging'
         log_file: file to write logs in
     """
 

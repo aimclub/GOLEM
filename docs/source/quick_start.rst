@@ -35,5 +35,5 @@ Adapter for domain structures
 -----------------------------
 
 Commonly your domain task works with specific structures. These can be some special graph models, 3D models, etc. Before running GOLEM for such tasks you need to define the *graph adapter* that will transform your domain graphs to universal graph representation, that GOLEM uses internally.
-For this you either need to subclass the :py:class:`golem.core.adapter.adapter.BaseOptimizationAdapter` or use one of the existing adapters. Currently there's one non-trivial adapter for `NetworkX <https://networkx.org/>`_ directed graphs. You can read more about it in :doc:`this document </advanced/nx-interop>`_.
-You can also find example using this adapter in this example on :doc:`synthetic graph search </examples/abstract>`_.
+For this you either need to subclass the :py:class:`golem.core.adapter.adapter.BaseOptimizationAdapter` or use one of the existing adapters. Currently there's one non-trivial adapter for `NetworkX <https://networkx.org/>`_ directed graphs. You can read more about it in :doc:`this document </advanced/nx-interop>`.
+You can also find example using this adapter in this example on :doc:`synthetic graph search </examples/abstract>`.
