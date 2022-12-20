@@ -67,7 +67,7 @@ def custom_mutation(graph: CustomGraphModel, **kwargs) -> CustomGraphModel:
     return graph
 
 
-def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, timeout: datetime.timedelta = None,
+def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, timeout: datetime.timedelta = None,
                        visualisation: bool = True):
     if not timeout:
         timeout = datetime.timedelta(minutes=3)
@@ -101,7 +101,7 @@ def run_custom_example(optimizer: Type[GraphOptimizer] = EvoGraphOptimizer, time
 
     objective = Objective({'custom': custom_metric})
 
-    optimizer = optimizer(
+    optimizer = optimizer_cls(
             objective=objective,
             initial_graphs=initial,
             requirements=requirements,
@@ -120,5 +120,5 @@ if __name__ == '__main__':
     visualisation = False
     timeout = datetime.timedelta(minutes=1)
     optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]
-    for optimizer in optimizers:
-        run_custom_example(optimizer, timeout, visualisation)
+    for optimizer_cls in optimizers:
+        run_custom_example(optimizer_cls, timeout, visualisation)
