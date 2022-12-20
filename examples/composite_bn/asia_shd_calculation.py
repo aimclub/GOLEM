@@ -11,7 +11,6 @@ from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 import bamt.preprocessors as pp
-import bamt.networks as Nets
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
 from golem.core.adapter import DirectAdapter
@@ -28,7 +27,6 @@ from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from math import ceil
 from scipy.stats import norm
 from itertools import chain
-import matplotlib.pyplot as plt
 from composite_model import CompositeModel
 from composite_node import CompositeNode
 from ML import ML_models
@@ -365,6 +363,45 @@ def _has_no_duplicates(graph: CompositeModel):
         raise ValueError('Custom graph has duplicates')
     return True
 
+# функции для расчета SHD
+def child_dict(net: list):
+    res_dict = dict()
+    for e0, e1 in net:
+        if e1 in res_dict:
+            res_dict[e1].append(e0)
+        else:
+            res_dict[e1] = [e0]
+    return res_dict
+
+def precision_recall(pred, true_net: list, decimal = 2):
+
+    edges= pred.operator.get_edges()
+    struct = []
+    for s in edges:
+        struct.append((s[0].content['name'], s[1].content['name']))
+
+    pred_net = deepcopy(struct)
+
+    pred_dict = child_dict(pred_net)
+    true_dict = child_dict(true_net)
+    corr_undir = 0
+    corr_dir = 0
+    for e0, e1 in pred_net:
+        flag = True
+        if e1 in true_dict:
+            if e0 in true_dict[e1]:
+                corr_undir += 1
+                corr_dir += 1
+                flag = False
+        if (e0 in true_dict) and flag:
+            if e1 in true_dict[e0]:
+                corr_undir += 1
+    pred_len = len(pred_net)
+    true_len = len(true_net)
+    shd = pred_len + true_len - corr_undir - corr_dir
+    return {
+    'SHD': shd}
+
 
 def run_example():
     
@@ -378,6 +415,15 @@ def run_example():
     encoder = preprocessing.LabelEncoder()
     p = pp.Preprocessor([('encoder', encoder)])
     discretized_data, _ = p.apply(data)
+
+    # загрузка истинной структуры
+    with open('examples/data/'+file+'.txt') as f:
+        lines = f.readlines()
+    true_net = []
+    for l in lines:
+        e0 = l.split()[0]
+        e1 = l.split()[1].split('\n')[0]
+        true_net.append((e0, e1))        
 
     # правила для байесовских сетей: нет петель, нет циклов, нет повторяющихся узлов
     rules = [has_no_self_cycled_nodes, has_no_cycle, _has_no_duplicates]
@@ -438,27 +484,8 @@ def run_example():
     # запуск оптимизатора
     optimized_graph = optimiser.optimise(objective_eval)[0]
     print('Score of optimized graph = ', composite_metric(optimized_graph, discretized_data))
-
-    bn = Nets.DiscreteBN()
-    info = p.info
-    bn.add_nodes(info)
-    structure = [(str(edge[0]), str(edge[1])) for edge in optimized_graph.get_edges()]
-    bn.set_structure(edges=structure)
-    dict_reg = {}
-    for n in optimized_graph.nodes:
-        dict_reg[str(n)] = n.content['parent_model']
-    bn.set_regressor(regressors=dict_reg)
-    bn.fit_parameters(data)
-
-    # семплирование данных
-    sample = bn.sample(1000)  
-    node = str(choice(optimized_graph.nodes))
-    sample[node].value_counts().plot(kind='bar', grid=True, color='#607c8e')
-    plt.title('Sample of node ' + "\"" + node + "\"")
-    plt.ylabel('Count') 
-    plt.xlabel('Values') 
-    plt.show()
-
+    print('SHD of optimized graph = ', precision_recall(optimized_graph, true_net)['SHD'])
+   
     #  отрисовка полученного графа
     graph = optimized_graph
     name_nodes = [str(n) for n in graph.nodes]
@@ -504,7 +531,7 @@ if __name__ == '__main__':
     # размер популяции 
     pop_size = 20
     # количество поколений
-    n_generation = 100
+    n_generation = 1000
     # вероятность кроссовера
     crossover_probability = 0.8
     # вероятность мутации
