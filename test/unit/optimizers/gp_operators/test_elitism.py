@@ -15,7 +15,7 @@ def set_up():
     population = [Individual(adapter.adapt(graph)) for graph in graphs]
     for ind in population:
         ind.set_evaluation_result(get_objective(ind.graph))
-    population, best_individuals = population[:4], population[4:]
+    population, best_individuals = population[:4], population[2:]
 
     return best_individuals, population
 
@@ -33,9 +33,9 @@ def test_replace_worst(set_up):
     best_individuals, population = set_up
     elitism = Elitism(GPAlgorithmParameters(elitism_type=ElitismTypesEnum.replace_worst))
     new_population = elitism(best_individuals, population)
-    for best_ind in best_individuals:
-        if any(best_ind.fitness > ind.fitness for ind in population):
-            assert best_ind in new_population
+    for ind in population:
+        if ind not in new_population:
+            assert all(ind.fitness <= best_ind.fitness for best_ind in new_population)
     assert len(new_population) == len(population)
 
 

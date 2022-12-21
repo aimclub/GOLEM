@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from golem.core.optimisers.fitness.fitness import SingleObjFitness, null_fitness
+from golem.core.optimisers.fitness.fitness import SingleObjFitness
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -21,15 +21,14 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
 from test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
-from test.unit.serialization.mocks.history_mocks import CustomMockNode, CustomMockGraph
 from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
 
 def create_mock_graph_individual():
-    node_1 = CustomMockNode(content={'name': 'logit'})
-    node_2 = CustomMockNode(content={'name': 'lda'})
-    node_3 = CustomMockNode(content={'name': 'knn'})
-    mock_graph = CustomMockGraph([node_1, node_2, node_3])
+    node_1 = MockNode(content={'name': 'logit'})
+    node_2 = MockNode(content={'name': 'lda'})
+    node_3 = MockNode(content={'name': 'knn'})
+    mock_graph = MockDomainStructure([node_1, node_2, node_3])
     individual = Individual(graph=mock_graph)
     individual.set_evaluation_result(SingleObjFitness(1))
     return individual
