@@ -1,6 +1,6 @@
 from enum import Enum
 
-from .mocks.serialization_mocks import MockNode
+from test.unit.mocks.serialization_mocks import MockNode
 
 TEST_UUID = '41d79d06c3d8478f89e7d1008c96a864'
 TEST_MODULE_PATH = 'test.unit.serialization.shared_data'

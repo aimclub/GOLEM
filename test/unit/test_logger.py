@@ -5,12 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from golem.core.dag.graph_verifier import GraphVerifier
-from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.log import DEFAULT_LOG_PATH, Log, default_log
 from golem.core.utilities.grouped_condition import GroupedCondition
 from golem.core.utilities.singleton_meta import SingletonMeta
-from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure, MockAdapter
 
 
 @pytest.fixture()

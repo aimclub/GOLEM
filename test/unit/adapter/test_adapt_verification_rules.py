@@ -1,7 +1,7 @@
 import pytest
 
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
-from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure, MockAdapter
+from test.unit.mocks.common_mocks import MockNode, MockDomainStructure, MockAdapter
 
 
 def get_valid_graph():

@@ -20,7 +20,7 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
-from test.unit.adapter.mock_adapter import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
+from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
 from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
 

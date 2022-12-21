@@ -11,7 +11,7 @@ from golem.serializers.coders import (
     uuid_to_json
 )
 
-from .mocks.serialization_mocks import MockGraph, MockNode, MockOperation, operation_to_json
+from test.unit.mocks.serialization_mocks import MockGraph, MockNode, MockOperation, operation_to_json
 from .shared_data import TestClass, TestEnum, TestSerializableClass
 
 

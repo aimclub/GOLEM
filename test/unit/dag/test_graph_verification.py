@@ -1,8 +1,8 @@
 import pytest
 
-from golem.core.dag.verification_rules import has_no_cycle, has_no_isolated_nodes, has_one_root, ERROR_PREFIX, \
+from golem.core.dag.verification_rules import has_no_cycle, has_no_isolated_nodes, ERROR_PREFIX, \
     has_no_self_cycled_nodes, has_no_isolated_components
-from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure
+from test.unit.mocks.common_mocks import MockNode, MockDomainStructure
 from test.unit.utils import graph_first
 
 
