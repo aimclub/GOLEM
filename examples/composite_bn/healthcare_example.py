@@ -10,8 +10,8 @@ from random import choice, sample
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
-import bamt.Preprocessors as pp
-import bamt.Networks as Nets
+import bamt.preprocessors as pp
+import bamt.networks as Nets
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
 from golem.core.adapter import DirectAdapter
@@ -439,24 +439,35 @@ def run_example():
     optimized_graph = optimiser.optimise(objective_eval)[0]
     print('Score of optimized graph = ', composite_metric(optimized_graph, discretized_data))
     
-    bn = Nets.HybridBN(use_mixture=True, has_logit=True)
+    bn = Nets.HybridBN(use_mixture=False, has_logit=True)
     info = p.info
     bn.add_nodes(info)
     structure = [(str(edge[0]), str(edge[1])) for edge in optimized_graph.get_edges()]
+
     bn.set_structure(edges=structure)
     dict_reg = {}
     for n in optimized_graph.nodes:
-        dict_reg[str(n)] = n.content['parent_model']
+        if n.content['parent_model'] != None:
+            dict_reg[str(n)] = n.content['parent_model']()
+
     bn.set_regressor(regressors=dict_reg)
+    data.dropna(inplace=True)
+    data.reset_index(inplace=True, drop=True)
+    p = pp.Preprocessor([])
+    data, _ = p.apply(data)
     bn.fit_parameters(data)
-    
+
     # предсказание
-    node = vertices[-1]
-    other_node = [n for n in vertices if n != node]
-    features = data[other_node]
-    predict = pd.DataFrame(list(bn.predict(features).values())[0])
-    rmse = mean_squared_error(data[node], predict, squared=True)
-    print('RMSE ' + node + ' = ', rmse)
+    for node_bn in bn.nodes:
+        if node_bn.type == 'Discrete' or "Logit" in node_bn.type:
+            continue
+        node_name = node_bn.name
+        other_node = [n for n in vertices if n != node_name]
+        features = data[other_node]
+        predict = pd.DataFrame(list(bn.predict(features).values())[0])      
+        rmse = mean_squared_error(data[node_name], predict, squared=True)
+        print('RMSE ' + node_name + ' = ', rmse)
+
 
     #  отрисовка полученного графа
     graph = optimized_graph
@@ -503,7 +514,7 @@ if __name__ == '__main__':
     # размер популяции 
     pop_size = 20
     # количество поколений
-    n_generation = 100
+    n_generation = 1000
     # вероятность кроссовера
     crossover_probability = 0.8
     # вероятность мутации
