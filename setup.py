@@ -7,8 +7,8 @@ import setuptools
 HERE = Path(__file__).parent.resolve()
 
 # The text of the README file
-NAME = 'nss-golem'
-VERSION = '0.1.1'
+NAME = 'thegolem'
+VERSION = '0.1.0'
 AUTHOR = 'NSS Lab'
 SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutionary Methods'
 

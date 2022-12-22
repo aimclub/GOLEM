@@ -64,7 +64,7 @@ GOLEM can be installed with ``pip``:
 
 .. code-block::
 
-  $ pip install golem
+  $ pip install thegolem
 
 
 Project Structure
@@ -149,20 +149,20 @@ Other papers - in `ResearchGate <https://www.researchgate.net/project/Evolutiona
    :alt: Coverage Status
    :target: https://codecov.io/gh/aimclub/GOLEM
 
-.. |pypi| image:: https://img.shields.io/pypi/v/golem.svg
+.. |pypi| image:: https://img.shields.io/pypi/v/thegolem.svg
    :alt: PyPI Package Version
-   :target: https://img.shields.io/pypi/v/golem
+   :target: https://img.shields.io/pypi/v/thegolem
 
-.. |python| image:: https://img.shields.io/pypi/pyversions/fedot.svg
+.. |python| image:: https://img.shields.io/pypi/pyversions/thegolem.svg
    :alt: Supported Python Versions
-   :target: https://img.shields.io/pypi/pyversions/fedot
+   :target: https://img.shields.io/pypi/pyversions/thegolem
 
 .. |license| image:: https://img.shields.io/github/license/aimclub/GOLEM
    :alt: Supported Python Versions
    :target: https://github.com/aimclub/GOLEM/blob/main/LICENSE.md
 
-.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/golem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
-   :target: https://pepy.tech/project/golem
+.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/thegolem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
+   :target: https://pepy.tech/project/thegolem
 
 .. |tg| image:: https://img.shields.io/badge/Telegram-Group-blue.svg
    :alt: Telegram Chat
