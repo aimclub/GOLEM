@@ -7,7 +7,7 @@ from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.optimisers.graph import OptGraph, OptNode
-from test.unit.adapter.mock_adapter import MockDomainStructure, MockNode
+from test.unit.mocks.common_mocks import MockDomainStructure, MockNode
 
 
 @pytest.fixture(scope='module', params=[GraphDelegate, LinkedGraph, MockDomainStructure, OptGraph])

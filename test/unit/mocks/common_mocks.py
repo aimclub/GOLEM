@@ -15,6 +15,9 @@ class MockNode(LinkedGraphNode):
         super().__init__(content, nodes_from=nodes_from)
         self.content['intermadiate_metric'] = None
 
+    def __str__(self) -> str:
+        return self.content.get('name')
+
 
 class MockDomainStructure(LinkedGraph):
     """Mock domain structure for testing adapt/restore logic.

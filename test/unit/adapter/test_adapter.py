@@ -8,7 +8,7 @@ from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
-from test.unit.adapter.mock_adapter import MockNode, MockDomainStructure, MockAdapter
+from test.unit.mocks.common_mocks import MockNode, MockDomainStructure, MockAdapter
 from test.unit.utils import find_first
 
 

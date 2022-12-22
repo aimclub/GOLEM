@@ -4,7 +4,7 @@ import pytest
 from golem.serializers import MODULE_X_NAME_DELIMITER, Serializer
 
 from .dataclasses.serialization_dataclasses import GetClassCase
-from .mocks.serialization_mocks import MockGraph, MockNode, MockOperation
+from test.unit.mocks.serialization_mocks import MockGraph, MockNode, MockOperation
 from .shared_data import TestClass, TestEnum, TestSerializableClass, test_func
 
 GET_CLASS_CASES = [

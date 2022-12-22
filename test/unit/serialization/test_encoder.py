@@ -5,7 +5,7 @@ import pytest
 from golem.serializers import CLASS_PATH_KEY, Serializer
 
 from .dataclasses.serialization_dataclasses import EncoderTestCase
-from .mocks.serialization_mocks import MockGraph, MockOperation
+from test.unit.mocks.serialization_mocks import MockGraph, MockOperation
 from .shared_data import (
     MOCK_NODE_1,
     MOCK_NODE_2,
