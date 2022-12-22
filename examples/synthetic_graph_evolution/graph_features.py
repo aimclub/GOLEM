@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Callable, Tuple
+from typing import Callable, Sequence, Tuple
 
 import networkx as nx
 import numpy as np

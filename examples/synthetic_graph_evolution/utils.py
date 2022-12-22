@@ -1,6 +1,5 @@
-from collections.abc import Sequence
 from datetime import datetime
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import networkx as nx
