@@ -1,15 +1,14 @@
 from datetime import timedelta
 from typing import Optional, Callable, Dict
 
-import netcomp
 import networkx as nx
 import numpy as np
-from netcomp import laplacian_matrix, normalized_laplacian_eig
+from netcomp import laplacian_matrix, normalized_laplacian_eig, edit_distance
 from netcomp.linalg import _eigs
 from networkx import graph_edit_distance
 
-from examples.synthetic_graph_evolution.graph_features import degree_stats
 from golem.core.optimisers.optimization_parameters import GraphRequirements
+from golem.metrics.graph_features import degree_stats
 
 
 def nxgraph_stats(graph: nx.Graph):
@@ -67,7 +66,7 @@ def matrix_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
         shape = (nmax, nmax)
         target_adj.resize(shape)
         adj.resize(shape)
-    value = netcomp.edit_distance(target_adj, adj)
+    value = edit_distance(target_adj, adj)
     return value
 
 

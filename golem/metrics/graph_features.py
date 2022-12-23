@@ -3,8 +3,8 @@ from typing import Callable, Sequence, Tuple
 import networkx as nx
 import numpy as np
 
-from examples.synthetic_graph_evolution import mmd
-from examples.synthetic_graph_evolution.mmd import compute_mmd
+from golem.metrics import mmd
+from golem.metrics.mmd import compute_mmd
 
 
 def compute_all_stats(graph_prediction: Sequence[nx.Graph],
