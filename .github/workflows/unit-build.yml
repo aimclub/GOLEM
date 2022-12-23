@@ -30,7 +30,6 @@ jobs:
         pip install pytest
         pip install .[docs]
         pip install .[profilers]
-        pip install .[examples]
         pip install pytest-cov
     - name: Test with pytest
       run: |
