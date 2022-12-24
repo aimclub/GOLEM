@@ -103,7 +103,7 @@ We acknowledge the contributors for their important impact and the participants 
 Supported by
 ============
 
-The project is maintained by the research team of the Natural Systems Simulation Lab. It is a part of the `National Center for Cognitive Research of ITMO University <https://actcognitive.org/>`_, that supports research and development of the project.
+The study is supported by Research Center `Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`__ of `ITMO University <https://en.itmo.ru/>`__ (Saint Petersburg, Russia)
 
 Contacts
 ========
