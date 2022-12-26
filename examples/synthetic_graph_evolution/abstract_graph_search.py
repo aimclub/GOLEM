@@ -4,7 +4,7 @@ from io import StringIO
 from itertools import product
 from typing import Sequence, Type
 
-from examples.synthetic_graph_evolution.graph_metrics import *
+from golem.metrics.graph_metrics import *
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter, nx_to_directed
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
@@ -16,8 +16,6 @@ from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
-from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 
 NumNodes = int
 DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
