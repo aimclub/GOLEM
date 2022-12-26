@@ -49,7 +49,7 @@ setuptools.setup(
     install_requires=_get_requirements('requirements.txt'),
     extras_require={
         key: _get_requirements(Path('other_requirements', f'{key}.txt'))
-        for key in ('docs', 'examples', 'profilers')
+        for key in ('docs', 'profilers')
     },
     classifiers=[
         'License :: OSI Approved :: BSD License',
