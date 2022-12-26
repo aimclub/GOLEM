@@ -8,56 +8,10 @@ from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
-from test.unit.mocks.common_mocks import MockNode, MockDomainStructure, MockAdapter
+from test.unit.adapter.graph_data import get_graphs, graph_with_custom_parameters, get_complex_graph, get_adapters, \
+    get_optgraphs
+from test.unit.mocks.common_mocks import MockNode, MockAdapter
 from test.unit.utils import find_first
-
-
-def get_graphs():
-    node_a = MockNode('operation_a')
-    node_b = MockNode('operation_a', nodes_from=[node_a])
-    node_c = MockNode('operation_a', nodes_from=[node_b, node_a])
-    skip_connection_structure = MockDomainStructure([node_c])
-
-    one_node_graph = MockDomainStructure([node_a])
-
-    node_d = MockNode('operation_a', nodes_from=[node_b])
-    linear_graph = MockDomainStructure([node_d])
-
-    node_f = MockNode('operation_f')
-    node_g = MockNode('operation_g', nodes_from=[node_b, node_f])
-    branching_structure = MockDomainStructure([node_g])
-
-    node_k = MockNode('operation_k', nodes_from=[node_f])
-    node_m = MockNode('operation_m', nodes_from=[node_b, node_k])
-    node_r = MockNode('operation_r', nodes_from=[node_m])
-    branching_structure2 = MockDomainStructure([node_r])
-
-    return [one_node_graph, linear_graph,
-            branching_structure, branching_structure2,
-            skip_connection_structure]
-
-
-def graph_with_custom_parameters(alpha_value):
-    node_a = MockNode('a')
-    node_b = MockNode('b')
-    node_c = MockNode('c', nodes_from=[node_a])
-    node_d = MockNode('d', nodes_from=[node_b])
-    node_final = MockNode('e', nodes_from=[node_c, node_d])
-    node_final.content['params'] = {'alpha': alpha_value}
-    graph = MockDomainStructure([node_final])
-
-    return graph
-
-
-def get_complex_graph():
-    node_a = MockNode('a')
-    node_b = MockNode('b', nodes_from=[node_a])
-    node_c = MockNode('c', nodes_from=[node_b])
-    node_d = MockNode('d', nodes_from=[node_b, node_c])
-    node_e = MockNode('e', nodes_from=[node_d])
-    node_final = MockNode('a', nodes_from=[node_c, node_e])
-    graph = MockDomainStructure([node_final])
-    return graph
 
 
 def test_adapters_params_correct():
@@ -77,9 +31,21 @@ def test_adapters_params_correct():
     assert np.isclose(init_alpha, restored_alpha)
 
 
+@pytest.mark.parametrize('adapter', get_adapters())
+@pytest.mark.parametrize('optgraph', get_optgraphs())
+def test_restored_and_adapted_are_equal(adapter, optgraph):
+    graph = adapter.restore(optgraph)
+    retransformed_optgraph = adapter.adapt(graph)
+
+    # assert 2-way mapping doesn't change the structure
+    assert retransformed_optgraph.descriptive_id == optgraph.descriptive_id
+    # assert that new graph is a different object
+    assert id(optgraph) != id(retransformed_optgraph)
+
+
+@pytest.mark.parametrize('adapter', [MockAdapter()])
 @pytest.mark.parametrize('graph', get_graphs())
-def test_graph_adapt_properly(graph):
-    adapter = MockAdapter()
+def test_graph_adapt_properly(adapter, graph):
     verifier = GraphVerifier(DEFAULT_DAG_RULES)
 
     assert all(isinstance(node, MockNode) for node in graph.nodes)
@@ -93,20 +59,18 @@ def test_graph_adapt_properly(graph):
     assert verifier(opt_graph)
 
 
+@pytest.mark.parametrize('adapter', [MockAdapter()])
 @pytest.mark.parametrize('graph', get_graphs())
-def test_adapted_has_same_structure(graph):
-    adapter = MockAdapter()
-
+def test_adapted_has_same_structure(adapter, graph):
     opt_graph = adapter.adapt(graph)
 
     # assert graph structures are same
     assert graph.descriptive_id == opt_graph.descriptive_id
 
 
+@pytest.mark.parametrize('adapter', [MockAdapter()])
 @pytest.mark.parametrize('graph', get_graphs())
-def test_adapted_and_restored_are_equal(graph):
-    adapter = MockAdapter()
-
+def test_adapted_and_restored_are_equal(adapter, graph):
     opt_graph = adapter.adapt(graph)
     restored_graph = adapter.restore(opt_graph)
 
@@ -116,10 +80,9 @@ def test_adapted_and_restored_are_equal(graph):
     assert id(graph) != id(restored_graph)
 
 
+@pytest.mark.parametrize('adapter', [MockAdapter()])
 @pytest.mark.parametrize('graph', get_graphs())
-def test_changes_to_transformed_dont_affect_origin(graph):
-    adapter = MockAdapter()
-
+def test_changes_to_transformed_dont_affect_origin(adapter, graph):
     original_graph = deepcopy(graph)
     opt_graph = adapter.adapt(graph)
 
