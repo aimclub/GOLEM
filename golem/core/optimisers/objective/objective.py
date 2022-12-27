@@ -1,4 +1,5 @@
 import itertools
+from dataclasses import dataclass
 from numbers import Real
 from typing import Any, Optional, Iterable, Callable, Sequence, TypeVar, Dict, Tuple, Union
 
@@ -12,7 +13,22 @@ GraphFunction = Callable[[G], R]
 ObjectiveFunction = GraphFunction[G, Fitness]
 
 
-class Objective:
+@dataclass
+class ObjectiveInfo:
+    """Keeps information about used metrics."""
+    is_multi_objective: bool = False
+    metric_names: Sequence[str] = ()
+
+    def format_fitness(self, fitness: Union[Fitness, Sequence[float]]) -> str:
+        """Returns formatted fitness string.
+        Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""
+        values = fitness.values if isinstance(fitness, Fitness) else fitness
+        fitness_info = zip(self.metric_names, values)
+        fitness_info_str = [f'{name}={value:.3f}' for name, value in fitness_info]
+        return f"<{' '.join(fitness_info_str)}>"
+
+
+class Objective(ObjectiveInfo, ObjectiveFunction):
     """Represents objective function for computing metric values
     on Graphs and keeps information about metrics used."""
 
@@ -22,9 +38,10 @@ class Objective:
                  is_multi_objective: bool = False,
                  ):
         self._log = default_log(self)
-        self.is_multi_objective = is_multi_objective
         self.quality_metrics = quality_metrics
         self.complexity_metrics = complexity_metrics or {}
+        metric_names = [str(metric_id) for metric_id, _ in self.metrics]
+        super().__init__(is_multi_objective, metric_names)
 
     def __call__(self, graph: Graph, **metrics_kwargs: Any) -> Fitness:
         evaluated_metrics = []
@@ -41,17 +58,8 @@ class Objective:
     def metrics(self) -> Sequence[Tuple[Any, Callable]]:
         return list(itertools.chain(self.quality_metrics.items(), self.complexity_metrics.items()))
 
-    @property
-    def metric_names(self) -> Sequence[str]:
-        return [str(metric_id) for metric_id, _ in self.metrics]
-
-    def format_fitness(self, fitness: Union[Fitness, Sequence[float]]) -> str:
-        """Returns formatted fitness string.
-        Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""
-        values = fitness.values if isinstance(fitness, Fitness) else fitness
-        fitness_info = zip(self.metric_names, values)
-        fitness_info_str = [f'{name}={value:.3f}' for name, value in fitness_info]
-        return f"<{' '.join(fitness_info_str)}>"
+    def get_info(self) -> ObjectiveInfo:
+        return ObjectiveInfo(self.is_multi_objective, self.metric_names)
 
 
 def to_fitness(metric_values: Optional[Sequence[Real]], multi_objective: bool = False) -> Fitness:
