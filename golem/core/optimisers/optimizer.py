@@ -114,13 +114,18 @@ class GraphOptimizer:
         self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()
         self._optimisation_callback: OptimisationCallback = do_nothing_callback
-        mo = False if not graph_optimizer_params else graph_optimizer_params.multi_objective
-        self.history = OptHistory(mo, requirements.history_dir) \
+        self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
 
     @property
     def objective(self) -> Objective:
+        """Returns Objective of this optimizer with information about metrics used."""
         return self._objective
+
+    @property
+    def history(self) -> Optional[OptHistory]:
+        """Returns optimization history"""
+        return self._history
 
     @abstractmethod
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:

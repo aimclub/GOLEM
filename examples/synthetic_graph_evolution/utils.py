@@ -15,7 +15,7 @@ from golem.visualisation.graph_viz import GraphVisualizer
 def fitness_to_stats(history: OptHistory,
                      target_metric_index: int = 0) -> Tuple[np.ndarray, np.ndarray]:
     all_metrics = history.historical_fitness
-    if history._is_multi_objective:
+    if history.objective.is_multi_objective:
         quality = [[metrics[target_metric_index] for metrics in pop]
                    for pop in all_metrics]
     else:
