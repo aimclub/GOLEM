@@ -8,8 +8,6 @@ import pytest
 from examples.synthetic_graph_evolution import abstract_graph_search
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
-from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 
 
 @pytest.mark.parametrize('optimizer_cls', [EvoGraphOptimizer])
@@ -38,7 +36,7 @@ def check_improvement(history: OptHistory):
     pareto_front_metrics = get_mean_metrics(pareto_front)
 
     quality_improved = pareto_front_metrics[0] < first_pop_metrics[0]
-    complexity_improved = pareto_front_metrics[-1] < first_pop_metrics[1]
+    complexity_improved = pareto_front_metrics[-1] < first_pop_metrics[-1]
     return quality_improved, complexity_improved
 
 
