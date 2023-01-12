@@ -23,8 +23,8 @@ class ObjectiveInfo:
         """Returns formatted fitness string.
         Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""
         values = fitness.values if isinstance(fitness, Fitness) else fitness
-        fitness_info = zip(self.metric_names, values)
-        fitness_info_str = [f'{name}={value:.3f}' for name, value in fitness_info]
+        fitness_info_str = [f'{name}={value:.3f}'
+                            for name, value in zip(self.metric_names, values)]
         return f"<{' '.join(fitness_info_str)}>"
 
 
@@ -41,7 +41,7 @@ class Objective(ObjectiveInfo, ObjectiveFunction):
         self.quality_metrics = quality_metrics
         self.complexity_metrics = complexity_metrics or {}
         metric_names = [str(metric_id) for metric_id, _ in self.metrics]
-        super().__init__(is_multi_objective, metric_names)
+        super(ObjectiveInfo).__init__(is_multi_objective, metric_names)
 
     def __call__(self, graph: Graph, **metrics_kwargs: Any) -> Fitness:
         evaluated_metrics = []
