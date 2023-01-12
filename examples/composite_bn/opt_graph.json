@@ -1,0 +1,111 @@
+{
+    "operator": {
+        "_nodes": [
+            {
+                "_nodes_from": [
+                    "ba55dd4f-5fe3-40ff-9a03-bccc73bc7215"
+                ],
+                "content": {
+                    "name": "asia",
+                    "type": "disc",
+                    "parent_model": "BernoulliNB"
+                },
+                "uid": "0d164fb0-1e33-4fab-beb7-d7a141d25b4a",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [
+                    "0d164fb0-1e33-4fab-beb7-d7a141d25b4a"
+                ],
+                "content": {
+                    "name": "tub",
+                    "type": "disc",
+                    "parent_model": "DecisionTreeClassifier"
+                },
+                "uid": "ed50408a-cd72-4e1e-9d42-741c6eb4d394",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [
+                    "ba55dd4f-5fe3-40ff-9a03-bccc73bc7215",
+                    "ef1d5f58-0d0e-481f-b3cf-d9af7e06bceb",
+                    "54713392-8831-4c03-a57e-9367bf332a85"
+                ],
+                "content": {
+                    "name": "smoke",
+                    "type": "disc",
+                    "parent_model": "RandomForestClassifier"
+                },
+                "uid": "7fbeef29-27c2-4e94-9b11-19a3657cecb9",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [
+                    "0d164fb0-1e33-4fab-beb7-d7a141d25b4a",
+                    "ef1d5f58-0d0e-481f-b3cf-d9af7e06bceb"
+                ],
+                "content": {
+                    "name": "lung",
+                    "type": "disc",
+                    "parent_model": "MLPClassifier"
+                },
+                "uid": "5b683cc4-1c16-46a5-827a-00e89fca7436",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [],
+                "content": {
+                    "name": "bronc",
+                    "type": "disc",
+                    "parent_model": "None"
+                },
+                "uid": "ba55dd4f-5fe3-40ff-9a03-bccc73bc7215",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [
+                    "5b683cc4-1c16-46a5-827a-00e89fca7436"
+                ],
+                "content": {
+                    "name": "either",
+                    "type": "disc",
+                    "parent_model": "LGBMClassifier"
+                },
+                "uid": "54713392-8831-4c03-a57e-9367bf332a85",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [
+                    "ed50408a-cd72-4e1e-9d42-741c6eb4d394"
+                ],
+                "content": {
+                    "name": "xray",
+                    "type": "disc",
+                    "parent_model": "RandomForestClassifier"
+                },
+                "uid": "ef1d5f58-0d0e-481f-b3cf-d9af7e06bceb",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            },
+            {
+                "_nodes_from": [
+                    "ba55dd4f-5fe3-40ff-9a03-bccc73bc7215",
+                    "54713392-8831-4c03-a57e-9367bf332a85",
+                    "7fbeef29-27c2-4e94-9b11-19a3657cecb9"
+                ],
+                "content": {
+                    "name": "dysp",
+                    "type": "disc",
+                    "parent_model": "LogisticRegression"
+                },
+                "uid": "55823bc6-28d0-48bb-9bc1-3b05c74faef4",
+                "_class_path": "golem.core.dag.linked_graph_node/LinkedGraphNode"
+            }
+        ],
+        "_postprocess_nodes": {
+            "_class_path": "golem.core.dag.linked_graph/LinkedGraph._empty_postprocess"
+        },
+        "_class_path": "golem.core.dag.linked_graph/LinkedGraph"
+    },
+    "unique_pipeline_id": 1,
+    "_class_path": "golem.core.dag.graph_delegate/GraphDelegate"
+}

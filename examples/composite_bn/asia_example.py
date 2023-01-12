@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 from composite_model import CompositeModel
 from composite_node import CompositeNode
 from ML import ML_models
+from golem.serializers.serializer import default_save
 
 # задаем fitness-функцию
 def composite_metric(graph: CompositeModel, data: pd.DataFrame):
@@ -458,6 +459,14 @@ def run_example():
     plt.ylabel('Count') 
     plt.xlabel('Values') 
     plt.show()
+
+    for node in optimized_graph.nodes:
+        if node.content['parent_model'] == None:
+            node.content['parent_model']  = 'None'
+        else:
+            model_name = str(node.content['parent_model']).split('.')[-1][:-2]
+            node.content['parent_model']  = model_name
+    default_save(optimized_graph, parentdir + '\\examples\\composite_bn\\' + 'opt_graph.json')    
 
     #  отрисовка полученного графа
     graph = optimized_graph
