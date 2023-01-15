@@ -13,7 +13,7 @@ from numpy import linalg as la
 
 from scipy.sparse import issparse
 
-from netcomp_components.matrices import _flat, _eps
+from libs.netcomp.matrices import _flat, _eps
 
 
 ######################

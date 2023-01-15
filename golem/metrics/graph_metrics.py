@@ -7,9 +7,9 @@ from networkx import graph_edit_distance
 
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.metrics.graph_features import degree_stats
-from netcomp_components.distance import edit_distance
-from netcomp_components.eigenstuff import _eigs, normalized_laplacian_eig
-from netcomp_components.matrices import laplacian_matrix
+from libs.netcomp import edit_distance
+from libs.netcomp import _eigs, normalized_laplacian_eig
+from libs.netcomp import laplacian_matrix
 
 
 def nxgraph_stats(graph: nx.Graph):
