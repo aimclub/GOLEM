@@ -80,3 +80,7 @@ class GraphDelegate(Graph):
     @property
     def depth(self) -> int:
         return self.operator.depth
+
+    @property
+    def structure(self) -> str:
+        return self.operator.structure

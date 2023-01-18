@@ -169,6 +169,11 @@ class LinkedGraph(Graph, Copyable):
                     edges.append((parent_node, node))
         return edges
 
+    @copy_doc(Graph)
+    @property
+    def structure(self):
+        return '\n'.join([str(self), *(f'{node.name} - {node.parameters}' for node in self.nodes)])
+
 
 def get_distance_between(graph_1: Graph, graph_2: Graph) -> int:
     """

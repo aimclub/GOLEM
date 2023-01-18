@@ -31,12 +31,13 @@ def test_multiobjective_improvement(optimizer_cls):
 def check_improvement(history: OptHistory):
     first_pop = history.individuals[1]
     pareto_front = history.archive_history[-1]
-
+    print(first_pop)
+    print(pareto_front)
     first_pop_metrics = get_mean_metrics(first_pop)
     pareto_front_metrics = get_mean_metrics(pareto_front)
 
     quality_improved = pareto_front_metrics[0] < first_pop_metrics[0]
-    complexity_improved = pareto_front_metrics[-1] < first_pop_metrics[-1]
+    complexity_improved = pareto_front_metrics[-1] < first_pop_metrics[1]
     return quality_improved, complexity_improved
 
 

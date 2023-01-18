@@ -43,6 +43,17 @@ class LinkedGraphNode(GraphNode):
     def name(self) -> str:
         return str(self.content.get('name'))
 
+    @property
+    def parameters(self) -> dict:
+        return self.content.get('params', {})
+
+    @parameters.setter
+    def parameters(self, new_parameters):
+        if self.content.get('params'):
+            self.content['params'] = {**self.content['params'], **new_parameters}
+        else:
+            self.content['params'] = new_parameters
+
     def __hash__(self) -> int:
         return hash(self.uid)
 

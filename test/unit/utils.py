@@ -1,4 +1,5 @@
 import time
+from numbers import Number
 from random import randint
 from typing import Sequence, Optional, List, Callable
 
@@ -152,6 +153,16 @@ class RandomMetric:
     def get_value(graph, *args, delay=0, **kwargs) -> float:
         time.sleep(delay)
         return randint(0, 1000)
+
+
+class CustomMetric:
+    @staticmethod
+    def get_value(graph: Graph, *args, **kwargs) -> float:
+        params_sum = 0
+        for node in graph.nodes:
+            params = list(filter(lambda x: isinstance(x, Number), node.parameters.values()))
+            params_sum += sum(params)
+        return -params_sum
 
 
 class DepthMetric:
