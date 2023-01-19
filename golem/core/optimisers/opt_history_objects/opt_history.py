@@ -27,14 +27,14 @@ class OptHistory:
     Can be used for any type of graph that is serializable with Serializer.
 
     Args:
-        is_multi_objective: specifies if history is built for multi-objective optimization.
+        objective: information about metrics (metric names and if it's multi-objective)
         default_save_dir: default directory used for saving history when not explicit path is provided.
     """
 
     def __init__(self,
                  objective: Optional[ObjectiveInfo] = None,
                  default_save_dir: Optional[os.PathLike] = None):
-        self.objective = objective or ObjectiveInfo()
+        self._objective = objective or ObjectiveInfo()
         self.individuals: List[Generation] = []
         self.archive_history: List[List[Individual]] = []
         self._tuning_result: Optional[Graph] = None
@@ -49,6 +49,10 @@ class OptHistory:
         else:
             default_save_dir = default_data_dir()
         self._default_save_dir = str(default_save_dir)
+
+    @property
+    def objective(self):
+        return self._objective
 
     def is_empty(self) -> bool:
         return not self.individuals

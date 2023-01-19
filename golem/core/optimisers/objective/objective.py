@@ -41,7 +41,7 @@ class Objective(ObjectiveInfo, ObjectiveFunction):
         self.quality_metrics = quality_metrics
         self.complexity_metrics = complexity_metrics or {}
         metric_names = [str(metric_id) for metric_id, _ in self.metrics]
-        super(ObjectiveInfo).__init__(is_multi_objective, metric_names)
+        ObjectiveInfo.__init__(self, is_multi_objective, metric_names)
 
     def __call__(self, graph: Graph, **metrics_kwargs: Any) -> Fitness:
         evaluated_metrics = []
