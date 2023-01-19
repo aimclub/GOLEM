@@ -7,9 +7,16 @@ from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultanious_tuning import SimultaniousTuner
 from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
-    opt_graph_with_params
+    opt_graph_with_params, MockNode, MockDomainStructure
 from test.unit.utils import CustomMetric
 
+
+def not_tunable_mock_graph():
+    node_d = MockNode('d')
+    node_final = MockNode('f', nodes_from=[node_d])
+    graph = MockDomainStructure([node_final])
+
+    return graph
 
 @pytest.fixture()
 def search_space():
@@ -36,6 +43,8 @@ def search_space():
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
+                          (not_tunable_mock_graph(), MockAdapter(),
+                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
                           (opt_graph_with_params(), None,
                            ObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
 def test_general_tuner(search_space, tuner_cls, graph, adapter, obj_eval):
@@ -47,7 +56,7 @@ def test_general_tuner(search_space, tuner_cls, graph, adapter, obj_eval):
     assert init_metric <= final_metric
 
 
-@pytest.mark.parametrize('graph', [mock_graph_with_params(), opt_graph_with_params()])
+@pytest.mark.parametrize('graph', [mock_graph_with_params(), opt_graph_with_params(), not_tunable_mock_graph()])
 def test_node_tuning(search_space, graph):
     obj_eval = MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))
     adapter = MockAdapter()
