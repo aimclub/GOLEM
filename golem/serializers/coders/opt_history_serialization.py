@@ -6,6 +6,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.generation import Generation
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from .. import any_from_json, any_to_json
+from ...core.optimisers.objective.objective import ObjectiveInfo
 
 MISSING_INDIVIDUAL_ARGS = {
     'metadata': {'MISSING_INDIVIDUAL': 'This individual could not be restored during `OptHistory.load()`'}
@@ -93,10 +94,10 @@ def _deserialize_parent_individuals(individuals: List[Individual],
 
 
 def opt_history_from_json(cls: Type[OptHistory], json_obj: Dict[str, Any]) -> OptHistory:
-    # backward compatibility with history._objective field
-    if '_objective' in json_obj:
-        json_obj['_is_multi_objective'] = json_obj['_objective'].is_multi_objective
-        del json_obj['_objective']
+    # backward compatibility with history._is_multi_objective field
+    if '_is_multi_objective' in json_obj:
+        json_obj['_objective'] = ObjectiveInfo(json_obj['_is_multi_objective'])
+        del json_obj['_is_multi_objective']
 
     history = any_from_json(cls, json_obj)
     # Read all individuals from history.

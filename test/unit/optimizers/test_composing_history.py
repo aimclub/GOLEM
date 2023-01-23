@@ -245,6 +245,7 @@ def test_newly_generated_history(n_jobs: int):
     assert len(history.archive_history) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
     assert len(history.initial_assumptions) == 5
     assert len(history.final_choices) == 1
+    assert hasattr(history, 'objective')
     _test_individuals_in_history(history)
     # Test history dumps
     dumped_history_json = history.save()
