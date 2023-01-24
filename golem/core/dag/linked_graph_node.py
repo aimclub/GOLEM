@@ -26,7 +26,7 @@ class LinkedGraphNode(GraphNode):
         if isinstance(content, str):
             content = {'name': content}
 
-        self.content = content
+        self.content: dict = content
         self._nodes_from = UniqueList(nodes_from or ())
 
         super().__init__()
@@ -50,7 +50,7 @@ class LinkedGraphNode(GraphNode):
     @parameters.setter
     def parameters(self, new_parameters):
         if self.content.get('params'):
-            self.content['params'] = {**self.content['params'], **new_parameters}
+            self.content['params'].update(new_parameters)
         else:
             self.content['params'] = new_parameters
 

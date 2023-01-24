@@ -1,9 +1,14 @@
-import numpy as np
-from hyperopt import hp
+from typing import Dict, Tuple, Callable, List
 
 
 class SearchSpace:
-    def __init__(self, search_space: dict):
+    """
+    Args:
+        search_space: dictionary with parameters and their search_space
+            {'operation_name': {'param_name': (hyperopt distribution function, [sampling scope]), ...}, ...},
+            e.g. ``{'operation_name': {'param1': (hp.uniformint, [2, 21]), ...}, ..}
+    """
+    def __init__(self, search_space: Dict[str, Dict[str, Tuple[Callable, List]]]):
         self.parameters_per_operation = search_space
 
     def get_operation_parameter_range(self, operation_name: str, parameter_name: str = None, label: str = 'default'):
@@ -11,11 +16,13 @@ class SearchSpace:
         Method return hyperopt object with search_space from search_space dictionary
         If parameter name is not defined - return all available operations
 
-        :param operation_name: name of the operation
-        :param parameter_name: name of hyperparameter of particular operation
-        :param label: label to assign in hyperopt pyll
+        Args:
+            operation_name: name of the operation
+            parameter_name: name of hyperparameter of particular operation
+            label: label to assign in hyperopt pyll
 
-        :return : dictionary with appropriate range
+        Returns:
+            dictionary with appropriate range
         """
 
         # Get available parameters for current operation

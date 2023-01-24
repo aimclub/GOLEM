@@ -5,7 +5,7 @@ from hyperopt import hp
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
-from golem.core.tuning.simultanious_tuning import SimultaniousTuner
+from golem.core.tuning.simultaneous_tuning import SimultaneousTuner
 from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
     opt_graph_with_params, MockNode, MockDomainStructure
 from test.unit.utils import CustomMetric
@@ -39,21 +39,32 @@ def search_space():
     return SearchSpace(params_per_operation)
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaniousTuner, SequentialTuner])
+@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
-                          (not_tunable_mock_graph(), MockAdapter(),
-                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
                           (opt_graph_with_params(), None,
                            ObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
-def test_general_tuner(search_space, tuner_cls, graph, adapter, obj_eval):
+def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval):
     init_metric = obj_eval.evaluate(graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
     tuned_graph = tuner.tune(graph)
     final_metric = obj_eval.evaluate(tuned_graph)
     assert final_metric is not None
-    assert init_metric <= final_metric
+    assert init_metric < final_metric
+
+
+@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner])
+@pytest.mark.parametrize('graph, adapter, obj_eval',
+                         [(not_tunable_mock_graph(), MockAdapter(),
+                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
+def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval):
+    init_metric = obj_eval.evaluate(graph)
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
+    tuned_graph = tuner.tune(graph)
+    final_metric = obj_eval.evaluate(tuned_graph)
+    assert final_metric is not None
+    assert init_metric == final_metric
 
 
 @pytest.mark.parametrize('graph', [mock_graph_with_params(), opt_graph_with_params(), not_tunable_mock_graph()])

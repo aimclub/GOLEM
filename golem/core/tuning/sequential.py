@@ -118,7 +118,7 @@ class SequentialTuner(HyperoptTuner):
                                                         operation_name=operation_name)
 
         if node_params is None:
-            self.log.info(f'"{operation_name}" operation has no parameters to optimize')
+            self._stop_tuning_with_message(f'"{operation_name}" operation has no parameters to optimize')
         else:
             # Apply tuning for current node
             self._optimize_node(graph=graph,

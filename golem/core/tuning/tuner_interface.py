@@ -8,12 +8,12 @@ from hyperopt.early_stop import no_progress_loss
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import DomainStructureType, IdentityAdapter
+from golem.core.constants import MAX_TUNING_METRIC_VALUE
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
+from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace
-
-MAX_METRIC_VALUE = np.inf
 
 
 class HyperoptTuner(ABC):
@@ -28,6 +28,9 @@ class HyperoptTuner(ABC):
       search_space: PipelineSearchSpace instance
       algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
       n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
+      deviation: required improvement (in percent) of a metric to return tuned graph.
+        By default, ``deviation=0.05``, which means that tuned graph will be returned
+        if it's metric will be at least 0.05% better than the initial.
     """
 
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
@@ -36,7 +39,8 @@ class HyperoptTuner(ABC):
                  iterations=100, early_stopping_rounds=None,
                  timeout: timedelta = timedelta(minutes=5),
                  algo: Callable = None,
-                 n_jobs: int = -1):
+                 n_jobs: int = -1,
+                 deviation: float = 0.05):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
         iteration_stop_count = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
@@ -48,9 +52,10 @@ class HyperoptTuner(ABC):
         self.n_jobs = n_jobs
         objective_evaluate.eval_n_jobs = self.n_jobs
         self.objective_evaluate = self.adapter.adapt_func(objective_evaluate.evaluate)
-        self._default_metric_value = MAX_METRIC_VALUE
+        self._default_metric_value = MAX_TUNING_METRIC_VALUE
         self.search_space = search_space
         self.algo = algo
+        self.deviation = deviation
 
         self.log = default_log(self)
 
@@ -118,8 +123,8 @@ class HyperoptTuner(ABC):
         prefix_init_phrase = 'Return init graph due to the fact that obtained metric'
 
         # 0.05% deviation is acceptable
-        deviation = (self.init_metric / 100.0) * 0.05
-        init_metric = self.init_metric + deviation * (-np.sign(self.init_metric))
+        deviation_value = (self.init_metric / 100.0) * self.deviation
+        init_metric = self.init_metric + deviation_value * (-np.sign(self.init_metric))
         if self.obtained_metric is None:
             self.log.info(f'{prefix_init_phrase} is None. Initial metric is {abs(init_metric):.3f}')
             final_graph = self.init_graph
@@ -140,3 +145,10 @@ class HyperoptTuner(ABC):
         else:
             self.log.message(f'Final metric is None')
         return final_graph
+
+    def _update_remaining_time(self, tuner_timer: Timer):
+        self.max_seconds = self.max_seconds - tuner_timer.minutes_from_start * 60
+
+    def _stop_tuning_with_message(self, message: str):
+        self.log.message(message)
+        self.obtained_metric = self.init_metric

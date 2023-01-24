@@ -236,7 +236,7 @@ class Graph(ABC):
     @property
     @abstractmethod
     def structure(self):
-        """ Structural information about the graph
+        """ Returns structural information about the graph - names and parameters of graph nodes.
 
             Returns:
                 string with graph structure
