@@ -5,11 +5,10 @@ from typing import Callable, Optional
 from hyperopt import tpe, fmin, space_eval
 
 from golem.core.adapter import BaseOptimizationAdapter
-from golem.core.adapter.adapter import DomainStructureType
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
 from golem.core.tuning.search_space import SearchSpace, convert_params
-from golem.core.tuning.tuner_interface import HyperoptTuner
+from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
 
 
 class SequentialTuner(HyperoptTuner):
@@ -30,7 +29,7 @@ class SequentialTuner(HyperoptTuner):
 
         self.inverse_node_order = inverse_node_order
 
-    def tune(self, graph: DomainStructureType) -> DomainStructureType:
+    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
         """ Method for hyperparameters tuning on the entire graph
 
         Args:
@@ -96,7 +95,7 @@ class SequentialTuner(HyperoptTuner):
 
         return nodes_ids
 
-    def tune_node(self, graph: DomainStructureType, node_index: int) -> DomainStructureType:
+    def tune_node(self, graph: DomainGraphForTune, node_index: int) -> DomainGraphForTune:
         """ Method for hyperparameters tuning for particular node
 
         Args:

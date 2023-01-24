@@ -3,19 +3,18 @@ from typing import Tuple, Optional
 
 from hyperopt import Trials, fmin, space_eval
 
-from golem.core.adapter.adapter import DomainStructureType
 from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import get_node_operation_parameter_label, convert_params
-from golem.core.tuning.tuner_interface import HyperoptTuner
+from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
 
 
 class SimultaneousTuner(HyperoptTuner):
     """
         Class for hyperparameters optimization for all nodes simultaneously
     """
-    def tune(self, graph: DomainStructureType, show_progress: bool = True) -> DomainStructureType:
+    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         """ Function for hyperparameters tuning on the entire graph
 
         Args:

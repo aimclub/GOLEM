@@ -1,19 +1,21 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import Callable
+from typing import Callable, TypeVar
 
 import numpy as np
 from hyperopt.early_stop import no_progress_loss
 
 from golem.core.adapter import BaseOptimizationAdapter
-from golem.core.adapter.adapter import DomainStructureType, IdentityAdapter
+from golem.core.adapter.adapter import IdentityAdapter
 from golem.core.constants import MAX_TUNING_METRIC_VALUE
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
 from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace
+
+DomainGraphForTune = TypeVar('DomainGraphForTune')
 
 
 class HyperoptTuner(ABC):
@@ -35,7 +37,7 @@ class HyperoptTuner(ABC):
 
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
-                 adapter: BaseOptimizationAdapter[DomainStructureType] = None,
+                 adapter: BaseOptimizationAdapter = None,
                  iterations=100, early_stopping_rounds=None,
                  timeout: timedelta = timedelta(minutes=5),
                  algo: Callable = None,
@@ -60,7 +62,7 @@ class HyperoptTuner(ABC):
         self.log = default_log(self)
 
     @abstractmethod
-    def tune(self, graph: DomainStructureType) -> DomainStructureType:
+    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
         """
         Function for hyperparameters tuning on the graph
 
