@@ -133,12 +133,12 @@ class HyperoptTuner(ABC):
             final_metric = self.init_metric
         elif self.obtained_metric <= init_metric:
             self.log.info(f'{prefix_tuned_phrase} {abs(self.obtained_metric):.3f} equal or '
-                          f'better than initial (+ 0.05% deviation) {abs(init_metric):.3f}')
+                          f'better than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
             final_graph = tuned_graph
             final_metric = self.obtained_metric
         else:
             self.log.info(f'{prefix_init_phrase} {abs(self.obtained_metric):.3f} '
-                          f'worse than initial (+ 0.05% deviation) {abs(init_metric):.3f}')
+                          f'worse than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
             final_graph = self.init_graph
             final_metric = self.init_metric
         self.log.message(f'Final graph: {final_graph.structure}')
