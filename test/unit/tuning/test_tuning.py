@@ -7,7 +7,7 @@ from hyperopt import hp
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
-from golem.core.tuning.simultaneous_tuning import SimultaneousTuner
+from golem.core.tuning.simultaneous import SimultaneousTuner
 from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
     opt_graph_with_params, MockNode, MockDomainStructure
 from test.unit.utils import CustomMetric
