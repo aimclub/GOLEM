@@ -295,10 +295,10 @@ def test_collect_intermediate_metric():
     evaluate = dispatcher.dispatch(objective_eval)
 
     population = [create_individual(evaluated=False)]
-    evaluated_pipeline = evaluate(population)[0].graph
-    restored_pipeline = graph_gen_params.adapter.restore(evaluated_pipeline)
+    evaluated_graph = evaluate(population)[0].graph
+    restored_graph = graph_gen_params.adapter.restore(evaluated_graph)
 
-    assert_intermediate_metrics(restored_pipeline)
+    assert_intermediate_metrics(restored_graph)
 
 
 def assert_intermediate_metrics(graph: MockDomainStructure):

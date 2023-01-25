@@ -56,3 +56,24 @@ class MockObjectiveEvaluate(ObjectiveEvaluate):
         for node in graph.nodes:
             intermediate_graph = MockDomainStructure([node])
             node.content['intermediate_metric'] = self._objective(intermediate_graph)
+
+
+def mock_graph_with_params():
+    node_a = MockNode('a')
+    node_b = MockNode({'name': 'b', 'params': {'b2': 0.7, 'b3': 2}})
+    node_c = MockNode('c', nodes_from=[node_a])
+    node_d = MockNode('d', nodes_from=[node_b])
+    node_final = MockNode('e', nodes_from=[node_c, node_d])
+    graph = MockDomainStructure([node_final])
+
+    return graph
+
+
+def opt_graph_with_params():
+    node_a = OptNode('a')
+    node_b = OptNode({'name': 'b', 'params': {'b2': 0.7, 'b3': 2}})
+    node_c = OptNode('c', nodes_from=[node_a])
+    node_d = OptNode('d', nodes_from=[node_b])
+    node_final = OptNode('e', nodes_from=[node_c, node_d])
+    graph = OptGraph(node_final)
+    return graph
