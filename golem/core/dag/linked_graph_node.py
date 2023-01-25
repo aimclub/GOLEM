@@ -64,7 +64,7 @@ class LinkedGraphNode(GraphNode):
         return self.__str__()
 
     def description(self) -> str:
-        node_operation = self.name
+        node_operation = self.content.get('name')
         if node_operation is None:
             raise ValueError('Unknown content in the node: expected content[`name`], got None')
         # TODO: possibly unify with __repr__ & don't duplicate Operation.description
