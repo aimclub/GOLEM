@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Generic
 
 import numpy as np
 from hyperopt.early_stop import no_progress_loss
@@ -18,7 +18,7 @@ from golem.core.tuning.search_space import SearchSpace
 DomainGraphForTune = TypeVar('DomainGraphForTune')
 
 
-class HyperoptTuner(ABC):
+class HyperoptTuner(Generic[DomainGraphForTune]):
     """
     Base class for hyperparameters optimization based on hyperopt library
     
@@ -27,7 +27,7 @@ class HyperoptTuner(ABC):
       adapter: the function for processing of external object that should be optimized
       iterations: max number of iterations
       timeout: max time for tuning
-      search_space: PipelineSearchSpace instance
+      search_space: SearchSpace instance
       algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
       n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
       deviation: required improvement (in percent) of a metric to return tuned graph.

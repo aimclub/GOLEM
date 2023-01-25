@@ -112,10 +112,10 @@ def test_changes_to_transformed_dont_affect_origin(adapter, graph):
 
 def test_no_opt_or_graph_nodes_after_adapt_so_complex_graph():
     adapter = MockAdapter()
-    pipeline = get_complex_graph()
-    adapter.adapt(pipeline)
+    graph = get_complex_graph()
+    adapter.adapt(graph)
 
-    assert not find_first(pipeline, lambda n: type(n) in (GraphNode, OptNode))
+    assert not find_first(graph, lambda n: type(n) in (GraphNode, OptNode))
 
 
 def _check_nodes_references_correct(graph):

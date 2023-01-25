@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pytest
 from hyperopt import hp
@@ -17,6 +19,7 @@ def not_tunable_mock_graph():
     graph = MockDomainStructure([node_final])
 
     return graph
+
 
 @pytest.fixture()
 def search_space():
@@ -48,7 +51,7 @@ def search_space():
 def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval):
     init_metric = obj_eval.evaluate(graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
-    tuned_graph = tuner.tune(graph)
+    tuned_graph = tuner.tune(deepcopy(graph))
     final_metric = obj_eval.evaluate(tuned_graph)
     assert final_metric is not None
     assert init_metric < final_metric
@@ -58,10 +61,10 @@ def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(not_tunable_mock_graph(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
-def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval):
+def test_tuner_with_no_tunable_params(search_space, tuner_cls, graph, adapter, obj_eval):
     init_metric = obj_eval.evaluate(graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
-    tuned_graph = tuner.tune(graph)
+    tuned_graph = tuner.tune(deepcopy(graph))
     final_metric = obj_eval.evaluate(tuned_graph)
     assert final_metric is not None
     assert init_metric == final_metric
