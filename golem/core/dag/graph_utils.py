@@ -126,3 +126,13 @@ def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:
         return mapped_node
 
     return list(map(map_impl, nodes))
+
+
+def graph_structure(graph: 'Graph') -> str:
+    """ Returns structural information about the graph - names and parameters of graph nodes.
+    Represents graph info in easily readable way.
+
+    Returns:
+        str: graph structure
+    """
+    return '\n'.join([str(graph), *(f'{node.name} - {node.parameters}' for node in graph.nodes)])

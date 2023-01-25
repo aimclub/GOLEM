@@ -9,6 +9,7 @@ from hyperopt.early_stop import no_progress_loss
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import IdentityAdapter
 from golem.core.constants import MAX_TUNING_METRIC_VALUE
+from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
@@ -103,7 +104,7 @@ class HyperoptTuner(Generic[DomainGraphForTune]):
         self.init_graph = deepcopy(graph)
 
         self.init_metric = self.get_metric_value(graph=self.init_graph)
-        self.log.message(f'Initial graph: {self.init_graph.structure} \n'
+        self.log.message(f'Initial graph: {graph_structure(self.init_graph)} \n'
                          f'Initial metric: {abs(self.init_metric):.3f}')
 
     def final_check(self, tuned_graph: OptGraph) -> OptGraph:
@@ -141,7 +142,7 @@ class HyperoptTuner(Generic[DomainGraphForTune]):
                           f'worse than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
             final_graph = self.init_graph
             final_metric = self.init_metric
-        self.log.message(f'Final graph: {final_graph.structure}')
+        self.log.message(f'Final graph: {graph_structure(final_graph)}')
         if final_metric is not None:
             self.log.message(f'Final metric: {abs(final_metric):.3f}')
         else:

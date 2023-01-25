@@ -233,16 +233,6 @@ class Graph(ABC):
         """
         return self.root_node.descriptive_id
 
-    @property
-    @abstractmethod
-    def structure(self):
-        """ Returns structural information about the graph - names and parameters of graph nodes.
-
-            Returns:
-                string with graph structure
-        """
-        raise NotImplementedError
-
     def __str__(self):
         return str(self.graph_description)
 
