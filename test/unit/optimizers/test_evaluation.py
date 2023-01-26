@@ -6,7 +6,7 @@ import pytest
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.fitness import Fitness, null_fitness
-from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SimpleDispatcher, \
+from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher, \
     ObjectiveEvaluationDispatcher
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -32,7 +32,7 @@ def invalid_objective(graph: Graph) -> Fitness:
 
 @pytest.mark.parametrize(
     'dispatcher',
-    [SimpleDispatcher(DirectAdapter()),
+    [SequentialDispatcher(DirectAdapter()),
      MultiprocessingDispatcher(DirectAdapter()),
      MultiprocessingDispatcher(DirectAdapter(), n_jobs=-1)]
 )
@@ -53,7 +53,7 @@ def test_dispatchers_with_and_without_multiprocessing(dispatcher):
 @pytest.mark.parametrize(
     'dispatcher',
     [MultiprocessingDispatcher(DirectAdapter()),
-     SimpleDispatcher(DirectAdapter())]
+     SequentialDispatcher(DirectAdapter())]
 )
 def test_dispatchers_with_faulty_objectives(objective, dispatcher):
     adapter, population = set_up_tests()
@@ -64,7 +64,7 @@ def test_dispatchers_with_faulty_objectives(objective, dispatcher):
 
 @pytest.mark.parametrize('dispatcher', [
     MultiprocessingDispatcher(DirectAdapter()),
-    SimpleDispatcher(DirectAdapter()),
+    SequentialDispatcher(DirectAdapter()),
 ])
 def test_dispatcher_with_timeout(dispatcher: ObjectiveEvaluationDispatcher):
     adapter, population = set_up_tests()

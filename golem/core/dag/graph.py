@@ -17,7 +17,7 @@ class Graph(ABC):
         """Adds new node to the graph together with its parent nodes.
 
         Args:
-            nodes: graph nodes
+            node: graph nodes
         """
         raise NotImplementedError()
 

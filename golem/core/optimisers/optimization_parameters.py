@@ -35,6 +35,7 @@ class OptimizationParameters:
     :param n_jobs: num of n_jobs
     :param show_progress: bool indicating whether to show progress using tqdm or not
     :param collect_intermediate_metric: save metrics for intermediate (non-root) nodes in graph
+    :param parallelization_mode: identifies the way to parallelize population evaluation
 
     History options:
 
@@ -56,6 +57,7 @@ class OptimizationParameters:
     n_jobs: int = 1
     show_progress: bool = True
     collect_intermediate_metric: bool = False
+    parallelization_mode: str = 'populational'
 
     keep_history: bool = True
     history_dir: Optional[str] = field(default_factory=default_data_dir)

@@ -2,7 +2,7 @@ from random import choice
 from typing import Optional, Sequence
 
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.genetic.evaluation import SimpleDispatcher
+from golem.core.optimisers.genetic.evaluation import SequentialDispatcher
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
 from golem.core.optimisers.graph import OptGraph
@@ -37,7 +37,7 @@ class RandomSearchOptimizer(GraphOptimizer):
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
 
-        dispatcher = SimpleDispatcher(self.graph_generation_params.adapter)
+        dispatcher = SequentialDispatcher(self.graph_generation_params.adapter)
         evaluator = dispatcher.dispatch(objective, self.timer)
 
         self.current_iteration_num = 0
