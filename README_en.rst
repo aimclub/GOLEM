@@ -110,7 +110,12 @@ workshops for their valuable advice and suggestions.
 Supported by
 ============
 
-The study is supported by the Research Center `Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`__ of `ITMO University <https://en.itmo.ru/>`__ (Saint Petersburg, Russia)
+.. image:: /docs/source/img/AIM-Strong_Sign_Norm-01_Colors.svg
+    :width: 400px
+    :align: center
+    :alt: Strong AI in industry logo
+
+The study is supported by the Research Center `Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`__ of `ITMO University <https://en.itmo.ru/>`__.
 
 Contacts
 ========
