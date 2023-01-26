@@ -94,7 +94,7 @@ class ObjectiveEvaluationDispatcher(ABC):
         return individuals_evaluated
 
 
-class BasePipelineEvaluationDispatcher(ObjectiveEvaluationDispatcher):
+class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
     """Base class for dispatchers that evaluate objective function on population.
 
     Usage: call `dispatch(objective_function)` to get evaluation function.
@@ -127,7 +127,7 @@ class BasePipelineEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         and allows only to evaluate population with provided objective."""
         self._objective_eval = objective
         self.timer = timer or get_forever_timer()
-        return self.evaluate_with_cache
+        return self.evaluate_population
 
     def set_evaluation_callback(self, callback: Optional[GraphFunction]):
         self._post_eval_callback = callback
@@ -144,8 +144,6 @@ class BasePipelineEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         if logs_initializer is not None:
             # in case of multiprocessing run
             Log.setup_in_mp(*logs_initializer)
-
-        graph = self.evaluation_cache.get(cache_key, graph)
 
         adapted_evaluate = self._adapter.adapt_func(self._evaluate_graph)
         start_time = timeit.default_timer()
@@ -173,7 +171,7 @@ class BasePipelineEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         return fitness, domain_graph
 
 
-class MultiprocessingDispatcher(BasePipelineEvaluationDispatcher):
+class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
     """Evaluates objective function on population using multiprocessing pool
     and optionally model evaluation cache with RemoteEvaluator.
 
@@ -247,7 +245,7 @@ class MultiprocessingDispatcher(BasePipelineEvaluationDispatcher):
             self.evaluation_cache = {ind.uid: graph for ind, graph in zip(population, computed_graphs)}
 
 
-class SequentialDispatcher(MultiprocessingDispatcher):
+class SequentialDispatcher(BaseGraphEvaluationDispatcher):
     """Evaluates objective function on population in sequential way.
 
         Usage: call `dispatch(objective_function)` to get evaluation function.
