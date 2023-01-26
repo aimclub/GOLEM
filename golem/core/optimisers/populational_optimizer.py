@@ -1,12 +1,11 @@
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Dict
 
-import datetime
 from tqdm import tqdm
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
-from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
+from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph
@@ -44,10 +43,14 @@ class PopulationalOptimizer(GraphOptimizer):
         self.population = None
         self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
-        self.eval_dispatcher = MultiprocessingDispatcher(adapter=graph_generation_params.adapter,
-                                                         n_jobs=requirements.n_jobs,
-                                                         graph_cleanup_fn=_try_unfit_graph,
-                                                         delegate_evaluator=graph_generation_params.remote_evaluator)
+
+        dispatcher_type = MultiprocessingDispatcher if self.requirements.parallelization_mode == 'populational' else \
+            SequentialDispatcher
+
+        self.eval_dispatcher = dispatcher_type(adapter=graph_generation_params.adapter,
+                                               n_jobs=requirements.n_jobs,
+                                               graph_cleanup_fn=_try_unfit_graph,
+                                               delegate_evaluator=graph_generation_params.remote_evaluator)
 
         # early_stopping_iterations and early_stopping_timeout may be None, so use some obvious max number
         max_stagnation_length = requirements.early_stopping_iterations or requirements.num_of_generations
