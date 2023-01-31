@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from typing import Sequence, Union, Any
 
+from golem.core.optimisers.genetic.operators.base_mutations import MutationStrengthEnum
 from golem.core.optimisers.optimizer import AlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.elitism import ElitismTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum, MutationStrengthEnum
+from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.regularization import RegularizationTypesEnum
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 
