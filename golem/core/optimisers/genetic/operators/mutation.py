@@ -1,21 +1,11 @@
 from copy import deepcopy
-from functools import partial
 from random import choice, random
-from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashable
+from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
 import numpy as np
 
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.genetic.operators.base_mutations import (
-    no_mutation,
-    simple_mutation,
-    growth_mutation,
-    reduce_mutation,
-    single_add_mutation,
-    single_edge_mutation,
-    single_drop_mutation,
-    single_change_mutation, MutationTypesEnum
-)
+from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -35,9 +25,13 @@ class Mutation(Operator):
     def __init__(self,
                  parameters: 'GPAlgorithmParameters',
                  requirements: GraphRequirements,
-                 graph_gen_params: GraphGenerationParams):
+                 graph_gen_params: GraphGenerationParams,
+                 mutations_repo: Optional[MutationRepo] = None
+                 ):
         super().__init__(parameters, requirements)
         self.graph_generation_params = graph_gen_params
+        self.parameters = parameters
+        self._mutations_repo = mutations_repo or base_mutations_repo
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
@@ -98,22 +92,6 @@ class Mutation(Operator):
         if isinstance(mutation_type, Callable):
             mutation_func = mutation_type
         else:
-            mutation_func = self.mutation_by_type(mutation_type)
-        return self.graph_generation_params.adapter.adapt_func(mutation_func)
-
-    def mutation_by_type(self, mutation_type: MutationTypesEnum) -> Callable:
-        mutations = {
-            MutationTypesEnum.none: no_mutation,
-            MutationTypesEnum.simple: simple_mutation,
-            MutationTypesEnum.growth: partial(growth_mutation, local_growth=False),
-            MutationTypesEnum.local_growth: partial(growth_mutation, local_growth=True),
-            MutationTypesEnum.reduce: reduce_mutation,
-            MutationTypesEnum.single_add: single_add_mutation,
-            MutationTypesEnum.single_edge: single_edge_mutation,
-            MutationTypesEnum.single_drop: single_drop_mutation,
-            MutationTypesEnum.single_change: single_change_mutation,
-        }
-        if mutation_type in mutations:
-            return mutations[mutation_type]
-        else:
-            raise ValueError(f'Required mutation type is not found: {mutation_type}')
+            mutation_func = self._mutations_repo[mutation_type]
+        adapted_mutation_func = self.graph_generation_params.adapter.adapt_func(mutation_func)
+        return adapted_mutation_func

@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import partial
 from random import choice, randint, random, sample
 from typing import TYPE_CHECKING
 
@@ -347,3 +348,17 @@ def reduce_mutation(graph: OptGraph,
 @register_native
 def no_mutation(graph: OptGraph, *args, **kwargs) -> OptGraph:
     return graph
+
+
+base_mutations_repo = {
+    MutationTypesEnum.none: no_mutation,
+    MutationTypesEnum.simple: simple_mutation,
+    MutationTypesEnum.growth: partial(growth_mutation, local_growth=False),
+    MutationTypesEnum.local_growth: partial(growth_mutation, local_growth=True),
+    MutationTypesEnum.reduce: reduce_mutation,
+    MutationTypesEnum.single_add: single_add_mutation,
+    MutationTypesEnum.single_edge: single_edge_mutation,
+    MutationTypesEnum.single_drop: single_drop_mutation,
+    MutationTypesEnum.single_change: single_change_mutation,
+}
+
