@@ -14,9 +14,9 @@ from golem.core.optimisers.genetic.operators.base_mutations import (
     single_add_mutation,
     single_edge_mutation,
     single_drop_mutation,
-    single_change_mutation, add_separate_parent_node, add_as_child, add_intermediate_node
+    single_change_mutation, add_separate_parent_node, add_as_child, add_intermediate_node, MutationTypesEnum
 )
-from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum, Mutation
+from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams

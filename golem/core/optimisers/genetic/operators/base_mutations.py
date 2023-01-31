@@ -1,5 +1,4 @@
 from copy import deepcopy
-from enum import Enum
 from random import choice, randint, random, sample
 from typing import TYPE_CHECKING
 
@@ -11,6 +10,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
+from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -21,6 +21,18 @@ class MutationStrengthEnum(Enum):
     mean = 1.0
     strong = 5.0
 
+
+class MutationTypesEnum(Enum):
+    simple = 'simple'
+    growth = 'growth'
+    local_growth = 'local_growth'
+    reduce = 'reduce'
+    single_add = 'single_add',
+    single_change = 'single_change',
+    single_drop = 'single_drop',
+    single_edge = 'single_edge'
+
+    none = 'none'
 
 
 def get_mutation_prob(mut_id: MutationStrengthEnum, node: GraphNode,

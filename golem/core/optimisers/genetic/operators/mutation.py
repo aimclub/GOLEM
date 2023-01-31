@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import partial
 from random import choice, random
-from typing import Callable, List, Union, Tuple, TYPE_CHECKING
+from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashable
 
 import numpy as np
 
@@ -14,7 +14,7 @@ from golem.core.optimisers.genetic.operators.base_mutations import (
     single_add_mutation,
     single_edge_mutation,
     single_drop_mutation,
-    single_change_mutation
+    single_change_mutation, MutationTypesEnum
 )
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
@@ -22,26 +22,13 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
-from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
 
 MutationFunc = Callable[[Graph, GraphRequirements, GraphGenerationParams, AlgorithmParameters], Graph]
-
-
-class MutationTypesEnum(Enum):
-    simple = 'simple'
-    growth = 'growth'
-    local_growth = 'local_growth'
-    reduce = 'reduce'
-    single_add = 'single_add',
-    single_change = 'single_change',
-    single_drop = 'single_drop',
-    single_edge = 'single_edge'
-
-    none = 'none'
+MutationRepo = Mapping[Hashable, MutationFunc]
 
 
 class Mutation(Operator):
