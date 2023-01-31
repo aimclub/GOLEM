@@ -45,7 +45,7 @@ class Mutation(Operator):
             new_graph = deepcopy(individual.graph)
             num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
 
-            new_graph, mutation_names = self._adapt_and_apply_mutations(new_graph, num_mut)
+            new_graph, mutation_names = self._apply_mutations(new_graph, num_mut)
 
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
@@ -59,9 +59,8 @@ class Mutation(Operator):
 
         return individual
 
-    def _adapt_and_apply_mutations(self, new_graph: OptGraph, num_mut: int) -> Tuple[OptGraph, List[str]]:
-        """Apply mutation in several iterations with specific adaptation of each graph"""
-
+    def _apply_mutations(self, new_graph: OptGraph, num_mut: int) -> Tuple[OptGraph, List[str]]:
+        """Apply a number of mutations iteratively"""
         mutation_types = self.parameters.mutation_types
         is_static_mutation_type = random() < self.parameters.static_mutation_prob
         mutation_type = choice(mutation_types)
@@ -72,18 +71,24 @@ class Mutation(Operator):
                 mutation_type = choice(mutation_types)
             is_custom_mutation = isinstance(mutation_type, Callable)
 
-            if self._will_mutation_be_applied(mutation_type):
-                # get the mutation function and adapt it
-                mutation_func = self._get_mutation_func(mutation_type)
-                new_graph = mutation_func(new_graph, requirements=self.requirements,
-                                          graph_gen_params=self.graph_generation_params,
-                                          parameters=self.parameters)
-                # log mutation
-                mutation_names.append(str(mutation_type))
-                if is_custom_mutation:
-                    # custom mutation occurs once
+            new_graph, applied = self._adapt_and_apply_mutation(new_graph, mutation_type)
+
+            if applied:
+                mutation_names.append(str(mutation_type))  # log mutation
+                if is_custom_mutation:  # custom mutation occurs once
                     break
         return new_graph, mutation_names
+
+    def _adapt_and_apply_mutation(self, new_graph: OptGraph, mutation_type) -> Tuple[OptGraph, bool]:
+        applied = self._will_mutation_be_applied(mutation_type)
+        if applied:
+            # get the mutation function and adapt it
+            mutation_func = self._get_mutation_func(mutation_type)
+            new_graph = mutation_func(new_graph, requirements=self.requirements,
+                                      graph_gen_params=self.graph_generation_params,
+                                      parameters=self.parameters)
+        return new_graph, applied
+
 
     def _will_mutation_be_applied(self, mutation_type: Union[MutationTypesEnum, Callable]) -> bool:
         return random() <= self.parameters.mutation_prob and mutation_type is not MutationTypesEnum.none
