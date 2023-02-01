@@ -27,6 +27,7 @@ class MutationTypesEnum(Enum):
     simple = 'simple'
     growth = 'growth'
     local_growth = 'local_growth'
+    tree_growth = 'tree_growth'
     reduce = 'reduce'
     single_add = 'single_add',
     single_change = 'single_change',
@@ -355,6 +356,7 @@ base_mutations_repo = {
     MutationTypesEnum.simple: simple_mutation,
     MutationTypesEnum.growth: partial(growth_mutation, local_growth=False),
     MutationTypesEnum.local_growth: partial(growth_mutation, local_growth=True),
+    MutationTypesEnum.tree_growth: tree_growth,
     MutationTypesEnum.reduce: reduce_mutation,
     MutationTypesEnum.single_add: single_add_mutation,
     MutationTypesEnum.single_edge: single_edge_mutation,
@@ -362,3 +364,22 @@ base_mutations_repo = {
     MutationTypesEnum.single_change: single_change_mutation,
 }
 
+
+simple_mutation_set = (
+    MutationTypesEnum.tree_growth,
+    MutationTypesEnum.single_add,
+    MutationTypesEnum.single_change,
+    MutationTypesEnum.single_drop,
+    MutationTypesEnum.single_edge,
+    # join nodes
+    # flip edge
+    # cycle edge
+)
+
+
+rich_mutation_set = (
+    MutationTypesEnum.simple,
+    MutationTypesEnum.reduce,
+    MutationTypesEnum.growth,
+    MutationTypesEnum.local_growth
+)
