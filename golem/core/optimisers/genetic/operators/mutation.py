@@ -5,6 +5,7 @@ from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashabl
 import numpy as np
 
 from golem.core.dag.graph import Graph
+from golem.core.optimisers.adaptive.operatoragent import OperatorAgent, RandomAgent
 from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum, MutationStrengthEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
@@ -26,12 +27,14 @@ class Mutation(Operator):
                  parameters: 'GPAlgorithmParameters',
                  requirements: GraphRequirements,
                  graph_gen_params: GraphGenerationParams,
-                 mutations_repo: Optional[MutationRepo] = None
+                 mutations_repo: Optional[MutationRepo] = None,
+                 operator_agent: Optional[OperatorAgent] = None,
                  ):
         super().__init__(parameters, requirements)
         self.graph_generation_params = graph_gen_params
         self.parameters = parameters
         self._mutations_repo = mutations_repo or base_mutations_repo
+        self._operator_agent = operator_agent or RandomAgent(actions=self.parameters.mutation_types)
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
@@ -43,9 +46,8 @@ class Mutation(Operator):
 
         for _ in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
-            num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
 
-            new_graph, mutation_names = self._apply_mutations(new_graph, num_mut)
+            new_graph, mutation_names = self._apply_mutations(new_graph)
 
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
@@ -59,16 +61,17 @@ class Mutation(Operator):
 
         return individual
 
-    def _apply_mutations(self, new_graph: OptGraph, num_mut: int) -> Tuple[OptGraph, List[str]]:
+    def _apply_mutations(self, new_graph: OptGraph) -> Tuple[OptGraph, List[str]]:
         """Apply a number of mutations iteratively"""
         mutation_types = self.parameters.mutation_types
         is_static_mutation_type = random() < self.parameters.static_mutation_prob
-        mutation_type = choice(mutation_types)
+        mutation_type = self._operator_agent.choose_action(new_graph)
         mutation_names = []
+        num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
         for _ in range(num_mut):
             # determine mutation type
             if not is_static_mutation_type:
-                mutation_type = choice(mutation_types)
+                mutation_type = self._operator_agent.choose_action(new_graph)
             is_custom_mutation = isinstance(mutation_type, Callable)
 
             new_graph, applied = self._adapt_and_apply_mutation(new_graph, mutation_type)
@@ -87,6 +90,7 @@ class Mutation(Operator):
             new_graph = mutation_func(new_graph, requirements=self.requirements,
                                       graph_gen_params=self.graph_generation_params,
                                       parameters=self.parameters)
+            # TODO: add result of the mutation? Optional result?
         return new_graph, applied
 
 
