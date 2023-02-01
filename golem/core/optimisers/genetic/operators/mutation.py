@@ -61,23 +61,23 @@ class Mutation(Operator):
 
         return individual
 
+    def _sample_num_of_mutations(self) -> int:
+        # most of the time returns 1 or rarely several mutations
+        if self.parameters.variable_mutation_num:
+            num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
+        else:
+            num_mut = 1
+        return num_mut
+
     def _apply_mutations(self, new_graph: OptGraph) -> Tuple[OptGraph, List[str]]:
-        """Apply a number of mutations iteratively"""
-        mutation_types = self.parameters.mutation_types
-        is_static_mutation_type = random() < self.parameters.static_mutation_prob
-        mutation_type = self._operator_agent.choose_action(new_graph)
+        """Apply mutation 1 or few times iteratively"""
         mutation_names = []
-        num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
-        for _ in range(num_mut):
-            # determine mutation type
-            if not is_static_mutation_type:
-                mutation_type = self._operator_agent.choose_action(new_graph)
-            is_custom_mutation = isinstance(mutation_type, Callable)
-
+        mutation_type = self._operator_agent.choose_action(new_graph)
+        for _ in range(self._sample_num_of_mutations()):
             new_graph, applied = self._adapt_and_apply_mutation(new_graph, mutation_type)
-
             if applied:
                 mutation_names.append(str(mutation_type))  # log mutation
+                is_custom_mutation = isinstance(mutation_type, Callable)
                 if is_custom_mutation:  # custom mutation occurs once
                     break
         return new_graph, mutation_names
