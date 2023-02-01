@@ -6,12 +6,12 @@ import pyemd
 
 def emd(x, y, distance_scaling=1.0):
     support_size = max(len(x), len(y))
-    d_mat = toeplitz(range(support_size)).astype(np.float)
+    d_mat = toeplitz(range(support_size)).astype(np.float64)
     distance_mat = d_mat / distance_scaling
 
     # convert histogram values x and y to float, and make them equal len
-    x = x.astype(np.float)
-    y = y.astype(np.float)
+    x = x.astype(np.float64)
+    y = y.astype(np.float64)
     if len(x) < len(y):
         x = np.hstack((x, [0.0] * (support_size - len(x))))
     elif len(y) < len(x):
