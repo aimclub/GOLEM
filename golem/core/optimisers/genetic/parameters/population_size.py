@@ -19,7 +19,7 @@ class ConstRatePopulationSize(PopulationSize):
     def __init__(self, pop_size: int, offspring_rate: float, max_pop_size: Optional[int] = None):
         self._offspring_rate = offspring_rate
         self._initial = pop_size
-        self._max_size = max_pop_size
+        self._max_pop_size = max_pop_size
 
     @property
     def initial(self) -> int:
@@ -27,17 +27,17 @@ class ConstRatePopulationSize(PopulationSize):
 
     def next(self, population: PopulationT) -> int:
         pop_size = len(population)
-        if not self._max_size or pop_size < self._max_size:
+        if not self._max_pop_size or pop_size < self._max_pop_size:
             pop_size += math.ceil(pop_size * self._offspring_rate)
-        if self._max_size:
-            pop_size = min(pop_size, self._max_size)
-        return pop_size
+        if self._max_pop_size:
+            pop_size = min(pop_size, self._max_pop_size)
+        return max(pop_size, self._initial)
 
 
 class AdaptivePopulationSize(PopulationSize):
     def __init__(self,
                  improvement_watcher: ImprovementWatcher,
-                 progression_iterator: BidirectionalIterator[int]):
+                 progression_iterator: SequenceIterator[int]):
         self._improvements = improvement_watcher
         self._iterator = progression_iterator
         self._initial = self._iterator.next() if self._iterator.has_next() else self._iterator.prev()
@@ -51,14 +51,18 @@ class AdaptivePopulationSize(PopulationSize):
         complexity_decreased = self._improvements.is_complexity_improved
         progress_in_both_goals = fitness_improved and complexity_decreased
         no_progress = not fitness_improved and not complexity_decreased
+        too_many_fitness_eval_errors = \
+            len(population)/self._iterator.sequence_item_calculation(self._iterator.index) < 0.5
 
         pop_size = len(population)
-        if progress_in_both_goals and pop_size > 0:
-            if self._iterator.has_prev():
-                pop_size = self._iterator.prev()
-        elif no_progress:
+
+        if too_many_fitness_eval_errors or no_progress:
             if self._iterator.has_next():
                 pop_size = self._iterator.next()
+        elif progress_in_both_goals and pop_size > 0:
+            if self._iterator.has_prev():
+                pop_size = self._iterator.prev()
+
         pop_size = max(pop_size, MIN_POP_SIZE)
         return pop_size
 

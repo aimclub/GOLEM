@@ -13,7 +13,6 @@ from .individuals_containers import HallOfFame, ParetoFront
 PARETO_MAX_POP_SIZE_MULTIPLIER = 5
 
 
-
 class ImprovementWatcher(ABC):
     """Interface that allows to check if optimization progresses or stagnates."""
 
@@ -25,6 +24,12 @@ class ImprovementWatcher(ABC):
     @property
     def stagnation_time_duration(self) -> float:
         """Returns time duration for which any metrics has not improved."""
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def are_too_many_eval_errors(self) -> bool:
+        """ Check if there were too many (>50% from pop_size) evaluation errors in the last population. """
         raise NotImplementedError()
 
     @property
@@ -111,6 +116,10 @@ class GenerationKeeper(ImprovementWatcher):
     @property
     def stagnation_time_duration(self) -> float:
         return (datetime.datetime.now() - self._stagnation_start_time).seconds / 60
+
+    @property
+    def are_too_many_eval_errors(self) -> bool:
+        return True
 
     @property
     def is_any_improved(self) -> bool:
