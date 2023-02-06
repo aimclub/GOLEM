@@ -37,9 +37,11 @@ class ConstRatePopulationSize(PopulationSize):
 class AdaptivePopulationSize(PopulationSize):
     def __init__(self,
                  improvement_watcher: ImprovementWatcher,
-                 progression_iterator: SequenceIterator[int]):
+                 progression_iterator: BidirectionalIterator[int],
+                 max_pop_size: Optional[int] = None):
         self._improvements = improvement_watcher
         self._iterator = progression_iterator
+        self._max_pop_size = max_pop_size
         self._initial = self._iterator.next() if self._iterator.has_next() else self._iterator.prev()
 
     @property
@@ -52,7 +54,7 @@ class AdaptivePopulationSize(PopulationSize):
         progress_in_both_goals = fitness_improved and complexity_decreased
         no_progress = not fitness_improved and not complexity_decreased
         too_many_fitness_eval_errors = \
-            len(population)/self._iterator.sequence_item_calculation(self._iterator.index) < 0.5
+            len(population)/self._iterator.current() < 0.5
 
         pop_size = len(population)
 
@@ -64,6 +66,9 @@ class AdaptivePopulationSize(PopulationSize):
                 pop_size = self._iterator.prev()
 
         pop_size = max(pop_size, MIN_POP_SIZE)
+        if self._max_pop_size:
+            pop_size = min(pop_size, self._max_pop_size)
+
         return pop_size
 
 

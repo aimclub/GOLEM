@@ -275,6 +275,15 @@ class BidirectionalIterator(Iterator[T]):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def current(self) -> T:
+        """
+        Get current value pointed to by the iterator
+
+        :return: current item
+        """
+        raise NotImplementedError()
+
     def __next__(self):
         """
         Gets next item of this iterator
