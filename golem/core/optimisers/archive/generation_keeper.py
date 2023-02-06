@@ -28,12 +28,6 @@ class ImprovementWatcher(ABC):
 
     @property
     @abstractmethod
-    def are_too_many_eval_errors(self) -> bool:
-        """ Check if there were too many (>50% from pop_size) evaluation errors in the last population. """
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
     def is_any_improved(self) -> bool:
         """Check if any of the metrics has improved."""
         raise NotImplementedError()
@@ -116,10 +110,6 @@ class GenerationKeeper(ImprovementWatcher):
     @property
     def stagnation_time_duration(self) -> float:
         return (datetime.datetime.now() - self._stagnation_start_time).seconds / 60
-
-    @property
-    def are_too_many_eval_errors(self) -> bool:
-        return True
 
     @property
     def is_any_improved(self) -> bool:

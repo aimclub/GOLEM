@@ -20,6 +20,10 @@ from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 from golem.core.optimisers.timer import Timer, get_forever_timer
 from golem.core.utilities.serializable import Serializable
 
+# the percentage of successful evaluations,
+# at which evolution is not threatened with stagnation at the moment
+STAGNATION_EVALUATION_PERCENTAGE = 0.5
+
 OptionalEvalResult = Optional[GraphEvalResult]
 EvalResultsList = List[OptionalEvalResult]
 G = TypeVar('G', bound=Serializable)
@@ -57,7 +61,7 @@ class ObjectiveEvaluationDispatcher(ABC):
         """
         raise NotImplementedError()
 
-    def set_evaluation_callback(self, callback: Optional[GraphFunction]):
+    def set_graph_evaluation_callback(self, callback: Optional[GraphFunction]):
         """Set or reset (with None) post-evaluation callback
         that's called on each graph after its evaluation.
 
@@ -129,8 +133,17 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         self.timer = timer or get_forever_timer()
         return self.evaluate_population
 
-    def set_evaluation_callback(self, callback: Optional[GraphFunction]):
+    def set_graph_evaluation_callback(self, callback: Optional[GraphFunction]):
         self._post_eval_callback = callback
+
+    def population_evaluation_callback(self, pop_size: int, evaluated_pop_size: int):
+        if evaluated_pop_size / pop_size > STAGNATION_EVALUATION_PERCENTAGE:
+            self.logger.message(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
+                                f"were evaluated successfully.")
+        else:
+            self.logger.warning(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
+                                f"were evaluated successfully. {evaluated_pop_size / pop_size}% "
+                                f"is a fairly small percentage of successful evaluation.")
 
     @abstractmethod
     def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
@@ -223,6 +236,9 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
             single_ind = choice(individuals)
             evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
             successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
+
+        self.population_evaluation_callback(evaluated_pop_size=len(successful_evals),
+                                            pop_size=len(individuals))
         return successful_evals
 
     def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,

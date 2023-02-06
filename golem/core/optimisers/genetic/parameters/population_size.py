@@ -26,12 +26,13 @@ class ConstRatePopulationSize(PopulationSize):
         return self._initial
 
     def next(self, population: PopulationT) -> int:
-        pop_size = len(population)
+        # to prevent stagnation
+        pop_size = max(len(population), self._initial)
         if not self._max_pop_size or pop_size < self._max_pop_size:
             pop_size += math.ceil(pop_size * self._offspring_rate)
         if self._max_pop_size:
             pop_size = min(pop_size, self._max_pop_size)
-        return max(pop_size, self._initial)
+        return pop_size
 
 
 class AdaptivePopulationSize(PopulationSize):

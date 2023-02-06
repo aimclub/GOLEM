@@ -77,7 +77,7 @@ class PopulationalOptimizer(GraphOptimizer):
 
     def set_evaluation_callback(self, callback: Optional[GraphFunction]):
         # Redirect callback to evaluation dispatcher
-        self.eval_dispatcher.set_evaluation_callback(callback)
+        self.eval_dispatcher.set_graph_evaluation_callback(callback)
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
 
