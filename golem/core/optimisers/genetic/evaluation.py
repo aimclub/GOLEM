@@ -137,6 +137,9 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         self._post_eval_callback = callback
 
     def population_evaluation_callback(self, pop_size: int, evaluated_pop_size: int):
+        """ Shows the amount of successfully evaluated individuals and total number of individuals in population.
+         If there are more that 50% of successful evaluations than it's more likely
+         there is no problem in optimization process. """
         if evaluated_pop_size / pop_size > STAGNATION_EVALUATION_PERCENTAGE:
             self.logger.message(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
                                 f"were evaluated successfully.")
