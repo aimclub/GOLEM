@@ -15,8 +15,8 @@ def custom_objective():
 
 
 def pop_size_sequence(n: int) -> int:
-    a = 3
-    b = 8
+    a = 2
+    b = 3
     for __ in range(n):
         a, b = b, a + b
     return max(a, 3)
@@ -51,3 +51,25 @@ def test_adaptive_pop_size_increases():
     generation_keeper.append(population_0)
     population_1 = [Individual(base_graph, fitness=fitness[1])]
     assert pop_size.next(population_1) >= len(population_1)
+
+
+def test_adaptive_max_pop_size():
+    """ Checks that `pop_size` never exceeds `max_pop_size`.
+     In this test pop_size must be increased since there are too many evaluation errors
+     (len(population added to generation keeper) == 1) and no progress in fitness. """
+    objective = Objective({'custom': custom_objective})
+    max_pop_size = 20
+    generation_keeper = GenerationKeeper(objective=objective)
+    pop_size = AdaptivePopulationSize(improvement_watcher=generation_keeper,
+                                      progression_iterator=SequenceIterator(sequence_func=pop_size_sequence),
+                                      max_pop_size=max_pop_size)
+
+    # only one successfully evaluated individual
+    base_graph = OptGraph(OptNode('rf'))
+    fitness = SingleObjFitness(primary_value=-0.8)
+    population = [Individual(base_graph, fitness=fitness)]
+    for i in range(10):
+        generation_keeper.append(population)
+        cur_pop_size = pop_size.next(population)
+        print(cur_pop_size)
+        assert cur_pop_size <= max_pop_size

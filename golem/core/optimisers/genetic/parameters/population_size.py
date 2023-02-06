@@ -53,10 +53,9 @@ class AdaptivePopulationSize(PopulationSize):
         complexity_decreased = self._improvements.is_complexity_improved
         progress_in_both_goals = fitness_improved and complexity_decreased
         no_progress = not fitness_improved and not complexity_decreased
-        too_many_fitness_eval_errors = \
-            len(population)/self._iterator.current() < 0.5
-
         pop_size = len(population)
+        too_many_fitness_eval_errors = \
+            pop_size/self._iterator.current() < 0.5
 
         if too_many_fitness_eval_errors or no_progress:
             if self._iterator.has_next():
@@ -92,7 +91,9 @@ def init_adaptive_pop_size(requirements: GPAlgorithmParameters,
                                                 start_value=requirements.pop_size,
                                                 min_sequence_value=1,
                                                 max_sequence_value=requirements.max_pop_size)
-        pop_size = AdaptivePopulationSize(improvement_watcher, pop_size_progression)
+        pop_size = AdaptivePopulationSize(improvement_watcher=improvement_watcher,
+                                          progression_iterator=pop_size_progression,
+                                          max_pop_size=requirements.max_pop_size)
     else:
         raise ValueError(f"Unknown genetic type scheme {genetic_scheme_type}")
     return pop_size
