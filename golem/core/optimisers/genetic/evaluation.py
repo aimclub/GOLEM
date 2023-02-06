@@ -232,13 +232,13 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         # If there were no successful evals then try once again getting at least one,
         # even if time limit was reached
         successful_evals = individuals_evaluated + individuals_to_skip
+        self.population_evaluation_callback(evaluated_pop_size=len(successful_evals),
+                                            pop_size=len(individuals))
         if not successful_evals:
             single_ind = choice(individuals)
             evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
             successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
 
-        self.population_evaluation_callback(evaluated_pop_size=len(successful_evals),
-                                            pop_size=len(individuals))
         return successful_evals
 
     def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
