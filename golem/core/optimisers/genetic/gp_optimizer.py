@@ -121,7 +121,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
 
-    def _spawn_evaluated_population(self, selected_individuals: PopulationT, evaluator: Callable) -> PopulationT:
+    def _spawn_evaluated_population(self, selected_individuals: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """ Reproduce and evaluate new population. If at least one of received individuals can not be evaluated then
         mutate and evaluate selected individuals until a new population is obtained
         or the number of attempts is exceeded """
@@ -130,6 +130,10 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             new_population = self.mutation(new_population)
             new_population = evaluator(new_population)
             if new_population:
+                # Perform adaptive learning
+                experience = self.mutation.agent_experience
+                experience.log_result(new_population)
+                self.mutation.agent.partial_fit(experience)
                 return new_population
         else:
             # Could not generate valid population; raise an error
