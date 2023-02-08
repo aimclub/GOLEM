@@ -47,29 +47,31 @@ class Mutation(Operator):
         if isinstance(population, Individual):
             return self._mutation(population)[0]
         mutated_population, mutations_applied = unzip(map(self._mutation, population))
-        self.agent_experience.log_actions(population, mutations_applied)
         return mutated_population
 
     def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
         """ Function applies mutation operator to graph """
-
+        mutation_applied = None
         for _ in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
 
             new_graph, mutation_applied = self._apply_mutations(new_graph)
-
+            if mutation_applied is None:
+                continue
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation',
-                                                 operators=str(mutation_applied),
+                                                 operators=mutation_applied,
                                                  parent_individuals=individual)
-                return Individual(new_graph, parent_operator,
-                                  metadata=self.requirements.static_individual_metadata), mutation_applied
-
-        self.log.debug('Number of mutation attempts exceeded. '
-                       'Please check optimization parameters for correctness.')
-
-        return individual, None
+                individual = Individual(new_graph, parent_operator,
+                                        metadata=self.requirements.static_individual_metadata)
+                break
+            else:
+                self.agent_experience.log_invalid(individual, mutation_applied)
+        else:
+            self.log.debug('Number of mutation attempts exceeded. '
+                           'Please check optimization parameters for correctness.')
+        return individual, mutation_applied
 
     def _sample_num_of_mutations(self) -> int:
         # most of the time returns 1 or rarely several mutations
@@ -100,9 +102,7 @@ class Mutation(Operator):
             new_graph = mutation_func(new_graph, requirements=self.requirements,
                                       graph_gen_params=self.graph_generation_params,
                                       parameters=self.parameters)
-            # TODO: add result of the mutation? Optional result?
         return new_graph, applied
-
 
     def _will_mutation_be_applied(self, mutation_type: Union[MutationTypesEnum, Callable]) -> bool:
         return random() <= self.parameters.mutation_prob and mutation_type is not MutationTypesEnum.none

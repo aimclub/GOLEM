@@ -125,16 +125,18 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         """ Reproduce and evaluate new population. If at least one of received individuals can not be evaluated then
         mutate and evaluate selected individuals until a new population is obtained
         or the number of attempts is exceeded """
+        experience = self.mutation.agent_experience
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             new_population = self.crossover(selected_individuals)
             new_population = self.mutation(new_population)
             new_population = evaluator(new_population)
             if new_population:
                 # Perform adaptive learning
-                experience = self.mutation.agent_experience
-                experience.log_result(new_population)
+                experience.log_results(new_population)
                 self.mutation.agent.partial_fit(experience)
                 return new_population
+            else:
+                experience.reset()
         else:
             # Could not generate valid population; raise an error
             raise EvaluationAttemptsError()
