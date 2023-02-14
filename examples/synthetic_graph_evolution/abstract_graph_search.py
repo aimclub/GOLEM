@@ -25,7 +25,9 @@ graph_generators: Dict[str, DiGraphGenerator] = {
     'grid2d': lambda n: nx.grid_2d_graph(int(np.sqrt(n)), int(np.sqrt(n))),
     '2ring': lambda n: nx_to_directed(nx.circular_ladder_graph(n)),
     'hypercube': lambda n: nx_to_directed(nx.hypercube_graph(int(np.log2(n).round()))),
-    'gnp': lambda n: nx.gnp_random_graph(n, p=0.15)
+    'gnp': lambda n: nx_to_directed(nx.gnp_random_graph(n, p=0.15)),
+    'line': lambda n: nx_to_directed(nx.path_graph(n, create_using=nx.DiGraph)),
+    'tree': lambda n: nx.random_tree(n, create_using=nx.DiGraph),
 }
 
 
@@ -113,7 +115,8 @@ def run_trial(target_graph: nx.DiGraph,
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_drop,
             MutationTypesEnum.single_edge,
-        ]
+        ],
+        crossover_types=[CrossoverTypesEnum.none],
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
@@ -132,8 +135,9 @@ def run_trial(target_graph: nx.DiGraph,
         },
         is_multi_objective=True
     )
-    # Generate simple initial population with single-node graphs
-    initial_graphs = [OptGraph(OptNode(f'Node{i}')) for i in range(gp_params.pop_size)]
+    # Generate simple initial population with line graphs
+    initial_graphs = [graph_generators['line'](k+3) for k in range(gp_params.pop_size)]
+    initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Run the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
