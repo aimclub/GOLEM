@@ -8,7 +8,7 @@
     |python| |pypi| |build| |docs| |license| |tg| |rus|
 
 
-Evolutionary Methods for Graph Optimization and Learning
+Graph Optimization and Learning by Evolutionary Methods
 -------------------------------------------------------
 
 GOLEM is an open-source AI framework for optimization and learning of structured graph-based models with meta-heuristic
