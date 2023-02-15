@@ -5,7 +5,8 @@ import networkx as nx
 import numpy as np
 import pytest
 
-from examples.synthetic_graph_evolution import abstract_graph_search
+from examples.synthetic_graph_evolution import experiment
+from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
@@ -17,6 +18,7 @@ def test_multiobjective_improvement(optimizer_cls):
 
     # running the example
     found_graph, history, _ = abstract_graph_search.run_trial(target_graph=target_graph,
+                                                              optimizer_setup=graph_search_setup,
                                                               optimizer_cls=optimizer_cls,
                                                               timeout=timedelta(minutes=1))
 

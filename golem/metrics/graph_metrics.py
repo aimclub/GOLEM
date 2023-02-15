@@ -39,15 +39,15 @@ def get_edit_dist_metric(target_graph: nx.DiGraph,
         return True or operations_do_match
 
     if requirements:
-        upper_bound = upper_bound or int(np.sqrt(requirements.max_depth * requirements.max_arity)),
+        upper_bound = upper_bound or int(np.sqrt(requirements.max_depth * requirements.max_arity))
         timeout = timeout or requirements.max_graph_fit_time
 
     def metric(graph: nx.DiGraph) -> float:
         ged = graph_edit_distance(target_graph, graph,
                                   node_match=node_match,
                                   upper_bound=upper_bound,
-                                  timeout=timeout.seconds if timeout else None,
-                                 )
+                                  timeout=timeout.total_seconds() if timeout else None,
+                                  )
         return ged or upper_bound
 
     return metric
