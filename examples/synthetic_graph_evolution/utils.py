@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Tuple, Optional, Sequence
+from typing import Tuple, Optional, Sequence, Collection
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -10,6 +10,17 @@ from golem.metrics.graph_metrics import spectral_dists_all
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer
+
+
+def relabel_nx_graph(graph: nx.Graph, available_names: Collection[str]) -> nx.Graph:
+    """Randomly label nodes with 'name' attribute in nx.Graph
+    given list of available labels"""
+    names = np.random.choice(available_names, size=graph.number_of_nodes())
+    attributes = {node_id: {'name': name}
+                  for node_id, name in zip(graph.nodes, names)}
+    nx.set_node_attributes(graph, attributes)
+    return graph
+
 
 
 def fitness_to_stats(history: OptHistory,
@@ -78,6 +89,7 @@ def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
 def draw_graphs_subplots(*graphs: Sequence[nx.Graph],
                          draw_fn=nx.draw_kamada_kawai,
                          size=10):
+    graphs = [graphs] if not isinstance(graphs, Sequence) else graphs
     ncols = int(np.ceil(np.sqrt(len(graphs))))
     nrows = len(graphs) // ncols
     aspect = nrows / ncols

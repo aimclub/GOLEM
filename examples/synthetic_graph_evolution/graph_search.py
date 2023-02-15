@@ -1,7 +1,9 @@
+from datetime import timedelta
 from functools import partial
-from typing import Type
+from typing import Type, Optional, Sequence
 
 from examples.synthetic_graph_evolution.experiment import run_experiments, graph_generators
+from examples.synthetic_graph_evolution.utils import relabel_nx_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -17,6 +19,7 @@ from golem.metrics.graph_metrics import *
 
 def graph_search_setup(target_graph: nx.DiGraph,
                        optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
+                       node_types: Sequence[str] = ('X',),
                        timeout: Optional[timedelta] = None,
                        num_iterations: Optional[int] = None):
     # Setup parameters
@@ -44,6 +47,7 @@ def graph_search_setup(target_graph: nx.DiGraph,
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
         rules_for_constraint=[has_no_self_cycled_nodes],
+        available_node_types=node_types,
     )
 
     # Setup objective that measures some graph-theoretic similarity measure
@@ -59,7 +63,8 @@ def graph_search_setup(target_graph: nx.DiGraph,
         is_multi_objective=True
     )
     # Generate simple initial population with line graphs
-    initial_graphs = [graph_generators['line'](k+3) for k in range(gp_params.pop_size)]
+    initial_graphs = [relabel_nx_graph(graph_generators['line'](k+3), node_types)
+                      for k in range(gp_params.pop_size)]
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Build the optimizer

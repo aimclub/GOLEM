@@ -1,7 +1,9 @@
+from datetime import timedelta
 from functools import partial
-from typing import Type
+from typing import Type, Optional, Sequence
 
 from examples.synthetic_graph_evolution.experiment import run_experiments, graph_generators
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, relabel_nx_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -12,11 +14,13 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.metrics.edit_distance import tree_edit_dist
 from golem.metrics.graph_metrics import *
 
 
 def tree_search_setup(target_graph: nx.DiGraph,
                       optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
+                      node_types: Sequence[str] = ('X',),
                       timeout: Optional[timedelta] = None,
                       num_iterations: Optional[int] = None):
     # Setup parameters
@@ -46,17 +50,18 @@ def tree_search_setup(target_graph: nx.DiGraph,
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
         rules_for_constraint=DEFAULT_DAG_RULES,
+        available_node_types=node_types,
     )
 
     # Setup objective
-    ged = get_edit_dist_metric(target_graph, requirements=requirements)
     objective = Objective(
-        quality_metrics={'edit_dist': ged},
+        quality_metrics={'edit_dist': partial(tree_edit_dist, target_graph)},
         complexity_metrics={'graph_size': partial(size_diff, target_graph)},
         is_multi_objective=True
     )
     # Generate simple initial population with tree graphs
-    initial_graphs = [graph_generators['tree'](k+3) for k in range(gp_params.pop_size)]
+    initial_graphs = [relabel_nx_graph(graph_generators['tree'](k+1), node_types)
+                      for k in range(gp_params.pop_size)]
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Build the optimizer
@@ -68,7 +73,7 @@ if __name__ == '__main__':
     results_log = run_experiments(optimizer_setup=tree_search_setup,
                                   optimizer_cls=EvoGraphOptimizer,
                                   graph_names=['tree'],
-                                  graph_sizes=[10, 32],
+                                  graph_sizes=[8, 16, 32],
                                   num_trials=1,
                                   trial_timeout=5,
                                   trial_iterations=2000,

@@ -4,7 +4,7 @@ from io import StringIO
 from itertools import product
 from typing import Sequence, Type, Callable, Dict, Optional
 
-from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, relabel_nx_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter, nx_to_directed
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.optimizer import GraphOptimizer
@@ -40,6 +40,7 @@ def get_all_quality_metrics(target_graph):
 
 def run_experiments(optimizer_setup: Callable,
                     optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
+                    node_types: Optional[Sequence[str]] = None,
                     graph_names: Sequence[str] = tuple(graph_generators.keys()),
                     graph_sizes: Sequence[int] = (30, 100, 300),
                     num_trials: int = 1,
@@ -48,6 +49,8 @@ def run_experiments(optimizer_setup: Callable,
                     visualize: bool = False,
                     ):
     log = StringIO()
+    if not node_types:
+        node_types = ['X']
     for graph_name, num_nodes in product(graph_names, graph_sizes):
         graph_generator = graph_generators[graph_name]
         experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
@@ -58,8 +61,12 @@ def run_experiments(optimizer_setup: Callable,
 
             # Generate random target graph and run the optimizer
             target_graph = graph_generator(num_nodes)
+            target_graph = relabel_nx_graph(target_graph, node_types)
+
+            # Run optimizer setup
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,
+                                                   node_types=node_types,
                                                    timeout=timedelta(minutes=trial_timeout),
                                                    num_iterations=trial_iterations)
             found_graphs = optimizer.optimise(objective)
