@@ -30,6 +30,6 @@ jobs:
       - name: send custom message with args
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.CHAT_ID }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           args: The ${{github.event_name}} ${{github.event.pull_request.title}} (${{github.event.number}}) was closed.
