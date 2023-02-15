@@ -1,13 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
 from io import StringIO
 from itertools import product
-from typing import Sequence, Type
+from typing import Sequence, Type, Callable, Dict, Optional
 
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter, nx_to_directed
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.optimizer import GraphOptimizer
+from golem.metrics.edit_distance import get_edit_dist_metric, matrix_edit_dist
 from golem.metrics.graph_metrics import *
 
 NumNodes = int
