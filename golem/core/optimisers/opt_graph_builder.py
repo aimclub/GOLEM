@@ -3,6 +3,7 @@ from typing import Union, Tuple, Optional, Dict
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import DomainStructureType
+from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.optimisers.graph import OptNode, OptGraph
 from golem.core.optimisers.graph_builder import GraphBuilder
 
