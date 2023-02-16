@@ -75,6 +75,10 @@ class SequenceIterator(BidirectionalIterator[int]):
             raise StopIteration()
         return self.sequence_item_calculation()
 
+    def current(self):
+        """ Get current value pointed to by the iterator """
+        return self.sequence_item_calculation(self.index)
+
     def __iter__(self):
         return self
 

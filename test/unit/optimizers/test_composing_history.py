@@ -291,7 +291,7 @@ def test_collect_intermediate_metric():
 
     objective_eval = MockObjectiveEvaluate(Objective({'rand_metric': metric}))
     dispatcher = MultiprocessingDispatcher(graph_gen_params.adapter)
-    dispatcher.set_evaluation_callback(objective_eval.evaluate_intermediate_metrics)
+    dispatcher.set_graph_evaluation_callback(objective_eval.evaluate_intermediate_metrics)
     evaluate = dispatcher.dispatch(objective_eval)
 
     population = [create_individual(evaluated=False)]

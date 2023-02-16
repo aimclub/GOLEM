@@ -13,7 +13,6 @@ from .individuals_containers import HallOfFame, ParetoFront
 PARETO_MAX_POP_SIZE_MULTIPLIER = 5
 
 
-
 class ImprovementWatcher(ABC):
     """Interface that allows to check if optimization progresses or stagnates."""
 
