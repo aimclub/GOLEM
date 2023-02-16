@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+from copy import deepcopy
 from random import choice
 from typing import Sequence, Callable
 
@@ -60,7 +60,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # Define initial parameters
         self.requirements.max_depth = self._graph_depth.initial
         self.graph_optimizer_params.pop_size = self._pop_size.initial
-        self.initial_individuals = [Individual(graph) for graph in initial_graphs]
+        self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
+                                    for graph in initial_graphs]
 
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
