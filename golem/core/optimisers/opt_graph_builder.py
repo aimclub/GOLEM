@@ -1,10 +1,10 @@
 from inspect import signature
 from typing import Union, Tuple, Optional, Dict
 
-from fedot.core.adapter.adapter import DomainStructureType, BaseOptimizationAdapter
-from fedot.core.dag.linked_graph import LinkedGraph
-from fedot.core.optimisers.graph import OptNode, OptGraph
-from fedot.core.optimisers.graph_builder import GraphBuilder
+from golem.core.adapter import BaseOptimizationAdapter
+from golem.core.adapter.adapter import DomainStructureType
+from golem.core.optimisers.graph import OptNode, OptGraph
+from golem.core.optimisers.graph_builder import GraphBuilder
 
 
 class OptGraphBuilder(GraphBuilder):

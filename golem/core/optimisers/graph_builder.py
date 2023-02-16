@@ -1,8 +1,8 @@
 from copy import deepcopy
 from typing import Union, Tuple, Optional, List, Dict
 
-from fedot.core.adapter.adapter import DomainStructureType
-from fedot.core.dag.graph_node import GraphNode
+from golem.core.adapter.adapter import DomainStructureType
+from golem.core.dag.graph_node import GraphNode
 
 
 class GraphBuilder:
