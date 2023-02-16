@@ -136,7 +136,7 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
     def set_graph_evaluation_callback(self, callback: Optional[GraphFunction]):
         self._post_eval_callback = callback
 
-    def population_evaluation_callback(self, pop_size: int, evaluated_pop_size: int):
+    def population_evaluation_info(self, pop_size: int, evaluated_pop_size: int):
         """ Shows the amount of successfully evaluated individuals and total number of individuals in population.
          If there are more that 50% of successful evaluations than it's more likely
          there is no problem in optimization process. """
@@ -235,8 +235,8 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         # If there were no successful evals then try once again getting at least one,
         # even if time limit was reached
         successful_evals = individuals_evaluated + individuals_to_skip
-        self.population_evaluation_callback(evaluated_pop_size=len(successful_evals),
-                                            pop_size=len(individuals))
+        self.population_evaluation_info(evaluated_pop_size=len(successful_evals),
+                                        pop_size=len(individuals))
         if not successful_evals:
             single_ind = choice(individuals)
             evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
