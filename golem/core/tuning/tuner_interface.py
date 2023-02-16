@@ -59,7 +59,7 @@ class HyperoptTuner(Generic[DomainGraphForTune]):
         self.search_space = search_space
         self.algo = algo
         self.deviation = deviation
-
+        self.was_tuned = False
         self.log = default_log(self)
 
     @abstractmethod
