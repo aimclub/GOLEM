@@ -58,6 +58,9 @@ class OptimizationParameters:
     show_progress: bool = True
     collect_intermediate_metric: bool = False
     parallelization_mode: str = 'populational'
+    static_individual_metadata: dict = field(default_factory=lambda: {
+        'use_input_preprocessing': True
+    })
 
     keep_history: bool = True
     history_dir: Optional[str] = field(default_factory=default_data_dir)

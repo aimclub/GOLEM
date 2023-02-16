@@ -83,7 +83,8 @@ class Mutation(Operator):
             if is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation', operators=tuple(mutation_names),
                                                  parent_individuals=individual)
-                return Individual(new_graph, parent_operator)
+                return Individual(new_graph, parent_operator,
+                                  metadata=self.requirements.static_individual_metadata)
 
         self.log.debug('Number of mutation attempts exceeded. '
                        'Please check optimization parameters for correctness.')
