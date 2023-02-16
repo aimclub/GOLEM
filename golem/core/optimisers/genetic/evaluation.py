@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import partial
 from random import choice
-from typing import Dict, Optional, Tuple, List, TypeVar, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple, TypeVar
 
-from joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, cpu_count, delayed
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph import Graph
@@ -19,6 +19,7 @@ from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 from golem.core.optimisers.timer import Timer, get_forever_timer
 from golem.core.utilities.serializable import Serializable
+from golem.utilities.memory import MemoryAnalytics
 
 # the percentage of successful evaluations,
 # at which evolution is not threatened with stagnation at the moment
@@ -241,7 +242,9 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
             single_ind = choice(individuals)
             evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
             successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
-
+        MemoryAnalytics.log(self.logger,
+                            additional_info='parallel evaluation of population',
+                            logging_level=logging.INFO)
         return successful_evals
 
     def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
