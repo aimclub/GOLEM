@@ -77,6 +77,8 @@ class SequentialTuner(HyperoptTuner):
         # Validation is the optimization do well
         final_graph = self.final_check(graph)
 
+        self.was_tuned = True
+
         return self.adapter.restore(final_graph)
 
     def get_nodes_order(self, nodes_number: int) -> range:
@@ -126,6 +128,7 @@ class SequentialTuner(HyperoptTuner):
                                 iterations_per_node=self.iterations,
                                 seconds_per_node=self.max_seconds,
                                 )
+            self.was_tuned = True
 
         # Validation is the optimization do well
         final_graph = self.final_check(graph)
