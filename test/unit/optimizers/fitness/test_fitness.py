@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from golem.core.optimisers.fitness import null_fitness, SingleObjFitness, MultiObjFitness
+from golem.core.optimisers.objective.objective import to_fitness
 from golem.serializers import Serializer
 
 
@@ -125,3 +126,10 @@ def test_fitness_serialization(fitness):
     assert fitness.valid == reserialized.valid
     if fitness.valid:
         assert fitness == reserialized
+
+def test_universal_fitness_compare():
+    assert to_fitness([1., 1., 3.], multi_objective=False).dominates(to_fitness([1., 2., 3.], multi_objective=False))
+    assert to_fitness([1., 1., 3.], multi_objective=True).dominates(to_fitness([1., 2., 3.], multi_objective=True))
+
+    assert to_fitness([1., 1., 3.], multi_objective=False).dominates(to_fitness([1., 2., 1.], multi_objective=False))
+    assert not to_fitness([1., 1., 3.], multi_objective=True).dominates(to_fitness([1., 2., 1.], multi_objective=True))
