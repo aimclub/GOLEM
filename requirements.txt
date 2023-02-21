@@ -27,6 +27,3 @@ hyperopt>=0.2.7
 # Tests
 pytest>=6.2.0
 testfixtures>=6.18.0
-
-# Examples
-pyemd
