@@ -1,10 +1,12 @@
 import itertools
 import numpy as np
 from scipy.linalg import toeplitz
-import pyemd
+from scipy.stats import wasserstein_distance
 
 
 def emd(x, y, distance_scaling=1.0):
+    """Earth's mover distance (or Wasserstein metric)
+     between 2 probability distributions."""
     support_size = max(len(x), len(y))
     d_mat = toeplitz(range(support_size)).astype(np.float64)
     distance_mat = d_mat / distance_scaling
@@ -17,7 +19,7 @@ def emd(x, y, distance_scaling=1.0):
     elif len(y) < len(x):
         y = np.hstack((y, [0.0] * (support_size - len(y))))
 
-    emd_value = pyemd.emd(x, y, distance_mat)
+    emd_value = wasserstein_distance(x, y, distance_mat)
     return emd_value
 
 
