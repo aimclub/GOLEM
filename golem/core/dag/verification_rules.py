@@ -46,6 +46,8 @@ def has_no_isolated_components(graph: Graph):
     ud_nx_graph = nx.Graph()
     ud_nx_graph.add_nodes_from(nx_graph)
     ud_nx_graph.add_edges_from(nx_graph.edges)
+    if ud_nx_graph.number_of_nodes() == 0:
+        raise ValueError(f'{ERROR_PREFIX} Graph is null, connectivity not defined')
     if not nx.is_connected(ud_nx_graph):
         raise ValueError(f'{ERROR_PREFIX} Graph has isolated components')
     return True
