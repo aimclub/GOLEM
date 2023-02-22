@@ -2,6 +2,8 @@ from datetime import timedelta
 from functools import partial
 from typing import Type, Optional, Sequence
 
+import networkx as nx
+
 from examples.synthetic_graph_evolution.experiment import run_experiments, graph_generators
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, relabel_nx_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
@@ -15,7 +17,7 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.metrics.edit_distance import tree_edit_dist
-from golem.metrics.graph_metrics import *
+from golem.metrics.graph_metrics import size_diff
 
 
 def tree_search_setup(target_graph: nx.DiGraph,
@@ -38,12 +40,13 @@ def tree_search_setup(target_graph: nx.DiGraph,
         history_dir=None,
     )
     gp_params = GPAlgorithmParameters(
+        # genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         multi_objective=True,
-        genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         mutation_types=[
-            MutationTypesEnum.tree_growth,
+            # MutationTypesEnum.tree_growth,
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_drop,
+            MutationTypesEnum.single_edge,
         ],
         crossover_types=[CrossoverTypesEnum.none],
     )
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     results_log = run_experiments(optimizer_setup=tree_search_setup,
                                   optimizer_cls=EvoGraphOptimizer,
                                   graph_names=['tree'],
-                                  graph_sizes=[8, 16, 32],
+                                  graph_sizes=[32],
                                   num_trials=1,
                                   trial_timeout=5,
                                   trial_iterations=2000,

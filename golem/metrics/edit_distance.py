@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from itertools import zip_longest
 from typing import Optional, Callable, Dict, Sequence
 
 import networkx as nx
@@ -24,8 +25,10 @@ def tree_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
 
 
 def _nx_to_zss_tree(graph: nx.DiGraph) -> zss.Node:
+    # Root is the node without successors
     root = _get_root_node(graph)
-    tree = nx.dfs_tree(graph, source=root)
+    # that's why we first reverse the tree to get proper DFS traverse
+    tree = graph.reverse()
     # Add nodes with appropriate labels for comparison
     nodes_dict = {}
     for node_id, node_data in tree.nodes(data=True):
@@ -38,7 +41,7 @@ def _nx_to_zss_tree(graph: nx.DiGraph) -> zss.Node:
 
 
 def _get_root_node(nxgraph: nx.DiGraph) -> Sequence:
-    source = [n for (n, d) in nxgraph.in_degree() if d == 0][0]
+    source = [n for (n, d) in nxgraph.out_degree() if d == 0][0]
     return source
 
 
@@ -78,11 +81,18 @@ def matrix_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     return value
 
 
-def try_tree_edit_distance():
-    node_types = list('abcdefg')
-    for i, n in enumerate(range(4, 50, 4)):
-        g1 = nx.random_tree(n, create_using=nx.DiGraph)
-        g2 = nx.random_tree(n, create_using=nx.DiGraph)
+def try_tree_edit_distance(sizes1=None, sizes2=None, node_types=None,
+                           print_trees=False):
+    if not sizes1:
+        sizes1 = list(range(5, 100, 5))
+    if not sizes2:
+        sizes2 = sizes1
+    if not node_types:
+        node_types = ['X']
+
+    for i, (n1, n2) in enumerate(zip_longest(sizes1, sizes2)):
+        g1 = nx.random_tree(n1, create_using=nx.DiGraph).reverse()
+        g2 = nx.random_tree(n2, create_using=nx.DiGraph).reverse()
         g1 = relabel_nx_graph(g1, node_types)
         g2 = relabel_nx_graph(g2, node_types)
 
@@ -90,10 +100,14 @@ def try_tree_edit_distance():
         dist = tree_edit_dist(g1, g2)
         duration = datetime.now() - start_time
 
-        print(f'iter {i} with size={n} dist={dist}, t={duration.total_seconds():.3f}s')
+        print(f'iter {i} with sizes={(n1, n2)} dist={dist}, '
+              f't={duration.total_seconds():.3f}s')
+        if print_trees:
+            print(nx.forest_str(g1))
+            print(nx.forest_str(g2))
 
 
 if __name__ == "__main__":
-    try_tree_edit_distance()
+    try_tree_edit_distance(print_trees=False, node_types=list('XYZWQ'))
 
 

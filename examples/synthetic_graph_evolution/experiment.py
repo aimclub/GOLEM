@@ -60,7 +60,7 @@ def run_experiments(optimizer_setup: Callable,
             print(f'\nTrial #{i} of {experiment_id} started at {start_time}', file=log)
 
             # Generate random target graph and run the optimizer
-            target_graph = graph_generator(num_nodes)
+            target_graph = graph_generator(num_nodes).reverse()
             target_graph = relabel_nx_graph(target_graph, node_types)
 
             # Run optimizer setup
