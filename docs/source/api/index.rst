@@ -14,3 +14,4 @@ This is automatically generated API reference.
    parameters
    profiler
    logging
+   tuning

@@ -85,8 +85,8 @@ class SimultaneousTuner(HyperoptTuner):
 
     def _search_near_initial_parameters(self, graph: OptGraph, search_space: dict, initial_parameters: dict,
                                         trials: Trials, show_progress: bool = True) -> Tuple[Trials, int]:
-        """ Method to search using the search space where initially parameters set for the graph are fixed.
-        This allows not to lose results obtained while composition process (e.g. ``parameter_change_mutation``)
+        """ Method to search using the search space where parameters initially set for the graph are fixed.
+        This allows not to lose results obtained while composition process
 
         Args:
             graph: graph to be tuned
@@ -157,7 +157,7 @@ class SimultaneousTuner(HyperoptTuner):
     def _objective(self, parameters_dict: dict, graph: OptGraph, unchangeable_parameters: Optional[dict] = None) \
             -> float:
         """
-        Objective function for minimization / maximization problem
+        Objective function for minimization problem
 
         Args:
             parameters_dict: dict which contains new graph hyperparameters
