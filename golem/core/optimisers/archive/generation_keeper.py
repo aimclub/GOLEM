@@ -1,16 +1,17 @@
+import datetime
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, Sequence, Type, Optional, Any, Callable
+from typing import Dict, Iterable, Sequence, Optional, Any, Callable
 
 import numpy as np
-import datetime
 
-from golem.core.optimisers.fitness import is_metric_worse, Fitness
+from golem.core.optimisers.fitness import is_metric_worse
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from .individuals_containers import HallOfFame, ParetoFront
 
-PARETO_MAX_POP_SIZE_MULTIPLIER = 10
+PARETO_MAX_POP_SIZE_MULTIPLIER = 5
+
 
 class ImprovementWatcher(ABC):
     """Interface that allows to check if optimization progresses or stagnates."""

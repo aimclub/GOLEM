@@ -32,6 +32,14 @@ class ObjectiveEvaluate(ABC, Generic[G]):
         """Provides functional interface for ObjectiveEvaluate."""
         return self.evaluate(graph)
 
+    @property
+    def eval_n_jobs(self) -> int:
+        return self._eval_n_jobs
+
+    @eval_n_jobs.setter
+    def eval_n_jobs(self, n_jobs: int):
+        self._eval_n_jobs = n_jobs
+
     def evaluate(self, graph: G) -> Fitness:
         """Evaluate graph and compute its fitness."""
         return self._objective(graph, **self._objective_kwargs)

@@ -5,7 +5,6 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.genetic.gp_operators import random_graph
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.optimizer import GraphGenerationParams
 
@@ -42,7 +41,7 @@ class InitialPopulationGenerator(InitialGraphsGenerator):
             return adapter.adapt(self.initial_graphs)
 
         if not self.generation_function:
-            self.generation_function = partial(random_graph, self.graph_generation_params, self.requirements)
+            self.generation_function = partial(self.graph_generation_params.random_graph_factory, self.requirements)
 
         population = []
         n_iter = 0

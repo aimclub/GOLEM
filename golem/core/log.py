@@ -1,6 +1,7 @@
 import json
 import logging
 import multiprocessing
+import os
 import pathlib
 import sys
 from logging.config import dictConfig
@@ -17,22 +18,8 @@ class Log(metaclass=SingletonMeta):
     """Log object to store logger singleton and log adapters
 
     Args:
-        logger_name: name of the logger
         config_json_file: ``json`` file from which to collect the logger if specified
-        output_logging_level: logging levels are the same as in 'logging'
-
-            .. details:: more details..
-
-                * ``50`` -> critical
-                * ``40`` -> error
-                * ``30`` -> warning
-                * ``20`` -> info
-                * ``10`` -> debug
-                * ``0`` -> nonset
-
-                Attention!
-                    logs with a level HIGHER than set will be displayed
-
+        output_logging_level: logging levels are the same as in standard python module 'logging'
         log_file: file to write logs in
     """
 
@@ -72,6 +59,8 @@ class Log(metaclass=SingletonMeta):
         self.logger.setLevel(logging_level)
         for handler in self.handlers:
             handler.setLevel(logging_level)
+        for adapter in self.__log_adapters.values():
+            adapter.logging_level = logging_level
 
     def get_adapter(self, prefix: str) -> 'LoggerAdapter':
         """ Get adapter to pass contextual information to log messages
@@ -171,13 +160,46 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.logger.setLevel(self.logging_level)
         return '%s - %s' % (self.extra['prefix'], msg), kwargs
 
-    def message(self, message: str):
+    def debug(self, msg, *args, **kwargs):
+        raise_if_test(msg, **kwargs)
+        super().debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        raise_if_test(msg, **kwargs)
+        super().info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        raise_if_test(msg, **kwargs)
+        super().warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        raise_if_test(msg, **kwargs)
+        super().error(msg, *args, **kwargs)
+
+    def exception(self, msg, *args, exc_info=True, **kwargs):
+        raise_if_test(msg, **kwargs)
+        super().exception(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        raise_if_test(msg, **kwargs)
+        super().critical(msg, *args, **kwargs)
+
+    def log(self, level, msg, *args, **kwargs):
+        """
+        Delegate a log call to the underlying logger, after adding
+        contextual information from this adapter instance.
+        """
+        raise_if_test(msg, **kwargs)
+        super().log(level, msg, *args, **kwargs)
+
+    def message(self, msg: str, **kwargs):
         """ Record the message to user.
         Message is an intermediate logging level between info and warning
         to display main info about optimization process """
+        raise_if_test(msg, **kwargs)
         message_logging_level = 45
         if message_logging_level >= self.logging_level:
-            self.critical(msg=message)
+            self.critical(msg=msg)
 
     def __str__(self):
         return f'LoggerAdapter object for {self.extra["prefix"]} module'
@@ -186,14 +208,20 @@ class LoggerAdapter(logging.LoggerAdapter):
         return self.__str__()
 
 
+def raise_if_test(msg, **kwargs):
+    if kwargs.get('raise_if_test', False) is True and is_test_session:
+        raise Exception(msg)
+
+
+def is_test_session():
+    return 'PYTEST_CURRENT_TEST' in os.environ
+
+
 def default_log(prefix: Optional[object] = 'default') -> 'LoggerAdapter':
     """ Default logger
 
     Args:
-        class_object: instance of class
         prefix: adapter prefix to add it to log messages
-        logging_level: logging levels are the same as in 'logging'
-        write_logs: bool indicating whenever to write logs in console or not
 
     Returns:
         :obj:`LoggerAdapter`: :obj:`LoggerAdapter` object

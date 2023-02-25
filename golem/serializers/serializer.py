@@ -85,6 +85,7 @@ class Serializer(JSONEncoder, JSONDecoder):
         from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
         from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
         from golem.core.optimisers.fitness.fitness import Fitness
+        from golem.core.optimisers.objective.objective import ObjectiveInfo
         from golem.core.utilities.data_structures import ComparableEnum
 
         from .any_serialization import any_from_json, any_to_json
@@ -108,6 +109,7 @@ class Serializer(JSONEncoder, JSONDecoder):
 
         default_coders = {
             Fitness: basic_serialization,
+            ObjectiveInfo: basic_serialization,
             Individual: basic_serialization,
             Generation: basic_serialization,
             LinkedGraphNode: {_to_json: graph_node_to_json, _from_json: any_from_json},

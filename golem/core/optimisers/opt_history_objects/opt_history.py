@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 
 from golem.core.log import default_log
+from golem.core.optimisers.objective.objective import ObjectiveInfo
 from golem.core.optimisers.opt_history_objects.generation import Generation
 
 from golem.core.paths import default_data_dir
@@ -26,14 +27,14 @@ class OptHistory:
     Can be used for any type of graph that is serializable with Serializer.
 
     Args:
-        is_multi_objective: specifies if history is built for multi-objective optimization.
+        objective: information about metrics (metric names and if it's multi-objective)
         default_save_dir: default directory used for saving history when not explicit path is provided.
     """
 
     def __init__(self,
-                 is_multi_objective: bool = False,
+                 objective: Optional[ObjectiveInfo] = None,
                  default_save_dir: Optional[os.PathLike] = None):
-        self._is_multi_objective = is_multi_objective
+        self._objective = objective or ObjectiveInfo()
         self.individuals: List[Generation] = []
         self.archive_history: List[List[Individual]] = []
         self._tuning_result: Optional[Graph] = None
@@ -48,6 +49,10 @@ class OptHistory:
         else:
             default_save_dir = default_data_dir()
         self._default_save_dir = str(default_save_dir)
+
+    @property
+    def objective(self):
+        return self._objective
 
     def is_empty(self) -> bool:
         return not self.individuals
@@ -70,7 +75,7 @@ class OptHistory:
 
             # Write header
             metric_str = 'metric'
-            if self._is_multi_objective:
+            if self.objective.is_multi_objective:
                 metric_str += 's'
             header_row = ['index', 'generation', metric_str, 'quantity_of_operations', 'depth', 'metadata']
             writer.writerow(header_row)
@@ -118,7 +123,7 @@ class OptHistory:
     @property
     def historical_fitness(self) -> Sequence[Sequence[Union[float, Sequence[float]]]]:
         """Return sequence of histories of generations per each metric"""
-        if self._is_multi_objective:
+        if self.objective.is_multi_objective:
             historical_fitness = []
             num_metrics = len(self.individuals[0][0].fitness.values)
             for objective_num in range(num_metrics):
@@ -134,7 +139,7 @@ class OptHistory:
     @property
     def all_historical_fitness(self) -> List[float]:
         historical_fitness = self.historical_fitness
-        if self._is_multi_objective:
+        if self.objective.is_multi_objective:
             all_historical_fitness = []
             for obj_num in range(len(historical_fitness)):
                 all_historical_fitness.append(list(itertools.chain(*historical_fitness[obj_num])))
@@ -153,7 +158,7 @@ class OptHistory:
         Returns:
             List: all historical fitness
         """
-        if self._is_multi_objective:
+        if self.objective.is_multi_objective:
             all_historical_quality = self.all_historical_fitness[metric_position]
         else:
             all_historical_quality = self.all_historical_fitness

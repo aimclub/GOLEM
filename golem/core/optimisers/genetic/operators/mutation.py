@@ -9,7 +9,6 @@ from golem.core.adapter import register_native
 from golem.core.optimisers.advisor import RemoveType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
-from golem.core.optimisers.genetic.gp_operators import random_graph
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph, OptNode
@@ -84,7 +83,8 @@ class Mutation(Operator):
             if is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation', operators=tuple(mutation_names),
                                                  parent_individuals=individual)
-                return Individual(new_graph, parent_operator)
+                return Individual(new_graph, parent_operator,
+                                  metadata=self.requirements.static_individual_metadata)
 
         self.log.debug('Number of mutation attempts exceeded. '
                        'Please check optimization parameters for correctness.')
@@ -315,7 +315,7 @@ class Mutation(Operator):
             if not new_subtree:
                 return graph
         else:
-            new_subtree = random_graph(self.graph_generation_params, self.requirements, max_depth).root_node
+            new_subtree = self.graph_generation_params.random_graph_factory(self.requirements, max_depth).root_node
         graph.update_subtree(node_from_graph, new_subtree)
         return graph
 

@@ -1,9 +1,8 @@
 from copy import deepcopy
-from typing import Sequence, Optional, Dict, Any, Iterable
+from typing import Optional, Dict, Any, Iterable
 
-import networkx
 import networkx as nx
-import numpy
+import numpy as np
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph_node import GraphNode

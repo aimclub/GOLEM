@@ -1,133 +1,136 @@
-.. image:: docs/img/golem_logo.png
+.. image:: /docs/source/img/golem_logo-02.png
    :alt: Logo of GOLEM framework
-   :scale: 70 %
+   :align: center
+   :width: 500
 
-.. start-badges
-.. list-table::
-   :stub-columns: 1
+.. class:: center
 
-   * - package
-     - | |pypi| |py_7| |py_8| |py_9|
-   * - tests
-     - | |build|
-   * - docs
-     - |docs|
-   * - license
-     - | |license|
-   * - support
-     - | |tg|
-
-.. end-badges
-
-**GOLEM**: Graph Optimization and Learning by Evolutionary Methods
-
-GOLEM is an open-source AI framework for optimization and learning of structured graph-based models with meta-heuristic methods. It is centered around 2 ideas:
-
-1. Potential of meta-heuristic methods in complex problem spaces.
-
-Focus on meta-heuristics allows approaching kinds of problems where gradient-based learning methods (notably, neural networks) can't be easily applied, like optimization problems with multiple conflicting objectives or having combinatorial character.
-
-2. Importance of structured models in many problem domains.
-
-Graph-based learning enables solutions in the form of structured and hybrid probabilistic models, not to mention that a wide range of domain-specific problems have a natural formulation in the form of graphs.
-
-Together this constitutes an approach to AI that potentially leads to structured, intuitive, interpretable methods and solutions for a wide range of tasks.
+    |python| |pypi| |build| |docs| |license| |tg| |eng|
 
 
-Core Features
-=============
+Оптимизация и обучение графовых моделей эволюционными методами
+--------------------------------------------------------------
 
-- **Structured** models with joint optimization of graph structure and properties (node attributes).
-- **Metaheuristic** methods (notably, evolutionary) applicable for any task with well-defined objective.
-- **Multi-objective** optimization that can take into account both quality and complexity.
-- **Constrained** optimization with support for arbitrary domain-specific constraints.
-- **Extensible** to new domains.
-- **Interpretable** thanks to meta-heuristics, structured models, adn visualisation tools.
-- **Reproducible** thanks to rich optimization history and model serialization.
+GOLEM - это фреймворк искусственного интеллекта с открытым исходным кодом для оптимизации и обучения структурированных
+моделей на основе графов с помощью метаэвристических методов. Он основан на двух идеях:
 
+1. Метаэвристические методы имеют большой потенциал в решении сложных задач.
 
-Applications
-==================
+Фокус на метаэвристике позволяет работать с типами задач, для которых градиентные методы обучения (в частности, нейронные сети)
+не могут быть легко применены. Например для задач многоцелевой оптимизации или для комбинаторных задач.
 
-GOLEM is potentially applicable for any optimization problem structures
+2. Структурированные модели важны в различных областях.
 
-- that can be represented as directed graphs;
-- with some clearly defined fitness function on them.
+Обучение на основе графов позволяет находить решения в виде структурированных и гибридных вероятностных моделей, не говоря
+уже о том, что широкий спектр задач в разных предметных областях естественным образом формулируется в виде графов.
 
-Graph models can represent fixed structures (e.g. physical model such as truss structures) or functional models that define a data-flow or inference process (e.g. bayesian networks that can be fitted and queried).
-
-Examples of GOLEM applications:
-
-- Automatic Machine Learning (AutoML) with optimal ML pipelines search in `FEDOT framework <https://github.com/aimclub/FEDOT>`_
-- Bayesian network structure search in `BAMT framework <https://github.com//FEDOT>`_
-- Differential equation discovery for physical models in `EPDE framework <https://github.com/ITMO-NSS-team/EPDE>`_
-- Geometric design of physical objects in `GEFEST framework <https://github.com/aimclub/GEFEST>`_
-- `Neural architecture search <https://github.com/ITMO-NSS-team/nas-fedot>`_
-
-As GOLEM is a general-purpose, it's easy to imagine fore potential applications, for example, finite state automata search for robotics control or molecular graph learning for drug discovery, and more.
-
-..
-    TODO:
-    Installation
-    ============
-
-    GOLEM can be installed with ``pip``:
-
-    .. code-block::
-
-      $ pip install golem
+В совокупности это представляет собой подход к ИИ, который потенциально приводит к созданию структурированных, интуитивно понятных,
+поддающихся интерпретации методов и решений для широкого круга задач.
 
 
-Project Structure
+Основные возможности
+====================
+
+- **Структурированные модели** с одновременной оптимизацией структуры графа и его свойств (атрибутов узлов).
+- **Метаэвристические методы** (в основном эволюционные), применимые к любой задаче с четко заданной целевой функцией.
+- **Многоцелевая оптимизация**, которая может учитывать как качество, так и сложность.
+- **Оптимизация с ограничениями** с поддержкой произвольных ограничений, специфичных для конкретных областей.
+- **Расширяемость** для новых предметных областей.
+- **Интерпретируемость** благодаря метаэвристике, структурированным моделям и инструментам визуализации.
+- **Воспроизводимость** благодаря подробной истории оптимизации и сериализации моделей.
+
+
+Применение
+==========
+
+GOLEM потенциально применим к любой структуре задач оптимизации:
+
+- к задачам, которые могут быть представлены в виде направленных графов;
+- к задачам, которые имеют какую-то четко определенную фитнес-функцию.
+
+Графовые модели могут представлять собой фиксированные структуры (например, физические модели, такие как ферменные конструкции)
+или функциональные модели, которые определяют поток данных или процесс предсказания (например, байесовские сети, которые
+могут быть обучены и могут отвечать на запросы).
+
+Примеры применения GOLEM:
+
+- Автоматическое машинное обучение (AutoML) для поиска оптимальных пайплайнов машинного обучения в `фреймворке FEDOT <https://github.com/aimclub/FEDOT>`_
+- Поиск структуры при помощи байесовской сети в `фреймворке BAMT <https://github.com/ITMO-NSS-team/BAMT>`_
+- Поиск дифференциальных уравнений для физических моделей в рамках `фреймворка EPDE <https://github.com/ITMO-NSS-team/EPDE>`_
+- Геометрический дизайн физических объектов в рамках `фреймворка GEFEST <https://github.com/aimclub/GEFEST>`_
+- `Поиск архитектуры нейронных сетей <https://github.com/ITMO-NSS-team/nas-fedot>`_
+
+Поскольку GOLEM - это фреймворк общего назначения, легко представить его потенциальное применение, например,
+поиск конечных автоматов для управления в робототехнике или изучение молекулярных графов для разработки лекарств и
+многое другое.
+
+
+Установка
+=========
+
+GOLEM можно установить с помощью ``pip``:
+
+.. code-block::
+
+  $ pip install thegolem
+
+
+Структура проекта
 =================
 
-The repository includes the following packages and directories:
+Репозиторий включает в себя следующие пакеты и папки:
 
-- Package `core` contains the main classes and scripts.
-- Package `core.adapter` is responsible for transformation between domain graphs and internal graph representation used by optimisers.
-- Package `core.dag` contains classes and algorithms for representation and processing of graphs.
-- Package `core.optimisers` contains graph optimisers and all related classes (like those representing fitness, individual, population, etc.), including optimization history.
-- Package `core.optimisers.genetic` contains genetic (also called evolutionary) graph optimiser and operators (mutation, selection, and so on).
-- Package `core.utilities` contains utilities and data structures used by other modules.
-- Package `serializers` contains class `Serializer` with required facilities, and is responsible for serialization of project classes (graphs, optimization history, and everything related).
-- Package `visualisation` contains classes that allow to visualise optimization history, graphs, and certain plots useful for analysis.
-- Package `examples` includes several use-cases where you can start to discover how the framework works.
-- All unit and integration tests are contained in the `test` directory.
-- The sources of the documentation are in the `docs` directory.
+- Пакет ``core`` содержит основные классы и скрипты.
+- Пакет ``core.adapter`` отвечает за преобразование между графами из предметной области и внутренним представлением, используемым оптимизаторами.
+- Пакет ``core.dag`` содержит классы и алгоритмы для изображения и обработки графов.
+- Пакет ``core.optimisers`` содержит оптимизаторы для графов и все вспомогательные классы (например, те, которые представляют фитнес, отдельных лиц, популяции и т.д.), включая историю оптимизации.
+- Пакет ``core.optimisers.genetic`` содержит генетический (также называемый эволюционным) оптимизатор графов и операторы (мутация, отбор и так далее).
+- Пакет ``core.utilities`` содержит утилиты и структуры данных, используемые другими модулями.
+- Пакет ``serializers`` содержит класс ``Serializer`` и отвечает за сериализацию классов проекта (графики, история оптимизации и все, что с этим связано).
+- Пакет ``visualisation`` содержит классы, которые позволяют визуализировать историю оптимизации, графы и некоторые графики, полезные для анализа.
+- Пакет ``examples`` включает в себя несколько примеров использования фреймворка.
+- Все модульные и интеграционные тесты содержатся в каталоге ``test``.
+- Источники документации находятся в каталоге ``docs``.
 
 
-Current R&D and future plans
-============================
+Текущие исследования/разработки и планы на будущее
+==================================================
 
-Any contribution is welcome. Our R&D team is open for cooperation with other scientific teams as well as with industrial partners.
+Наша научно-исследовательская команда открыта для сотрудничества с другими научными коллективами, а также с партнерами из индустрии.
 
-Contribution Guide
-==================
-
-- The contribution guide is available in the `repository <https://github.com/nccr-itmo/FEDOT/blob/master/docs/source/contribution.rst>`__.
-
-Acknowledgments
+Как участвовать
 ===============
 
-We acknowledge the contributors for their important impact and the participants of the numerous scientific conferences and workshops for their valuable advice and suggestions.
+- Инструкция для добавления изменений находится в `репозитории </docs/source/contribution.rst>`__.
 
-Supported by
-============
+Благодарности
+=============
 
-The project is maintained by the research team of the Natural Systems Simulation Lab. It is a part of the `National Center for Cognitive Research of ITMO University <https://actcognitive.org/>`_, that supports research and development of the project.
+Мы благодарны контрибьютерам за их важный вклад, а участникам многочисленных конференций и семинаров -
+за их ценные советы и предложения.
 
-Contacts
+Разработка ведётся при поддержке
+================================
+
+.. image:: /docs/source/img/AIM-Strong_Sign_Norm-01_Colors.svg
+    :width: 400px
+    :align: center
+    :alt: Strong AI in industry logo
+
+Разработка поддерживается исследовательским центром `Сильный искусственный интеллект в промышленности <https://sai.itmo.ru/>`__ `Университета ИТМО <https://itmo.ru/>`__.
+
+Контакты
 ========
-- `Telegram channel for solving problems and answering questions on FEDOT <https://t.me/FEDOT_helpdesk>`_
-- `Natural System Simulation Team <https://itmo-nss-team.github.io/>`_
-- `Anna Kalyuzhnaya <https://scholar.google.com/citations?user=bjiILqcAAAAJ&hl=ru>`_, Team leader (anna.kalyuzhnaya@itmo.ru)
-- `Newsfeed <https://t.me/NSS_group>`_
-- `Youtube channel <https://www.youtube.com/channel/UC4K9QWaEUpT_p3R4FeDp5jA>`_
+- `Telegram канал <https://t.me/FEDOT_helpdesk>`_ для решения проблем и ответов на вопросы, связанные с FEDOT
+- `Команда Лаборатории моделирования естественных систем <https://itmo-nss-team.github.io/>`_
+- `Анна Калюжная <https://scholar.google.com/citations?user=bjiILqcAAAAJ&hl=ru>`_, тимлид (anna.kalyuzhnaya@itmo.ru)
+- `Новости <https://t.me/NSS_group>`_
+- `Youtube канал <https://www.youtube.com/channel/UC4K9QWaEUpT_p3R4FeDp5jA>`_
 
-Citation
-========
+Цитирование
+===========
 
-If you use our project in your work or research, we would appreciate citations.
+Если вы используете наш проект в своей работе или исследовании, мы будем признательны за цитирование.
 
 @article{nikitin2021automated,
   title = {Automated evolutionary approach for the design of composite machine learning pipelines},
@@ -146,43 +149,42 @@ If you use our project in your work or research, we would appreciate citations.
   doi={10.1109/CEC45853.2021.9504773}}
 
 
-Other papers - in `ResearchGate <https://www.researchgate.net/project/Evolutionary-multi-modal-AutoML-with-FEDOT-framework>`_.
+Другие статьи можно найти на `ResearchGate <https://www.researchgate.net/project/Evolutionary-multi-modal-AutoML-with-FEDOT-framework>`_.
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. |build| image:: https://github.com/nccr-itmo/FEDOT/workflows/Build/badge.svg?branch=master
+.. |build| image:: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=main
    :alt: Build Status
-   :target: https://github.com/nccr-itmo/FEDOT/actions
+   :target: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml
 
-.. |coverage| image:: https://codecov.io/gh/nccr-itmo/FEDOT/branch/master/graph/badge.svg
+.. |coverage| image:: https://codecov.io/gh/aimclub/GOLEM/branch/main/graph/badge.svg
    :alt: Coverage Status
-   :target: https://codecov.io/gh/nccr-itmo/FEDOT
+   :target: https://codecov.io/gh/aimclub/GOLEM
 
-.. |pypi| image:: https://badge.fury.io/py/fedot.svg
+.. |pypi| image:: https://img.shields.io/pypi/v/thegolem.svg
+   :alt: PyPI Package Version
+   :target: https://img.shields.io/pypi/v/thegolem
+
+.. |python| image:: https://img.shields.io/pypi/pyversions/thegolem.svg
    :alt: Supported Python Versions
-   :target: https://badge.fury.io/py/fedot
+   :target: https://img.shields.io/pypi/pyversions/thegolem
 
-.. |py_7| image:: https://img.shields.io/badge/python_3.7-passing-success
+.. |license| image:: https://img.shields.io/github/license/aimclub/GOLEM
    :alt: Supported Python Versions
-   :target: https://img.shields.io/badge/python_3.7-passing-success
+   :target: https://github.com/aimclub/GOLEM/blob/main/LICENSE.md
 
-.. |py_8| image:: https://img.shields.io/badge/python_3.8-passing-success
-   :alt: Supported Python Versions
-   :target: https://img.shields.io/badge/python_3.8-passing-success
-
-.. |py_9| image:: https://img.shields.io/badge/python_3.9-passing-success
-   :alt: Supported Python Versions
-   :target: https://img.shields.io/badge/python_3.9-passing-success
-
-.. |license| image:: https://img.shields.io/github/license/nccr-itmo/FEDOT
-   :alt: Supported Python Versions
-   :target: https://github.com/nccr-itmo/FEDOT/blob/master/LICENSE.md
-
-.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/fedot?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
-   :target: https://pepy.tech/project/fedot
+.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/thegolem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
+   :target: https://pepy.tech/project/thegolem
 
 .. |tg| image:: https://img.shields.io/badge/Telegram-Group-blue.svg
-          :target: https://t.me/FEDOT_helpdesk
-          :alt: Telegram Chat
+   :alt: Telegram Chat
+   :target: https://t.me/FEDOT_helpdesk
+
+.. |by-golem| image:: http://img.shields.io/badge/powered%20by-GOLEM-orange.svg?style=flat
+   :target: http://github.com/aimclub/GOLEM
+   :alt: Powered by GOLEM
+
+.. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
+            :target: /README_en.rst

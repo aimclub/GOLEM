@@ -47,8 +47,8 @@ class MemoryProfiler:
             roots = [Graph, GraphOptimizer]
 
         if visualization:
-            # Create the plot of the memory time dependence.
-            self._create_memory_plot(function, args, kwargs)
+            # # Create the plot of the memory time dependence.
+            # self._create_memory_plot(function, args, kwargs)
 
             # Create call graph.
             self._create_memory_graph(roots, max_depth)
@@ -68,7 +68,7 @@ class MemoryProfiler:
 
         sns.set_style("whitegrid")
 
-        ax = sns.lineplot(time_split, mem_res, linewidth=3, marker="X", markersize=8)
+        ax = sns.lineplot((time_split, mem_res), linewidth=3, marker="X", markersize=8)
         ax.axhline(mem_res[max_index], ls='--', color='red')
         ax.axvline(time_split[max_index], ls='--', color='red')
 

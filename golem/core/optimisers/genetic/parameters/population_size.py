@@ -11,32 +11,38 @@ from golem.core.optimisers.genetic.operators.operator import PopulationT
 
 PopulationSize = AdaptiveParameter[int]
 
+# min pop size to avoid getting stuck in local maximum during optimization
+MIN_POP_SIZE = 5
+
 
 class ConstRatePopulationSize(PopulationSize):
     def __init__(self, pop_size: int, offspring_rate: float, max_pop_size: Optional[int] = None):
         self._offspring_rate = offspring_rate
         self._initial = pop_size
-        self._max_size = max_pop_size
+        self._max_pop_size = max_pop_size
 
     @property
     def initial(self) -> int:
         return self._initial
 
     def next(self, population: PopulationT) -> int:
-        pop_size = len(population)
-        if not self._max_size or pop_size < self._max_size:
+        # to prevent stagnation
+        pop_size = max(len(population), self._initial)
+        if not self._max_pop_size or pop_size < self._max_pop_size:
             pop_size += math.ceil(pop_size * self._offspring_rate)
-        if self._max_size:
-            pop_size = min(pop_size, self._max_size)
+        if self._max_pop_size:
+            pop_size = min(pop_size, self._max_pop_size)
         return pop_size
 
 
 class AdaptivePopulationSize(PopulationSize):
     def __init__(self,
                  improvement_watcher: ImprovementWatcher,
-                 progression_iterator: BidirectionalIterator[int]):
+                 progression_iterator: BidirectionalIterator[int],
+                 max_pop_size: Optional[int] = None):
         self._improvements = improvement_watcher
         self._iterator = progression_iterator
+        self._max_pop_size = max_pop_size
         self._initial = self._iterator.next() if self._iterator.has_next() else self._iterator.prev()
 
     @property
@@ -48,14 +54,20 @@ class AdaptivePopulationSize(PopulationSize):
         complexity_decreased = self._improvements.is_complexity_improved
         progress_in_both_goals = fitness_improved and complexity_decreased
         no_progress = not fitness_improved and not complexity_decreased
-
         pop_size = len(population)
-        if progress_in_both_goals and pop_size > 2:
-            if self._iterator.has_prev():
-                pop_size = self._iterator.prev()
-        elif no_progress:
+        too_many_fitness_eval_errors = \
+            pop_size/self._iterator.current() < 0.5
+
+        if too_many_fitness_eval_errors or no_progress:
             if self._iterator.has_next():
                 pop_size = self._iterator.next()
+        elif progress_in_both_goals and pop_size > 0:
+            if self._iterator.has_prev():
+                pop_size = self._iterator.prev()
+
+        pop_size = max(pop_size, MIN_POP_SIZE)
+        if self._max_pop_size:
+            pop_size = min(pop_size, self._max_pop_size)
 
         return pop_size
 
@@ -80,7 +92,9 @@ def init_adaptive_pop_size(requirements: GPAlgorithmParameters,
                                                 start_value=requirements.pop_size,
                                                 min_sequence_value=1,
                                                 max_sequence_value=requirements.max_pop_size)
-        pop_size = AdaptivePopulationSize(improvement_watcher, pop_size_progression)
+        pop_size = AdaptivePopulationSize(improvement_watcher=improvement_watcher,
+                                          progression_iterator=pop_size_progression,
+                                          max_pop_size=requirements.max_pop_size)
     else:
         raise ValueError(f"Unknown genetic type scheme {genetic_scheme_type}")
     return pop_size
