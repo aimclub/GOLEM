@@ -146,13 +146,13 @@ GOLEM можно установить с помощью ``pip``:
 В данных публикациях описывается применения алгоритмов GOLEM и основанных на нем решений
 для различных прикладных задач.
 
-- Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08. - (применение GOLEM для задачи поиска оптимального пайплайна машинного обучения для прогнозирования временных рядов).
+- GOLEM для задачи поиска оптимального пайплайна машинного обучения для прогнозирования временных рядов: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
 
-- Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817. - (применение GOLEM для идентификации структуры уравнения для акустических данных).
+- GOLEM для идентификации структуры уравнения для акустических данных: Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
 
-- Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8. - (применение GOLEM для идентификации структуры дифференциальных уравнений в частных производных).
+- GOLEM для идентификации структуры дифференциальных уравнений в частных производных: Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8.
 
-- Deeva I., Kalyuzhnaya A. V., Alexander V. Boukhanovsky Adaptive Learning Algorithm for Bayesian Networks Based on Kernel Mixtures Distributions//International Journal of Artificial Intelligence. – 2023. - Т.21. - №. 1. - С. 90 - (применение GOLEM для задачи идентификации Баесовских сетей.)
+- GOLEM для задачи идентификации Баесовских сетей: Deeva I., Kalyuzhnaya A. V., Alexander V. Boukhanovsky Adaptive Learning Algorithm for Bayesian Networks Based on Kernel Mixtures Distributions//International Journal of Artificial Intelligence. – 2023. - Т.21. - №. 1. - С. 90.
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
