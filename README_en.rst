@@ -121,7 +121,7 @@ Contacts
 ========
 - `Telegram channel <https://t.me/FEDOT_helpdesk>`_ for solving problems and answering questions about FEDOT
 - `Natural System Simulation Team <https://itmo-nss-team.github.io/>`_
-- `Anna Kalyuzhnaya <https://scholar.google.com/citations?user=bjiILqcAAAAJ&hl=ru>`_, Team leader (anna.kalyuzhnaya@itmo.ru)
+- `Nikolay Nikitin <https://scholar.google.com/citations?user=eQBTGccAAAAJ&hl=ru>`_, AutoML Lead (nnikitin@itmo.ru)
 - `Newsfeed <https://t.me/NSS_group>`_
 - `Youtube channel <https://www.youtube.com/channel/UC4K9QWaEUpT_p3R4FeDp5jA>`_
 
@@ -139,13 +139,26 @@ If you use our project in your work or research, we would appreciate citations.
   doi = {https://doi.org/10.1016/j.future.2021.08.022}}
 
 Papers that describes that applications of GOLEM:
-===========
+=================================================
 
-This papers desribe the domain-specific applications of GOLEM and GOLEM-based solutions.
+В данных публикациях описывается применения алгоритмов GOLEM и основанных на нем решений
+для различных прикладных задач.
 
-- Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
-- Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
-- Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8.
+- Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08. -
+application of GOLEM for time series forecasting pipeline design.
+
+- Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817. -
+application of GOLEM for acoustic equation discovery.
+
+- Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8. -
+application of GOLEM for PDE discovery.
+
+- Deeva I., Kalyuzhnaya A. V., Alexander V. Boukhanovsky Adaptive Learning Algorithm for Bayesian Networks Based on Kernel Mixtures Distributions//International Journal of Artificial Intelligence. – 2023. - Т.21. - №. 1. - С. 90 -
+application of GOLEM for structural learning of Bayesian Networks.
+
+
+-
+применение GOLEM для задачи идентификации Баесовской сети
 
 
 
