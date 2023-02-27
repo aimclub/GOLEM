@@ -140,16 +140,16 @@ GOLEM можно установить с помощью ``pip``:
   issn = {0167-739X},
   doi = {https://doi.org/10.1016/j.future.2021.08.022}}
 
-@inproceedings{polonskaia2021multi,
-  title={Multi-Objective Evolutionary Design of Composite Data-Driven Models},
-  author={Polonskaia, Iana S. and Nikitin, Nikolay O. and Revin, Ilia and Vychuzhanin, Pavel and Kalyuzhnaya, Anna V.},
-  booktitle={2021 IEEE Congress on Evolutionary Computation (CEC)},
-  year={2021},
-  pages={926-933},
-  doi={10.1109/CEC45853.2021.9504773}}
+Публикации, описывающие применение GOLEM для прикладных задач:
+===========
 
+В данных публикациях описывается применения алгоритмов GOLEM и основанных на нем решений
+для различных прикладных задач.
 
-Другие статьи можно найти на `ResearchGate <https://www.researchgate.net/project/Evolutionary-multi-modal-AutoML-with-FEDOT-framework>`_.
+- Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
+- Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
+- Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8.
+
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
