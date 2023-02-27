@@ -143,7 +143,7 @@ GOLEM можно установить с помощью ``pip``:
 Публикации, описывающие применение GOLEM для прикладных задач:
 ==============================================================
 
-В данных публикациях описывается применения алгоритмов GOLEM и основанных на нем решений
+В данных публикациях описывается применение алгоритмов GOLEM и основанных на нем решений
 для различных прикладных задач.
 
 - GOLEM для задачи поиска оптимального пайплайна машинного обучения для прогнозирования временных рядов: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.

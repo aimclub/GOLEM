@@ -138,10 +138,10 @@ If you use our project in your work or research, we would appreciate citations.
   issn = {0167-739X},
   doi = {https://doi.org/10.1016/j.future.2021.08.022}}
 
-Papers that describes that applications of GOLEM:
-=================================================
+Papers that describe applications of GOLEM:
+===========================================
 
-There are various cases was solved with GOLEM:
+There are various cases solved with GOLEM:
 
 - GOLEM for time series forecasting pipeline design: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
 
