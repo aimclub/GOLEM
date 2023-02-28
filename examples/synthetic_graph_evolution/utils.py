@@ -22,7 +22,6 @@ def relabel_nx_graph(graph: nx.Graph, available_names: Collection[str]) -> nx.Gr
     return graph
 
 
-
 def fitness_to_stats(history: OptHistory,
                      target_metric_index: int = 0) -> Tuple[np.ndarray, np.ndarray]:
     all_metrics = history.historical_fitness
@@ -90,14 +89,33 @@ def draw_graphs_subplots(*graphs: Sequence[nx.Graph],
                          draw_fn=nx.draw_kamada_kawai,
                          size=10):
     graphs = [graphs] if not isinstance(graphs, Sequence) else graphs
+    # Setup subplots
     ncols = int(np.ceil(np.sqrt(len(graphs))))
     nrows = len(graphs) // ncols
     aspect = nrows / ncols
     figsize = (size, int(size * aspect))
     fig, axs = plt.subplots(nrows, ncols, figsize=figsize)
+    # Draw graphs
     for ax, graph in zip(axs, graphs):
-        draw_fn(graph, arrows=True, ax=ax)
+        colors, labeldict = _get_node_colors_and_labels(graph)
+        draw_fn(graph, ax=ax, arrows=True,
+                node_color=colors, with_labels=True, labels=labeldict)
     plt.show()
+
+
+def _get_node_colors_and_labels(graph: nx.Graph):
+    if isinstance(graph, nx.DiGraph):
+        roots = [n for (n, d) in graph.out_degree() if d == 0]
+    else:
+        roots = [max(*graph.nodes(), key=lambda n: graph.degree[n])]
+    colors = []
+    labels = {}
+    for node, data in graph.nodes(data=True):
+        color = 'red' if node in roots else 'blue'
+        colors.append(color)
+        label = data.get('name') or str(node)
+        labels[node] = label
+    return colors, labels
 
 
 def measure_graphs(target_graph, graph, vis=False):
