@@ -233,6 +233,8 @@ def single_drop_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
+    if len(graph.nodes) < 2:
+        return graph
     node_to_del = choice(graph.nodes)
     node_name = node_to_del.content['name']
     removal_type = graph_gen_params.advisor.can_be_removed(node_to_del)
