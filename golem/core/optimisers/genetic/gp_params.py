@@ -27,8 +27,26 @@ class GPAlgorithmParameters(AlgorithmParameters):
     :param crossover_types: Sequence of crossover operators types
     :param mutation_types: Sequence of mutation operators types
     :param elitism_type: type of elitism operator evolution
+
     :param regularization_type: type of regularization operator
+
+    Regularization attempts to cut off the subtrees of the graph. If the truncated graph
+    is not worse than the original, then it enters the new generation as a simpler solution.
+    Regularization is not used by default, it must be explicitly enabled.
+
     :param genetic_scheme_type: type of genetic evolutionary scheme
+
+    The `generational` scheme is a standard scheme of the evolutionary algorithm.
+    It specifies that at each iteration the entire generation is updated.
+
+    In the `steady_state` scheme at each iteration only one individual is updated.
+
+    The `parameter_free` scheme is an adaptive variation of the `generational` scheme.
+    It specifies that the population size and the probability of mutation and crossover
+    change depending on the success of convergence. If there are no improvements in fitness,
+    then the size and the probabilities increase. When fitness improves, the size and the
+    probabilities decrease. That is, the algorithm choose a more stable and conservative
+    mode when optimization seems to converge.
     """
 
     crossover_prob: float = 0.8
