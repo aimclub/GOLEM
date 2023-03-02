@@ -310,7 +310,7 @@ def growth_mutation(graph: OptGraph,
 
     if random() > 0.5:
         # simple growth (one node can be added)
-        return single_add_mutation(graph, requirements.max_depth)
+        return single_add_mutation(graph, requirements, graph_gen_params, parameters)
     else:
         # advanced growth (several nodes can be added)
         return tree_growth(graph, requirements, graph_gen_params, parameters, local_growth)
