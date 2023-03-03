@@ -7,7 +7,7 @@ Tuners optimise parameters stored in ``OptNode.parameters``.
 
 To specify parameters search space use ``SearchSpace`` class.
 Initialize ``SearchSpace`` with dictionary of the form
-{'operation_name': {'param_name': (hyperopt distribution function, [sampling scope]), ...}, ...}.
+``{'operation_name': {'param_name': (hyperopt distribution function, [sampling scope]), ...}, ...}``.
 
 .. code::
 
