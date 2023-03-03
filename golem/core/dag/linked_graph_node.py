@@ -66,8 +66,6 @@ class LinkedGraphNode(GraphNode):
 
     def description(self) -> str:
         label = self.name or self.uid
-        if label is None:
-            raise ValueError('Unknown content in the node: expected content[`name`], got None')
         # TODO: possibly unify with __repr__ & don't duplicate Operation.description
         if not self.parameters:
             node_label = f'n_{label}'

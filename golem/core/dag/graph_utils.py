@@ -42,13 +42,13 @@ def nodes_from_layer(graph: 'Graph', layer_number: int) -> Sequence['GraphNode']
         all nodes from the surface to the ``layer_number`` layer
     """
 
-    def get_nodes(roots: Sequence['GraphNode'], current_height: int):
+    def get_nodes(roots: Sequence['GraphNode'], current_height: int) -> Sequence['GraphNode']:
         """Gets all the parent nodes of ``roots``
 
-        :param node: node to get all subnodes from
+        :param roots: nodes to get all subnodes from
         :param current_height: current diving step depth
 
-        :return: all parent nodes of ``node``
+        :return: all parent nodes of ``roots`` in one sequence:69
         """
         nodes = []
         if current_height == layer_number:
