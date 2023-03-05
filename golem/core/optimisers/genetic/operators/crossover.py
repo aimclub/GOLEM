@@ -1,5 +1,7 @@
 from copy import deepcopy
-from random import choice, random
+from random import choice, random, sample
+from math import ceil
+from itertools import chain
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
@@ -21,6 +23,9 @@ class CrossoverTypesEnum(Enum):
     subtree = 'subtree'
     one_point = "one_point"
     none = 'none'
+    exchange_edges = 'exchange_edges'
+    exchange_parents_one = 'exchange_parents_one'
+    exchange_parents_both = 'exchange_parents_both'
 
 
 CrossoverCallable = Callable[[OptGraph, OptGraph, int], Tuple[OptGraph, OptGraph]]
@@ -78,6 +83,9 @@ class Crossover(Operator):
         crossovers = {
             CrossoverTypesEnum.subtree: subtree_crossover,
             CrossoverTypesEnum.one_point: one_point_crossover,
+            CrossoverTypesEnum.exchange_edges: exchange_edges_crossover,
+            CrossoverTypesEnum.exchange_parents_one: exchange_parents_one_crossover,
+            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover            
         }
         if crossover_type in crossovers:
             return crossovers[crossover_type]
@@ -128,4 +136,109 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
 
         replace_subtrees(graph_first, graph_second, node_from_graph_first, node_from_graph_second,
                          layer_in_graph_first, layer_in_graph_second, max_depth)
+    return graph_first, graph_second
+
+
+@register_native
+def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+    
+    old_edges1 = []
+    old_edges2 = []
+
+    edges_1 = graph_first.operator.get_edges()
+    edges_2 = graph_second.operator.get_edges()
+    count = ceil(min(len(edges_1), len(edges_2))/2)
+    choice_edges_1 = sample(edges_1, count)
+    choice_edges_2 = sample(edges_2, count)
+    
+    for pair in choice_edges_1:
+        pair[1].nodes_from.remove(pair[0])
+    for pair in choice_edges_2:
+        pair[1].nodes_from.remove(pair[0])
+    
+    old_edges1 = graph_first.operator.get_edges()
+    old_edges2 = graph_second.operator.get_edges()
+
+    new_edges_2 = [(graph_second.get_nodes_by_name(str(i[0]))[0], graph_second.get_nodes_by_name(str(i[1]))[0]) for i in choice_edges_1]
+    new_edges_1 = [(graph_first.get_nodes_by_name(str(i[0]))[0], graph_first.get_nodes_by_name(str(i[1]))[0]) for i in choice_edges_2]
+
+    for pair in new_edges_1:
+        if pair not in old_edges1:
+            pair[1].nodes_from.append(pair[0])
+    for pair in new_edges_2:
+        if pair not in old_edges2:
+            pair[1].nodes_from.append(pair[0])                                          
+        
+    return graph_first, graph_second
+
+
+@register_native
+def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+
+    edges = graph_second.operator.get_edges()
+    flatten_edges = list(chain(*edges))
+    nodes_with_parent_or_child=list(set(flatten_edges))
+    if nodes_with_parent_or_child!=[]:
+        
+        selected_node=choice(nodes_with_parent_or_child)
+        parents=selected_node.nodes_from
+        
+        node_from_first_graph=graph_first.get_nodes_by_name(str(selected_node))[0]
+        
+        node_from_first_graph.nodes_from=[]
+        old_edges1 = graph_first.operator.get_edges()
+        
+        if parents!=[] and parents!=None:
+            parents_in_first_graph=[graph_first.get_nodes_by_name(str(i))[0] for i in parents]
+            for parent in parents_in_first_graph:
+                if (parent, node_from_first_graph) not in old_edges1:
+                    node_from_first_graph.nodes_from.append(parent)
+
+    return graph_first, graph_second
+
+
+@register_native
+def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+
+    parents1 = []
+    parents2 = []
+    parents_in_first_graph = []
+    parents_in_second_graph = []
+
+
+    edges = graph_second.operator.get_edges()
+    flatten_edges = list(chain(*edges))
+    nodes_with_parent_or_child=list(set(flatten_edges))
+    if nodes_with_parent_or_child!=[]:
+        
+        selected_node2=choice(nodes_with_parent_or_child)
+        parents2=selected_node2.nodes_from
+        if parents2!=[] and parents2!=None:
+            parents_in_first_graph=[graph_first.get_nodes_by_name(str(i))[0] for i in parents2]
+
+        selected_node1 = graph_first.get_nodes_by_name(str(selected_node2))[0]
+        parents1=selected_node1.nodes_from
+        if parents1!=[] and parents1!=None:
+            parents_in_second_graph=[graph_second.get_nodes_by_name(str(i))[0] for i in parents1]
+
+        if parents1:
+            for p in parents1:
+                selected_node1.nodes_from.remove(p)
+        if parents2:
+            for p in parents2:
+                selected_node2.nodes_from.remove(p)
+
+        old_edges1 = graph_first.operator.get_edges()
+        old_edges2 = graph_second.operator.get_edges()
+
+        if parents_in_first_graph!=[]:
+            for parent in parents_in_first_graph:
+                if (parent, selected_node1) not in old_edges1:
+                    selected_node1.nodes_from.append(parent)
+
+        if parents_in_second_graph!=[]:
+            for parent in parents_in_second_graph:
+                if (parent, selected_node2) not in old_edges2:
+                    selected_node2.nodes_from.append(parent)
+
     return graph_first, graph_second
