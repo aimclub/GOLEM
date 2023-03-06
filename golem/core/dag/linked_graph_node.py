@@ -41,7 +41,8 @@ class LinkedGraphNode(GraphNode):
 
     @property
     def name(self) -> str:
-        return str(self.content.get('name'))
+        name = self.content.get('name')
+        return str(name) if name is not None else ''
 
     @property
     def parameters(self) -> dict:
@@ -64,16 +65,14 @@ class LinkedGraphNode(GraphNode):
         return self.__str__()
 
     def description(self) -> str:
-        node_operation = self.content.get('name')
-        if node_operation is None:
-            raise ValueError('Unknown content in the node: expected content[`name`], got None')
+        label = self.name or self.uid
         # TODO: possibly unify with __repr__ & don't duplicate Operation.description
         if not self.parameters:
-            node_label = f'n_{node_operation}'
-        elif isinstance(node_operation, str):
+            node_label = f'n_{label}'
+        elif isinstance(label, str):
             # If there is a string: name of operation (as in json repository)
-            node_label = f'n_{node_operation}_{self.parameters}'
+            node_label = f'n_{label}_{self.parameters}'
         else:
             # If instance of Operation is placed in 'name'
-            node_label = node_operation.description(self.parameters)
+            node_label = label.description(self.parameters)
         return node_label

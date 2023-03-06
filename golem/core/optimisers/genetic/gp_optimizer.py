@@ -74,24 +74,25 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
 
     def _extend_population(self, initial_individuals: PopulationT) -> PopulationT:
-        iter_num = 0
         initial_individuals = list(initial_individuals)
         initial_graphs = [ind.graph for ind in initial_individuals]
         initial_req = deepcopy(self.requirements)
         initial_req.mutation_prob = 1
         self.mutation.update_requirements(requirements=initial_req)
-        while len(initial_individuals) < self.graph_optimizer_params.pop_size:
+
+        for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
+            if len(initial_individuals) == self.graph_optimizer_params.pop_size:
+                break
             new_ind = self.mutation(choice(self.initial_individuals))
             new_graph = new_ind.graph
-            iter_num += 1
             if new_graph not in initial_graphs and self.graph_generation_params.verifier(new_graph):
                 initial_individuals.append(new_ind)
                 initial_graphs.append(new_graph)
-            if iter_num > MAX_GRAPH_GEN_ATTEMPTS:
-                self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
-                                 f'Current size {len(self.initial_individuals)} '
-                                 f'instead of {self.graph_optimizer_params.pop_size} graphs.')
-                break
+        else:
+            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
+                             f'Current size {len(self.initial_individuals)} '
+                             f'instead of {self.graph_optimizer_params.pop_size} graphs.')
+
         self.mutation.update_requirements(requirements=self.requirements)
         return initial_individuals
 
@@ -101,8 +102,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         individuals_to_select = self.regularization(self.population, evaluator)
         selected_individuals = self.selection(individuals_to_select)
-        new_population = self._spawn_evaluated_population(selected_individuals=selected_individuals,
-                                                          evaluator=evaluator)
+        new_population = self._spawn_evaluated_population(selected_individuals, evaluator)
         new_population = self.inheritance(self.population, new_population)
         new_population = self.elitism(self.generations.best_individuals, new_population)
 
@@ -126,19 +126,12 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         """ Reproduce and evaluate new population. If at least one of received individuals can not be evaluated then
         mutate and evaluate selected individuals until a new population is obtained
         or the number of attempts is exceeded """
-
-        iter_num = 0
-        new_population = None
-        while not new_population:
+        for i in range(EVALUATION_ATTEMPTS_NUMBER):
             new_population = self.crossover(selected_individuals)
             new_population = self.mutation(new_population)
             new_population = evaluator(new_population)
-
-            if iter_num > EVALUATION_ATTEMPTS_NUMBER:
-                break
-            iter_num += 1
-
-        if not new_population:
+            if new_population:
+                return new_population
+        else:
+            # Could not generate valid population; raise an error
             raise EvaluationAttemptsError()
-
-        return new_population
