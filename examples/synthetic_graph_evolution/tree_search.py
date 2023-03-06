@@ -40,15 +40,13 @@ def tree_search_setup(target_graph: nx.DiGraph,
         history_dir=None,
     )
     gp_params = GPAlgorithmParameters(
-        # genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         multi_objective=True,
         mutation_types=[
-            # MutationTypesEnum.tree_growth,
+            MutationTypesEnum.tree_growth,
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_drop,
             MutationTypesEnum.single_edge,
         ],
-        crossover_types=[CrossoverTypesEnum.none],
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
