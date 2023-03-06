@@ -9,7 +9,7 @@ from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.regularization import RegularizationTypesEnum
 from golem.core.optimisers.initial_graphs_generator import InitialPopulationGenerator
 from golem.core.optimisers.objective.objective import Objective

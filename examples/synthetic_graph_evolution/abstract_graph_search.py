@@ -12,7 +12,7 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.genetic.operators.mutation import MutationTypesEnum
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer

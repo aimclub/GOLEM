@@ -36,16 +36,18 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.delete_node)
     def delete_node(self, node: GraphNode):
         node_children_cached = self.node_children(node)
-        self_root_node_cached = self.root_node
 
-        for node_child in self.node_children(node):
+        self._nodes.remove(node)
+        for node_child in node_children_cached:
             node_child.nodes_from.remove(node)
 
+        # if removed node had a single child
+        # then reconnect it to preceding parent nodes.
         if node.nodes_from and len(node_children_cached) == 1:
+            child = node_children_cached[0]
             for node_from in node.nodes_from:
-                node_children_cached[0].nodes_from.append(node_from)
-        self._nodes.clear()
-        self.add_node(self_root_node_cached)
+                child.nodes_from.append(node_from)
+
         self._postprocess_nodes(self, self._nodes)
 
     @copy_doc(Graph.delete_subtree)

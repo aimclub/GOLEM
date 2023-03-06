@@ -76,6 +76,48 @@ def test_delete_primary_node():
     assert isinstance(new_primary_node, GraphNode)
 
 
+def test_delete_root_node():
+    first = GraphNode(content='n1')
+    second = GraphNode(content='n2')
+    third = GraphNode(content='n3', nodes_from=[first])
+    final = GraphNode(content='n4', nodes_from=[second, third])
+    graph = GraphImpl(final)
+
+    assert graph.root_node == final
+    assert graph.depth == 3
+
+    graph.delete_node(final)
+
+    assert graph.root_nodes() == [second, third]
+    assert graph.depth == 2
+
+    graph.delete_node(second)
+
+    assert graph.root_node == third
+    assert graph.depth == 2
+
+
+def test_delete_intermediate_node():
+    first = GraphNode(content='n1')
+    second = GraphNode(content='n2')
+    third = GraphNode(content='n3', nodes_from=[first])
+    final = GraphNode(content='n4', nodes_from=[second, third])
+    graph = GraphImpl(final)
+
+    assert third in final.nodes_from
+    assert first not in final.nodes_from
+    assert graph.node_children(third) == [final]
+    assert graph.depth == 3
+
+    graph.delete_node(third)
+
+    # the only child node (final) is rewired to parent of remove node (first)
+    assert third not in final.nodes_from
+    assert first in final.nodes_from
+    assert not graph.node_children(third)
+    assert graph.depth == 2
+
+
 def test_delete_node_with_duplicated_edges():
     ok_primary_node = GraphNode('n1')
     bad_primary_node = GraphNode('n2')
