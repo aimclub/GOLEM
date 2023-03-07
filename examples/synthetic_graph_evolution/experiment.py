@@ -107,7 +107,7 @@ def run_trial(target_graph: nx.DiGraph,
                                            optimizer_cls=optimizer_cls,
                                            timeout=timeout,
                                            num_iterations=num_iterations)
-    found_graphs = optimizer.optimize(objective)
+    found_graphs = optimizer.optimise(objective)
     found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
     history = optimizer.history
     return found_graph, history
