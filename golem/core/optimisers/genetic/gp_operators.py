@@ -23,7 +23,10 @@ def equivalent_subtree(graph_first: Any, graph_second: Any) -> List[Tuple[Any, A
                 nodes.extend(nodes_set)
         return nodes
 
-    pairs_set = structural_equivalent_nodes(graph_first.root_node, graph_second.root_node)
+    pairs_set = []
+    for root_first, root_second in zip(graph_first.root_nodes(), graph_second.root_nodes()):
+        equivalent_pairs = structural_equivalent_nodes(root_first, root_second)
+        pairs_set.extend(equivalent_pairs)
     return pairs_set
 
 
