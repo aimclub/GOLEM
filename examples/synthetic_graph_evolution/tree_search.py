@@ -60,10 +60,15 @@ def tree_search_setup(target_graph: nx.DiGraph,
         complexity_metrics={'graph_size': partial(size_diff, target_graph)},
         is_multi_objective=True
     )
+
+    def get_random_tree(size):
+        unlabeled_graph = graph_generators['tree'](size).reverse()
+        labeled_graph = relabel_nx_graph(unlabeled_graph, node_types)
+        optgraph = graph_gen_params.adapter.adapt(labeled_graph)
+        return optgraph
+
     # Generate simple initial population with tree graphs
-    initial_graphs = [relabel_nx_graph(graph_generators['tree'](k+1), node_types)
-                      for k in range(gp_params.pop_size)]
-    initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
+    initial_graphs = [get_random_tree(k+1) for k in range(gp_params.pop_size)]
 
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
