@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Tuple, Optional, Sequence, Collection
+from itertools import chain
+from typing import Tuple, Optional, Sequence, Collection, Iterable
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -85,18 +86,19 @@ def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
                                 edge_curvature_scale=0.5)
 
 
-def draw_graphs_subplots(*graphs: Sequence[nx.Graph],
+def draw_graphs_subplots(*graphs: nx.Graph,
                          draw_fn=nx.draw_kamada_kawai,
                          size=10):
-    graphs = [graphs] if not isinstance(graphs, Sequence) else graphs
+    graphs = [graphs] if not isinstance(graphs, Iterable) else graphs
     # Setup subplots
     ncols = int(np.ceil(np.sqrt(len(graphs))))
     nrows = len(graphs) // ncols
     aspect = nrows / ncols
     figsize = (size, int(size * aspect))
     fig, axs = plt.subplots(nrows, ncols, figsize=figsize)
+    axs = [axs] if not isinstance(axs, Iterable) else axs
     # Draw graphs
-    for ax, graph in zip(axs, graphs):
+    for ax, graph in zip(chain(*axs), graphs):
         colors, labeldict = _get_node_colors_and_labels(graph)
         draw_fn(graph, ax=ax, arrows=True,
                 node_color=colors, with_labels=True, labels=labeldict)
@@ -104,14 +106,26 @@ def draw_graphs_subplots(*graphs: Sequence[nx.Graph],
 
 
 def _get_node_colors_and_labels(graph: nx.Graph):
+    clr_cyan = '#2A788EFF'
+    clr_yellow = '#FDE725FF'
+    clr_green = '#7AD151FF'
+
     if isinstance(graph, nx.DiGraph):
-        roots = [n for (n, d) in graph.out_degree() if d == 0]
+        roots = {n for n, d in graph.out_degree() if d == 0}
+        sources = {n for n, d in graph.in_degree() if d == 0}
     else:
-        roots = [max(*graph.nodes(), key=lambda n: graph.degree[n])]
+        roots = {max(*graph.nodes(), key=lambda n: graph.degree[n])}
+        sources = {min(*graph.nodes(), key=lambda n: graph.degree[n])}
+
     colors = []
     labels = {}
     for node, data in graph.nodes(data=True):
-        color = 'red' if node in roots else 'blue'
+        if node in roots:
+            color = clr_yellow
+        elif node in sources:
+            color = clr_green
+        else:
+            color = clr_cyan
         colors.append(color)
         label = data.get('name') or str(node)
         labels[node] = label
@@ -140,12 +154,16 @@ def measure_graphs(target_graph, graph, vis=False):
         plt.show()
 
 
-def try_random(n=100, it=1):
+def try_random(n=30, it=1):
+    graphs = []
     for i in range(it):
-        for p in [0.05, 0.15, 0.3]:
+        for p in [0.05, 0.08, 0.15, 0.3]:
             g1 = gnp_random_graph(n, p)
             g2 = gnp_random_graph(n, p)
+            graphs.append(g1)
+            graphs.append(g2)
             measure_graphs(g1, g2, vis=False)
+    draw_graphs_subplots(*graphs, size=12)
 
 
 if __name__ == "__main__":
