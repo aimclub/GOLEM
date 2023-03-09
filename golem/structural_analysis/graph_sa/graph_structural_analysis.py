@@ -10,6 +10,7 @@ from golem.structural_analysis.graph_sa.edges_analysis import EdgesAnalysis
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
+from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
@@ -44,7 +45,7 @@ class GraphStructuralAnalysis:
         else:
             self.graph = graph
 
-        self.log = default_log(self)
+        self.self._log = default_log(self)
 
         if approaches:
             self.nodes_analyze_approaches = [approach for approach in approaches
@@ -52,7 +53,7 @@ class GraphStructuralAnalysis:
             self.edges_analyze_approaches = [approach for approach in approaches
                                              if issubclass(approach, EdgeAnalyzeApproach)]
         else:
-            self.log.message('Approaches for analysis are not given, thus will be set to defaults.')
+            self.self._log.message('Approaches for analysis are not given, thus will be set to defaults.')
             self.nodes_analyze_approaches = None
             self.edges_analyze_approaches = None
 
@@ -66,6 +67,8 @@ class GraphStructuralAnalysis:
                                             requirements=requirements,
                                             edges_to_analyze=edges_to_analyze,
                                             path_to_save=path_to_save)
+        
+        self._log = default_log('SA')
 
     def analyze(self, n_jobs: int = -1, timer: OptimisationTimer = None):
         """
@@ -88,10 +91,9 @@ class GraphStructuralAnalysis:
 
         return result
 
-    @staticmethod
-    def optimize(analysis_result: Optional[dict]):
-        """ Optimizes graph by applying 'analyze' method and deleting/replacing parts of graph iteratively
-        or by applying actions specified in analysis_result """
+    def optimize(self, graph: OptGraph, analysis_result: Optional[dict], n_jobs: int = -1, timer: OptimisationTimer = None):
+        """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
+        of graph iteratively or by applying actions specified in analysis_result """
 
         if analysis_result:
             pass
