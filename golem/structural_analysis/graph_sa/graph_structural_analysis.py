@@ -3,6 +3,7 @@ import multiprocessing
 
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach
 from golem.structural_analysis.graph_sa.edges_analysis import EdgesAnalysis
@@ -19,7 +20,7 @@ class GraphStructuralAnalysis:
 
     :param graph: graph object to analyze
     :param objectives: list of objective functions for computing metric values
-    :param task_type: type of solving task
+    :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to graph. Default: None
     :param nodes_to_analyze: nodes to analyze. Default: all nodes
     :param edges_to_analyze: edges to analyze. Default: all edges
@@ -30,7 +31,7 @@ class GraphStructuralAnalysis:
     """
 
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 task_type: Any,
+                 node_factory: OptNodeFactory,
                  is_preproc: bool = True,
                  approaches: List = None,
                  nodes_to_analyze: List[OptNode] = None,
@@ -56,7 +57,7 @@ class GraphStructuralAnalysis:
             self.edges_analyze_approaches = None
 
         self._nodes_analyze = NodesAnalysis(graph=self.graph, objectives=objectives,
-                                            task_type=task_type,
+                                            node_factory=node_factory,
                                             approaches=self.nodes_analyze_approaches, requirements=requirements,
                                             path_to_save=path_to_save, nodes_to_analyze=nodes_to_analyze)
 

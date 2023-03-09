@@ -8,6 +8,7 @@ from typing import List, Optional, Type, Union, Dict, Callable, Any
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
@@ -21,12 +22,12 @@ class NodeAnalysis:
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, task_type: Any,
+    def __init__(self, node_factory: Any,
                  approaches: Optional[List[Type['NodeAnalyzeApproach']]] = None,
                  approaches_requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
 
-        self.task_type = task_type
+        self.node_factory = node_factory
 
         self.approaches = [NodeDeletionAnalyze, NodeReplaceOperationAnalyze] if approaches is None else approaches
 
@@ -59,36 +60,10 @@ class NodeAnalysis:
             results[f'{approach.__name__}'] = \
                 approach(graph=graph,
                          objectives=objectives,
-                         task_type=self.task_type,
+                         node_factory=self.node_factory,
                          requirements=self.approaches_requirements,
                          path_to_save=self.path_to_save).analyze(node=node)
         return results
-
-    @staticmethod
-    def _get_node_index(train_data: Any, results: dict):
-        """
-        For each node, give an rating==assessment of "importance" on a scale from 0 to 5
-        and display it on the visualization
-        """
-        total_index = None
-        deletion_score = results[NodeDeletionAnalyze.__name__][0]
-
-        if NodeReplaceOperationAnalyze.__name__ in results.keys() and NodeDeletionAnalyze.__name__ in results.keys():
-            task = train_data.task.task_type
-            app_models, _ = OperationTypesRepository().suitable_operation(task_type=task)
-            total_operations_number = len(app_models)
-
-            replacement_candidates = results[NodeReplaceOperationAnalyze.__name__]
-            candidates_for_replacement_number = len(
-                [candidate for candidate in replacement_candidates if (1 - candidate) < 0])
-
-            replacement_score = candidates_for_replacement_number / total_operations_number
-
-            total_index = (deletion_score / abs(deletion_score)) * replacement_score
-        elif NodeDeletionAnalyze.__name__ in results.keys():
-            total_index = deletion_score
-
-        return total_index
 
 
 class NodeAnalyzeApproach(ABC):
@@ -100,12 +75,12 @@ class NodeAnalyzeApproach(ABC):
     """
 
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 task_type: Any,
+                 node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
         self._graph = graph
         self._objectives = objectives
-        self._task_type = task_type
+        self._node_factory = node_factory
         self._origin_metrics = list()
         self._requirements = \
             StructuralAnalysisRequirements() if requirements is None else requirements
@@ -181,9 +156,9 @@ class NodeAnalyzeApproach(ABC):
 
 class NodeDeletionAnalyze(NodeAnalyzeApproach):
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 task_type: Any,
+                 node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, task_type, requirements)
+        super().__init__(graph, objectives, node_factory, requirements)
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
@@ -243,9 +218,9 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
     """
 
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 task_type: Any,
+                 node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, task_type, requirements)
+        super().__init__(graph, objectives, node_factory, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
@@ -302,7 +277,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         if not nodes_to_replace_to:
             nodes_to_replace_to = self._node_generation(node=node,
-                                                        task_type=self._task_type,
+                                                        node_factory=self._node_factory,
                                                         number_of_operations=number_of_random_operations)
 
         samples = list()
@@ -311,7 +286,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
             replaced_node_index = self._graph.nodes.index(node)
             replaced_node = sample_graph.nodes[replaced_node_index]
             sample_graph.update_node(old_node=replaced_node,
-                                        new_node=replacing_node)
+                                     new_node=replacing_node)
             verifier = GraphVerifier()
             if not verifier.verify(sample_graph):
                 self.log.warning(f'Can not replace {node.operation} node with {replacing_node.operation} node.')
@@ -326,7 +301,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
     @staticmethod
     def _node_generation(node: OptNode,
-                         task_type: Any,
+                         node_factory: OptNodeFactory,
                          number_of_operations=None) -> List[OptNode]:
         """
         The method returns possible nodes that can replace the given node
@@ -337,7 +312,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         :return: nodes that can be used to replace
         """
 
-        app_operations = OperationTypesRepository().suitable_operation(task_type=task_type)
+        app_operations = node_factory.exchange_node(node=node)
 
         if number_of_operations:
             app_operations = [i for i in app_operations if i != node.operation.operation_type]
@@ -359,12 +334,12 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
     Approach to delete specified node subtree
     """
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 task_type: Any,
+                 node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, task_type, requirements)
+        super().__init__(graph, objectives, node_factory, requirements)
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') \
-                if path_to_save is None else path_to_save
+            if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 

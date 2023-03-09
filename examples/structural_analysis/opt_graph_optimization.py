@@ -4,6 +4,7 @@ import pandas as pd
 
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
+from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 
 
@@ -29,7 +30,9 @@ if __name__ == "__main__":
     opt_graph.show()
 
     objective = Objective({'custom': custom_metric})
-    sa = GraphStructuralAnalysis(graph=opt_graph, task_type='classification', objectives=[objective])
+    node_factory = DefaultOptNodeFactory()
+
+    sa = GraphStructuralAnalysis(graph=opt_graph, objectives=[objective], node_factory=node_factory)
 
     analyze_result = sa.analyze()
 

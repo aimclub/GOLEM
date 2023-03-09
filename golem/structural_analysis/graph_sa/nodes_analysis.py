@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
@@ -25,7 +26,7 @@ class NodesAnalysis:
 
     :param graph: graph object to analyze
     :param objectives: objective functions for computing metric values
-    :param task_type: type of solving task
+    :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
     :param nodes_to_analyze: nodes to analyze. Default: all nodes
@@ -33,14 +34,14 @@ class NodesAnalysis:
     """
 
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 task_type: Any,
+                 node_factory: OptNodeFactory,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None,
                  nodes_to_analyze: List[OptNode] = None):
 
         self.graph = graph
         self.objectives = objectives
-        self.task_type = task_type
+        self.node_factory = node_factory
         self.approaches = approaches
         self.requirements = \
             StructuralAnalysisRequirements() if requirements is None else requirements
@@ -69,7 +70,7 @@ class NodesAnalysis:
         operation_types = []
         node_analysis = NodeAnalysis(approaches=self.approaches,
                                      approaches_requirements=self.requirements,
-                                     task_type=self.task_type,
+                                     node_factory=self.node_factory,
                                      path_to_save=self.path_to_save)
 
         with multiprocessing.Pool(processes=n_jobs) as pool:

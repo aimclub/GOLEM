@@ -6,6 +6,7 @@ from typing import List, Dict, Union, Any, Tuple, Optional, Callable
 
 from golem.core.log import LoggerAdapter, default_log
 from golem.core.optimisers.graph import OptGraph
+from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
 from golem.structural_analysis.graph_labels_using_sa import draw_nx_dag
@@ -17,7 +18,7 @@ from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysi
 
 
 def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
-                task_type: Any, data: Any = None, objectives: List[Callable] = None,
+                node_factory: OptNodeFactory, data: Any = None, objectives: List[Callable] = None,
                 metrics: List[str] = None,
                 timer: OptimisationTimer = None,
                 log: Optional[LoggerAdapter] = None, max_iter: int = 20, n_jobs: int = -1,
@@ -31,7 +32,7 @@ def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
     the function must be called separately for each approach, and in the second - it must be called once,
     specifying all the necessary approaches
     :param graph_before_sa: OptGraph that will be analyzed
-    :param task_type: type of solving task
+    :param node_factory: node factory
     :param data: input data
     :param objectives: list of objective functions for computing metrics
     :param metrics: metrics to use for optimization.
@@ -50,7 +51,7 @@ def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
         log = default_log(prefix=__name__)
 
     if not objectives:
-        objectives = _get_objectives_from_data(data=data, metrics=metrics, task_type=task_type)
+        objectives = _get_objectives_from_data(data=data, metrics=metrics, task_type=node_factory)
     approaches_repo = StructuralAnalysisApproachesRepository()
     approaches = [approaches_repo.approach_by_name(approach_name) for approach_name in approaches_names]
 
@@ -62,7 +63,7 @@ def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
         kwargs.pop('save_path')
 
     new_graph = deepcopy(graph_before_sa)
-    analysis_results = _analyse(graph=new_graph, objectives=objectives, task_type=task_type,
+    analysis_results = _analyse(graph=new_graph, objectives=objectives, node_factory=node_factory,
                                 approaches=approaches,
                                 is_visualize=is_visualize, is_save_results_to_json=is_save_results_to_json,
                                 is_preproc=is_preproc, timer=timer, n_jobs=n_jobs, **kwargs)
@@ -99,7 +100,7 @@ def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
             if max_iter and iter >= max_iter:
                 break
 
-            analysis_results = _analyse(graph=new_graph, objectives=objectives, task_type=task_type,
+            analysis_results = _analyse(graph=new_graph, objectives=objectives, task_type=node_factory,
                                         approaches=approaches,
                                         is_visualize=is_visualize, is_save_results_to_json=is_save_results_to_json,
                                         is_preproc=is_preproc, timer=timer, n_jobs=n_jobs, **kwargs)
@@ -118,7 +119,7 @@ def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
 
 
 def _analyse(graph: OptGraph, objectives: List[Callable],
-             task_type: Any,
+             node_factory: OptNodeFactory,
              approaches: List[Union[NodeAnalyzeApproach, EdgeAnalyzeApproach]],
              is_visualize: bool = False,
              is_save_results_to_json: bool = False,
@@ -140,12 +141,10 @@ def _analyse(graph: OptGraph, objectives: List[Callable],
     if n_jobs == -1:
         n_jobs = multiprocessing.cpu_count()
 
-    analysis_results = GraphStructuralAnalysis(graph=graph, objectives=objectives,
-                                               task_type=task_type,
-                                               is_preproc=is_preproc,
-                                               approaches=approaches,
+    analysis_results = GraphStructuralAnalysis(graph=graph, objectives=objectives, node_factory=node_factory,
+                                               is_preproc=is_preproc, approaches=approaches,
                                                requirements=sa_requirements).analyze(n_jobs=n_jobs,
-                                                                                         timer=timer)
+                                                                                     timer=timer)
     return analysis_results
 
 
