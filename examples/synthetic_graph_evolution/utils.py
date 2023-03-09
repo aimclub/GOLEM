@@ -86,7 +86,7 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     aspect = nrows / ncols
     figsize = (size, int(size * aspect))
     fig, axs = plt.subplots(nrows, ncols, figsize=figsize)
-    axs = [axs] if not isinstance(axs, Iterable) else axs
+    axs = np.atleast_2d(axs)
     # Draw graphs
     for ax, graph in zip(chain(*axs), graphs):
         colors, labeldict = _get_node_colors_and_labels(graph)
@@ -154,6 +154,7 @@ def try_random(n=30, it=1):
             graphs.append(g2)
             measure_graphs(g1, g2, vis=False)
     draw_graphs_subplots(*graphs, size=12)
+    draw_graphs_subplots(graphs[0], size=8)
 
 
 if __name__ == "__main__":
