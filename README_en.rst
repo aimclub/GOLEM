@@ -53,7 +53,7 @@ define a data-flow or inference process (e.g. bayesian networks that can be fitt
 
 Examples of GOLEM applications:
 
-- Automatic Machine Learning (AutoML) with optimal ML graphs search in `FEDOT framework <https://github.com/aimclub/FEDOT>`_
+- Automatic Machine Learning (AutoML) with optimal ML pipelines search in `FEDOT framework <https://github.com/aimclub/FEDOT>`_
 - Bayesian network structure search in `BAMT framework <https://github.com/ITMO-NSS-team/BAMT>`_
 - Differential equation discovery for physical models in `EPDE framework <https://github.com/ITMO-NSS-team/EPDE>`_
 - Geometric design of physical objects in `GEFEST framework <https://github.com/aimclub/GEFEST>`_
@@ -131,7 +131,7 @@ Citation
 If you use our project in your work or research, we would appreciate citations.
 
 @article{nikitin2021automated,
-  title = {Automated evolutionary approach for the design of composite machine learning graphs},
+  title = {Automated evolutionary approach for the design of composite machine learning pipelines},
   author = {Nikolay O. Nikitin and Pavel Vychuzhanin and Mikhail Sarafanov and Iana S. Polonskaia and Ilia Revin and Irina V. Barabanova and Gleb Maximov and Anna V. Kalyuzhnaya and Alexander Boukhanovsky},
   journal = {Future Generation Computer Systems},
   year = {2021},
@@ -143,7 +143,7 @@ Papers that describe applications of GOLEM:
 
 There are various cases solved with GOLEM's algorithms:
 
-- Algorithms for time series forecasting graph design: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
+- Algorithms for time series forecasting pipeline design: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
 
 - Algorithms for acoustic equation discovery: Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
 
