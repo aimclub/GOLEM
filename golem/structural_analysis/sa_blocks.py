@@ -6,12 +6,12 @@ from typing import List, Callable, Any
 from golem.core.log import LoggerAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.sensitivity_analysis.pipeline_sa.sa_approaches_repository import SUBTREE_DELETION, NODE_DELETION, \
+from golem.structural_analysis.pipeline_sa.sa_approaches_repository import SUBTREE_DELETION, NODE_DELETION, \
     NODE_REPLACEMENT, EDGE_DELETION
-from golem.sensitivity_analysis.pipeline_sa.sa_based_postproc import sa_postproc
+from golem.structural_analysis.pipeline_sa.sa_based_postproc import sa_postproc
 
 
-def sensitivity_analysis_version_1(graphs_to_handle: List[OptGraph],
+def structural_analysis_version_1(graphs_to_handle: List[OptGraph],
                                    timeout: datetime.timedelta,
                                    task_type: Any,
                                    log: LoggerAdapter, n_jobs: int,
@@ -42,7 +42,7 @@ def sensitivity_analysis_version_1(graphs_to_handle: List[OptGraph],
     return result_pipelines
 
 
-def sensitivity_analysis_version_2(graphs_to_handle: List[OptGraph],
+def structural_analysis_version_2(graphs_to_handle: List[OptGraph],
                                    timeout: datetime.timedelta,
                                    task_type: Any,
                                    log: LoggerAdapter, n_jobs: int,

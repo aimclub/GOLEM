@@ -1,7 +1,7 @@
-from golem.sensitivity_analysis.pipeline_sa.edge_sa_approaches import EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze
-from golem.sensitivity_analysis.pipeline_sa.node_sa_approaches import NodeDeletionAnalyze, NodeReplaceOperationAnalyze, \
+from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze
+from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeDeletionAnalyze, NodeReplaceOperationAnalyze, \
     SubtreeDeletionAnalyze
-from golem.sensitivity_analysis.pipeline_sa.postproc_methods import nodes_deletion, nodes_replacement, subtree_deletion, \
+from golem.structural_analysis.pipeline_sa.postproc_methods import nodes_deletion, nodes_replacement, subtree_deletion, \
     edges_deletion, edges_replacement
 
 NODE_DELETION = 'NodeDeletionAnalyze'
@@ -11,7 +11,7 @@ EDGE_DELETION = 'EdgeDeletionAnalyze'
 EDGE_REPLACEMENT = 'EdgeReplaceOperationAnalyze'
 
 
-class SensitivityAnalysisApproachesRepository:
+class StructuralAnalysisApproachesRepository:
     approaches_dict = {NODE_DELETION: {'approach': NodeDeletionAnalyze,
                                        'postproc_method': nodes_deletion},
                        NODE_REPLACEMENT: {'approach': NodeReplaceOperationAnalyze,

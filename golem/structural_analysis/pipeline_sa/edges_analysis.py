@@ -9,17 +9,17 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.sensitivity_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeAnalysis
-from golem.sensitivity_analysis.pipeline_sa.entities.edge import Edge
-from golem.sensitivity_analysis.pipeline_sa.nodes_sensitivity import path_to_save_per_iter
-from golem.sensitivity_analysis.pipeline_sa.postproc_methods import extract_result_values
-from golem.sensitivity_analysis.pipeline_sa.sa_approaches_repository import EDGE_REPLACEMENT
-from golem.sensitivity_analysis.pipeline_sa.sa_requirements import SensitivityAnalysisRequirements
+from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeAnalysis
+from golem.structural_analysis.pipeline_sa.entities.edge import Edge
+from golem.structural_analysis.pipeline_sa.nodes_analysis import path_to_save_per_iter
+from golem.structural_analysis.pipeline_sa.postproc_methods import extract_result_values
+from golem.structural_analysis.pipeline_sa.sa_approaches_repository import EDGE_REPLACEMENT
+from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 class EdgesAnalysis:
     """
-    This class is for edges sensitivity analysis within a OptGraph .
+    This class is for edges structural analysis within an OptGraph .
     It takes edges and approaches to be applied to chosen edges.
     To define which edges to analyze pass them to edges_to_analyze filed
     or all edges will be analyzed.
@@ -29,12 +29,12 @@ class EdgesAnalysis:
     :param approaches: methods applied to edges to modify the pipeline or analyze certain operations.\
     Default: [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
     :param edges_to_analyze: edges to analyze. Default: all edges
-    :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
+    :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
     def __init__(self, pipeline: OptGraph, objectives: List[Callable],
                  approaches: Optional[List[Type[EdgeAnalyzeApproach]]] = None,
-                 requirements: SensitivityAnalysisRequirements = None,
+                 requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None,
                  edges_to_analyze: List[Edge] = None):
 
@@ -42,11 +42,11 @@ class EdgesAnalysis:
         self.objectives = objectives
         self.approaches = approaches
         self.requirements = \
-            SensitivityAnalysisRequirements() if requirements is None else requirements
+            StructuralAnalysisRequirements() if requirements is None else requirements
         self.metric = self.requirements.metric
         self.log = default_log(self)
         self.path_to_save = \
-            join(default_data_dir(), 'sensitivity', 'edges_sensitivity') if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
 
         if not edges_to_analyze:
             self.log.message('Edges to analyze are not defined. All edges will be analyzed.')
@@ -104,7 +104,7 @@ class EdgesAnalysis:
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(json.dumps(result, indent=4))
 
-        self.log.message(f'Edges Sensitivity Analysis results were saved to {file_path}')
+        self.log.message(f'Edges Structural Analysis results were saved to {file_path}')
 
     def _visualize_result_per_approach(self, results: dict, types: list, edges_idxs_to_replace_to: list):
         gathered_results = extract_result_values(approaches=self.approaches, results=results)
@@ -138,4 +138,4 @@ class EdgesAnalysis:
                                               folder_name='results_per_approach')
 
             plt.savefig(file_path)
-            self.log.message(f'Edges Sensitivity Analysis visualized results per approach were saved to {file_path}')
+            self.log.message(f'Edges Structural Analysis visualized results per approach were saved to {file_path}')

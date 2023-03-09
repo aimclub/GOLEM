@@ -4,15 +4,15 @@ import multiprocessing
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.sensitivity_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach
-from golem.sensitivity_analysis.pipeline_sa.edges_sensivity import EdgesAnalysis
-from golem.sensitivity_analysis.pipeline_sa.entities.edge import Edge
-from golem.sensitivity_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach
-from golem.sensitivity_analysis.pipeline_sa.nodes_sensitivity import NodesAnalysis
-from golem.sensitivity_analysis.pipeline_sa.sa_requirements import SensitivityAnalysisRequirements
+from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach
+from golem.structural_analysis.pipeline_sa.edges_analysis import EdgesAnalysis
+from golem.structural_analysis.pipeline_sa.entities.edge import Edge
+from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach
+from golem.structural_analysis.pipeline_sa.nodes_analysis import NodesAnalysis
+from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
 
 
-class GraphSensitivityAnalysis:
+class GraphStructuralAnalysis:
     """
     This class works as facade and allows to apply all kind of approaches
     to whole pipeline and separate nodes together.
@@ -23,8 +23,8 @@ class GraphSensitivityAnalysis:
     :param approaches: methods applied to pipeline. Default: None
     :param nodes_to_analyze: nodes to analyze. Default: all nodes
     :param requirements: extra requirements to define specific details for different approaches.\
-    See SensitivityAnalysisRequirements class documentation.
-    :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity/
+    See StructuralAnalysisRequirements class documentation.
+    :param path_to_save: path to save results to. Default: ~home/Fedot/structural/
     Default: False
     """
 
@@ -34,13 +34,13 @@ class GraphSensitivityAnalysis:
                  approaches: List = None,
                  nodes_to_analyze: List[OptNode] = None,
                  edges_to_analyze: List[Edge] = None,
-                 requirements: SensitivityAnalysisRequirements = None,
+                 requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
-        #
-        # if is_preproc:
-        #     self.pipeline = self.pipeline_preprocessing(pipeline=pipeline)
-        # else:
-        self.pipeline = pipeline
+
+        if is_preproc:
+            self.pipeline = self.pipeline_preprocessing(pipeline=pipeline)
+        else:
+            self.pipeline = pipeline
 
         self.log = default_log(self)
 
@@ -71,7 +71,7 @@ class GraphSensitivityAnalysis:
 
     def analyze(self, n_jobs: int = -1, timer: OptimisationTimer = None):
         """
-        Applies defined sensitivity analysis approaches
+        Applies defined structural analysis approaches
         """
 
         result = dict()
@@ -86,6 +86,9 @@ class GraphSensitivityAnalysis:
             result['edges_result'] = self._edges_analyze.analyze(n_jobs=n_jobs, timer=timer)
 
         return result
+
+    def optimize(self):
+        pass
 
     @staticmethod
     def pipeline_preprocessing(pipeline: OptGraph):

@@ -2,7 +2,7 @@ from collections import namedtuple
 from typing import List, Optional
 
 from golem.core.optimisers.graph import OptNode
-from golem.sensitivity_analysis.pipeline_sa.entities.edge import Edge
+from golem.structural_analysis.pipeline_sa.entities.edge import Edge
 
 HyperparamsAnalysisMetaParams = namedtuple('HyperparamsAnalysisMetaParams', ['analyze_method',
                                                                              'sample_method',
@@ -14,7 +14,7 @@ ReplacementAnalysisMetaParams = namedtuple('ReplacementAnalysisMetaParams', ['ed
                                                                              'number_of_random_operations_nodes'])
 
 
-class SensitivityAnalysisRequirements:
+class StructuralAnalysisRequirements:
     """
     Use this object to pass all the requirements needed for SA.
 

@@ -3,8 +3,8 @@ import numpy as np
 from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
-from golem.sensitivity_analysis.pipeline_sa.edge_sa_approaches import EdgeReplaceOperationAnalyze
-from golem.sensitivity_analysis.pipeline_sa.node_sa_approaches import NodeReplaceOperationAnalyze
+from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeReplaceOperationAnalyze
+from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeReplaceOperationAnalyze
 
 
 def nodes_deletion(pipeline: OptGraph, entity: str, **kwargs) -> OptGraph:

@@ -11,14 +11,14 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.sensitivity_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
-from golem.sensitivity_analysis.pipeline_sa.postproc_methods import extract_result_values
-from golem.sensitivity_analysis.pipeline_sa.sa_requirements import SensitivityAnalysisRequirements
+from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
+from golem.structural_analysis.pipeline_sa.postproc_methods import extract_result_values
+from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 class NodesAnalysis:
     """
-    This class is for nodes sensitivity analysis within a OptGraph .
+    This class is for nodes structural analysis within a OptGraph .
     It takes nodes and approaches to be applied to chosen nodes.
     To define which nodes to analyze pass them to nodes_to_analyze filed
     or all nodes will be analyzed.
@@ -29,13 +29,13 @@ class NodesAnalysis:
     :param approaches: methods applied to nodes to modify the pipeline or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
     :param nodes_to_analyze: nodes to analyze. Default: all nodes
-    :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
+    :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
     def __init__(self, pipeline: OptGraph, objectives: List[Callable],
                  task_type: Any,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
-                 requirements: SensitivityAnalysisRequirements = None, path_to_save=None,
+                 requirements: StructuralAnalysisRequirements = None, path_to_save=None,
                  nodes_to_analyze: List[OptNode] = None):
 
         self.pipeline = pipeline
@@ -43,11 +43,11 @@ class NodesAnalysis:
         self.task_type = task_type
         self.approaches = approaches
         self.requirements = \
-            SensitivityAnalysisRequirements() if requirements is None else requirements
+            StructuralAnalysisRequirements() if requirements is None else requirements
         self.metric = self.requirements.metric
         self.log = default_log(self)
         self.path_to_save = \
-            join(default_data_dir(), 'sensitivity', 'nodes_sensitivity') if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
 
         if not nodes_to_analyze:
             self.log.message('Nodes to analyze are not defined. All nodes will be analyzed.')
@@ -101,7 +101,7 @@ class NodesAnalysis:
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(json.dumps(result, indent=4))
 
-        self.log.message(f'Nodes Sensitivity Analysis results were saved to {file_path}')
+        self.log.message(f'Nodes Structural Analysis results were saved to {file_path}')
 
     def _visualize_result_per_approach(self, results: dict, types: list):
         gathered_results = extract_result_values(approaches=self.approaches, results=results)
@@ -124,7 +124,7 @@ class NodesAnalysis:
                                               folder_name='results_per_approach')
 
             plt.savefig(file_path)
-            self.log.message(f'Nodes Sensitivity Analysis visualized results per approach were saved to {file_path}')
+            self.log.message(f'Nodes Structural Analysis visualized results per approach were saved to {file_path}')
 
     def _get_unique_points(self, nodes_degrees: list, result: list):
         """ Leaves one point with the same values along the x and y axes,

@@ -8,12 +8,12 @@ from golem.core.log import LoggerAdapter, default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
-from golem.sensitivity_analysis.graph_labels_using_sa import draw_nx_dag
-from golem.sensitivity_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach
-from golem.sensitivity_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach
-from golem.sensitivity_analysis.pipeline_sa.pipeline_sensitivity_facade import GraphSensitivityAnalysis
-from golem.sensitivity_analysis.pipeline_sa.sa_approaches_repository import SensitivityAnalysisApproachesRepository
-from golem.sensitivity_analysis.pipeline_sa.sa_requirements import SensitivityAnalysisRequirements
+from golem.structural_analysis.graph_labels_using_sa import draw_nx_dag
+from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach
+from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach
+from golem.structural_analysis.pipeline_sa.graph_structural_analysis import GraphStructuralAnalysis
+from golem.structural_analysis.pipeline_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
+from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
@@ -24,7 +24,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
                 is_visualize: bool = False, is_save_results_to_json: bool = False, is_preproc: bool = True,
                 **kwargs) -> Union[OptGraph, Tuple[OptGraph, Dict[str, int]]]:
     """
-    Function for pipeline post-processing using sensitivity analysis
+    Function for pipeline post-processing using structural analysis
 
     :param approaches_names: names of SA approaches to apply to the pipeline.
     Approaches can be applied both iteratively and all at once. In the first case,
@@ -36,7 +36,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
     :param objectives: list of objective functions for computing metrics
     :param metrics: metrics to use for optimization.
     All metrics will be calculated but result will be made using the first one.
-    :param timer: timer to check if the time allotted for sensitivity analysis has expired
+    :param timer: timer to check if the time allotted for structural analysis has expired
     :param log: log
     :param max_iter: max possible iteration. It is desirable to set this parameter,
     since this approach can work for a very long time
@@ -51,7 +51,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
 
     if not objectives:
         objectives = _get_objectives_from_data(data=data, metrics=metrics, task_type=task_type)
-    approaches_repo = SensitivityAnalysisApproachesRepository()
+    approaches_repo = StructuralAnalysisApproachesRepository()
     approaches = [approaches_repo.approach_by_name(approach_name) for approach_name in approaches_names]
 
     # what actions were applied on the pipeline and how many
@@ -130,17 +130,17 @@ def _analyse(pipeline: OptGraph, objectives: List[Callable],
              ) -> Dict[str, Any]:
 
     sa_requirements = \
-        SensitivityAnalysisRequirements(replacement_number_of_random_operations_nodes=
+        StructuralAnalysisRequirements(replacement_number_of_random_operations_nodes=
                                         number_of_replace_operations_nodes,
-                                        replacement_number_of_random_operations_edges=
+                                       replacement_number_of_random_operations_edges=
                                         number_of_replace_operations_edges,
-                                        is_visualize=is_visualize,
-                                        is_save_results_to_json=is_save_results_to_json)
+                                       is_visualize=is_visualize,
+                                       is_save_results_to_json=is_save_results_to_json)
 
     if n_jobs == -1:
         n_jobs = multiprocessing.cpu_count()
 
-    analysis_results = GraphSensitivityAnalysis(pipeline=pipeline, objectives=objectives,
+    analysis_results = GraphStructuralAnalysis(pipeline=pipeline, objectives=objectives,
                                                 task_type=task_type,
                                                 is_preproc=is_preproc,
                                                 approaches=approaches,
@@ -178,7 +178,7 @@ def _save_iteration_results_to_json(analysis_results: dict, save_path: str = Non
     if save_path:
         save_path = os.path.join(save_path, 'results_per_iteration.json')
     else:
-        save_path = os.path.join(project_root(), 'examples', 'sensitivity_analysis',
+        save_path = os.path.join(project_root(), 'examples', 'structural_analysis',
                                  'show_sa_on_graph', 'results_per_iteration.json')
     if not os.path.exists(save_path):
         json_data = [analysis_results]

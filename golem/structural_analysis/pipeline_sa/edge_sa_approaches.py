@@ -10,33 +10,33 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.sensitivity_analysis.pipeline_sa.entities.edge import Edge
-from golem.sensitivity_analysis.pipeline_sa.sa_requirements import SensitivityAnalysisRequirements, \
+from golem.structural_analysis.pipeline_sa.entities.edge import Edge
+from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
 
 class EdgeAnalysis:
     """
-    Class for successively applying approaches for sensitivity analysis
+    Class for successively applying approaches for structural analysis
 
     :param approaches: methods applied to edges to modify the pipeline or analyze certain operations.\
     Default: [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
-    :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
+    :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
     def __init__(self, approaches: Optional[List[Type['EdgeAnalyzeApproach']]] = None,
-                 approaches_requirements: SensitivityAnalysisRequirements = None,
+                 approaches_requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
 
         self.approaches = [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze] \
             if approaches is None else approaches
 
         self.path_to_save = \
-            join(default_data_dir(), 'sensitivity', 'edges_sensitivity') if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
         self.log = default_log(self)
 
         self.approaches_requirements = \
-            SensitivityAnalysisRequirements() if approaches_requirements is None else approaches_requirements
+            StructuralAnalysisRequirements() if approaches_requirements is None else approaches_requirements
 
     def analyze(self, graph: OptGraph, edge: Edge,
                 objectives: List[Callable],
@@ -47,7 +47,7 @@ class EdgeAnalysis:
         :param graph: graph containing the analyzed Edge
         :param edge: Edge object to analyze in Pipeline
         :param objectives: list of objective functions for computing metric values
-        :param timer: timer to check if the time allotted for sensitivity analysis has expired
+        :param timer: timer to check if the time allotted for structural analysis has expired
         :return: dict with Edge analysis result per approach
         """
 
@@ -72,20 +72,20 @@ class EdgeAnalyzeApproach(ABC):
 
     :param graph: Pipeline containing the analyzing Edge
     :param objectives: objective function for computing metric values
-    :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
+    :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
     def __init__(self, graph: OptGraph, objectives: List[Callable],
-                 requirements: SensitivityAnalysisRequirements = None,
+                 requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
         self._graph = graph
         self._objectives = objectives
         self._origin_metrics = None
         self._requirements = \
-            SensitivityAnalysisRequirements() if requirements is None else requirements
+            StructuralAnalysisRequirements() if requirements is None else requirements
 
         self._path_to_save = \
-            join(default_data_dir(), 'sensitivity', 'edges_sensitivity') if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
         self.log = default_log(prefix='edge_analysis')
 
         if not exists(self._path_to_save):
@@ -154,11 +154,11 @@ class EdgeAnalyzeApproach(ABC):
 
 class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
     def __init__(self, pipeline: OptGraph, objectives: List[Callable],
-                 requirements: SensitivityAnalysisRequirements = None, path_to_save=None):
+                 requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(pipeline, objectives, requirements)
 
         self._path_to_save = \
-            join(default_data_dir(), 'sensitivity', 'edges_sensitivity') if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
@@ -219,11 +219,11 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
     """
 
     def __init__(self, pipeline: OptGraph, objectives: List[Callable],
-                 requirements: SensitivityAnalysisRequirements = None, path_to_save=None):
+                 requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(pipeline, objectives, requirements)
 
         self._path_to_save = \
-            join(default_data_dir(), 'sensitivity', 'edges_sensitivity') if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 

@@ -8,8 +8,8 @@ import networkx as nx
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.graph import OptGraph
-from golem.sensitivity_analysis.graph_viz_temporary import NodeColorType, GraphVisualizer
-from golem.sensitivity_analysis.pipeline_sa.sa_approaches_repository import SensitivityAnalysisApproachesRepository
+from golem.structural_analysis.graph_viz_temporary import NodeColorType, GraphVisualizer
+from golem.structural_analysis.pipeline_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 
 GraphType = Union[Graph, OptGraph]
 
@@ -317,7 +317,7 @@ class SAGraphVisualizer(GraphVisualizer):
         """ Deletes node/edge in graph that has the max score """
         if worst_approach_name is None:
             return graph
-        postproc_method = SensitivityAnalysisApproachesRepository().postproc_method_by_name(worst_approach_name)
+        postproc_method = StructuralAnalysisApproachesRepository().postproc_method_by_name(worst_approach_name)
         new_graph = postproc_method(results=analysis_results, pipeline=graph, entity=entity_to_change)
         return new_graph
 
