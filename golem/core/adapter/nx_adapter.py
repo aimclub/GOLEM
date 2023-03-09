@@ -85,26 +85,3 @@ class DumbNetworkxAdapter(BaseNetworkxAdapter):
 
     def _node_adapt(self, data: Dict) -> OptNode:
         return data[_NX_NODE_KEY]
-
-
-def nx_to_directed(graph: nx.Graph) -> nx.DiGraph:
-    """Randomly chooses a direction for each edge."""
-    dedges = set()
-    digraph = nx.DiGraph()
-
-    for node, data in graph.nodes(data=True):
-        digraph.add_node(node, **data)
-
-    for u, v, data in graph.edges.data():
-        edge = (u, v)
-        inv_edge = (v, u)
-        if edge in dedges or inv_edge in dedges:
-            continue
-
-        if np.random.default_rng().random() > 0.5:
-            digraph.add_edge(*edge, **data)
-            dedges.add(edge)
-        else:
-            digraph.add_edge(*inv_edge, **data)
-            dedges.add(inv_edge)
-    return digraph
