@@ -4,8 +4,9 @@ from typing import Type, Optional, Sequence
 
 import networkx as nx
 
-from examples.synthetic_graph_evolution.experiment import run_experiments, graph_generators
-from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, relabel_nx_graph
+from examples.synthetic_graph_evolution.experiment import run_experiments
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -61,14 +62,10 @@ def tree_search_setup(target_graph: nx.DiGraph,
         is_multi_objective=True
     )
 
-    def get_random_tree(size):
-        unlabeled_graph = graph_generators['tree'](size).reverse()
-        labeled_graph = relabel_nx_graph(unlabeled_graph, node_types)
-        optgraph = graph_gen_params.adapter.adapt(labeled_graph)
-        return optgraph
-
     # Generate simple initial population with tree graphs
-    initial_graphs = [get_random_tree(k+1) for k in range(gp_params.pop_size)]
+    initial_graphs = [generate_labeled_graph('tree', k+1)
+                      for k in range(gp_params.pop_size)]
+    initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)

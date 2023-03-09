@@ -2,27 +2,15 @@ from datetime import datetime, timedelta
 from functools import partial
 from io import StringIO
 from itertools import product
-from typing import Sequence, Type, Callable, Dict, Optional
+from typing import Sequence, Type, Callable, Optional
 
-from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, relabel_nx_graph
-from golem.core.adapter.nx_adapter import BaseNetworkxAdapter, nx_to_directed
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_generators
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
+from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.metrics.edit_distance import get_edit_dist_metric, matrix_edit_dist
 from golem.metrics.graph_metrics import *
-
-NumNodes = int
-DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
-
-graph_generators: Dict[str, DiGraphGenerator] = {
-    'star': lambda n: nx_to_directed(nx.star_graph(n)),
-    'grid2d': lambda n: nx.grid_2d_graph(int(np.sqrt(n)), int(np.sqrt(n))),
-    '2ring': lambda n: nx_to_directed(nx.circular_ladder_graph(n)),
-    'hypercube': lambda n: nx_to_directed(nx.hypercube_graph(int(np.log2(n).round()))),
-    'gnp': lambda n: nx_to_directed(nx.gnp_random_graph(n, p=0.15)),
-    'line': lambda n: nx_to_directed(nx.path_graph(n, create_using=nx.DiGraph)),
-    'tree': lambda n: nx.random_tree(n, create_using=nx.DiGraph),
-}
 
 
 def get_all_quality_metrics(target_graph):
@@ -52,7 +40,6 @@ def run_experiments(optimizer_setup: Callable,
     if not node_types:
         node_types = ['X']
     for graph_name, num_nodes in product(graph_names, graph_sizes):
-        graph_generator = graph_generators[graph_name]
         experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
         trial_results = []
         for i in range(num_trials):
@@ -60,9 +47,7 @@ def run_experiments(optimizer_setup: Callable,
             print(f'\nTrial #{i} of {experiment_id} started at {start_time}', file=log)
 
             # Generate random target graph and run the optimizer
-            target_graph = graph_generator(num_nodes).reverse()
-            target_graph = relabel_nx_graph(target_graph, node_types)
-
+            target_graph = generate_labeled_graph(graph_name, num_nodes, node_types)
             # Run optimizer setup
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,

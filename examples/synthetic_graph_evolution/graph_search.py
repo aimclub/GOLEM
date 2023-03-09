@@ -2,8 +2,8 @@ from datetime import timedelta
 from functools import partial
 from typing import Type, Optional, Sequence
 
-from examples.synthetic_graph_evolution.experiment import run_experiments, graph_generators
-from examples.synthetic_graph_evolution.utils import relabel_nx_graph
+from examples.synthetic_graph_evolution.experiment import run_experiments
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -62,8 +62,9 @@ def graph_search_setup(target_graph: nx.DiGraph,
         },
         is_multi_objective=True
     )
+
     # Generate simple initial population with line graphs
-    initial_graphs = [relabel_nx_graph(graph_generators['line'](k+3), node_types)
+    initial_graphs = [generate_labeled_graph('line', k+3)
                       for k in range(gp_params.pop_size)]
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 

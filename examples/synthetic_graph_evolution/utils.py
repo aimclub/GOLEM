@@ -1,6 +1,6 @@
 from datetime import datetime
 from itertools import chain
-from typing import Tuple, Optional, Sequence, Collection, Iterable
+from typing import Tuple, Optional, Sequence, Iterable
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -11,16 +11,6 @@ from golem.metrics.graph_metrics import spectral_dists_all
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer
-
-
-def relabel_nx_graph(graph: nx.Graph, available_names: Collection[str]) -> nx.Graph:
-    """Randomly label nodes with 'name' attribute in nx.Graph
-    given list of available labels"""
-    names = np.random.choice(available_names, size=graph.number_of_nodes())
-    attributes = {node_id: {'name': name}
-                  for node_id, name in zip(graph.nodes, names)}
-    nx.set_node_attributes(graph, attributes)
-    return graph
 
 
 def fitness_to_stats(history: OptHistory,

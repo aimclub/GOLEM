@@ -7,7 +7,7 @@ import numpy as np
 import zss
 from networkx import graph_edit_distance
 
-from examples.synthetic_graph_evolution.utils import relabel_nx_graph
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.metrics.graph_metrics import min_max
 from libs.netcomp import edit_distance
@@ -91,10 +91,8 @@ def try_tree_edit_distance(sizes1=None, sizes2=None, node_types=None,
         node_types = ['X']
 
     for i, (n1, n2) in enumerate(zip_longest(sizes1, sizes2)):
-        g1 = nx.random_tree(n1, create_using=nx.DiGraph).reverse()
-        g2 = nx.random_tree(n2, create_using=nx.DiGraph).reverse()
-        g1 = relabel_nx_graph(g1, node_types)
-        g2 = relabel_nx_graph(g2, node_types)
+        g1 = generate_labeled_graph('tree', n1, node_types)
+        g2 = generate_labeled_graph('tree', n2, node_types)
 
         start_time = datetime.now()
         dist = tree_edit_dist(g1, g2)

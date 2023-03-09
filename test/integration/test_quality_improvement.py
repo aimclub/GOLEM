@@ -1,22 +1,20 @@
 from datetime import timedelta
 from typing import Sequence
 
-import networkx as nx
 import numpy as np
 import pytest
 
 from examples.synthetic_graph_evolution import experiment
-from examples.synthetic_graph_evolution.experiment import graph_generators
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
-from examples.synthetic_graph_evolution.utils import relabel_nx_graph
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 
 def run_graph_trial(optimizer_cls):
     # input data initialization
-    target_graph = nx.gnp_random_graph(20, p=0.15)
+    target_graph = generate_labeled_graph('gnp', 20, node_labels=['X', 'Y'])
     # running the example
     return experiment.run_trial(target_graph=target_graph,
                                 optimizer_setup=graph_search_setup,
@@ -26,8 +24,7 @@ def run_graph_trial(optimizer_cls):
 
 def run_tree_trial(optimizer_cls):
     # input data initialization
-    unlabeled_graph = graph_generators['tree'](10).reverse()
-    target_graph = relabel_nx_graph(unlabeled_graph, available_names=['X', 'Y'])
+    target_graph = generate_labeled_graph('tree', 10, node_labels=['X', 'Y'])
     # running the example
     return experiment.run_trial(target_graph=target_graph,
                                 optimizer_setup=tree_search_setup,
