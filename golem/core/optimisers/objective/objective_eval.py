@@ -13,7 +13,7 @@ class ObjectiveEvaluate(ABC, Generic[G]):
 
      Responsibilities:
      - Graph-specific evaluation policy: typically, Graphs require some kind of evaluation
-     before Objective could be estimated on them. E.g. Machine-learning pipelines must be
+     before Objective could be estimated on them. E.g. Machine-learning graphs must be
      fit on train data before they could be evaluated on the test data.
      - Objective-specific estimation: typically objectives require additional parameters
      besides Graphs for estimation, e.g. test data for estimation of prediction quality.

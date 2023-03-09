@@ -98,7 +98,7 @@ class HyperoptTuner(Generic[DomainGraphForTune]):
         Args:
           graph: graph to calculate objective
         """
-        self.log.info('Hyperparameters optimization start: estimation of metric for initial pipeline')
+        self.log.info('Hyperparameters optimization start: estimation of metric for initial graph')
 
         # Train graph
         self.init_graph = deepcopy(graph)

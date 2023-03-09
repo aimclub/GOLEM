@@ -1,7 +1,7 @@
-from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze
-from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeDeletionAnalyze, NodeReplaceOperationAnalyze, \
+from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze
+from golem.structural_analysis.graph_sa.node_sa_approaches import NodeDeletionAnalyze, NodeReplaceOperationAnalyze, \
     SubtreeDeletionAnalyze
-from golem.structural_analysis.pipeline_sa.postproc_methods import nodes_deletion, nodes_replacement, subtree_deletion, \
+from golem.structural_analysis.graph_sa.postproc_methods import nodes_deletion, nodes_replacement, subtree_deletion, \
     edges_deletion, edges_replacement
 
 NODE_DELETION = 'NodeDeletionAnalyze'

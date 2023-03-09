@@ -9,12 +9,12 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeAnalysis
-from golem.structural_analysis.pipeline_sa.entities.edge import Edge
-from golem.structural_analysis.pipeline_sa.nodes_analysis import path_to_save_per_iter
-from golem.structural_analysis.pipeline_sa.postproc_methods import extract_result_values
-from golem.structural_analysis.pipeline_sa.sa_approaches_repository import EDGE_REPLACEMENT
-from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
+from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeAnalysis
+from golem.structural_analysis.graph_sa.entities.edge import Edge
+from golem.structural_analysis.graph_sa.nodes_analysis import path_to_save_per_iter
+from golem.structural_analysis.graph_sa.postproc_methods import extract_result_values
+from golem.structural_analysis.graph_sa.sa_approaches_repository import EDGE_REPLACEMENT
+from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 class EdgesAnalysis:
@@ -24,21 +24,21 @@ class EdgesAnalysis:
     To define which edges to analyze pass them to edges_to_analyze filed
     or all edges will be analyzed.
 
-    :param pipeline: pipeline object to analyze
+    :param graph: graph object to analyze
     :param objectives: list of objective functions for computing metric values
-    :param approaches: methods applied to edges to modify the pipeline or analyze certain operations.\
+    :param approaches: methods applied to edges to modify the graph or analyze certain operations.\
     Default: [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
     :param edges_to_analyze: edges to analyze. Default: all edges
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  approaches: Optional[List[Type[EdgeAnalyzeApproach]]] = None,
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None,
                  edges_to_analyze: List[Edge] = None):
 
-        self.pipeline = pipeline
+        self.graph = graph
         self.objectives = objectives
         self.approaches = approaches
         self.requirements = \
@@ -50,7 +50,7 @@ class EdgesAnalysis:
 
         if not edges_to_analyze:
             self.log.message('Edges to analyze are not defined. All edges will be analyzed.')
-            self.edges_to_analyze = Edge.from_tuple(self.pipeline.get_edges())
+            self.edges_to_analyze = Edge.from_tuple(self.graph.get_edges())
         else:
             self.edges_to_analyze = edges_to_analyze
 
@@ -73,14 +73,14 @@ class EdgesAnalysis:
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
             edges_result = pool.starmap(edge_analysis.analyze,
-                                        [[self.pipeline, edge, self.objectives, timer]
+                                        [[self.graph, edge, self.objectives, timer]
                                          for edge in self.edges_to_analyze])
 
             for i, edge in enumerate(self.edges_to_analyze):
-                edges_results[f'parent_node id = {self.pipeline.nodes.index(edge.parent_node)}, '
-                              f'child_node id = {self.pipeline.nodes.index(edge.child_node)}'] = edges_result[i]
-                operation_types.append(f'{self.pipeline.nodes.index(edge.parent_node)}_{edge.parent_node.operation} '
-                                       f'{self.pipeline.nodes.index(edge.child_node)}_{edge.child_node.operation}')
+                edges_results[f'parent_node id = {self.graph.nodes.index(edge.parent_node)}, '
+                              f'child_node id = {self.graph.nodes.index(edge.child_node)}'] = edges_result[i]
+                operation_types.append(f'{self.graph.nodes.index(edge.parent_node)}_{edge.parent_node.operation} '
+                                       f'{self.graph.nodes.index(edge.child_node)}_{edge.child_node.operation}')
 
         if self.requirements.is_visualize:
             # get edges to replace to for visualization
@@ -123,14 +123,14 @@ class EdgesAnalysis:
                     parent_node_idx = nodes['parent_node_id']
                     child_node_idx = nodes['child_node_id']
                     nodes_to_replace_to.append(f'\nto\n'
-                                               f'{parent_node_idx}_{self.pipeline.nodes[parent_node_idx].operation}_'
-                                               f'{child_node_idx}_{self.pipeline.nodes[child_node_idx].operation}')
+                                               f'{parent_node_idx}_{self.graph.nodes[parent_node_idx].operation}_'
+                                               f'{child_node_idx}_{self.graph.nodes[child_node_idx].operation}')
                 types = list(map(lambda x, y: x + y, types, nodes_to_replace_to))
 
             ax.set_xticklabels(types, rotation=25)
             plt.title(f'{self.approaches[index].__name__} results', fontsize=18)
             plt.xlabel('parent node _ child node', fontsize=16)
-            plt.ylabel('changed_pipeline_metric/original_metric', fontsize=16)
+            plt.ylabel('changed_graph_metric/original_metric', fontsize=16)
 
             file_path = path_to_save_per_iter(root_path_to_save=self.path_to_save,
                                               file_name=f'{self.approaches[index].__name__}',

@@ -9,7 +9,7 @@ import networkx as nx
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.graph import OptGraph
 from golem.structural_analysis.graph_viz_temporary import NodeColorType, GraphVisualizer
-from golem.structural_analysis.pipeline_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
+from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 
 GraphType = Union[Graph, OptGraph]
 
@@ -44,7 +44,7 @@ def draw_nx_dag(graph: GraphType,
         edge_curvature_scale: edge curvature
         figure_size: figure_size
     """
-    SAPipelineVisualizer(graph).draw_with_sa(save_path=save_path, json_path=json_path,
+    SAGraphVisualizer(graph).draw_with_sa(save_path=save_path, json_path=json_path,
                                              metrics_names=metrics_names,
                                              node_color=node_color, dpi=dpi,
                                              node_size_scale=node_size_scale,
@@ -318,11 +318,11 @@ class SAGraphVisualizer(GraphVisualizer):
         if worst_approach_name is None:
             return graph
         postproc_method = StructuralAnalysisApproachesRepository().postproc_method_by_name(worst_approach_name)
-        new_graph = postproc_method(results=analysis_results, pipeline=graph, entity=entity_to_change)
+        new_graph = postproc_method(results=analysis_results, graph=graph, entity=entity_to_change)
         return new_graph
 
 
-class SAPipelineVisualizer(SAGraphVisualizer):
+class SAGraphVisualizer(SAGraphVisualizer):
     def __init__(self, graph: GraphType, visuals_params: Optional[Dict[str, Any]] = None):
         visuals_params = visuals_params if visuals_params is not None else {}
         # TODO: get_colors_by_tags from fedot

@@ -10,13 +10,13 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements, \
+from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
 
 class NodeAnalysis:
     """
-    :param approaches: methods applied to nodes to modify the pipeline or analyze certain operations.\
+    :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeTuneAnalyze, NodeReplaceOperationAnalyze]
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
@@ -37,15 +37,15 @@ class NodeAnalysis:
         self.approaches_requirements = \
             StructuralAnalysisRequirements() if approaches_requirements is None else approaches_requirements
 
-    def analyze(self, pipeline: OptGraph, node: OptNode,
+    def analyze(self, graph: OptGraph, node: OptNode,
                 objectives: List[Callable],
                 timer: OptimisationTimer = None) -> dict:
 
         """
         Method runs Node analysis within defined approaches
 
-        :param pipeline: Pipeline containing the analyzed Node
-        :param node: Node object to analyze in Pipeline
+        :param graph: Graph containing the analyzed Node
+        :param node: Node object to analyze in Graph
         :param objectives: objective functions for computing metric values
         :param timer: timer to check if the time allotted for structural analysis has expired
         :return: dict with Node analysis result per approach
@@ -57,7 +57,7 @@ class NodeAnalysis:
                 results[f'{approach.__name__}'] = {'loss': [-2.0]*len(objectives)}
                 break
             results[f'{approach.__name__}'] = \
-                approach(pipeline=pipeline,
+                approach(graph=graph,
                          objectives=objectives,
                          task_type=self.task_type,
                          requirements=self.approaches_requirements,
@@ -94,16 +94,16 @@ class NodeAnalysis:
 class NodeAnalyzeApproach(ABC):
     """
     Base class for analysis approach.
-    :param pipeline: Pipeline containing the analyzed Node
+    :param graph: Graph containing the analyzed Node
     :param objectives: objective functions for computing metric values
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  task_type: Any,
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
-        self._pipeline = pipeline
+        self._graph = graph
         self._objectives = objectives
         self._task_type = task_type
         self._origin_metrics = list()
@@ -127,52 +127,52 @@ class NodeAnalyzeApproach(ABC):
 
     @abstractmethod
     def sample(self, *args) -> Union[List[OptGraph], OptGraph]:
-        """Changes the pipeline according to the approach"""
+        """Changes the graph according to the approach"""
         pass
 
-    def _is_the_modified_pipeline_different(self, modified_pipeline: OptGraph):
-        """ Checks if the pipeline after changes is different from the original pipeline """
-        if modified_pipeline.root_node.descriptive_id != self._pipeline.root_node.descriptive_id:
+    def _is_the_modified_graph_different(self, modified_graph: OptGraph):
+        """ Checks if the graph after changes is different from the original graph """
+        if modified_graph.root_node.descriptive_id != self._graph.root_node.descriptive_id:
             return True
         return False
 
-    def _compare_with_origin_by_metrics(self, modified_pipeline: OptGraph) -> List[float]:
-        """ Iterate through all objectives and evaluate modified pipeline """
+    def _compare_with_origin_by_metrics(self, modified_graph: OptGraph) -> List[float]:
+        """ Iterate through all objectives and evaluate modified graph """
         results = []
         for objective in self._objectives:
-            metric = self._compare_with_origin_by_metric(modified_pipeline=modified_pipeline,
+            metric = self._compare_with_origin_by_metric(modified_graph=modified_graph,
                                                          objective=objective)
             results.append(metric)
         return results
 
-    def _compare_with_origin_by_metric(self, modified_pipeline: OptGraph,
+    def _compare_with_origin_by_metric(self, modified_graph: OptGraph,
                                        objective: Callable) -> float:
-        """ Returns the ratio of metrics for the modified pipeline and the original one """
+        """ Returns the ratio of metrics for the modified graph and the original one """
 
-        if not self._is_the_modified_pipeline_different(modified_pipeline):
+        if not self._is_the_modified_graph_different(modified_graph):
             return -1.0
 
         obj_idx = self._objectives.index(objective)
 
         if not self._origin_metrics:
-            self._origin_metrics = [objective(self._pipeline).value]
+            self._origin_metrics = [objective(self._graph).value]
         elif len(self._origin_metrics) <= obj_idx:
-            self._origin_metrics.append(objective(self._pipeline).value)
+            self._origin_metrics.append(objective(self._graph).value)
 
-        modified_pipeline_metric = objective(modified_pipeline).value
+        modified_graph_metric = objective(modified_graph).value
 
         if not self._origin_metrics[obj_idx]:
-            self.log.warning("Origin pipeline can not be evaluated")
+            self.log.warning("Origin graph can not be evaluated")
             return -1.0
-        if not modified_pipeline_metric:
-            self.log.warning("Modified pipeline can not be evaluated")
+        if not modified_graph_metric:
+            self.log.warning("Modified graph can not be evaluated")
             return -1.0
 
         try:
-            if modified_pipeline_metric < 0.0:
-                res = modified_pipeline_metric / self._origin_metrics[obj_idx]
+            if modified_graph_metric < 0.0:
+                res = modified_graph_metric / self._origin_metrics[obj_idx]
             else:
-                res = self._origin_metrics[obj_idx] / modified_pipeline_metric
+                res = self._origin_metrics[obj_idx] / modified_graph_metric
         except ZeroDivisionError:
             res = -1.0
 
@@ -180,10 +180,10 @@ class NodeAnalyzeApproach(ABC):
 
 
 class NodeDeletionAnalyze(NodeAnalyzeApproach):
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  task_type: Any,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(pipeline, objectives, task_type, requirements)
+        super().__init__(graph, objectives, task_type, requirements)
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
@@ -191,20 +191,20 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
 
     def analyze(self, node: OptNode, **kwargs) -> Dict[str, List[float]]:
         """
-        Receives a pipeline without the specified node and tries to calculate the loss for it
+        Receives a graph without the specified node and tries to calculate the loss for it
 
         :param node: OptNode object to analyze
-        :return: the ratio of modified pipeline score to origin score
+        :return: the ratio of modified graph score to origin score
         """
-        if node is self._pipeline.root_node:
+        if node is self._graph.root_node:
             self.log.warning(f'{node} node can not be deleted')
             return {'loss': [-1.0]*len(self._objectives)}
         else:
-            shortened_pipeline = self.sample(node)
-            if shortened_pipeline:
-                losses = self._compare_with_origin_by_metrics(shortened_pipeline)
+            shortened_graph = self.sample(node)
+            if shortened_graph:
+                losses = self._compare_with_origin_by_metrics(shortened_graph)
                 self.log.message(f'losses for {node.operation.operation_type}: {losses}')
-                del shortened_pipeline
+                del shortened_graph
             else:
                 losses = [-1.0]*len(self._objectives)
 
@@ -212,28 +212,28 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
 
     def sample(self, node: OptNode):
         """
-        Checks if it is possible to delete the node from the pipeline so that it remains valid,
+        Checks if it is possible to delete the node from the graph so that it remains valid,
         and if so, deletes
 
-        :param node: OptNode object to delete from Pipeline object
-        :return: Pipeline object without node
+        :param node: OptNode object to delete from Graph object
+        :return: Graph object without node
         """
-        pipeline_sample = deepcopy(self._pipeline)
-        node_index_to_delete = self._pipeline.nodes.index(node)
-        node_to_delete = pipeline_sample.nodes[node_index_to_delete]
+        graph_sample = deepcopy(self._graph)
+        node_index_to_delete = self._graph.nodes.index(node)
+        node_to_delete = graph_sample.nodes[node_index_to_delete]
 
         if node_to_delete.operation.operation_type == 'class_decompose':
-            for child in pipeline_sample.node_children(node_to_delete):
-                pipeline_sample.delete_node(child)
+            for child in graph_sample.node_children(node_to_delete):
+                graph_sample.delete_node(child)
 
-        pipeline_sample.delete_node(node_to_delete)
+        graph_sample.delete_node(node_to_delete)
 
         verifier = GraphVerifier()
-        if not verifier.verify(pipeline_sample):
+        if not verifier.verify(graph_sample):
             self.log.message('Can not delete node since modified graph can not be verified')
             return None
 
-        return pipeline_sample
+        return graph_sample
 
 
 class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
@@ -242,10 +242,10 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
     and evaluate the score difference
     """
 
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  task_type: Any,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(pipeline, objectives, task_type, requirements)
+        super().__init__(graph, objectives, task_type, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
@@ -254,14 +254,14 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
     def analyze(self, node: OptNode, **kwargs) -> Dict[str, Union[float, str]]:
         """
-        Counts the loss on each changed pipeline received and returns losses
+        Counts the loss on each changed graph received and returns losses
 
         :param node: OptNode object to analyze
 
-        :return: the ratio of modified pipeline score to origin score
+        :return: the ratio of modified graph score to origin score
         """
         requirements: ReplacementAnalysisMetaParams = self._requirements.replacement_meta
-        node_id = self._pipeline.nodes.index(node)
+        node_id = self._graph.nodes.index(node)
         samples = self.sample(node=node,
                               nodes_to_replace_to=requirements.nodes_to_replace_to,
                               number_of_random_operations=requirements.number_of_random_operations_nodes)
@@ -269,12 +269,12 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         try:
             loss_values = []
             new_nodes_types = []
-            for sample_pipeline in samples:
-                loss_per_sample = self._compare_with_origin_by_metrics(sample_pipeline)
+            for sample_graph in samples:
+                loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
                 self.log.message(f'losses: {loss_per_sample}\n')
                 loss_values.append(loss_per_sample)
 
-                new_node = sample_pipeline.nodes[node_id]
+                new_node = sample_graph.nodes[node_id]
                 new_nodes_types.append(new_node.operation.operation_type)
 
             loss_and_node_operations = sorted(list(zip(loss_values, new_nodes_types)),
@@ -297,7 +297,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         :param nodes_to_replace_to: nodes provided for old_node replacement
         :param number_of_random_operations: number of replacement operations, \
         if nodes_to_replace_to not provided
-        :return: Sequence of Pipeline objects with new operations instead of old one
+        :return: Sequence of Graph objects with new operations instead of old one
         """
 
         if not nodes_to_replace_to:
@@ -307,20 +307,20 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         samples = list()
         for replacing_node in nodes_to_replace_to:
-            sample_pipeline = deepcopy(self._pipeline)
-            replaced_node_index = self._pipeline.nodes.index(node)
-            replaced_node = sample_pipeline.nodes[replaced_node_index]
-            sample_pipeline.update_node(old_node=replaced_node,
+            sample_graph = deepcopy(self._graph)
+            replaced_node_index = self._graph.nodes.index(node)
+            replaced_node = sample_graph.nodes[replaced_node_index]
+            sample_graph.update_node(old_node=replaced_node,
                                         new_node=replacing_node)
             verifier = GraphVerifier()
-            if not verifier.verify(sample_pipeline):
+            if not verifier.verify(sample_graph):
                 self.log.warning(f'Can not replace {node.operation} node with {replacing_node.operation} node.')
             else:
                 self.log.message(f'replacing node: {replacing_node.operation}')
-                samples.append(sample_pipeline)
+                samples.append(sample_graph)
 
         if not samples:
-            samples.append(self._pipeline)
+            samples.append(self._graph)
 
         return samples
 
@@ -358,10 +358,10 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
     """
     Approach to delete specified node subtree
     """
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  task_type: Any,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(pipeline, objectives, task_type, requirements)
+        super().__init__(graph, objectives, task_type, requirements)
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') \
                 if path_to_save is None else path_to_save
@@ -370,21 +370,21 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
 
     def analyze(self, node: OptNode, **kwargs) -> Dict[str, List[float]]:
         """
-        Receives a pipeline without the specified node's subtree and
+        Receives a graph without the specified node's subtree and
         tries to calculate the loss for it
 
         :param node: OptNode object to analyze
-        :return: the ratio of modified pipeline score to origin score
+        :return: the ratio of modified graph score to origin score
         """
-        if node is self._pipeline.root_node:
+        if node is self._graph.root_node:
             self.log.warning(f'{node} subtree can not be deleted')
             return {'loss': [-1.0]*len(self._objectives)}
         else:
-            shortened_pipeline = self.sample(node)
-            if shortened_pipeline:
-                loss = self._compare_with_origin_by_metrics(shortened_pipeline)
+            shortened_graph = self.sample(node)
+            if shortened_graph:
+                loss = self._compare_with_origin_by_metrics(shortened_graph)
                 self.log.message(f'loss for {node.operation.operation_type}: {loss}')
-                del shortened_pipeline
+                del shortened_graph
             else:
                 loss = [-1.0]*len(self._objectives)
 
@@ -392,25 +392,25 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
 
     def sample(self, node: OptNode):
         """
-        Checks if it is possible to delete the node's subtree from the pipeline so that it remains valid,
+        Checks if it is possible to delete the node's subtree from the graph so that it remains valid,
         and if so, deletes
 
         :param node: OptNode object from which to delete subtree from OptGraph object
         :return: OptGraph object without subtree
         """
-        pipeline_sample = deepcopy(self._pipeline)
-        node_index_to_delete = self._pipeline.nodes.index(node)
-        node_to_delete = pipeline_sample.nodes[node_index_to_delete]
+        graph_sample = deepcopy(self._graph)
+        node_index_to_delete = self._graph.nodes.index(node)
+        node_to_delete = graph_sample.nodes[node_index_to_delete]
 
         if node_to_delete.operation.operation_type == 'class_decompose':
-            for child in pipeline_sample.node_children(node_to_delete):
-                pipeline_sample.delete_node(child)
+            for child in graph_sample.node_children(node_to_delete):
+                graph_sample.delete_node(child)
 
-        pipeline_sample.delete_subtree(node_to_delete)
+        graph_sample.delete_subtree(node_to_delete)
 
         verifier = GraphVerifier()
-        if not verifier.verify(pipeline_sample):
+        if not verifier.verify(graph_sample):
             self.log.warning('Can not delete subtree since modified graph can not pass verification')
             return None
 
-        return pipeline_sample
+        return graph_sample

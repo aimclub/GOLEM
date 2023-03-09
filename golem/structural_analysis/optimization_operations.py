@@ -7,7 +7,7 @@ from golem.core.optimisers.graph import OptGraph
 
 
 def graph_gluing(last_population: List[OptGraph]) -> Tuple[OptGraph, List[List[int]]]:
-    """ Glue together the three most distant pipelines from the last population """
+    """ Glue together the three most distant graphs from the last population """
     graphs_to_glue = get_graphs_to_glue(population=last_population)
     inds_idxs = [last_population.index(graph) for graph in graphs_to_glue]
     if graphs_to_glue[0].root_node.nodes_from is None:
@@ -23,9 +23,9 @@ def graph_gluing(last_population: List[OptGraph]) -> Tuple[OptGraph, List[List[i
 
 
 def get_graphs_to_glue(population: List[OptGraph]) -> List[OptGraph]:
-    """ Get three pipelines: the first one is the pipeline from the individual with the best fitness,
-    the second one is the most different pipeline from it and
-    the third one is pipeline in the middle in the distance from the two previously named pipelines """
+    """ Get three graphs: the first one is the graph from the individual with the best fitness,
+    the second one is the most different graph from it and
+    the third one is graph in the middle in the distance from the two previously named graphs """
     pipe_0 = population[0]
     distances = []
     for idx, ind in enumerate(population):

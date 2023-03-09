@@ -9,14 +9,14 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
 from golem.structural_analysis.graph_labels_using_sa import draw_nx_dag
-from golem.structural_analysis.pipeline_sa.edge_sa_approaches import EdgeAnalyzeApproach
-from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach
-from golem.structural_analysis.pipeline_sa.graph_structural_analysis import GraphStructuralAnalysis
-from golem.structural_analysis.pipeline_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
-from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
+from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach
+from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach
+from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
+from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
+from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
-def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
+def sa_postproc(approaches_names: List[str], graph_before_sa: OptGraph,
                 task_type: Any, data: Any = None, objectives: List[Callable] = None,
                 metrics: List[str] = None,
                 timer: OptimisationTimer = None,
@@ -24,13 +24,13 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
                 is_visualize: bool = False, is_save_results_to_json: bool = False, is_preproc: bool = True,
                 **kwargs) -> Union[OptGraph, Tuple[OptGraph, Dict[str, int]]]:
     """
-    Function for pipeline post-processing using structural analysis
+    Function for graph post-processing using structural analysis
 
-    :param approaches_names: names of SA approaches to apply to the pipeline.
+    :param approaches_names: names of SA approaches to apply to the graph.
     Approaches can be applied both iteratively and all at once. In the first case,
     the function must be called separately for each approach, and in the second - it must be called once,
     specifying all the necessary approaches
-    :param pipeline_before_sa: OptGraph that will be analyzed
+    :param graph_before_sa: OptGraph that will be analyzed
     :param task_type: type of solving task
     :param data: input data
     :param objectives: list of objective functions for computing metrics
@@ -44,7 +44,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
     :param is_visualize: a boolean flag indicating whether to visualize results or not
     :param is_save_results_to_json: a boolean flag indicating whether to save results to json or not
     :param is_preproc: is preprocessing needed or not
-    :return: optimized pipeline
+    :return: optimized graph
     """
     if not log:
         log = default_log(prefix=__name__)
@@ -54,15 +54,15 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
     approaches_repo = StructuralAnalysisApproachesRepository()
     approaches = [approaches_repo.approach_by_name(approach_name) for approach_name in approaches_names]
 
-    # what actions were applied on the pipeline and how many
+    # what actions were applied on the graph and how many
     actions_applied = dict.fromkeys(approaches_names, 0)
 
     save_path = kwargs.get('save_path')
     if save_path:
         kwargs.pop('save_path')
 
-    new_pipeline = deepcopy(pipeline_before_sa)
-    analysis_results = _analyse(pipeline=new_pipeline, objectives=objectives, task_type=task_type,
+    new_graph = deepcopy(graph_before_sa)
+    analysis_results = _analyse(graph=new_graph, objectives=objectives, task_type=task_type,
                                 approaches=approaches,
                                 is_visualize=is_visualize, is_save_results_to_json=is_save_results_to_json,
                                 is_preproc=is_preproc, timer=timer, n_jobs=n_jobs, **kwargs)
@@ -72,7 +72,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
     if len(list(analysis_results.values())) == 0 or not analysis_results.keys():
         log.message(f'{iter} actions were taken during SA')
         log.message(f'The following actions were applied during SA: {actions_applied}')
-        return pipeline_before_sa
+        return graph_before_sa
 
     while not converged:
         iter += 1
@@ -91,7 +91,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
                                             save_path=save_path)
         if worst_approach_result > 1.0:
             postproc_method = approaches_repo.postproc_method_by_name(worst_approach_name)
-            new_pipeline = postproc_method(results=analysis_results, pipeline=new_pipeline, entity=entity_to_change)
+            new_graph = postproc_method(results=analysis_results, graph=new_graph, entity=entity_to_change)
             actions_applied[f'{worst_approach_name}'] += 1
             if timer is not None and timer.is_time_limit_reached():
                 break
@@ -99,7 +99,7 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
             if max_iter and iter >= max_iter:
                 break
 
-            analysis_results = _analyse(pipeline=new_pipeline, objectives=objectives, task_type=task_type,
+            analysis_results = _analyse(graph=new_graph, objectives=objectives, task_type=task_type,
                                         approaches=approaches,
                                         is_visualize=is_visualize, is_save_results_to_json=is_save_results_to_json,
                                         is_preproc=is_preproc, timer=timer, n_jobs=n_jobs, **kwargs)
@@ -107,17 +107,17 @@ def sa_postproc(approaches_names: List[str], pipeline_before_sa: OptGraph,
             converged = True
 
     if save_path:
-        _save_iteration_results(pipeline_before_sa=pipeline_before_sa, save_path=save_path)
+        _save_iteration_results(graph_before_sa=graph_before_sa, save_path=save_path)
 
     log.message(f'{iter} iterations passed during SA')
     log.message(f'The following actions were applied during SA: {actions_applied}')
-    if isinstance(new_pipeline, OptGraph):
-        return new_pipeline
+    if isinstance(new_graph, OptGraph):
+        return new_graph
     else:
-        return pipeline_before_sa
+        return graph_before_sa
 
 
-def _analyse(pipeline: OptGraph, objectives: List[Callable],
+def _analyse(graph: OptGraph, objectives: List[Callable],
              task_type: Any,
              approaches: List[Union[NodeAnalyzeApproach, EdgeAnalyzeApproach]],
              is_visualize: bool = False,
@@ -140,11 +140,11 @@ def _analyse(pipeline: OptGraph, objectives: List[Callable],
     if n_jobs == -1:
         n_jobs = multiprocessing.cpu_count()
 
-    analysis_results = GraphStructuralAnalysis(pipeline=pipeline, objectives=objectives,
-                                                task_type=task_type,
-                                                is_preproc=is_preproc,
-                                                approaches=approaches,
-                                                requirements=sa_requirements).analyze(n_jobs=n_jobs,
+    analysis_results = GraphStructuralAnalysis(graph=graph, objectives=objectives,
+                                               task_type=task_type,
+                                               is_preproc=is_preproc,
+                                               approaches=approaches,
+                                               requirements=sa_requirements).analyze(n_jobs=n_jobs,
                                                                                          timer=timer)
     return analysis_results
 
@@ -159,15 +159,15 @@ def _get_objectives_from_data(data: Any, metrics: List[str], task_type: Any):
     return
 
 
-def _save_iteration_results(pipeline_before_sa: OptGraph, save_path: str = None):
+def _save_iteration_results(graph_before_sa: OptGraph, save_path: str = None):
     """ Save visualizations for SA per iteration """
     json_path = os.path.join(save_path, 'results_per_iteration.json')
-    pipeline_save_path = os.path.join(save_path, 'result_pipelines')
-    pipeline_before_sa.save(pipeline_save_path)
-    if not os.path.exists(pipeline_save_path):
-        os.makedirs(pipeline_save_path)
+    graph_save_path = os.path.join(save_path, 'result_graphs')
+    graph_before_sa.save(graph_save_path)
+    if not os.path.exists(graph_save_path):
+        os.makedirs(graph_save_path)
     try:
-        draw_nx_dag(graph=pipeline_before_sa, save_path=save_path, json_path=json_path)
+        draw_nx_dag(graph=graph_before_sa, save_path=save_path, json_path=json_path)
     except Exception as ex:
         log = default_log('draw_viz')
         log.error(f'Visualisation failed: {ex}')

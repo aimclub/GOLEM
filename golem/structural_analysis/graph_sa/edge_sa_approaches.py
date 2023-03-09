@@ -10,8 +10,8 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.pipeline_sa.entities.edge import Edge
-from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements, \
+from golem.structural_analysis.graph_sa.entities.edge import Edge
+from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
 
@@ -19,7 +19,7 @@ class EdgeAnalysis:
     """
     Class for successively applying approaches for structural analysis
 
-    :param approaches: methods applied to edges to modify the pipeline or analyze certain operations.\
+    :param approaches: methods applied to edges to modify the graph or analyze certain operations.\
     Default: [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
@@ -45,7 +45,7 @@ class EdgeAnalysis:
         Method runs Edge analysis within defined approaches
 
         :param graph: graph containing the analyzed Edge
-        :param edge: Edge object to analyze in Pipeline
+        :param edge: Edge object to analyze in Graph
         :param objectives: list of objective functions for computing metric values
         :param timer: timer to check if the time allotted for structural analysis has expired
         :return: dict with Edge analysis result per approach
@@ -58,7 +58,7 @@ class EdgeAnalysis:
                 break
 
             results[f'{approach.__name__}'] = \
-                approach(pipeline=graph,
+                approach(graph=graph,
                          objectives=objectives,
                          requirements=self.approaches_requirements,
                          path_to_save=self.path_to_save).analyze(edge=edge)
@@ -70,7 +70,7 @@ class EdgeAnalyzeApproach(ABC):
     """
     Base class for analysis approach.
 
-    :param graph: Pipeline containing the analyzing Edge
+    :param graph: Graph containing the analyzing Edge
     :param objectives: objective function for computing metric values
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
@@ -101,29 +101,29 @@ class EdgeAnalyzeApproach(ABC):
 
     @abstractmethod
     def sample(self, *args) -> Union[List[OptGraph], OptGraph]:
-        """ Changes the pipeline according to the approach """
+        """ Changes the graph according to the approach """
         pass
 
-    def _is_the_modified_pipeline_different(self, modified_pipeline: OptGraph):
-        """ Checks if the pipeline after changes is different from the original pipeline """
-        if modified_pipeline.root_node.descriptive_id != self._graph.root_node.descriptive_id:
+    def _is_the_modified_graph_different(self, modified_graph: OptGraph):
+        """ Checks if the graph after changes is different from the original graph """
+        if modified_graph.root_node.descriptive_id != self._graph.root_node.descriptive_id:
             return True
         return False
 
-    def _compare_with_origin_by_metrics(self, modified_pipeline: OptGraph) -> List[float]:
-        """ Iterate through all objectives and evaluate modified pipeline """
+    def _compare_with_origin_by_metrics(self, modified_graph: OptGraph) -> List[float]:
+        """ Iterate through all objectives and evaluate modified graph """
         results = []
         for objective in self._objectives:
-            metric = self._compare_with_origin_by_metric(modified_pipeline=modified_pipeline,
+            metric = self._compare_with_origin_by_metric(modified_graph=modified_graph,
                                                          objective=objective)
             results.append(metric)
         return results
 
-    def _compare_with_origin_by_metric(self, modified_pipeline: OptGraph,
+    def _compare_with_origin_by_metric(self, modified_graph: OptGraph,
                                        objective: Callable) -> float:
-        """ Returns the ratio of metrics for the modified pipeline and the original one """
+        """ Returns the ratio of metrics for the modified graph and the original one """
 
-        if not self._is_the_modified_pipeline_different(modified_pipeline):
+        if not self._is_the_modified_graph_different(modified_graph):
             return -1.0
 
         obj_idx = self._objectives.index(objective)
@@ -132,20 +132,20 @@ class EdgeAnalyzeApproach(ABC):
         elif len(self._origin_metrics) <= obj_idx:
             self._origin_metrics.append(objective(self._graph).value)
 
-        modified_pipeline_metric = objective(modified_pipeline).value
+        modified_graph_metric = objective(modified_graph).value
 
         if not self._origin_metrics[obj_idx]:
-            self.log.warning("Origin pipeline can not be evaluated")
+            self.log.warning("Origin graph can not be evaluated")
             return -1.0
-        if not modified_pipeline_metric:
-            self.log.warning("Modified pipeline can not be evaluated")
+        if not modified_graph_metric:
+            self.log.warning("Modified graph can not be evaluated")
             return -1.0
 
         try:
-            if modified_pipeline_metric < 0.0:
-                res = modified_pipeline_metric / self._origin_metrics[obj_idx]
+            if modified_graph_metric < 0.0:
+                res = modified_graph_metric / self._origin_metrics[obj_idx]
             else:
-                res = self._origin_metrics[obj_idx] / modified_pipeline_metric
+                res = self._origin_metrics[obj_idx] / modified_graph_metric
         except ZeroDivisionError:
             res = -1.0
 
@@ -153,9 +153,9 @@ class EdgeAnalyzeApproach(ABC):
 
 
 class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(pipeline, objectives, requirements)
+        super().__init__(graph, objectives, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
@@ -164,52 +164,52 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
 
     def analyze(self, edge: Edge, **kwargs) -> Dict[str, List[float]]:
         """
-        Receives a pipeline without the specified edge and tries to calculate the loss for it
+        Receives a graph without the specified edge and tries to calculate the loss for it
 
         :param edge: Edge object to analyze
-        :return: the ratio of modified pipeline score to origin score
+        :return: the ratio of modified graph score to origin score
         """
 
         if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
-            self.log.warning('if remove this edge then get a pipeline of length one')
+            self.log.warning('if remove this edge then get a graph of length one')
             return {'loss': [-1.0]*len(self._objectives)}
         else:
-            shortened_pipeline = self.sample(edge)
-            if shortened_pipeline:
-                loss = self._compare_with_origin_by_metrics(shortened_pipeline)
+            shortened_graph = self.sample(edge)
+            if shortened_graph:
+                loss = self._compare_with_origin_by_metrics(shortened_graph)
                 self.log.message(f'loss: {loss}')
-                del shortened_pipeline
+                del shortened_graph
             else:
-                self.log.warning('if remove this edge then get an invalid pipeline')
+                self.log.warning('if remove this edge then get an invalid graph')
                 loss = [-1.0]*len(self._objectives)
 
         return {'loss': loss}
 
     def sample(self, edge: Edge) -> Optional[OptGraph]:
         """
-        Checks if it is possible to delete an edge from the pipeline so that it remains valid,
+        Checks if it is possible to delete an edge from the graph so that it remains valid,
         and if so, deletes
 
-        :param edge: Edge object to delete from Pipeline object
-        :return: Pipeline object without edge
+        :param edge: Edge object to delete from Graph object
+        :return: Graph object without edge
         """
 
-        pipeline_sample = deepcopy(self._graph)
+        graph_sample = deepcopy(self._graph)
 
         parent_node_index_to_delete = self._graph.nodes.index(edge.parent_node)
-        parent_node_to_delete = pipeline_sample.nodes[parent_node_index_to_delete]
+        parent_node_to_delete = graph_sample.nodes[parent_node_index_to_delete]
 
         child_node_index_to_delete = self._graph.nodes.index(edge.child_node)
-        child_node_to_delete = pipeline_sample.nodes[child_node_index_to_delete]
+        child_node_to_delete = graph_sample.nodes[child_node_index_to_delete]
 
-        pipeline_sample.disconnect_nodes(parent_node_to_delete, child_node_to_delete)
+        graph_sample.disconnect_nodes(parent_node_to_delete, child_node_to_delete)
 
         verifier = GraphVerifier()
-        if not verifier.verify(pipeline_sample):
-            self.log.warning('Can not delete edge since modified pipeline can not pass verification')
+        if not verifier.verify(graph_sample):
+            self.log.warning('Can not delete edge since modified graph can not pass verification')
             return None
 
-        return pipeline_sample
+        return graph_sample
 
 
 class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
@@ -218,9 +218,9 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
        and evaluate the score difference
     """
 
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(pipeline, objectives, requirements)
+        super().__init__(graph, objectives, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
@@ -229,8 +229,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
 
     def analyze(self, edge: Edge, **kwargs) -> Dict[str, Union[List[float], Dict[str, int]]]:
         """
-        Counts the loss on each changed pipeline received and returns the biggest loss and
-        the pipeline on which it was received
+        Counts the loss on each changed graph received and returns the biggest loss and
+        the graph on which it was received
 
         :param edge: Edge object to analyze
         :return: dictionary of the best (the biggest) loss and corresponding to it edge to replace to
@@ -244,8 +244,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         edges_nodes_idx_to_replace_to = samples_res['edges_nodes_idx_to_replace_to']
 
         loss_values = []
-        for sample_pipeline in samples:
-            loss_per_sample = self._compare_with_origin_by_metrics(sample_pipeline)
+        for sample_graph in samples:
+            loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
             self.log.message(f'loss: {loss_per_sample}')
             loss_values.append(loss_per_sample)
 
@@ -262,15 +262,15 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             -> Dict[str, Union[List[OptGraph], List[Dict[str, int]]]]:
         """
         Tries to replace the given edge with a pool of edges available for replacement (see _edge_generation docstring)
-        and validates the resulting pipelines
+        and validates the resulting graphs
 
         :param edge: Edge object to replace
         :param edges_to_replace_to: edges provided for old_edge replacement
         :param number_of_random_operations: number of replacement operations, \
         if edges_to_replace_to not provided
 
-        :return: dictionary of sequence of Pipeline objects with new edges instead of old one
-        and indexes of edges to which to change the given edge to get these pipelines
+        :return: dictionary of sequence of Graph objects with new edges instead of old one
+        and indexes of edges to which to change the given edge to get these graphs
         """
 
         if not edges_to_replace_to or number_of_random_operations:
@@ -279,34 +279,34 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         samples = list()
         edges_nodes_idx_to_replace_to = list()
         for replacing_nodes_idx in edges_to_replace_to:
-            sample_pipeline = deepcopy(self._graph)
+            sample_graph = deepcopy(self._graph)
 
             # disconnect nodes
             previous_parent_node_index = self._graph.nodes.index(edge.parent_node)
             previous_child_node_index = self._graph.nodes.index(edge.child_node)
 
-            previous_parent_node = sample_pipeline.nodes[previous_parent_node_index]
-            previous_child_node = sample_pipeline.nodes[previous_child_node_index]
+            previous_parent_node = sample_graph.nodes[previous_parent_node_index]
+            previous_child_node = sample_graph.nodes[previous_child_node_index]
 
-            sample_pipeline.disconnect_nodes(node_parent=previous_parent_node,
+            sample_graph.disconnect_nodes(node_parent=previous_parent_node,
                                              node_child=previous_child_node)
             # connect nodes
-            next_parent_node = sample_pipeline.nodes[replacing_nodes_idx['parent_node_idx']]
-            next_child_node = sample_pipeline.nodes[replacing_nodes_idx['child_node_idx']]
+            next_parent_node = sample_graph.nodes[replacing_nodes_idx['parent_node_idx']]
+            next_child_node = sample_graph.nodes[replacing_nodes_idx['child_node_idx']]
 
-            if next_parent_node in sample_pipeline.nodes and \
-               next_child_node in sample_pipeline.nodes:
-                sample_pipeline.connect_nodes(next_parent_node, next_child_node)
-            if self._graph.root_node.descriptive_id == sample_pipeline.root_node.descriptive_id:
+            if next_parent_node in sample_graph.nodes and \
+               next_child_node in sample_graph.nodes:
+                sample_graph.connect_nodes(next_parent_node, next_child_node)
+            if self._graph.root_node.descriptive_id == sample_graph.root_node.descriptive_id:
                 continue
 
             verifier = GraphVerifier()
-            if not verifier.verify(sample_pipeline):
+            if not verifier.verify(sample_graph):
                 self.log.warning('Can not connect these nodes')
             else:
                 self.log.message(f'replace edge parent: {next_parent_node}')
                 self.log.message(f'replace edge child: {next_child_node}')
-                samples.append(sample_pipeline)
+                samples.append(sample_graph)
                 edges_nodes_idx_to_replace_to.append({'parent_node_id':
                                                       replacing_nodes_idx['parent_node_idx'],
                                                       'child_node_id':

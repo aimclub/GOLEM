@@ -11,9 +11,9 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.pipeline_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
-from golem.structural_analysis.pipeline_sa.postproc_methods import extract_result_values
-from golem.structural_analysis.pipeline_sa.sa_requirements import StructuralAnalysisRequirements
+from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
+from golem.structural_analysis.graph_sa.postproc_methods import extract_result_values
+from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 class NodesAnalysis:
@@ -23,22 +23,22 @@ class NodesAnalysis:
     To define which nodes to analyze pass them to nodes_to_analyze filed
     or all nodes will be analyzed.
 
-    :param pipeline: pipeline object to analyze
+    :param graph: graph object to analyze
     :param objectives: objective functions for computing metric values
     :param task_type: type of solving task
-    :param approaches: methods applied to nodes to modify the pipeline or analyze certain operations.\
+    :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
     :param nodes_to_analyze: nodes to analyze. Default: all nodes
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, pipeline: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: OptGraph, objectives: List[Callable],
                  task_type: Any,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None,
                  nodes_to_analyze: List[OptNode] = None):
 
-        self.pipeline = pipeline
+        self.graph = graph
         self.objectives = objectives
         self.task_type = task_type
         self.approaches = approaches
@@ -51,7 +51,7 @@ class NodesAnalysis:
 
         if not nodes_to_analyze:
             self.log.message('Nodes to analyze are not defined. All nodes will be analyzed.')
-            self.nodes_to_analyze = self.pipeline.nodes
+            self.nodes_to_analyze = self.graph.nodes
         else:
             self.nodes_to_analyze = nodes_to_analyze
 
@@ -74,18 +74,18 @@ class NodesAnalysis:
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
             results = pool.starmap(node_analysis.analyze,
-                                   [[self.pipeline, node, self.objectives, timer]
+                                   [[self.graph, node, self.objectives, timer]
                                     for node in self.nodes_to_analyze])
 
         for i, node in enumerate(self.nodes_to_analyze):
-            nodes_results[f'id = {self.pipeline.nodes.index(node)}, '
+            nodes_results[f'id = {self.graph.nodes.index(node)}, '
                           f'operation = {node.content["name"].operation_type}'] = results[i]
-            operation_types.append(f'{self.pipeline.nodes.index(node)}_{node.operation.operation_type}')
+            operation_types.append(f'{self.graph.nodes.index(node)}_{node.operation.operation_type}')
 
         if self.requirements.is_visualize:
             self._visualize_result_per_approach(nodes_results, operation_types)
 
-            if len(self.nodes_to_analyze) == len(self.pipeline.nodes):
+            if len(self.nodes_to_analyze) == len(self.graph.nodes):
                 self._visualize_degree_correlation(nodes_results)
 
         if self.requirements.is_save:
@@ -116,7 +116,7 @@ class NodesAnalysis:
             ax.set_xticklabels(types, rotation=45)
             plt.title(f'{self.approaches[index].__name__} results', fontsize=16)
             plt.xlabel('nodes', fontsize=14)
-            plt.ylabel('changed_pipeline_metric/original_metric', fontsize=14)
+            plt.ylabel('changed_graph_metric/original_metric', fontsize=14)
 
             file_path = path_to_save_per_iter(root_path_to_save=self.path_to_save,
                                               file_name=f'{self.approaches[index].__name__}',
@@ -132,7 +132,7 @@ class NodesAnalysis:
         It is done so that when visualization points annotations to points do not overlap each other"""
 
         points = []
-        for i, (x, y, node) in enumerate(zip(nodes_degrees, result, self.pipeline.nodes)):
+        for i, (x, y, node) in enumerate(zip(nodes_degrees, result, self.graph.nodes)):
             is_already = False
             cur_point = {'x': x, 'y': y, 'annotation': f'{i}_{node}'}
             for point in points:
@@ -145,13 +145,13 @@ class NodesAnalysis:
         return points
 
     def _visualize_degree_correlation(self, results: dict):
-        nodes_degrees = get_nodes_degrees(self.pipeline)
+        nodes_degrees = get_nodes_degrees(self.graph)
         gathered_results = extract_result_values(approaches=self.approaches, results=results)
         for index, result in enumerate(gathered_results):
             fig, ax = plt.subplots(figsize=(15, 10))
             ax.set_title('Degree correlation', fontsize=16)
             ax.set_xlabel('nodes degrees', fontsize=14)
-            ax.set_ylabel('metric if this node was dropped / metric of source pipeline - 1', fontsize=14)
+            ax.set_ylabel('metric if this node was dropped / metric of source graph - 1', fontsize=14)
             ax.scatter(nodes_degrees, result)
 
             points = self._get_unique_points(nodes_degrees, result)
