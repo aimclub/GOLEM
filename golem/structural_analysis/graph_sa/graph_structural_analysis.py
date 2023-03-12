@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import partial
 from typing import List, Callable, Any, Optional
 import multiprocessing
 
@@ -12,6 +13,8 @@ from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
 from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
+from golem.structural_analysis.graph_sa.sa_based_postproc import _save_iteration_results_to_json, \
+    _save_iteration_results
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
@@ -62,6 +65,7 @@ class GraphStructuralAnalysis:
                                             path_to_save=path_to_save)
         
         self._log = default_log('SA')
+        self.path_to_save = path_to_save
 
     def analyze(self, graph: OptGraph,
                 nodes_to_analyze: List[OptNode] = None, edges_to_analyze: List[Edge] = None,
@@ -96,10 +100,69 @@ class GraphStructuralAnalysis:
 
         return result
 
-    def optimize(self, n_jobs: int = -1, timer: OptimisationTimer = None, save_path: str = None) -> OptGraph:
+    def optimize(self, graph: OptGraph,
+                 n_jobs: int = -1, timer: OptimisationTimer = None,
+                 max_iter: int = 10) -> OptGraph:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
         of graph iteratively """
-        pass
+
+        approaches_repo = StructuralAnalysisApproachesRepository()
+        approaches = self.nodes_analyze_approaches + self.edges_analyze_approaches
+        approaches_names = [approach.__name__ for approach in approaches]
+
+        # what actions were applied on the graph and how many
+        actions_applied = dict.fromkeys(approaches_names, 0)
+
+        graph_before_sa = deepcopy(graph)
+        analysis_results = self.analyze(graph=graph,
+                                        timer=timer, n_jobs=n_jobs)
+        converged = False
+        iter = 0
+
+        if len(list(analysis_results.values())) == 0 or not analysis_results.keys():
+            self._log.message(f'{iter} actions were taken during SA')
+            self._log.message(f'The following actions were applied during SA: {actions_applied}')
+            return graph
+
+        while not converged:
+            iter += 1
+            worst_approach_name = None
+            worst_approach_result = 0
+            entity_to_change = None
+            for section in list(analysis_results.values()):
+                for entity in section.keys():
+                    for approach_key in section[entity].keys():
+                        if section[entity][approach_key]['loss'][0] > worst_approach_result:
+                            worst_approach_result = section[entity][approach_key]['loss'][0]
+                            worst_approach_name = approach_key
+                            entity_to_change = entity
+            if self.path_to_save:
+                _save_iteration_results_to_json(analysis_results=analysis_results,
+                                                save_path=self.path_to_save)
+            if worst_approach_result > 1.0:
+                postproc_method = approaches_repo.postproc_method_by_name(worst_approach_name)
+                graph = postproc_method(results=analysis_results, graph=graph, entity=entity_to_change)
+                actions_applied[f'{worst_approach_name}'] += 1
+                if timer is not None and timer.is_time_limit_reached():
+                    break
+
+                if max_iter and iter >= max_iter:
+                    break
+
+                analysis_results = self.analyze(graph=graph, n_jobs=n_jobs,
+                                                timer=timer)
+            else:
+                converged = True
+
+        if self.path_to_save:
+            _save_iteration_results(graph_before_sa=graph_before_sa, save_path=self.path_to_save)
+
+        self._log.message(f'{iter} iterations passed during SA')
+        self._log.message(f'The following actions were applied during SA: {actions_applied}')
+        if isinstance(graph, OptGraph):
+            return graph
+        else:
+            return graph_before_sa
 
     @staticmethod
     def apply_results(graph: OptGraph, analysis_result: Optional[dict] = None) -> OptGraph:
