@@ -24,21 +24,17 @@ class EdgesAnalysis:
     To define which edges to analyze pass them to edges_to_analyze filed
     or all edges will be analyzed.
 
-    :param graph: graph object to analyze
     :param objectives: list of objective functions for computing metric values
     :param approaches: methods applied to edges to modify the graph or analyze certain operations.\
     Default: [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
-    :param edges_to_analyze: edges to analyze. Default: all edges
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, objectives: List[Callable],
                  approaches: Optional[List[Type[EdgeAnalyzeApproach]]] = None,
                  requirements: StructuralAnalysisRequirements = None,
-                 path_to_save=None,
-                 edges_to_analyze: List[Edge] = None):
+                 path_to_save=None):
 
-        self.graph = graph
         self.objectives = objectives
         self.approaches = approaches
         self.requirements = \
@@ -48,21 +44,24 @@ class EdgesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
 
-        if not edges_to_analyze:
-            self.log.message('Edges to analyze are not defined. All edges will be analyzed.')
-            self.edges_to_analyze = Edge.from_tuple(self.graph.get_edges())
-        else:
-            self.edges_to_analyze = edges_to_analyze
-
-    def analyze(self, n_jobs: int = -1, timer: OptimisationTimer = None) -> dict:
+    def analyze(self, graph: OptGraph, edges_to_analyze: List[Edge] = None,
+                n_jobs: int = -1, timer: OptimisationTimer = None) -> dict:
         """
         Main method to run the analyze process for every edge.
 
+        :param graph: graph object to analyze
+        :param edges_to_analyze: edges to analyze. Default: all edges
+        :param n_jobs: n_jobs
+        :param timer: timer indicating how much time is left for optimization
         :return edges_results: dict with analysis result per Edge
         """
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
+
+        if not edges_to_analyze:
+            self.log.message('Edges to analyze are not defined. All edges will be analyzed.')
+            edges_to_analyze = Edge.from_tuple([edge for edge in graph.get_edges()])
 
         edges_results = dict()
         operation_types = []
@@ -73,14 +72,14 @@ class EdgesAnalysis:
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
             edges_result = pool.starmap(edge_analysis.analyze,
-                                        [[self.graph, edge, self.objectives, timer]
-                                         for edge in self.edges_to_analyze])
+                                        [[graph, edge, self.objectives, timer]
+                                         for edge in edges_to_analyze])
 
-            for i, edge in enumerate(self.edges_to_analyze):
-                edges_results[f'parent_node id = {self.graph.nodes.index(edge.parent_node)}, '
-                              f'child_node id = {self.graph.nodes.index(edge.child_node)}'] = edges_result[i]
-                operation_types.append(f'{self.graph.nodes.index(edge.parent_node)}_{edge.parent_node.operation} '
-                                       f'{self.graph.nodes.index(edge.child_node)}_{edge.child_node.operation}')
+            for i, edge in enumerate(edges_to_analyze):
+                edges_results[f'parent_node id = {graph.nodes.index(edge.parent_node)}, '
+                              f'child_node id = {graph.nodes.index(edge.child_node)}'] = edges_result[i]
+                operation_types.append(f'{graph.nodes.index(edge.parent_node)}_{edge.parent_node.operation} '
+                                       f'{graph.nodes.index(edge.child_node)}_{edge.child_node.operation}')
 
         if self.requirements.is_visualize:
             # get edges to replace to for visualization
@@ -88,7 +87,7 @@ class EdgesAnalysis:
                 if EDGE_REPLACEMENT in edge_result.keys():
                     edges_to_replace_to.append(edge_result[EDGE_REPLACEMENT]['edge_node_idx_to_replace_to'])
 
-            self._visualize_result_per_approach(edges_results, operation_types, edges_to_replace_to)
+            self._visualize_result_per_approach(graph, edges_results, operation_types, edges_to_replace_to)
 
         if self.requirements.is_save:
             self._save_results_to_json(edges_results)
@@ -106,7 +105,9 @@ class EdgesAnalysis:
 
         self.log.message(f'Edges Structural Analysis results were saved to {file_path}')
 
-    def _visualize_result_per_approach(self, results: dict, types: list, edges_idxs_to_replace_to: list):
+    def _visualize_result_per_approach(self, graph: OptGraph,
+                                       results: dict, types: list, edges_idxs_to_replace_to: list):
+
         gathered_results = extract_result_values(approaches=self.approaches, results=results)
 
         for index, result in enumerate(gathered_results):
@@ -123,8 +124,8 @@ class EdgesAnalysis:
                     parent_node_idx = nodes['parent_node_id']
                     child_node_idx = nodes['child_node_id']
                     nodes_to_replace_to.append(f'\nto\n'
-                                               f'{parent_node_idx}_{self.graph.nodes[parent_node_idx].operation}_'
-                                               f'{child_node_idx}_{self.graph.nodes[child_node_idx].operation}')
+                                               f'{parent_node_idx}_{graph.nodes[parent_node_idx].operation}_'
+                                               f'{child_node_idx}_{graph.nodes[child_node_idx].operation}')
                 types = list(map(lambda x, y: x + y, types, nodes_to_replace_to))
 
             ax.set_xticklabels(types, rotation=25)

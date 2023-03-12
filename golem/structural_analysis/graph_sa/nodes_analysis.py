@@ -24,22 +24,18 @@ class NodesAnalysis:
     To define which nodes to analyze pass them to nodes_to_analyze filed
     or all nodes will be analyzed.
 
-    :param graph: graph object to analyze
     :param objectives: objective functions for computing metric values
     :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
-    :param nodes_to_analyze: nodes to analyze. Default: all nodes
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, objectives: List[Callable],
                  node_factory: OptNodeFactory,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
-                 requirements: StructuralAnalysisRequirements = None, path_to_save=None,
-                 nodes_to_analyze: List[OptNode] = None):
+                 requirements: StructuralAnalysisRequirements = None, path_to_save=None):
 
-        self.graph = graph
         self.objectives = objectives
         self.node_factory = node_factory
         self.approaches = approaches
@@ -50,21 +46,24 @@ class NodesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
 
-        if not nodes_to_analyze:
-            self.log.message('Nodes to analyze are not defined. All nodes will be analyzed.')
-            self.nodes_to_analyze = self.graph.nodes
-        else:
-            self.nodes_to_analyze = nodes_to_analyze
-
-    def analyze(self, n_jobs: int = -1, timer: OptimisationTimer = None) -> dict:
+    def analyze(self, graph: OptGraph, nodes_to_analyze: List[OptNode] = None,
+                n_jobs: int = -1, timer: OptimisationTimer = None) -> dict:
         """
         Main method to run the analyze process for every node.
 
+        :param graph: graph object to analyze
+        :param nodes_to_analyze: nodes to analyze. Default: all nodes
+        :param n_jobs: n_jobs
+        :param timer: timer indicating how much time is left for optimization
         :return nodes_results: dict with analysis result per OptNode
         """
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
+
+        if not nodes_to_analyze:
+            self.log.message('Nodes to analyze are not defined. All nodes will be analyzed.')
+            nodes_to_analyze = graph.nodes
 
         nodes_results = dict()
         operation_types = []
@@ -75,19 +74,19 @@ class NodesAnalysis:
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
             results = pool.starmap(node_analysis.analyze,
-                                   [[self.graph, node, self.objectives, timer]
-                                    for node in self.nodes_to_analyze])
+                                   [[graph, node, self.objectives, timer]
+                                    for node in nodes_to_analyze])
 
-        for i, node in enumerate(self.nodes_to_analyze):
-            nodes_results[f'id = {self.graph.nodes.index(node)}, '
+        for i, node in enumerate(nodes_to_analyze):
+            nodes_results[f'id = {graph.nodes.index(node)}, '
                           f'operation = {node.content["name"].operation_type}'] = results[i]
-            operation_types.append(f'{self.graph.nodes.index(node)}_{node.operation.operation_type}')
+            operation_types.append(f'{graph.nodes.index(node)}_{node.operation.operation_type}')
 
         if self.requirements.is_visualize:
             self._visualize_result_per_approach(nodes_results, operation_types)
 
-            if len(self.nodes_to_analyze) == len(self.graph.nodes):
-                self._visualize_degree_correlation(nodes_results)
+            if len(nodes_to_analyze) == len(graph.nodes):
+                self._visualize_degree_correlation(graph, nodes_results)
 
         if self.requirements.is_save:
             self._save_results_to_json(nodes_results)
@@ -127,13 +126,14 @@ class NodesAnalysis:
             plt.savefig(file_path)
             self.log.message(f'Nodes Structural Analysis visualized results per approach were saved to {file_path}')
 
-    def _get_unique_points(self, nodes_degrees: list, result: list):
+    @staticmethod
+    def _get_unique_points(graph: OptGraph, nodes_degrees: list, result: list):
         """ Leaves one point with the same values along the x and y axes,
         and adds information about all other points with the same coordinates to the annotation of this point.
         It is done so that when visualization points annotations to points do not overlap each other"""
 
         points = []
-        for i, (x, y, node) in enumerate(zip(nodes_degrees, result, self.graph.nodes)):
+        for i, (x, y, node) in enumerate(zip(nodes_degrees, result, graph.nodes)):
             is_already = False
             cur_point = {'x': x, 'y': y, 'annotation': f'{i}_{node}'}
             for point in points:
@@ -145,8 +145,8 @@ class NodesAnalysis:
                 points.append(cur_point)
         return points
 
-    def _visualize_degree_correlation(self, results: dict):
-        nodes_degrees = get_nodes_degrees(self.graph)
+    def _visualize_degree_correlation(self, graph: OptGraph, results: dict):
+        nodes_degrees = get_nodes_degrees(graph)
         gathered_results = extract_result_values(approaches=self.approaches, results=results)
         for index, result in enumerate(gathered_results):
             fig, ax = plt.subplots(figsize=(15, 10))
@@ -155,7 +155,7 @@ class NodesAnalysis:
             ax.set_ylabel('metric if this node was dropped / metric of source graph - 1', fontsize=14)
             ax.scatter(nodes_degrees, result)
 
-            points = self._get_unique_points(nodes_degrees, result)
+            points = self._get_unique_points(graph, nodes_degrees, result)
 
             for point in points:
                 ax.annotate(point['annotation'], xy=(point['x'] + (max(nodes_degrees) - min(nodes_degrees)) / 100,
@@ -170,7 +170,7 @@ class NodesAnalysis:
             self.log.message(f'Nodes degree correlation visualized results were saved to {file_path}')
 
 
-def get_nodes_degrees(graph: 'Graph') -> Sequence[int]:
+def get_nodes_degrees(graph: OptGraph) -> Sequence[int]:
     """Nodes degree as the number of edges the node has:
         ``degree = #input_edges + #out_edges``
 
