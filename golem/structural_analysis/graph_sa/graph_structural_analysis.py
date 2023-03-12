@@ -1,5 +1,6 @@
+import json
+import os
 from copy import deepcopy
-from functools import partial
 from typing import List, Callable, Any, Optional
 import multiprocessing
 
@@ -7,14 +8,16 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach
+from golem.core.paths import project_root
+from golem.structural_analysis.graph_labels_using_sa import draw_nx_dag
+from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeDeletionAnalyze, \
+    EdgeReplaceOperationAnalyze
 from golem.structural_analysis.graph_sa.edges_analysis import EdgesAnalysis
 from golem.structural_analysis.graph_sa.entities.edge import Edge
-from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach
+from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeDeletionAnalyze, \
+    NodeReplaceOperationAnalyze, SubtreeDeletionAnalyze
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
 from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
-from golem.structural_analysis.graph_sa.sa_based_postproc import _save_iteration_results_to_json, \
-    _save_iteration_results
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
@@ -50,8 +53,8 @@ class GraphStructuralAnalysis:
                                              if issubclass(approach, EdgeAnalyzeApproach)]
         else:
             self._log.message('Approaches for analysis are not given, thus will be set to defaults.')
-            self.nodes_analyze_approaches = None
-            self.edges_analyze_approaches = None
+            self.nodes_analyze_approaches = [NodeDeletionAnalyze, NodeReplaceOperationAnalyze, SubtreeDeletionAnalyze]
+            self.edges_analyze_approaches = [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
 
         self._nodes_analyze = NodesAnalysis(objectives=objectives,
                                             node_factory=node_factory,
@@ -107,7 +110,7 @@ class GraphStructuralAnalysis:
         of graph iteratively """
 
         approaches_repo = StructuralAnalysisApproachesRepository()
-        approaches = self.nodes_analyze_approaches + self.edges_analyze_approaches
+        approaches = self._nodes_analyze.approaches + self._edges_analyze.approaches
         approaches_names = [approach.__name__ for approach in approaches]
 
         # what actions were applied on the graph and how many
@@ -178,8 +181,40 @@ class GraphStructuralAnalysis:
                 continue
             nodes_to_delete = []
             for node_parent in node_child.nodes_from:
-                if node_child.operation.operation_type == node_parent.operation.operation_type:
+                if node_child.name == node_parent.name:
                     nodes_to_delete.append(node_parent)
             for node in nodes_to_delete:
                 graph.delete_node(node)
         return graph
+
+
+def _save_iteration_results(graph_before_sa: OptGraph, save_path: str = None):
+    """ Save visualizations for SA per iteration """
+    json_path = os.path.join(save_path, 'results_per_iteration.json')
+    graph_save_path = os.path.join(save_path, 'result_graphs')
+    graph_before_sa.save(graph_save_path)
+    if not os.path.exists(graph_save_path):
+        os.makedirs(graph_save_path)
+    try:
+        draw_nx_dag(graph=graph_before_sa, save_path=save_path, json_path=json_path)
+    except Exception as ex:
+        log = default_log('draw_viz')
+        log.error(f'Visualisation failed: {ex}')
+
+
+def _save_iteration_results_to_json(analysis_results: dict, save_path: str = None):
+    """ Save SA actions scores in json file """
+    if save_path:
+        save_path = os.path.join(save_path, 'results_per_iteration.json')
+    else:
+        save_path = os.path.join(project_root(), 'examples', 'structural_analysis',
+                                 'show_sa_on_graph', 'results_per_iteration.json')
+    if not os.path.exists(save_path):
+        json_data = [analysis_results]
+        with open(save_path, 'w') as file:
+            file.write(json.dumps(json_data, indent=2, ensure_ascii=False))
+    else:
+        data = json.load(open(save_path))
+        data.append(analysis_results)
+        with open(save_path, 'w', encoding="utf-8") as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)

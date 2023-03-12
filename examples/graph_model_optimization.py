@@ -36,7 +36,7 @@ class CustomGraphModel(OptGraph):
 
 class CustomGraphNode(OptNode):
     def __str__(self):
-        return f'Node_{self.content["name"]}'
+        return f'Node_{self.name}'
 
 
 def custom_metric(graph: CustomGraphModel, data: pd.DataFrame, visualisation: bool = False):

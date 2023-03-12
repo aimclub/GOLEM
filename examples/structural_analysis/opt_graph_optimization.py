@@ -18,22 +18,22 @@ def get_opt_graph() -> OptGraph:
     return OptGraph(node1)
 
 
-def custom_metric(graph: OptGraph, data: pd.DataFrame, visualisation: bool = False):
+def custom_metric(graph: OptGraph, visualisation: bool = False):
     if visualisation:
         graph.show()
-    metric = -random.randint(80, 100)/100
+    metric = -1*random.randint(80, 105)/100
     return metric
 
 
 if __name__ == "__main__":
     opt_graph = get_opt_graph()
-    opt_graph.show()
+    # opt_graph.show()
 
     objective = Objective({'custom': custom_metric})
     node_factory = DefaultOptNodeFactory()
 
-    sa = GraphStructuralAnalysis(graph=opt_graph, objectives=[objective], node_factory=node_factory)
+    sa = GraphStructuralAnalysis(objectives=[objective], node_factory=node_factory)
 
-    analyze_result = sa.analyze()
+    sa.analyze(graph=opt_graph, n_jobs=1)
 
-    optimized_graph = sa.optimize(analysis_result=analyze_result)
+    # optimized_graph = sa.optimize(graph=opt_graph)

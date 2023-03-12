@@ -41,7 +41,6 @@ class NodesAnalysis:
         self.approaches = approaches
         self.requirements = \
             StructuralAnalysisRequirements() if requirements is None else requirements
-        self.metric = self.requirements.metric
         self.log = default_log(self)
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
@@ -77,10 +76,13 @@ class NodesAnalysis:
                                    [[graph, node, self.objectives, timer]
                                     for node in nodes_to_analyze])
 
+        # for node in nodes_to_analyze:
+        #     node_analysis.analyze(graph, node, self.objectives, timer)
+
         for i, node in enumerate(nodes_to_analyze):
             nodes_results[f'id = {graph.nodes.index(node)}, '
-                          f'operation = {node.content["name"].operation_type}'] = results[i]
-            operation_types.append(f'{graph.nodes.index(node)}_{node.operation.operation_type}')
+                          f'operation = {node.name}'] = results[i]
+            operation_types.append(f'{graph.nodes.index(node)}_{node.name}')
 
         if self.requirements.is_visualize:
             self._visualize_result_per_approach(nodes_results, operation_types)

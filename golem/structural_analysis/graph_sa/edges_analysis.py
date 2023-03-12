@@ -39,7 +39,6 @@ class EdgesAnalysis:
         self.approaches = approaches
         self.requirements = \
             StructuralAnalysisRequirements() if requirements is None else requirements
-        self.metric = self.requirements.metric
         self.log = default_log(self)
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
@@ -78,8 +77,8 @@ class EdgesAnalysis:
             for i, edge in enumerate(edges_to_analyze):
                 edges_results[f'parent_node id = {graph.nodes.index(edge.parent_node)}, '
                               f'child_node id = {graph.nodes.index(edge.child_node)}'] = edges_result[i]
-                operation_types.append(f'{graph.nodes.index(edge.parent_node)}_{edge.parent_node.operation} '
-                                       f'{graph.nodes.index(edge.child_node)}_{edge.child_node.operation}')
+                operation_types.append(f'{graph.nodes.index(edge.parent_node)}_{edge.parent_node.name} '
+                                       f'{graph.nodes.index(edge.child_node)}_{edge.child_node.name}')
 
         if self.requirements.is_visualize:
             # get edges to replace to for visualization
@@ -124,8 +123,8 @@ class EdgesAnalysis:
                     parent_node_idx = nodes['parent_node_id']
                     child_node_idx = nodes['child_node_id']
                     nodes_to_replace_to.append(f'\nto\n'
-                                               f'{parent_node_idx}_{graph.nodes[parent_node_idx].operation}_'
-                                               f'{child_node_idx}_{graph.nodes[child_node_idx].operation}')
+                                               f'{parent_node_idx}_{graph.nodes[parent_node_idx].name}_'
+                                               f'{child_node_idx}_{graph.nodes[child_node_idx].name}')
                 types = list(map(lambda x, y: x + y, types, nodes_to_replace_to))
 
             ax.set_xticklabels(types, rotation=25)

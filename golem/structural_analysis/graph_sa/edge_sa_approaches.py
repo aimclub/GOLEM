@@ -258,7 +258,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
 
     def sample(self, edge: Edge,
                edges_to_replace_to: Optional[List[Edge]],
-               number_of_random_operations: Optional[int] = None) \
+               number_of_random_operations: Optional[int] = 1) \
             -> Dict[str, Union[List[OptGraph], List[Dict[str, int]]]]:
         """
         Tries to replace the given edge with a pool of edges available for replacement (see _edge_generation docstring)
@@ -289,7 +289,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             previous_child_node = sample_graph.nodes[previous_child_node_index]
 
             sample_graph.disconnect_nodes(node_parent=previous_parent_node,
-                                             node_child=previous_child_node)
+                                          node_child=previous_child_node)
             # connect nodes
             next_parent_node = sample_graph.nodes[replacing_nodes_idx['parent_node_idx']]
             next_child_node = sample_graph.nodes[replacing_nodes_idx['child_node_idx']]
@@ -320,7 +320,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
 
         return {'samples': samples, 'edges_nodes_idx_to_replace_to': edges_nodes_idx_to_replace_to}
 
-    def _edge_generation(self, edge: Edge, number_of_operations=None) -> List[Dict[str, int]]:
+    def _edge_generation(self, edge: Edge, number_of_operations: int = 1) -> List[Dict[str, int]]:
         """
         The method returns possible edges that can replace the given edge.
         These edges must not start at the root node, already exist in the graph and must not form cycles

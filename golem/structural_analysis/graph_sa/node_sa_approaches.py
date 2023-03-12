@@ -178,7 +178,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
             shortened_graph = self.sample(node)
             if shortened_graph:
                 losses = self._compare_with_origin_by_metrics(shortened_graph)
-                self.log.message(f'losses for {node.operation.operation_type}: {losses}')
+                self.log.message(f'losses for {node.name}: {losses}')
                 del shortened_graph
             else:
                 losses = [-1.0]*len(self._objectives)
@@ -197,7 +197,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
         node_index_to_delete = self._graph.nodes.index(node)
         node_to_delete = graph_sample.nodes[node_index_to_delete]
 
-        if node_to_delete.operation.operation_type == 'class_decompose':
+        if node_to_delete.name == 'class_decompose':
             for child in graph_sample.node_children(node_to_delete):
                 graph_sample.delete_node(child)
 
@@ -250,7 +250,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
                 loss_values.append(loss_per_sample)
 
                 new_node = sample_graph.nodes[node_id]
-                new_nodes_types.append(new_node.operation.operation_type)
+                new_nodes_types.append(new_node.name)
 
             loss_and_node_operations = sorted(list(zip(loss_values, new_nodes_types)),
                                               key=lambda x: x[0], reverse=True)
@@ -264,7 +264,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
     def sample(self, node: OptNode,
                nodes_to_replace_to: Optional[List[OptNode]],
-               number_of_random_operations: Optional[int] = None) -> Union[List[OptGraph], OptGraph]:
+               number_of_random_operations: int = 1) -> Union[List[OptGraph], OptGraph]:
         """
         Replaces the given node with a pool of nodes available for replacement (see _node_generation docstring)
 
@@ -289,9 +289,9 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
                                      new_node=replacing_node)
             verifier = GraphVerifier()
             if not verifier.verify(sample_graph):
-                self.log.warning(f'Can not replace {node.operation} node with {replacing_node.operation} node.')
+                self.log.warning(f'Can not replace {node.name} node with {replacing_node.name} node.')
             else:
-                self.log.message(f'replacing node: {replacing_node.operation}')
+                self.log.message(f'replacing node: {replacing_node.name}')
                 samples.append(sample_graph)
 
         if not samples:
@@ -302,7 +302,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
     @staticmethod
     def _node_generation(node: OptNode,
                          node_factory: OptNodeFactory,
-                         number_of_operations=None) -> List[OptNode]:
+                         number_of_operations: int = 1) -> List[OptNode]:
         """
         The method returns possible nodes that can replace the given node
 
@@ -312,19 +312,20 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         :return: nodes that can be used to replace
         """
 
-        app_operations = node_factory.exchange_node(node=node)
+        available_nodes = [node_factory.exchange_node(node=node)]*number_of_operations if number_of_operations \
+            else [node_factory.exchange_node(node=node)]
 
         if number_of_operations:
-            app_operations = [i for i in app_operations if i != node.operation.operation_type]
-            number_of_operations = min(len(app_operations), number_of_operations)
-            random_operations = random.sample(app_operations, number_of_operations)
+            available_nodes = [i for i in available_nodes if i != node.name]
+            number_of_operations = min(len(available_nodes), number_of_operations)
+            random_nodes = random.sample(available_nodes, number_of_operations)
         else:
-            random_operations = app_operations
+            random_nodes = available_nodes
 
-        node_type = type(node)
         nodes = []
-        for operation in random_operations:
-            nodes.append(node_type(operation_type=operation, nodes_from=node.nodes_from))
+        for node in random_nodes:
+            node.nodes_from = node.nodes_from
+            nodes.append(node)
 
         return nodes
 
@@ -358,7 +359,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
             shortened_graph = self.sample(node)
             if shortened_graph:
                 loss = self._compare_with_origin_by_metrics(shortened_graph)
-                self.log.message(f'loss for {node.operation.operation_type}: {loss}')
+                self.log.message(f'loss for {node.name}: {loss}')
                 del shortened_graph
             else:
                 loss = [-1.0]*len(self._objectives)
@@ -377,7 +378,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
         node_index_to_delete = self._graph.nodes.index(node)
         node_to_delete = graph_sample.nodes[node_index_to_delete]
 
-        if node_to_delete.operation.operation_type == 'class_decompose':
+        if node_to_delete.name == 'class_decompose':
             for child in graph_sample.node_children(node_to_delete):
                 graph_sample.delete_node(child)
 

@@ -30,11 +30,11 @@ class StructuralAnalysisRequirements:
 
     def __init__(self,
                  replacement_nodes_to_replace_to: Optional[List[OptNode]] = None,
-                 replacement_number_of_random_operations_nodes: Optional[int] = None,
+                 replacement_number_of_random_operations_nodes: Optional[int] = 1,
                  replacement_edges_to_replace_to: Optional[List[Edge]] = None,
-                 replacement_number_of_random_operations_edges: Optional[int] = None,
-                 is_visualize: bool = True,
-                 is_save_results_to_json: bool = True):
+                 replacement_number_of_random_operations_edges: Optional[int] = 1,
+                 is_visualize: bool = False,
+                 is_save_results_to_json: bool = False):
 
         self.replacement_meta = ReplacementAnalysisMetaParams(replacement_edges_to_replace_to,
                                                               replacement_number_of_random_operations_edges,
