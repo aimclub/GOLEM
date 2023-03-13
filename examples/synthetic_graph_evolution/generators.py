@@ -1,14 +1,32 @@
-from typing import Dict, Callable, Collection, Sequence
+from typing import Dict, Callable, Collection, Sequence, Optional
 
 import networkx as nx
 import numpy as np
+
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 
 NumNodes = int
 DiGraphGenerator = Callable[[NumNodes], nx.DiGraph]
 
 
+graph_generators: Dict[str, DiGraphGenerator] = {
+    'line': lambda n: nx.path_graph(n, create_using=nx.DiGraph),
+    'tree': lambda n: nx.random_tree(n, create_using=nx.DiGraph),
+    'gnp': lambda n: nx.gnp_random_graph(n, p=0.1),
+    'star': nx.star_graph,
+    '2ring': nx.circular_ladder_graph,
+    'grid2d': lambda n: nx.grid_2d_graph(int(np.sqrt(n)), int(np.sqrt(n))),
+    'hypercube': lambda n: nx.hypercube_graph(int(np.log2(n).round())),
+}
+
+graph_kinds: Sequence[str] = tuple(graph_generators.keys())
+
+
 def nx_to_directed(graph: nx.Graph) -> nx.DiGraph:
     """Randomly chooses a direction for each edge."""
+    if isinstance(graph, nx.DiGraph):
+        return graph
+
     dedges = set()
     digraph = nx.DiGraph()
 
@@ -30,15 +48,11 @@ def nx_to_directed(graph: nx.Graph) -> nx.DiGraph:
     return digraph
 
 
-graph_generators: Dict[str, DiGraphGenerator] = {
-    'star': lambda n: nx_to_directed(nx.star_graph(n)),
-    'grid2d': lambda n: nx.grid_2d_graph(int(np.sqrt(n)), int(np.sqrt(n))),
-    '2ring': lambda n: nx_to_directed(nx.circular_ladder_graph(n)),
-    'hypercube': lambda n: nx_to_directed(nx.hypercube_graph(int(np.log2(n).round()))),
-    'gnp': lambda n: nx_to_directed(nx.gnp_random_graph(n, p=0.08)),
-    'line': lambda n: nx_to_directed(nx.path_graph(n, create_using=nx.DiGraph)),
-    'tree': lambda n: nx.random_tree(n, create_using=nx.DiGraph),
-}
+def largest_component(graph: nx.Graph) -> nx.Graph:
+    get_components = nx.weakly_connected_components \
+        if isinstance(graph, nx.DiGraph) else nx.connected_components
+    largest = max(get_components(graph), key=len)
+    return graph.subgraph(largest)
 
 
 def relabel_nx_graph(graph: nx.Graph, available_names: Collection[str]) -> nx.Graph:
@@ -53,12 +67,31 @@ def relabel_nx_graph(graph: nx.Graph, available_names: Collection[str]) -> nx.Gr
 
 def generate_labeled_graph(kind: str,
                            size: int,
-                           node_labels: Sequence[str] = ('x',)):
-    """Generate randomly labeled graph of the specified kind and size"""
+                           node_labels: Optional[Sequence[str]] = ('x',),
+                           connected: bool = True,
+                           directed: bool = True):
+    """Generate randomly labeled graph of the specified kind and size,
+    optionally enforce connectedness and direction."""
     generator = graph_generators[kind]
-    graph = generator(size).reverse()
+    graph = generator(size)
+    # Remove unconnected components
+    if connected:
+        graph = largest_component(graph)
+    # Optionally choose random directions for each edge
+    if directed:
+        # reverse() is mainly for trees
+        # to make them growing towards root
+        graph = nx_to_directed(graph).reverse()
     # Label the nodes randomly from available nodes
-    graph = relabel_nx_graph(graph, node_labels)
+    if node_labels:
+        graph = relabel_nx_graph(graph, node_labels)
     return graph
 
 
+def _draw_sample_graphs(kind: str = 'gnp', sizes=tuple(range(5, 50, 5))):
+    graphs = [generate_labeled_graph(kind, n) for n in sizes]
+    draw_graphs_subplots(*graphs)
+
+
+if __name__ == '__main__':
+    _draw_sample_graphs('gnp')

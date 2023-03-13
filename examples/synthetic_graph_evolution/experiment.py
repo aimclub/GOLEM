@@ -4,7 +4,7 @@ from io import StringIO
 from itertools import product
 from typing import Sequence, Type, Callable, Optional
 
-from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_generators
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -29,7 +29,7 @@ def get_all_quality_metrics(target_graph):
 def run_experiments(optimizer_setup: Callable,
                     optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
                     node_types: Optional[Sequence[str]] = None,
-                    graph_names: Sequence[str] = tuple(graph_generators.keys()),
+                    graph_names: Sequence[str] = graph_kinds,
                     graph_sizes: Sequence[int] = (30, 100, 300),
                     num_trials: int = 1,
                     trial_timeout: Optional[int] = None,
