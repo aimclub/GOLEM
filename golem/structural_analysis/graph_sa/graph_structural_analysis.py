@@ -17,6 +17,7 @@ from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeDeletionAnalyze, \
     NodeReplaceOperationAnalyze, SubtreeDeletionAnalyze
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
+from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -72,7 +73,7 @@ class GraphStructuralAnalysis:
 
     def analyze(self, graph: OptGraph,
                 nodes_to_analyze: List[OptNode] = None, edges_to_analyze: List[Edge] = None,
-                n_jobs: int = -1, timer: OptimisationTimer = None):
+                n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
         Applies defined structural analysis approaches
 
@@ -83,7 +84,7 @@ class GraphStructuralAnalysis:
         :param timer: timer with timeout left for optimization
         """
 
-        result = dict()
+        result = SAAnalysisResults(graph=graph)
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
@@ -92,14 +93,16 @@ class GraphStructuralAnalysis:
             graph = self.graph_preprocessing(graph=graph)
 
         if self.nodes_analyze_approaches:
-            result['nodes_result'] = self._nodes_analyze.analyze(graph=graph,
-                                                                 nodes_to_analyze=nodes_to_analyze,
-                                                                 n_jobs=n_jobs, timer=timer)
+            self._nodes_analyze.analyze(graph=graph,
+                                        results=result,
+                                        nodes_to_analyze=nodes_to_analyze,
+                                        n_jobs=n_jobs, timer=timer)
 
         if self.edges_analyze_approaches:
-            result['edges_result'] = self._edges_analyze.analyze(graph=graph,
-                                                                 edges_to_analyze=edges_to_analyze,
-                                                                 n_jobs=n_jobs, timer=timer)
+            self._edges_analyze.analyze(graph=graph,
+                                        results=result,
+                                        edges_to_analyze=edges_to_analyze,
+                                        n_jobs=n_jobs, timer=timer)
 
         return result
 
@@ -117,35 +120,23 @@ class GraphStructuralAnalysis:
         actions_applied = dict.fromkeys(approaches_names, 0)
 
         graph_before_sa = deepcopy(graph)
-        analysis_results = self.analyze(graph=graph,
-                                        timer=timer, n_jobs=n_jobs)
+        analysis_results = self.analyze(graph=graph, timer=timer, n_jobs=n_jobs)
         converged = False
         iter = 0
 
-        if len(list(analysis_results.values())) == 0 or not analysis_results.keys():
-            self._log.message(f'{iter} actions were taken during SA')
-            self._log.message(f'The following actions were applied during SA: {actions_applied}')
+        if analysis_results.is_empty:
+            self._log.message(f'0 actions were taken during SA')
             return graph
 
         while not converged:
             iter += 1
-            worst_approach_name = None
-            worst_approach_result = 0
-            entity_to_change = None
-            for section in list(analysis_results.values()):
-                for entity in section.keys():
-                    for approach_key in section[entity].keys():
-                        if section[entity][approach_key]['loss'][0] > worst_approach_result:
-                            worst_approach_result = section[entity][approach_key]['loss'][0]
-                            worst_approach_name = approach_key
-                            entity_to_change = entity
-            if self.path_to_save:
-                _save_iteration_results_to_json(analysis_results=analysis_results,
-                                                save_path=self.path_to_save)
-            if worst_approach_result > 1.0:
-                postproc_method = approaches_repo.postproc_method_by_name(worst_approach_name)
-                graph = postproc_method(results=analysis_results, graph=graph, entity=entity_to_change)
-                actions_applied[f'{worst_approach_name}'] += 1
+            worst_result = analysis_results.get_info_about_worst_result()
+            if worst_result['value'] > 1.0:
+                # apply the worst approach
+                postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])
+                graph = postproc_method(graph=graph, worst_result=worst_result)
+                actions_applied[f'{worst_result["approach_name"]}'] += 1
+
                 if timer is not None and timer.is_time_limit_reached():
                     break
 
@@ -162,6 +153,7 @@ class GraphStructuralAnalysis:
 
         self._log.message(f'{iter} iterations passed during SA')
         self._log.message(f'The following actions were applied during SA: {actions_applied}')
+
         if isinstance(graph, OptGraph):
             return graph
         else:

@@ -11,6 +11,11 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
+from golem.structural_analysis.graph_sa.result_presenting_structures.deletion_sa_approach_result import \
+    DeletionSAApproachResult
+from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_result import ObjectSAResult
+from golem.structural_analysis.graph_sa.result_presenting_structures.replace_sa_approach_result import \
+    ReplaceSAApproachResult
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
@@ -40,7 +45,7 @@ class NodeAnalysis:
 
     def analyze(self, graph: OptGraph, node: OptNode,
                 objectives: List[Callable],
-                timer: OptimisationTimer = None) -> dict:
+                timer: OptimisationTimer = None) -> ObjectSAResult:
 
         """
         Method runs Node analysis within defined approaches
@@ -52,17 +57,18 @@ class NodeAnalysis:
         :return: dict with Node analysis result per approach
         """
 
-        results = dict()
+        results = ObjectSAResult(idx=graph.nodes.index(node),
+                                 entity=node,
+                                 approaches=[approach.__name__ for approach in self.approaches])
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
-                results[f'{approach.__name__}'] = {'loss': [-2.0]*len(objectives)}
                 break
-            results[f'{approach.__name__}'] = \
-                approach(graph=graph,
-                         objectives=objectives,
-                         node_factory=self.node_factory,
-                         requirements=self.approaches_requirements,
-                         path_to_save=self.path_to_save).analyze(node=node)
+
+            results.add_result(approach(graph=graph,
+                               objectives=objectives,
+                               node_factory=self.node_factory,
+                               requirements=self.approaches_requirements,
+                               path_to_save=self.path_to_save).analyze(node=node))
         return results
 
 
@@ -105,7 +111,7 @@ class NodeAnalyzeApproach(ABC):
         """Changes the graph according to the approach"""
         pass
 
-    def _is_the_modified_graph_different(self, modified_graph: OptGraph):
+    def _is_the_modified_graph_different(self, modified_graph: OptGraph) -> bool:
         """ Checks if the graph after changes is different from the original graph """
         if modified_graph.root_node.descriptive_id != self._graph.root_node.descriptive_id:
             return True
@@ -164,16 +170,18 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, node: OptNode, **kwargs) -> Dict[str, List[float]]:
+    def analyze(self, node: OptNode, **kwargs) -> DeletionSAApproachResult:
         """
         Receives a graph without the specified node and tries to calculate the loss for it
 
         :param node: OptNode object to analyze
         :return: the ratio of modified graph score to origin score
         """
+        results = DeletionSAApproachResult()
         if node is self._graph.root_node:
             self.log.warning(f'{node} node can not be deleted')
-            return {'loss': [-1.0]*len(self._objectives)}
+            results.add_results(metrics_values=[-1.0]*len(self._objectives))
+            return results
         else:
             shortened_graph = self.sample(node)
             if shortened_graph:
@@ -183,7 +191,8 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
             else:
                 losses = [-1.0]*len(self._objectives)
 
-            return {'loss': losses}
+            results.add_results(metrics_values=losses)
+            return results
 
     def sample(self, node: OptNode):
         """
@@ -227,7 +236,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, node: OptNode, **kwargs) -> Dict[str, Union[float, str]]:
+    def analyze(self, node: OptNode, **kwargs) -> ReplaceSAApproachResult:
         """
         Counts the loss on each changed graph received and returns losses
 
@@ -235,32 +244,20 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         :return: the ratio of modified graph score to origin score
         """
+        result = ReplaceSAApproachResult()
         requirements: ReplacementAnalysisMetaParams = self._requirements.replacement_meta
         node_id = self._graph.nodes.index(node)
         samples = self.sample(node=node,
                               nodes_to_replace_to=requirements.nodes_to_replace_to,
                               number_of_random_operations=requirements.number_of_random_operations_nodes)
 
-        try:
-            loss_values = []
-            new_nodes_types = []
-            for sample_graph in samples:
-                loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
-                self.log.message(f'losses: {loss_per_sample}\n')
-                loss_values.append(loss_per_sample)
+        for sample_graph in samples:
+            loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
+            self.log.message(f'losses: {loss_per_sample}\n')
 
-                new_node = sample_graph.nodes[node_id]
-                new_nodes_types.append(new_node.name)
+            result.add_results(entity_to_replace_to=sample_graph.nodes[node_id], metrics_values=loss_per_sample)
 
-            loss_and_node_operations = sorted(list(zip(loss_values, new_nodes_types)),
-                                              key=lambda x: x[0], reverse=True)
-            best_loss = loss_and_node_operations[0][0]
-            best_node_operation = loss_and_node_operations[0][1]
-        except Exception as ex:
-            print(f'HERE9: {ex}')
-
-        return {'loss': best_loss, 'new_node_operation': best_node_operation,
-                'all_losses': loss_values, 'node_operations': new_nodes_types}
+        return result
 
     def sample(self, node: OptNode,
                nodes_to_replace_to: Optional[List[OptNode]],
@@ -344,7 +341,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, node: OptNode, **kwargs) -> Dict[str, List[float]]:
+    def analyze(self, node: OptNode, **kwargs) -> DeletionSAApproachResult:
         """
         Receives a graph without the specified node's subtree and
         tries to calculate the loss for it
@@ -352,19 +349,22 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
         :param node: OptNode object to analyze
         :return: the ratio of modified graph score to origin score
         """
+        results = DeletionSAApproachResult()
         if node is self._graph.root_node:
             self.log.warning(f'{node} subtree can not be deleted')
-            return {'loss': [-1.0]*len(self._objectives)}
+            results.add_results(metrics_values=[-1.0]*len(self._objectives))
+            return results
         else:
             shortened_graph = self.sample(node)
             if shortened_graph:
-                loss = self._compare_with_origin_by_metrics(shortened_graph)
-                self.log.message(f'loss for {node.name}: {loss}')
+                losses = self._compare_with_origin_by_metrics(shortened_graph)
+                self.log.message(f'losses for {node.name}: {losses}')
                 del shortened_graph
             else:
-                loss = [-1.0]*len(self._objectives)
+                losses = [-1.0]*len(self._objectives)
 
-            return {'loss': loss}
+            results.add_results(metrics_values=losses)
+            return results
 
     def sample(self, node: OptNode):
         """

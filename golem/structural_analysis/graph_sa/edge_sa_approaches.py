@@ -11,6 +11,11 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.entities.edge import Edge
+from golem.structural_analysis.graph_sa.result_presenting_structures.deletion_sa_approach_result import \
+    DeletionSAApproachResult
+from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_result import ObjectSAResult
+from golem.structural_analysis.graph_sa.result_presenting_structures.replace_sa_approach_result import \
+    ReplaceSAApproachResult
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
@@ -40,7 +45,7 @@ class EdgeAnalysis:
 
     def analyze(self, graph: OptGraph, edge: Edge,
                 objectives: List[Callable],
-                timer: OptimisationTimer = None) -> dict:
+                timer: OptimisationTimer = None) -> ObjectSAResult:
         """
         Method runs Edge analysis within defined approaches
 
@@ -51,17 +56,24 @@ class EdgeAnalysis:
         :return: dict with Edge analysis result per approach
         """
 
-        results = dict()
+        results = ObjectSAResult(idx=graph.get_edges().index((edge.parent_node, edge.child_node)),
+                                 entity=edge,
+                                 approaches=[approach.__name__ for approach in self.approaches])
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
-                results[f'{approach.__name__}'] = {'loss': [-2.0]*len(objectives)}
+
+                # results[f'{approach.__name__}'] = {'loss': [-2.0]*len(objectives)}
                 break
 
-            results[f'{approach.__name__}'] = \
-                approach(graph=graph,
-                         objectives=objectives,
-                         requirements=self.approaches_requirements,
-                         path_to_save=self.path_to_save).analyze(edge=edge)
+            results.add_result(approach(graph=graph,
+                               objectives=objectives,
+                               requirements=self.approaches_requirements,
+                               path_to_save=self.path_to_save).analyze(edge=edge))
+            # results[f'{approach.__name__}'] = \
+            #     approach(graph=graph,
+            #              objectives=objectives,
+            #              requirements=self.approaches_requirements,
+            #              path_to_save=self.path_to_save).analyze(edge=edge)
 
         return results
 
@@ -114,6 +126,8 @@ class EdgeAnalyzeApproach(ABC):
         """ Iterate through all objectives and evaluate modified graph """
         results = []
         for objective in self._objectives:
+            if isinstance(modified_graph, list):
+                continue
             metric = self._compare_with_origin_by_metric(modified_graph=modified_graph,
                                                          objective=objective)
             results.append(metric)
@@ -162,28 +176,30 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, edge: Edge, **kwargs) -> Dict[str, List[float]]:
+    def analyze(self, edge: Edge, **kwargs) -> DeletionSAApproachResult:
         """
         Receives a graph without the specified edge and tries to calculate the loss for it
 
         :param edge: Edge object to analyze
         :return: the ratio of modified graph score to origin score
         """
-
+        results = DeletionSAApproachResult()
         if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
             self.log.warning('if remove this edge then get a graph of length one')
-            return {'loss': [-1.0]*len(self._objectives)}
+            results.add_results(metrics_values=[-1.0]*len(self._objectives))
+            return results
         else:
             shortened_graph = self.sample(edge)
             if shortened_graph:
-                loss = self._compare_with_origin_by_metrics(shortened_graph)
-                self.log.message(f'loss: {loss}')
+                losses = self._compare_with_origin_by_metrics(shortened_graph)
+                self.log.message(f'loss: {losses}')
                 del shortened_graph
             else:
                 self.log.warning('if remove this edge then get an invalid graph')
-                loss = [-1.0]*len(self._objectives)
+                losses = [-1.0]*len(self._objectives)
 
-        return {'loss': loss}
+        results.add_results(metrics_values=losses)
+        return results
 
     def sample(self, edge: Edge) -> Optional[OptGraph]:
         """
@@ -227,7 +243,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, edge: Edge, **kwargs) -> Dict[str, Union[List[float], Dict[str, int]]]:
+    def analyze(self, edge: Edge, **kwargs) -> ReplaceSAApproachResult:
         """
         Counts the loss on each changed graph received and returns the biggest loss and
         the graph on which it was received
@@ -235,6 +251,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         :param edge: Edge object to analyze
         :return: dictionary of the best (the biggest) loss and corresponding to it edge to replace to
         """
+        result = ReplaceSAApproachResult()
         requirements: ReplacementAnalysisMetaParams = self._requirements.replacement_meta
         samples_res = self.sample(edge=edge,
                                   edges_to_replace_to=requirements.edges_to_replace_to,
@@ -244,17 +261,29 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         edges_nodes_idx_to_replace_to = samples_res['edges_nodes_idx_to_replace_to']
 
         loss_values = []
-        for sample_graph in samples:
+        for i, sample_graph in enumerate(samples):
             loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
             self.log.message(f'loss: {loss_per_sample}')
             loss_values.append(loss_per_sample)
 
-        loss_and_edges = sorted(list(zip(loss_values, edges_nodes_idx_to_replace_to)),
-                                key=lambda x: x[0], reverse=True)
-        best_loss = loss_and_edges[0][0]
-        best_edge = loss_and_edges[0][1]
+            child_node_idx = ''
+            parent_node_idx = ''
+            part1, part2 = edges_nodes_idx_to_replace_to[i].__str__().split(',')
+            for char in part1:
+                if char.isdigit():
+                    child_node_idx += char
+                else:
+                    continue
+            for char in part2:
+                if char.isdigit():
+                    parent_node_idx += char
+                else:
+                    continue
+            result.add_results(entity_to_replace_to=Edge(child_node=self._graph.nodes[int(child_node_idx)],
+                                                         parent_node=self._graph.nodes[int(parent_node_idx)]),
+                               metrics_values=loss_per_sample)
 
-        return {'loss': best_loss, 'edge_node_idx_to_replace_to': best_edge}
+        return result
 
     def sample(self, edge: Edge,
                edges_to_replace_to: Optional[List[Edge]],

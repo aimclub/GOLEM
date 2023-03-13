@@ -1,7 +1,5 @@
 import random
 
-import pandas as pd
-
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
@@ -34,6 +32,6 @@ if __name__ == "__main__":
 
     sa = GraphStructuralAnalysis(objectives=[objective], node_factory=node_factory)
 
-    sa.analyze(graph=opt_graph, n_jobs=1)
+    optimized_graph = sa.optimize(graph=opt_graph, n_jobs=1)
 
-    # optimized_graph = sa.optimize(graph=opt_graph)
+    optimized_graph.show()

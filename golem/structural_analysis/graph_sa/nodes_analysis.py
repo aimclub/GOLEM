@@ -14,6 +14,8 @@ from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
 from golem.structural_analysis.graph_sa.postproc_methods import extract_result_values
+from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_result import ObjectSAResult
+from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
@@ -45,12 +47,14 @@ class NodesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
 
-    def analyze(self, graph: OptGraph, nodes_to_analyze: List[OptNode] = None,
-                n_jobs: int = -1, timer: OptimisationTimer = None) -> dict:
+    def analyze(self, graph: OptGraph, results: SAAnalysisResults,
+                nodes_to_analyze: List[OptNode] = None,
+                n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
         Main method to run the analyze process for every node.
 
         :param graph: graph object to analyze
+        :param results: SA results
         :param nodes_to_analyze: nodes to analyze. Default: all nodes
         :param n_jobs: n_jobs
         :param timer: timer indicating how much time is left for optimization
@@ -64,35 +68,35 @@ class NodesAnalysis:
             self.log.message('Nodes to analyze are not defined. All nodes will be analyzed.')
             nodes_to_analyze = graph.nodes
 
-        nodes_results = dict()
-        operation_types = []
+        # operation_types = []
         node_analysis = NodeAnalysis(approaches=self.approaches,
                                      approaches_requirements=self.requirements,
                                      node_factory=self.node_factory,
                                      path_to_save=self.path_to_save)
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
-            results = pool.starmap(node_analysis.analyze,
-                                   [[graph, node, self.objectives, timer]
-                                    for node in nodes_to_analyze])
+            cur_results = pool.starmap(node_analysis.analyze,
+                                       [[graph, node, self.objectives, timer]
+                                        for node in nodes_to_analyze])[0]
+            results.add_node_result(cur_results)
 
         # for node in nodes_to_analyze:
-        #     node_analysis.analyze(graph, node, self.objectives, timer)
-
-        for i, node in enumerate(nodes_to_analyze):
-            nodes_results[f'id = {graph.nodes.index(node)}, '
-                          f'operation = {node.name}'] = results[i]
-            operation_types.append(f'{graph.nodes.index(node)}_{node.name}')
-
-        if self.requirements.is_visualize:
-            self._visualize_result_per_approach(nodes_results, operation_types)
-
-            if len(nodes_to_analyze) == len(graph.nodes):
-                self._visualize_degree_correlation(graph, nodes_results)
-
-        if self.requirements.is_save:
-            self._save_results_to_json(nodes_results)
-        return nodes_results
+        #     results.add_node_result(node_analysis.analyze(graph, node, self.objectives, timer))
+        #
+        # for i, node in enumerate(nodes_to_analyze):
+        #     nodes_results[f'id = {graph.nodes.index(node)}, '
+        #                   f'operation = {node.name}'] = results[i]
+        #     operation_types.append(f'{graph.nodes.index(node)}_{node.name}')
+        #
+        # if self.requirements.is_visualize:
+        #     self._visualize_result_per_approach(nodes_results, operation_types)
+        #
+        #     if len(nodes_to_analyze) == len(graph.nodes):
+        #         self._visualize_degree_correlation(graph, nodes_results)
+        #
+        # if self.requirements.is_save:
+        #     self._save_results_to_json(nodes_results)
+        return results
 
     def _save_results_to_json(self, result: dict):
         file_path = path_to_save_per_iter(root_path_to_save=self.path_to_save,

@@ -13,5 +13,5 @@ class Edge:
     def from_tuple(edges_in_tuple: List[Tuple[GraphNode, GraphNode]]) -> List['Edge']:
         edges = []
         for edge in edges_in_tuple:
-            edges.append(Edge(parent_node=edge[0], child_node=edge[1]))
+            edges.append(Edge(child_node=edge[1], parent_node=edge[0]))
         return edges

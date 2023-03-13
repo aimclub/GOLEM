@@ -13,6 +13,7 @@ from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApp
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.nodes_analysis import path_to_save_per_iter
 from golem.structural_analysis.graph_sa.postproc_methods import extract_result_values
+from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_approaches_repository import EDGE_REPLACEMENT
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -43,12 +44,14 @@ class EdgesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
 
-    def analyze(self, graph: OptGraph, edges_to_analyze: List[Edge] = None,
-                n_jobs: int = -1, timer: OptimisationTimer = None) -> dict:
+    def analyze(self, graph: OptGraph, results: SAAnalysisResults,
+                edges_to_analyze: List[Edge] = None,
+                n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
         Main method to run the analyze process for every edge.
 
         :param graph: graph object to analyze
+        :param results: SA results
         :param edges_to_analyze: edges to analyze. Default: all edges
         :param n_jobs: n_jobs
         :param timer: timer indicating how much time is left for optimization
@@ -60,38 +63,42 @@ class EdgesAnalysis:
 
         if not edges_to_analyze:
             self.log.message('Edges to analyze are not defined. All edges will be analyzed.')
-            edges_to_analyze = Edge.from_tuple([edge for edge in graph.get_edges()])
+            edges_to_analyze = [Edge.from_tuple([edge]) for edge in graph.get_edges()][0]
 
-        edges_results = dict()
-        operation_types = []
-        edges_to_replace_to = []
+        # edges_results = dict()
+        # operation_types = []
+        # edges_to_replace_to = []
         edge_analysis = EdgeAnalysis(approaches=self.approaches,
                                      approaches_requirements=self.requirements,
                                      path_to_save=self.path_to_save)
 
-        with multiprocessing.Pool(processes=n_jobs) as pool:
-            edges_result = pool.starmap(edge_analysis.analyze,
-                                        [[graph, edge, self.objectives, timer]
-                                         for edge in edges_to_analyze])
+        # with multiprocessing.Pool(processes=n_jobs) as pool:
+        #     cur_edges_result = pool.starmap(edge_analysis.analyze,
+        #                                     [[graph, edge, self.objectives, timer]
+        #                                      for edge in edges_to_analyze])
+        #     results.add_edge_result(cur_edges_result)
 
-            for i, edge in enumerate(edges_to_analyze):
-                edges_results[f'parent_node id = {graph.nodes.index(edge.parent_node)}, '
-                              f'child_node id = {graph.nodes.index(edge.child_node)}'] = edges_result[i]
-                operation_types.append(f'{graph.nodes.index(edge.parent_node)}_{edge.parent_node.name} '
-                                       f'{graph.nodes.index(edge.child_node)}_{edge.child_node.name}')
+        for edge in edges_to_analyze:
+            results.add_node_result(edge_analysis.analyze(graph, edge, self.objectives, timer))
 
-        if self.requirements.is_visualize:
-            # get edges to replace to for visualization
-            for edge_result in edges_result:
-                if EDGE_REPLACEMENT in edge_result.keys():
-                    edges_to_replace_to.append(edge_result[EDGE_REPLACEMENT]['edge_node_idx_to_replace_to'])
+        #     for i, edge in enumerate(edges_to_analyze):
+        #         edges_results[f'parent_node id = {graph.nodes.index(edge.parent_node)}, '
+        #                       f'child_node id = {graph.nodes.index(edge.child_node)}'] = edges_result[i]
+        #         operation_types.append(f'{graph.nodes.index(edge.parent_node)}_{edge.parent_node.name} '
+        #                                f'{graph.nodes.index(edge.child_node)}_{edge.child_node.name}')
+        #
+        # if self.requirements.is_visualize:
+        #     # get edges to replace to for visualization
+        #     for edge_result in edges_result:
+        #         if EDGE_REPLACEMENT in edge_result.keys():
+        #             edges_to_replace_to.append(edge_result[EDGE_REPLACEMENT]['edge_node_idx_to_replace_to'])
+        #
+        #     self._visualize_result_per_approach(graph, edges_results, operation_types, edges_to_replace_to)
+        #
+        # if self.requirements.is_save:
+        #     self._save_results_to_json(edges_results)
 
-            self._visualize_result_per_approach(graph, edges_results, operation_types, edges_to_replace_to)
-
-        if self.requirements.is_save:
-            self._save_results_to_json(edges_results)
-
-        return edges_results
+        return results
 
     def _save_results_to_json(self, result: dict):
         file_path = path_to_save_per_iter(root_path_to_save=self.path_to_save,
