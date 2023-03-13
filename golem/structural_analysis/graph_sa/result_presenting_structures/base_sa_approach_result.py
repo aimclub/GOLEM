@@ -17,10 +17,6 @@ class BaseSAApproachResult:
         """ Returns all calculated metrics. """
         raise NotImplementedError()
 
-    def add_result(self, **kwargs):
-        """ Adds newly calculated result. """
-        raise NotImplementedError
-
     def add_results(self, **kwargs):
         """ Adds newly calculated results. """
         raise NotImplementedError

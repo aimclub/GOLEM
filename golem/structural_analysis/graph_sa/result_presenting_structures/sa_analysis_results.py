@@ -31,14 +31,8 @@ class SAAnalysisResults:
         """ Worst result among all nodes and all approaches. """
         return max([res.get_worst_result() for res in self.results['nodes']+self.results['edges']])
 
-    def get_worst_result_with_names(self) -> dict:
-        """ Returns worst result with additional information. """
-        worst_value = self.get_worst_result()
-        for res in self.results['nodes'] + self.results['edges']:
-            if res.get_worst_result() == worst_value:
-                return res.get_worst_result_with_names()
-
     def get_info_about_worst_result(self):
+        """ Returns info about the worst result. """
         worst_value = self.get_worst_result()
         for i, res in enumerate(self.results['nodes'] + self.results['edges']):
             if res.get_worst_result() == worst_value:
@@ -46,14 +40,10 @@ class SAAnalysisResults:
                 result.update(res.get_worst_result_with_names())
                 return result
 
-    def add_nodes_result(self, nodes_result):
-        self.results['nodes'] = nodes_result
-
-    def add_edges_result(self, edges_result):
-        self.results['edges'] = edges_result
-
     def add_node_result(self, node_result):
+        """ Add calculated result for node. """
         self.results['nodes'].append(node_result)
 
     def add_edge_result(self, edge_result):
+        """ Add calculated result for edge. """
         self.results['nodes'].append(edge_result)

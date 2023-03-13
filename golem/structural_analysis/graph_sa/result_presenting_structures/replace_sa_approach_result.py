@@ -12,12 +12,6 @@ class ReplaceSAApproachResult(BaseSAApproachResult):
         dict with {nodes_names: metric_value} as values"""
         self.metrics = dict()
 
-    def add_result(self, entity_to_replace_to_name: str, metric_value: float):
-        """ Sets value for specified metric. """
-        if entity_to_replace_to_name not in self.metrics.keys():
-            self.metrics[entity_to_replace_to_name] = []
-        self.metrics[entity_to_replace_to_name].append(metric_value)
-
     def add_results(self, entity_to_replace_to: Union[OptNode, Edge], metrics_values: List[float]):
         """ Sets value for specified metric. """
         self.metrics[entity_to_replace_to] = metrics_values

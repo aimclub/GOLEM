@@ -58,9 +58,3 @@ class ObjectSAResult:
 
     def add_result(self, result: BaseSAApproachResult):
         self.result_approaches.append(result)
-
-    def add_result_by_approach(self, approach: Callable, metrics_values: List[float]):
-        res_class = StructuralAnalysisApproachesRepository.approaches_dict.get(approach)['result_class']()
-        for res_app in self.result_approaches:
-            if res_app.__class__ == res_class.__class__:
-                res_app.add_results(metrics_values=metrics_values)

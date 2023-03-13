@@ -8,16 +8,8 @@ class DeletionSAApproachResult(BaseSAApproachResult):
     def __init__(self):
         self.metrics = []
 
-    def add_result(self, metric_value: float):
-        """ Sets value for specified metric. """
-        self.metrics.append(metric_value)
-
     def add_results(self, metrics_values: List[float]):
         self.metrics = metrics_values
-
-    def get_metric_value(self, metric_idx: int) -> float:
-        """ Returns value of specified metric. """
-        return self.metrics[metric_idx]
 
     def get_worst_result(self) -> float:
         """ Returns the worst metric among all calculated. """
