@@ -51,45 +51,45 @@ def test_crossover_exchange_edges():
     adapter = DirectAdapter()
     graph_example_first = adapter.adapt(graph_sixth())
     graph_example_second = adapter.adapt(graph_seventh())
-    valid_graphs = [graph_example_first, graph_example_first, adapter.adapt(graph_eighth()), adapter.adapt(graph_ninth())]
+    valid_graphs = [graph_example_first, graph_example_second, adapter.adapt(graph_eighth()), adapter.adapt(graph_ninth())]
 
     requirements = GraphRequirements()
     graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c'])
     opt_parameters = GPAlgorithmParameters(crossover_types=[CrossoverTypesEnum.exchange_edges], crossover_prob=1)
     crossover = Crossover(opt_parameters, requirements, graph_generation_params)
     new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
-    assert ([new_graphs[0].graph == graph for graph in valid_graphs] != [])
-    assert ([new_graphs[1].graph == graph for graph in valid_graphs] != [])    
+    assert any([new_graphs[0].graph == graph for graph in valid_graphs])
+    assert any([new_graphs[1].graph == graph for graph in valid_graphs])    
 
 
 def test_crossover_exchange_parents_one():
     adapter = DirectAdapter()
     graph_example_first = adapter.adapt(graph_sixth())
     graph_example_second = adapter.adapt(graph_seventh())
-    valid_graphs = [graph_example_first, graph_example_first]
+    valid_graphs = [graph_example_first, graph_example_second]
 
     requirements = GraphRequirements()
     graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c'])
     opt_parameters = GPAlgorithmParameters(crossover_types=[CrossoverTypesEnum.exchange_parents_one], crossover_prob=1)
     crossover = Crossover(opt_parameters, requirements, graph_generation_params)
     new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
-    assert ([new_graphs[0].graph == graph for graph in valid_graphs] != [])
-    assert ([new_graphs[1].graph == graph for graph in valid_graphs] != [])
+    assert any([new_graphs[0].graph == graph for graph in valid_graphs])
+    assert any([new_graphs[1].graph == graph for graph in valid_graphs])  
 
 
 def test_crossover_exchange_parents_both():
     adapter = DirectAdapter()
     graph_example_first = adapter.adapt(graph_sixth())
     graph_example_second = adapter.adapt(graph_seventh())
-    valid_graphs = [graph_example_first, graph_example_first]
+    valid_graphs = [graph_example_first, graph_example_second]
 
     requirements = GraphRequirements()
     graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c'])
     opt_parameters = GPAlgorithmParameters(crossover_types=[CrossoverTypesEnum.exchange_parents_both], crossover_prob=1)
     crossover = Crossover(opt_parameters, requirements, graph_generation_params)
     new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
-    assert ([new_graphs[0].graph == graph for graph in valid_graphs] != [])
-    assert ([new_graphs[1].graph == graph for graph in valid_graphs] != [])
+    assert any([new_graphs[0].graph == graph for graph in valid_graphs])
+    assert any([new_graphs[1].graph == graph for graph in valid_graphs])  
 
 
 def test_crossover_with_single_node():
