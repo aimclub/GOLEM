@@ -36,13 +36,15 @@ def graph_search_setup(target_graph: nx.DiGraph,
         history_dir=None,
     )
     gp_params = GPAlgorithmParameters(
-        multi_objective=True,
-        genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
+        pop_size=21,
+        multi_objective=False,
+        genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_drop,
             MutationTypesEnum.single_edge,
         ],
+        crossover_types=[CrossoverTypesEnum.none]
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
@@ -60,7 +62,13 @@ def graph_search_setup(target_graph: nx.DiGraph,
             'degree': partial(degree_distance, target_graph),
             'graph_size': partial(size_diff, target_graph),
         },
-        is_multi_objective=True
+        is_multi_objective=gp_params.multi_objective,
+    )
+    objective = Objective(
+        quality_metrics={'sp_adj': partial(spectral_dist, target_graph, kind='adjacency')},
+        # quality_metrics={'degree': partial(degree_dist, target_graph)},
+        complexity_metrics={'graph_size': partial(size_diff, target_graph)},
+        is_multi_objective=gp_params.multi_objective,
     )
 
     # Generate simple initial population with line graphs
@@ -74,10 +82,10 @@ def graph_search_setup(target_graph: nx.DiGraph,
 if __name__ == '__main__':
     results_log = run_experiments(optimizer_setup=graph_search_setup,
                                   optimizer_cls=EvoGraphOptimizer,
-                                  graph_names=['2ring', 'gnp'],
-                                  graph_sizes=[30, 100],
+                                  graph_names=['gnp'],
+                                  graph_sizes=[50],
                                   num_trials=1,
-                                  trial_timeout=5,
-                                  trial_iterations=2000,
+                                  trial_timeout=15,
+                                  trial_iterations=1000,
                                   visualize=True)
     print(results_log)
