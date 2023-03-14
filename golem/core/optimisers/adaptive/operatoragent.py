@@ -1,6 +1,6 @@
 import random
 from abc import ABC, abstractmethod
-from typing import Union, Sequence, Hashable, Any, Dict, Tuple, Optional
+from typing import Union, Sequence, Hashable, Any, Dict, Tuple, Optional, List
 
 import numpy as np
 
@@ -50,7 +50,7 @@ class ExperienceBuffer:
         self._actions.append(action)
         self._rewards.append(reward)
 
-    def get_experience(self) -> Tuple[Sequence[ActType], Sequence[float]]:
+    def get_experience(self) -> Tuple[List[ActType], List[float]]:
         actions, rewards = self._actions, self._rewards
         next_pop = self._next_pop
         self.reset()
