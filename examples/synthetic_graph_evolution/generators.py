@@ -65,15 +65,11 @@ def relabel_nx_graph(graph: nx.Graph, available_names: Collection[str]) -> nx.Gr
     return graph
 
 
-def generate_labeled_graph(kind: str,
-                           size: int,
-                           node_labels: Optional[Sequence[str]] = ('x',),
-                           connected: bool = True,
-                           directed: bool = True):
-    """Generate randomly labeled graph of the specified kind and size,
-    optionally enforce connectedness and direction."""
-    generator = graph_generators[kind]
-    graph = generator(size)
+def postprocess_nx_graph(graph: nx.Graph,
+                         node_labels: Optional[Sequence[str]] = ('x',),
+                         connected: bool = True,
+                         directed: bool = True):
+    """Generate randomly labeled graph, enforce connectedness and direction."""
     # Remove unconnected components
     if connected:
         graph = largest_component(graph)
@@ -86,6 +82,17 @@ def generate_labeled_graph(kind: str,
     if node_labels:
         graph = relabel_nx_graph(graph, node_labels)
     return graph
+
+
+def generate_labeled_graph(kind: str,
+                           size: int,
+                           node_labels: Optional[Sequence[str]] = ('x',),
+                           connected: bool = True,
+                           directed: bool = True):
+    """Generate randomly labeled graph of the specified kind and size,
+    optionally enforce connectedness and direction."""
+    graph = graph_generators[kind](size)
+    return postprocess_nx_graph(graph, node_labels, connected, directed)
 
 
 def _draw_sample_graphs(kind: str = 'gnp', sizes=tuple(range(5, 50, 5))):
