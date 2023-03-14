@@ -27,13 +27,23 @@ class SAAnalysisResults:
             return True
         return False
 
-    def get_worst_result(self) -> float:
+    def get_worst_result(self) -> Optional[float]:
         """ Worst result among all nodes and all approaches. """
-        return max([res.get_worst_result() for res in self.results['nodes']+self.results['edges']])
+        result = []
+        if self.results['nodes']:
+            result.extend(self.results['nodes'])
+        if self.results['edges']:
+            result.extend(self.results['edges'])
+        if result:
+            return max([res.get_worst_result() for res in result])
+        else:
+            return None
 
     def get_info_about_worst_result(self):
         """ Returns info about the worst result. """
         worst_value = self.get_worst_result()
+        if not worst_value:
+            return {'value': -1}
         for i, res in enumerate(self.results['nodes'] + self.results['edges']):
             if res.get_worst_result() == worst_value:
                 result = {'entity': res.entity}

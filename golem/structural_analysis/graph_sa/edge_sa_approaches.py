@@ -69,11 +69,6 @@ class EdgeAnalysis:
                                objectives=objectives,
                                requirements=self.approaches_requirements,
                                path_to_save=self.path_to_save).analyze(edge=edge))
-            # results[f'{approach.__name__}'] = \
-            #     approach(graph=graph,
-            #              objectives=objectives,
-            #              requirements=self.approaches_requirements,
-            #              path_to_save=self.path_to_save).analyze(edge=edge)
 
         return results
 
@@ -118,7 +113,7 @@ class EdgeAnalyzeApproach(ABC):
 
     def _is_the_modified_graph_different(self, modified_graph: OptGraph):
         """ Checks if the graph after changes is different from the original graph """
-        if modified_graph.root_node.descriptive_id != self._graph.root_node.descriptive_id:
+        if modified_graph == self._graph:
             return True
         return False
 
@@ -157,9 +152,9 @@ class EdgeAnalyzeApproach(ABC):
 
         try:
             if modified_graph_metric < 0.0:
-                res = modified_graph_metric / self._origin_metrics[obj_idx]
+                res = modified_graph_metric / self._origin_metrics[obj_idx] - 0.1
             else:
-                res = self._origin_metrics[obj_idx] / modified_graph_metric
+                res = self._origin_metrics[obj_idx] / modified_graph_metric - 0.05
         except ZeroDivisionError:
             res = -1.0
 
@@ -220,7 +215,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
 
         graph_sample.disconnect_nodes(parent_node_to_delete, child_node_to_delete)
 
-        verifier = GraphVerifier()
+        verifier = self._requirements.graph_verifier
         if not verifier.verify(graph_sample):
             self.log.warning('Can not delete edge since modified graph can not pass verification')
             return None
@@ -254,7 +249,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         result = ReplaceSAApproachResult()
         requirements: ReplacementAnalysisMetaParams = self._requirements.replacement_meta
         samples_res = self.sample(edge=edge,
-                                  edges_to_replace_to=requirements.edges_to_replace_to,
+                                  edges_idxs_to_replace_to=requirements.edges_to_replace_to,
                                   number_of_random_operations=requirements.number_of_random_operations_edges)
 
         samples = samples_res['samples']
@@ -286,7 +281,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         return result
 
     def sample(self, edge: Edge,
-               edges_to_replace_to: Optional[List[Edge]],
+               edges_idxs_to_replace_to: Optional[List[Edge]],
                number_of_random_operations: Optional[int] = 1) \
             -> Dict[str, Union[List[OptGraph], List[Dict[str, int]]]]:
         """
@@ -294,7 +289,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         and validates the resulting graphs
 
         :param edge: Edge object to replace
-        :param edges_to_replace_to: edges provided for old_edge replacement
+        :param edges_idxs_to_replace_to: edges provided for old_edge replacement
         :param number_of_random_operations: number of replacement operations, \
         if edges_to_replace_to not provided
 
@@ -302,12 +297,12 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         and indexes of edges to which to change the given edge to get these graphs
         """
 
-        if not edges_to_replace_to or number_of_random_operations:
-            edges_to_replace_to = self._edge_generation(edge=edge,
-                                                        number_of_operations=number_of_random_operations)
+        if not edges_idxs_to_replace_to or number_of_random_operations:
+            edges_idxs_to_replace_to = self._edge_generation(edge=edge,
+                                                             number_of_operations=number_of_random_operations)
         samples = list()
         edges_nodes_idx_to_replace_to = list()
-        for replacing_nodes_idx in edges_to_replace_to:
+        for replacing_nodes_idx in edges_idxs_to_replace_to:
             sample_graph = deepcopy(self._graph)
 
             # disconnect nodes
@@ -318,7 +313,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             previous_child_node = sample_graph.nodes[previous_child_node_index]
 
             sample_graph.disconnect_nodes(node_parent=previous_parent_node,
-                                          node_child=previous_child_node)
+                                          node_child=previous_child_node,
+                                          clean_up_leftovers=False)
             # connect nodes
             next_parent_node = sample_graph.nodes[replacing_nodes_idx['parent_node_idx']]
             next_child_node = sample_graph.nodes[replacing_nodes_idx['child_node_idx']]
@@ -326,10 +322,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             if next_parent_node in sample_graph.nodes and \
                next_child_node in sample_graph.nodes:
                 sample_graph.connect_nodes(next_parent_node, next_child_node)
-            if self._graph.root_node.descriptive_id == sample_graph.root_node.descriptive_id:
-                continue
 
-            verifier = GraphVerifier()
+            verifier = self._requirements.graph_verifier
             if not verifier.verify(sample_graph):
                 self.log.warning('Can not connect these nodes')
             else:
@@ -370,7 +364,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
         if child_node is cur_graph.root_node and len(child_node.nodes_from) == 1:
             return []
 
-        cur_graph.disconnect_nodes(node_parent=parent_node, node_child=child_node)
+        cur_graph.disconnect_nodes(node_parent=parent_node, node_child=child_node,
+                                   clean_up_leftovers=False)
 
         edges_in_graph = cur_graph.get_edges()
 
@@ -387,5 +382,6 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                 available_edges_idx.append({'parent_node_idx': cur_graph.nodes.index(parent_node),
                                             'child_node_idx': cur_graph.nodes.index(child_node)})
 
+        # random.seed(self._requirements.seed + len(self._graph))
         edges_for_replacement = random.sample(available_edges_idx, min(number_of_operations, len(available_edges_idx)))
         return edges_for_replacement

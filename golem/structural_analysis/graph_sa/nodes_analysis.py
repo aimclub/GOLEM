@@ -75,10 +75,12 @@ class NodesAnalysis:
                                      path_to_save=self.path_to_save)
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
-            cur_results = pool.starmap(node_analysis.analyze,
+            cur_nodes_results = pool.starmap(node_analysis.analyze,
                                        [[graph, node, self.objectives, timer]
-                                        for node in nodes_to_analyze])[0]
-            results.add_node_result(cur_results)
+                                        for node in nodes_to_analyze])
+
+        for res in cur_nodes_results:
+            results.add_node_result(res)
 
         # for node in nodes_to_analyze:
         #     results.add_node_result(node_analysis.analyze(graph, node, self.objectives, timer))

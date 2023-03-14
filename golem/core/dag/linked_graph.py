@@ -61,7 +61,6 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.update_node)
     def update_node(self, old_node: GraphNode, new_node: GraphNode):
         self.actualise_old_node_children(old_node, new_node)
-        new_node.nodes_from.extend(old_node.nodes_from)
         self._nodes.remove(old_node)
         self._nodes.append(new_node)
         self.sort_nodes()
@@ -100,6 +99,7 @@ class LinkedGraph(Graph, Copyable):
 
     @copy_doc(Graph.node_children)
     def node_children(self, node: GraphNode) -> List[Optional[GraphNode]]:
+        """ Returns list of children of specified node. """
         return [other_node for other_node in self._nodes
                 if other_node.nodes_from and
                 node in other_node.nodes_from]

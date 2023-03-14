@@ -111,12 +111,6 @@ class NodeAnalyzeApproach(ABC):
         """Changes the graph according to the approach"""
         pass
 
-    def _is_the_modified_graph_different(self, modified_graph: OptGraph) -> bool:
-        """ Checks if the graph after changes is different from the original graph """
-        if modified_graph.root_node.descriptive_id != self._graph.root_node.descriptive_id:
-            return True
-        return False
-
     def _compare_with_origin_by_metrics(self, modified_graph: OptGraph) -> List[float]:
         """ Iterate through all objectives and evaluate modified graph """
         results = []
@@ -130,7 +124,7 @@ class NodeAnalyzeApproach(ABC):
                                        objective: Callable) -> float:
         """ Returns the ratio of metrics for the modified graph and the original one """
 
-        if not self._is_the_modified_graph_different(modified_graph):
+        if modified_graph == self._graph:
             return -1.0
 
         obj_idx = self._objectives.index(objective)
@@ -212,7 +206,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
 
         graph_sample.delete_node(node_to_delete)
 
-        verifier = GraphVerifier()
+        verifier = self._requirements.graph_verifier
         if not verifier.verify(graph_sample):
             self.log.message('Can not delete node since modified graph can not be verified')
             return None
@@ -284,7 +278,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
             replaced_node = sample_graph.nodes[replaced_node_index]
             sample_graph.update_node(old_node=replaced_node,
                                      new_node=replacing_node)
-            verifier = GraphVerifier()
+            verifier = self._requirements.graph_verifier
             if not verifier.verify(sample_graph):
                 self.log.warning(f'Can not replace {node.name} node with {replacing_node.name} node.')
             else:
@@ -296,8 +290,8 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         return samples
 
-    @staticmethod
-    def _node_generation(node: OptNode,
+    def _node_generation(self,
+                         node: OptNode,
                          node_factory: OptNodeFactory,
                          number_of_operations: int = 1) -> List[OptNode]:
         """
@@ -309,9 +303,11 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         :return: nodes that can be used to replace
         """
 
+        # random.seed(self._requirements.seed + len(self._graph))
         available_nodes = [node_factory.exchange_node(node=node)]*number_of_operations if number_of_operations \
             else [node_factory.exchange_node(node=node)]
 
+        # random.seed(self._requirements.seed + len(self._graph))
         if number_of_operations:
             available_nodes = [i for i in available_nodes if i != node.name]
             number_of_operations = min(len(available_nodes), number_of_operations)
@@ -319,12 +315,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         else:
             random_nodes = available_nodes
 
-        nodes = []
-        for node in random_nodes:
-            node.nodes_from = node.nodes_from
-            nodes.append(node)
-
-        return nodes
+        return random_nodes
 
 
 class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
@@ -384,7 +375,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
 
         graph_sample.delete_subtree(node_to_delete)
 
-        verifier = GraphVerifier()
+        verifier = self._requirements.graph_verifier
         if not verifier.verify(graph_sample):
             self.log.warning('Can not delete subtree since modified graph can not pass verification')
             return None

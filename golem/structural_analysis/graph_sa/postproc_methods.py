@@ -2,7 +2,7 @@ import numpy as np
 
 from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph
+from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeReplaceOperationAnalyze
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeReplaceOperationAnalyze
 from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
@@ -12,7 +12,8 @@ def nodes_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
     """ Extracts the node index from the entity key and removes it from the graph """
 
     node_to_delete = worst_result["entity"]
-    graph.delete_node(node_to_delete)
+
+    graph.delete_node(get_same_node_from_graph(graph=graph, node=node_to_delete))
     default_log('NodeDeletion').message(f'{node_to_delete.name} was deleted')
 
     return graph
@@ -28,9 +29,7 @@ def nodes_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
     new_node = worst_result["entity_to_replace_to"]
 
     # actualize node to current instance of graph
-    for node in graph.nodes:
-        if node.description() == node_to_replace.description():
-            node_to_replace = node
+    node_to_replace = get_same_node_from_graph(graph=graph, node=node_to_replace)
 
     graph.update_node(old_node=node_to_replace, new_node=new_node)
 
@@ -106,3 +105,11 @@ def extract_result_values(approaches: list, results):
         gathered_results.append(approach_result)
 
     return gathered_results
+
+
+def get_same_node_from_graph(graph: OptGraph, node: OptNode) -> OptNode:
+    for cur_node in graph.nodes:
+        if cur_node.description() == node.description():
+            return cur_node
+
+

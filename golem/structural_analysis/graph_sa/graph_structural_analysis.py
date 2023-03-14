@@ -54,7 +54,8 @@ class GraphStructuralAnalysis:
                                              if issubclass(approach, EdgeAnalyzeApproach)]
         else:
             self._log.message('Approaches for analysis are not given, thus will be set to defaults.')
-            self.nodes_analyze_approaches = [NodeDeletionAnalyze, NodeReplaceOperationAnalyze, SubtreeDeletionAnalyze]
+            self.nodes_analyze_approaches = [NodeDeletionAnalyze, NodeReplaceOperationAnalyze,
+                                             SubtreeDeletionAnalyze]
             self.edges_analyze_approaches = [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
 
         self._nodes_analyze = NodesAnalysis(objectives=objectives,
@@ -171,12 +172,15 @@ class GraphStructuralAnalysis:
         for node_child in reversed(graph.nodes):
             if not node_child.nodes_from or len(node_child.nodes_from) != 1:
                 continue
-            nodes_to_delete = []
+            nodes_uid_to_delete = []
             for node_parent in node_child.nodes_from:
                 if node_child.name == node_parent.name:
-                    nodes_to_delete.append(node_parent)
-            for node in nodes_to_delete:
-                graph.delete_node(node)
+                    nodes_uid_to_delete.append(node_parent.uid)
+            # there is a need to store nodes using uid since after deleting one of the nodes in graph
+            # other nodes will not remain the same (nodes_from may be changed)
+            for uid in nodes_uid_to_delete:
+                node_to_delete = [node for node in graph.nodes if node.uid == uid][0]
+                graph.delete_node(node_to_delete)
         return graph
 
 

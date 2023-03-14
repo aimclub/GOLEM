@@ -9,7 +9,7 @@ ERROR_PREFIX = 'Invalid graph configuration:'
 
 
 @register_native
-def has_one_root(graph: Graph):
+def has_root(graph: Graph):
     if graph.root_node:
         return True
 
@@ -53,5 +53,5 @@ def has_no_isolated_components(graph: Graph):
     return True
 
 
-DEFAULT_DAG_RULES = [has_one_root, has_no_cycle, has_no_isolated_components,
+DEFAULT_DAG_RULES = [has_root, has_no_cycle, has_no_isolated_components,
                      has_no_self_cycled_nodes, has_no_isolated_nodes]

@@ -1,6 +1,9 @@
+import random
 from collections import namedtuple
 from typing import List, Optional
 
+from golem.core.dag.graph_verifier import GraphVerifier
+from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 
@@ -29,12 +32,16 @@ class StructuralAnalysisRequirements:
     """
 
     def __init__(self,
+                 graph_verifier: GraphVerifier = None,
                  replacement_nodes_to_replace_to: Optional[List[OptNode]] = None,
                  replacement_number_of_random_operations_nodes: Optional[int] = 1,
                  replacement_edges_to_replace_to: Optional[List[Edge]] = None,
                  replacement_number_of_random_operations_edges: Optional[int] = 1,
                  is_visualize: bool = False,
-                 is_save_results_to_json: bool = False):
+                 is_save_results_to_json: bool = False,
+                 seed: int = random.randint(0, 100)):
+
+        self.graph_verifier = graph_verifier or GraphVerifier(DEFAULT_DAG_RULES)
 
         self.replacement_meta = ReplacementAnalysisMetaParams(replacement_edges_to_replace_to,
                                                               replacement_number_of_random_operations_edges,
@@ -43,3 +50,4 @@ class StructuralAnalysisRequirements:
 
         self.is_visualize = is_visualize
         self.is_save = is_save_results_to_json
+        self.seed = seed

@@ -42,6 +42,8 @@ class ObjectSAResult:
         worst_results = []
         for approach in self.result_approaches:
             worst_results.append(approach.get_worst_result())
+        if not worst_results:
+            return 0
         return max(worst_results)
 
     def get_worst_result_with_names(self) -> dict:
