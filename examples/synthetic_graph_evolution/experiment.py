@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from functools import partial
 from io import StringIO
 from itertools import product
+from pathlib import Path
 from typing import Sequence, Type, Callable, Optional
 
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds
@@ -36,6 +37,7 @@ def run_experiments(optimizer_setup: Callable,
                     trial_iterations: Optional[int] = None,
                     visualize: bool = False,
                     ):
+    Path("results").mkdir(exist_ok=True)
     log = StringIO()
     if not node_types:
         node_types = ['X']
