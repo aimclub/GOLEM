@@ -5,6 +5,7 @@ from itertools import chain
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
+from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
@@ -141,55 +142,89 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
 
 @register_native
 def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+    """Parents exchange a certain number of edges with each other. The number of 
+    edges is defined as half of the minimum number of edges of both parents, rounded up"""
+    
+    def find_edges_in_other_graph(edges, graph: OptGraph):
+        new_edges = []
+        for parent, child in edges:
+            parent_new = graph.get_nodes_by_name(str(parent))
+            if parent_new:
+                parent_new = parent_new[0]
+            else:
+                parent_new = GraphNode(str(parent))  
+                graph.add_node(parent_new) 
+            child_new = graph.get_nodes_by_name(str(child))
+            if child_new:
+                child_new = child_new[0]
+            else:
+                child_new = GraphNode(str(child))  
+                graph.add_node(child_new)
+            new_edges.append((parent_new, child_new))    
+        return new_edges      
     
     old_edges1 = []
     old_edges2 = []
 
-    edges_1 = graph_first.operator.get_edges()
-    edges_2 = graph_second.operator.get_edges()
+    edges_1 = graph_first.get_edges()
+    edges_2 = graph_second.get_edges()
     count = ceil(min(len(edges_1), len(edges_2))/2)
     choice_edges_1 = sample(edges_1, count)
     choice_edges_2 = sample(edges_2, count)
     
-    for pair in choice_edges_1:
-        pair[1].nodes_from.remove(pair[0])
-    for pair in choice_edges_2:
-        pair[1].nodes_from.remove(pair[0])
+    for parent, child in choice_edges_1:
+        child.nodes_from.remove(parent)
+    for parent, child in choice_edges_2:
+        child.nodes_from.remove(parent)
     
-    old_edges1 = graph_first.operator.get_edges()
-    old_edges2 = graph_second.operator.get_edges()
+    old_edges1 = graph_first.get_edges()
+    old_edges2 = graph_second.get_edges()  
 
-    new_edges_2 = [(graph_second.get_nodes_by_name(str(i[0]))[0], graph_second.get_nodes_by_name(str(i[1]))[0]) for i in choice_edges_1]
-    new_edges_1 = [(graph_first.get_nodes_by_name(str(i[0]))[0], graph_first.get_nodes_by_name(str(i[1]))[0]) for i in choice_edges_2]
+    new_edges_2 = find_edges_in_other_graph(choice_edges_1, graph_second)
+    new_edges_1 = find_edges_in_other_graph(choice_edges_2, graph_first)
 
-    for pair in new_edges_1:
-        if pair not in old_edges1:
-            pair[1].nodes_from.append(pair[0])
-    for pair in new_edges_2:
-        if pair not in old_edges2:
-            pair[1].nodes_from.append(pair[0])                                          
-        
+    for parent, child in new_edges_1:
+        if (parent, child) not in old_edges1:
+            child.nodes_from.append(parent)
+    for parent, child in new_edges_2:
+        if (parent, child) not in old_edges2:
+            child.nodes_from.append(parent)                                          
+
     return graph_first, graph_second
 
 
 @register_native
 def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+    """For the selected node for the first parent, change the parent nodes to 
+    the parent nodes of the same node of the second parent. Thus, the first child is obtained. 
+    The second child is a copy of the second parent"""
 
-    edges = graph_second.operator.get_edges()
-    flatten_edges = list(chain(*edges))
-    nodes_with_parent_or_child=list(set(flatten_edges))
-    if nodes_with_parent_or_child!=[]:
+    def find_nodes_in_other_graph(nodes, graph: OptGraph):
+        new_nodes = []
+        for node in nodes:
+            new_node = graph.get_nodes_by_name(str(node))
+            if new_node:
+                new_node = new_node[0]
+            else:
+                new_node = GraphNode(str(node))  
+                graph.add_node(new_node)
+            new_nodes.append(new_node)     
+        return new_nodes       
+    
+    edges = graph_second.get_edges()
+    nodes_with_parent_or_child = list(set(chain(*edges)))
+    if nodes_with_parent_or_child:
         
-        selected_node=choice(nodes_with_parent_or_child)
-        parents=selected_node.nodes_from
+        selected_node = choice(nodes_with_parent_or_child)
+        parents = selected_node.nodes_from
         
-        node_from_first_graph=graph_first.get_nodes_by_name(str(selected_node))[0]
+        node_from_first_graph = find_nodes_in_other_graph([selected_node], graph_first)[0]
         
-        node_from_first_graph.nodes_from=[]
-        old_edges1 = graph_first.operator.get_edges()
+        node_from_first_graph.nodes_from = []
+        old_edges1 = graph_first.get_edges()
         
-        if parents!=[] and parents!=None:
-            parents_in_first_graph=[graph_first.get_nodes_by_name(str(i))[0] for i in parents]
+        if parents:
+            parents_in_first_graph = find_nodes_in_other_graph(parents, graph_first)            
             for parent in parents_in_first_graph:
                 if (parent, node_from_first_graph) not in old_edges1:
                     node_from_first_graph.nodes_from.append(parent)
@@ -199,46 +234,53 @@ def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph
 
 @register_native
 def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+    """For the selected node for the first parent, change the parent nodes to 
+    the parent nodes of the same node of the second parent. Thus, the first child is obtained. 
+    The second child is formed in a similar way"""
 
-    parents1 = []
-    parents2 = []
     parents_in_first_graph = []
     parents_in_second_graph = []
 
+    def find_nodes_in_other_graph(nodes, graph: OptGraph):
+        new_nodes = []
+        for node in nodes:
+            new_node = graph.get_nodes_by_name(str(node))
+            if new_node:
+                new_node = new_node[0]
+            else:
+                new_node = GraphNode(str(node))  
+                graph.add_node(new_node)
+            new_nodes.append(new_node)     
+        return new_nodes  
 
-    edges = graph_second.operator.get_edges()
-    flatten_edges = list(chain(*edges))
-    nodes_with_parent_or_child=list(set(flatten_edges))
-    if nodes_with_parent_or_child!=[]:
+    edges = graph_second.get_edges()
+    nodes_with_parent_or_child = list(set(chain(*edges)))
+    if nodes_with_parent_or_child:
         
-        selected_node2=choice(nodes_with_parent_or_child)
-        parents2=selected_node2.nodes_from
-        if parents2!=[] and parents2!=None:
-            parents_in_first_graph=[graph_first.get_nodes_by_name(str(i))[0] for i in parents2]
-
-        selected_node1 = graph_first.get_nodes_by_name(str(selected_node2))[0]
-        parents1=selected_node1.nodes_from
-        if parents1!=[] and parents1!=None:
-            parents_in_second_graph=[graph_second.get_nodes_by_name(str(i))[0] for i in parents1]
-
-        if parents1:
-            for p in parents1:
-                selected_node1.nodes_from.remove(p)
+        selected_node2 = choice(nodes_with_parent_or_child)
+        parents2 = selected_node2.nodes_from
         if parents2:
-            for p in parents2:
-                selected_node2.nodes_from.remove(p)
+            parents_in_first_graph = find_nodes_in_other_graph(parents2, graph_first)
 
-        old_edges1 = graph_first.operator.get_edges()
-        old_edges2 = graph_second.operator.get_edges()
+        selected_node1 = find_nodes_in_other_graph([selected_node2], graph_first)[0]
+        parents1 = selected_node1.nodes_from
+        if parents1:
+            parents_in_second_graph = find_nodes_in_other_graph(parents1, graph_second)
 
-        if parents_in_first_graph!=[]:
-            for parent in parents_in_first_graph:
-                if (parent, selected_node1) not in old_edges1:
-                    selected_node1.nodes_from.append(parent)
+        for p in parents1:
+            selected_node1.nodes_from.remove(p)
+        for p in parents2:
+            selected_node2.nodes_from.remove(p)
 
-        if parents_in_second_graph!=[]:
-            for parent in parents_in_second_graph:
-                if (parent, selected_node2) not in old_edges2:
-                    selected_node2.nodes_from.append(parent)
+        old_edges1 = graph_first.get_edges()
+        old_edges2 = graph_second.get_edges()
+
+        for parent in parents_in_first_graph:
+            if (parent, selected_node1) not in old_edges1:
+                selected_node1.nodes_from.append(parent)
+
+        for parent in parents_in_second_graph:
+            if (parent, selected_node2) not in old_edges2:
+                selected_node2.nodes_from.append(parent)
 
     return graph_first, graph_second
