@@ -5,7 +5,6 @@ from os import makedirs
 from os.path import exists, join
 from typing import List, Optional, Type, Union, Dict, Callable, Any
 
-from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
@@ -303,11 +302,9 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         :return: nodes that can be used to replace
         """
 
-        # random.seed(self._requirements.seed + len(self._graph))
         available_nodes = [node_factory.exchange_node(node=node)]*number_of_operations if number_of_operations \
             else [node_factory.exchange_node(node=node)]
 
-        # random.seed(self._requirements.seed + len(self._graph))
         if number_of_operations:
             available_nodes = [i for i in available_nodes if i != node.name]
             number_of_operations = min(len(available_nodes), number_of_operations)

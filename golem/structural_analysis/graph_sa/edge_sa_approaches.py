@@ -61,8 +61,6 @@ class EdgeAnalysis:
                                  approaches=[approach.__name__ for approach in self.approaches])
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
-
-                # results[f'{approach.__name__}'] = {'loss': [-2.0]*len(objectives)}
                 break
 
             results.add_result(approach(graph=graph,
@@ -111,12 +109,6 @@ class EdgeAnalyzeApproach(ABC):
         """ Changes the graph according to the approach """
         pass
 
-    def _is_the_modified_graph_different(self, modified_graph: OptGraph):
-        """ Checks if the graph after changes is different from the original graph """
-        if modified_graph == self._graph:
-            return True
-        return False
-
     def _compare_with_origin_by_metrics(self, modified_graph: OptGraph) -> List[float]:
         """ Iterate through all objectives and evaluate modified graph """
         results = []
@@ -132,8 +124,8 @@ class EdgeAnalyzeApproach(ABC):
                                        objective: Callable) -> float:
         """ Returns the ratio of metrics for the modified graph and the original one """
 
-        if not self._is_the_modified_graph_different(modified_graph):
-            return -1.0
+        if modified_graph == self._graph:
+            return -1
 
         obj_idx = self._objectives.index(objective)
         if not self._origin_metrics:

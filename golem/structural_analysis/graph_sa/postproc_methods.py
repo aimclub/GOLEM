@@ -1,11 +1,5 @@
-import numpy as np
-
-from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph, OptNode
-from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeReplaceOperationAnalyze
-from golem.structural_analysis.graph_sa.node_sa_approaches import NodeReplaceOperationAnalyze
-from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
 
 
 def nodes_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
@@ -73,11 +67,6 @@ def edges_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
     next_parent_node = worst_result['entity_to_replace_to'].parent_node
     next_child_node = worst_result['entity_to_replace_to'].child_node
 
-    # next_parent_node = [node for node in graph.nodes
-    #                     if graph.nodes.index(node) == next_parent_node_index][0]
-    # next_child_node = [node for node in graph.nodes
-    #                    if graph.nodes.index(node) == next_child_node_index][0]
-
     graph.connect_nodes(next_parent_node, next_child_node)
     default_log('EdgeReplacement').message(f'Edge from {parent_node.name} to {child_node.name} was replaced with '
                                            f'edge from {next_parent_node.name} to {next_child_node.name}')
@@ -85,31 +74,8 @@ def edges_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
     return graph
 
 
-def _get_edge_nodes(graph: OptGraph, parent_index: str, child_index: str) -> (GraphNode, GraphNode):
-    """ Function to get the nodes of a given edge """
-    parent_node = [node for node in graph.nodes
-                   if f'parent_node id = {graph.nodes.index(node)}' == parent_index][0]
-    child_node = [node for node in graph.nodes
-                  if f' child_node id = {graph.nodes.index(node)}' == child_index][0]
-    return parent_node, child_node
-
-
-def extract_result_values(approaches: list, results):
-    """ Calculates the average of the results obtained by the approach.
-    We subtract one, since loss=metric_after/metric_before and for visualization it is more convenient
-    to have the horizontal axis at the level of zero than one """
-
-    gathered_results = []
-    for approach in approaches:
-        approach_result = [np.mean(result[f'{approach.__name__}']['loss']) - 1 for result in results.values()]
-        gathered_results.append(approach_result)
-
-    return gathered_results
-
-
 def get_same_node_from_graph(graph: OptGraph, node: OptNode) -> OptNode:
+    """ Returns the same node but from particular graph. """
     for cur_node in graph.nodes:
         if cur_node.description() == node.description():
             return cur_node
-
-

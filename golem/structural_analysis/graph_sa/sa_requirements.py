@@ -7,10 +7,6 @@ from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 
-HyperparamsAnalysisMetaParams = namedtuple('HyperparamsAnalysisMetaParams', ['analyze_method',
-                                                                             'sample_method',
-                                                                             'sample_size'])
-
 ReplacementAnalysisMetaParams = namedtuple('ReplacementAnalysisMetaParams', ['edges_to_replace_to',
                                                                              'number_of_random_operations_edges',
                                                                              'nodes_to_replace_to',

@@ -9,7 +9,6 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
-from golem.structural_analysis.graph_labels_using_sa import draw_nx_dag
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeDeletionAnalyze, \
     EdgeReplaceOperationAnalyze
 from golem.structural_analysis.graph_sa.edges_analysis import EdgesAnalysis
