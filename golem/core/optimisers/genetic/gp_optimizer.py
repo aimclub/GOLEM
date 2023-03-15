@@ -4,6 +4,7 @@ from typing import Sequence, Callable, Union, Any
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
+from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
@@ -41,7 +42,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)
         self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
-        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
+        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params,
+                                 operator_agent=MultiArmedBanditAgent(graph_optimizer_params.mutation_types)
+                                 )
         self.inheritance = Inheritance(graph_optimizer_params, self.selection)
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,
