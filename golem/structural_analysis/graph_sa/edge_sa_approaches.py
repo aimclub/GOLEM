@@ -144,9 +144,9 @@ class EdgeAnalyzeApproach(ABC):
 
         try:
             if modified_graph_metric < 0.0:
-                res = modified_graph_metric / self._origin_metrics[obj_idx] - 0.1
+                res = modified_graph_metric / self._origin_metrics[obj_idx]
             else:
-                res = self._origin_metrics[obj_idx] / modified_graph_metric - 0.05
+                res = self._origin_metrics[obj_idx] / modified_graph_metric
         except ZeroDivisionError:
             res = -1.0
 
