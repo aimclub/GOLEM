@@ -1,16 +1,76 @@
 from datetime import datetime
-from itertools import chain
+from itertools import chain, cycle, zip_longest
 from typing import Tuple, Optional, Sequence, Iterable
 
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from networkx import gnp_random_graph
+from matplotlib import pyplot as plt
+import plotly.express as px
+import plotly.graph_objs as go
 
 from golem.metrics.graph_metrics import spectral_dists_all
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer
+
+
+def visualize_histories(histories: Sequence[OptHistory],
+                        labels: Sequence[str] = tuple(),
+                        with_confidence_interval: bool = True,
+                        multiobj_metric_idx: int = 0,
+                        resolution: Tuple[int, int] = (1200, 600)):
+    # Extract primary history metric
+    ys_arrays = [h.get_fitness(multiobj_metric_idx) for h in histories]
+
+    color_pallete = cycle(px.colors.qualitative.Plotly)
+    fig = go.Figure()
+    best_num = 5
+
+    for ys, label in zip_longest(ys_arrays, labels):
+        # Лучший фитнесс
+        best_fitness = np.abs(np.array([np.min(pop) for pop in ys]))
+        label = label or ''
+
+        line_color = next(color_pallete)
+        ys = best_fitness
+        xs = np.arange(0, len(best_fitness))
+
+        # График фитнесса
+        fig.add_trace(go.Scatter(
+            name=f'{label}', x=xs, y=ys,
+            mode='lines', line=dict(color=line_color))
+        )
+
+        # Графики доверительного интервала
+        if with_confidence_interval:
+            best_num = min(len(xs), best_num)
+            std_fitness = np.array([np.std(sorted(pop)[:best_num]) for pop in ys])
+            y_upper = ys + std_fitness
+            y_lower = ys - std_fitness
+
+            fig.add_trace(
+                go.Scatter(
+                    name=f'{label} conf interval',
+                    x=xs.tolist() + xs[::-1].tolist(),
+                    y=y_upper.tolist() + y_lower[::-1].tolist(),
+                    fill='toself',
+                    fillcolor=line_color,
+                    line=dict(color='rgba(255,255,255,0)'),
+                    opacity=0.15,
+                    showlegend=False,
+                    hoverinfo='skip'
+                )
+            )
+
+    width, height = resolution
+    fig.update_layout(
+        xaxis_title='Generation',
+        yaxis_title='Fitness',
+        width=width,
+        height=height,
+    )
+    fig.show()
 
 
 def fitness_to_stats(history: OptHistory,
