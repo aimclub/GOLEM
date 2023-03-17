@@ -120,6 +120,12 @@ class OptHistory:
             shutil.rmtree(dir_path, ignore_errors=True)
             os.mkdir(dir_path)
 
+    def get_fitness(self, metric_idx: int = 0) -> Sequence[Sequence[float]]:
+        # without initial assumptions and final choices
+        hist_fitness = [[ind.fitness.values[metric_idx] for ind in gen]
+                        for gen in self.individuals[1:-1]]
+        return hist_fitness
+
     @property
     def historical_fitness(self) -> Sequence[Sequence[Union[float, Sequence[float]]]]:
         """Return sequence of histories of generations per each metric"""
