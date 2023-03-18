@@ -18,10 +18,15 @@ than the change should be applied, otherwise not.
 
 There are two pseudocode samples to illustrate the way SA works.
 
-.. image:: ..img/sa.png
+.. image:: ../img/sa.png
+   :alt: SA algorithm itself.
+   :align: center
+   :width: 60%
 
 .. image:: ../img/sa_optimization.png
-
+   :alt: Optimization with SA algorithm.
+   :align: center
+   :width: 60%
 
 Usage example
 -------------
