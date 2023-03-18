@@ -12,3 +12,4 @@ Advanced Topics
    multi_obj_search
    serialization
    nx-interop
+   structural_analysis

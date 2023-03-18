@@ -40,6 +40,7 @@ if __name__ == "__main__":
 
     opt_graph = get_opt_graph()
     requirements = StructuralAnalysisRequirements(graph_verifier=GraphVerifier(DEFAULT_DAG_RULES),
+                                                  main_metric_idx=0,
                                                   seed=1)
 
     # structural analysis will optimize given graph if at least one of the metrics was increased.
