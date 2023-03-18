@@ -67,7 +67,8 @@ class GraphStructuralAnalysis:
                                             approaches=self.edges_analyze_approaches,
                                             requirements=requirements,
                                             path_to_save=path_to_save)
-        
+
+        self.main_metric_idx = requirements.main_metric_idx
         self._log = default_log('SA')
         self.path_to_save = path_to_save
 
@@ -130,7 +131,8 @@ class GraphStructuralAnalysis:
 
         while not converged:
             iter += 1
-            worst_result = analysis_results.get_info_about_worst_result()
+            worst_result = analysis_results.get_info_about_worst_result(
+                metric_idx_to_optimize_by=self.main_metric_idx)
             if worst_result['value'] > 1.0:
                 # apply the worst approach
                 postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])

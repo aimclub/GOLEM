@@ -302,8 +302,9 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         :return: nodes that can be used to replace
         """
 
-        available_nodes = [node_factory.exchange_node(node=node)]*number_of_operations if number_of_operations \
-            else [node_factory.exchange_node(node=node)]
+        available_nodes = []
+        for i in range(number_of_operations):
+            available_nodes.append(node_factory.exchange_node(node=node))
 
         if number_of_operations:
             available_nodes = [i for i in available_nodes if i != node.name]

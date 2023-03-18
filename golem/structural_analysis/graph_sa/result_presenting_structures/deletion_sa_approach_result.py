@@ -11,12 +11,12 @@ class DeletionSAApproachResult(BaseSAApproachResult):
     def add_results(self, metrics_values: List[float]):
         self.metrics = metrics_values
 
-    def get_worst_result(self) -> float:
+    def get_worst_result(self, metric_idx_to_optimize_by: int) -> float:
         """ Returns the worst metric among all calculated. """
-        return max(self.metrics)
+        return self.metrics[metric_idx_to_optimize_by]
 
-    def get_worst_result_with_names(self) -> dict:
-        return {'value': self.get_worst_result()}
+    def get_worst_result_with_names(self, metric_idx_to_optimize_by: int) -> dict:
+        return {'value': self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)}
 
     def get_all_results(self) -> List[float]:
         """ Returns all calculated results. """

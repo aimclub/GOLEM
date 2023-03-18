@@ -1,6 +1,8 @@
 import os.path
 import random
 
+from typing import Callable
+
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptGraph, OptNode
@@ -11,6 +13,7 @@ from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysi
 
 
 def get_opt_graph() -> OptGraph:
+    """ Get diverse OptGraph. """
     node4 = OptNode({'name': 'node4'})
     node5 = OptNode({'name': 'node5'})
     node6 = OptNode({'name': 'node6'})
@@ -20,7 +23,8 @@ def get_opt_graph() -> OptGraph:
     return OptGraph(node1)
 
 
-def custom_metric(graph: OptGraph, visualisation: bool = False):
+def custom_metric(graph: OptGraph, visualisation: bool = False) -> float:
+    """ Get toy metric for demonstration. """
     if visualisation:
         graph.show()
     metric = -1*random.randint(80, 100)/100

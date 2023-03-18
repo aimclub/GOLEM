@@ -37,25 +37,25 @@ class ObjectSAResult:
         self.result_approaches: List[BaseSAApproachResult] = []
         self._approaches = approaches
 
-    def get_worst_result(self) -> float:
+    def get_worst_result(self, metric_idx_to_optimize_by: int) -> float:
         """ Returns the worst result among all result classes. """
         worst_results = []
         for approach in self.result_approaches:
-            worst_results.append(approach.get_worst_result())
+            worst_results.append(approach.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by))
         if not worst_results:
             return 0
         return max(worst_results)
 
-    def get_worst_result_with_names(self) -> dict:
+    def get_worst_result_with_names(self, metric_idx_to_optimize_by: int) -> dict:
         """ Returns worst result with additional information. """
-        worst_result = self.get_worst_result()
+        worst_result = self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)
         for app in self.result_approaches:
-            if app.get_worst_result() == worst_result:
+            if app.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by) == worst_result:
                 entity_type = 'edge' if isinstance(self.entity, Edge) else 'node'
                 sa_approach_name = StructuralAnalysisApproachesRepository()\
                     .get_method_by_result_class(app, entity_type)
-                result = {'approach_name': sa_approach_name}
-                result.update(app.get_worst_result_with_names())
+                result = {'entity': self.entity, 'approach_name': sa_approach_name}
+                result.update(app.get_worst_result_with_names(metric_idx_to_optimize_by=metric_idx_to_optimize_by))
                 return result
 
     def add_result(self, result: BaseSAApproachResult):

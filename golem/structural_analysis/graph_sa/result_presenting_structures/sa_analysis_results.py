@@ -27,28 +27,17 @@ class SAAnalysisResults:
             return True
         return False
 
-    def get_worst_result(self) -> Optional[float]:
-        """ Worst result among all nodes and all approaches. """
-        result = []
-        if self.results['nodes']:
-            result.extend(self.results['nodes'])
-        if self.results['edges']:
-            result.extend(self.results['edges'])
-        if result:
-            return max([res.get_worst_result() for res in result])
-        else:
-            return None
-
-    def get_info_about_worst_result(self):
+    def get_info_about_worst_result(self, metric_idx_to_optimize_by: int):
         """ Returns info about the worst result. """
-        worst_value = self.get_worst_result()
-        if not worst_value:
-            return {'value': -1}
+        worst_value = None
+        worst_result = None
         for i, res in enumerate(self.results['nodes'] + self.results['edges']):
-            if res.get_worst_result() == worst_value:
-                result = {'entity': res.entity}
-                result.update(res.get_worst_result_with_names())
-                return result
+            cur_res = res.get_worst_result_with_names(
+                metric_idx_to_optimize_by=metric_idx_to_optimize_by)
+            if not worst_value or cur_res['value'] > worst_value:
+                worst_value = cur_res['value']
+                worst_result = cur_res
+        return worst_result
 
     def add_node_result(self, node_result):
         """ Add calculated result for node. """

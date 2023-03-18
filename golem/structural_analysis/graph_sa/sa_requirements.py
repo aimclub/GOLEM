@@ -17,6 +17,8 @@ class StructuralAnalysisRequirements:
     """
     Use this object to pass all the requirements needed for SA.
 
+    :param graph_verifier: verifier for graph in SA.
+    :param main_metric_idx: index of metric to optimize by. Other metrics will be calculated and saved if needed.
     :param replacement_nodes_to_replace_to: defines nodes which is used in replacement analysis
     :param replacement_number_of_random_operations_nodes: if replacement_nodes_to_replace_to is not filled, \
     define the number of randomly chosen operations used in replacement analysis
@@ -29,15 +31,18 @@ class StructuralAnalysisRequirements:
 
     def __init__(self,
                  graph_verifier: GraphVerifier = None,
+                 main_metric_idx: int = 0,
                  replacement_nodes_to_replace_to: Optional[List[OptNode]] = None,
-                 replacement_number_of_random_operations_nodes: Optional[int] = 1,
+                 replacement_number_of_random_operations_nodes: Optional[int] = 3,
                  replacement_edges_to_replace_to: Optional[List[Edge]] = None,
-                 replacement_number_of_random_operations_edges: Optional[int] = 1,
+                 replacement_number_of_random_operations_edges: Optional[int] = 3,
                  is_visualize: bool = False,
                  is_save_results_to_json: bool = False,
                  seed: int = random.randint(0, 100)):
 
         self.graph_verifier = graph_verifier or GraphVerifier(DEFAULT_DAG_RULES)
+
+        self.main_metric_idx = main_metric_idx
 
         self.replacement_meta = ReplacementAnalysisMetaParams(replacement_edges_to_replace_to,
                                                               replacement_number_of_random_operations_edges,
