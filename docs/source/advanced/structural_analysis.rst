@@ -18,19 +18,9 @@ than the change should be applied, otherwise not.
 
 There are two pseudocode samples to illustrate the way SA works.
 
-|SA|
+.. image:: img/sa.png
 
-.. |SA| image:: img/sa.png
-   :width: 70%
-   :align: center
-   :alt: Algorithm of SA itself
-
-|SA_optimization|
-
-.. |SA_optimization| image:: img/sa_optimization.png
-   :width: 70%
-   :align: center
-   :alt: Algorithm of optimization with SA
+.. image:: img/sa_optimization.png
 
 
 Usage example
