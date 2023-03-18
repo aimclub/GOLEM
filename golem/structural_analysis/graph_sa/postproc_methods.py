@@ -21,6 +21,7 @@ def nodes_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
     node_to_replace = worst_result["entity"]
     # get node to replace to
     new_node = worst_result["entity_to_replace_to"]
+    new_node.nodes_from = []
 
     # actualize node to current instance of graph
     node_to_replace = get_same_node_from_graph(graph=graph, node=node_to_replace)

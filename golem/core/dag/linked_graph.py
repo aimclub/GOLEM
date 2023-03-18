@@ -61,6 +61,7 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.update_node)
     def update_node(self, old_node: GraphNode, new_node: GraphNode):
         self.actualise_old_node_children(old_node, new_node)
+        new_node.nodes_from.extend(old_node.nodes_from)
         self._nodes.remove(old_node)
         self._nodes.append(new_node)
         self.sort_nodes()
