@@ -4,7 +4,7 @@ from golem.structural_analysis.graph_sa.result_presenting_structures.base_sa_app
 
 
 class DeletionSAApproachResult(BaseSAApproachResult):
-    """ Class for deletion result approaches. """
+    """ Class for presenting deletion result approaches. """
     def __init__(self):
         self.metrics = []
 

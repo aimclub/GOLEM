@@ -56,9 +56,8 @@ class EdgeAnalysis:
         :return: dict with Edge analysis result per approach
         """
 
-        results = ObjectSAResult(idx=graph.get_edges().index((edge.parent_node, edge.child_node)),
-                                 entity=edge,
-                                 approaches=[approach.__name__ for approach in self.approaches])
+        results = ObjectSAResult(entity=edge)
+
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
                 break

@@ -6,19 +6,13 @@ from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_r
 
 
 class SAAnalysisResults:
+    """ Class presenting results of Structural Analysis for the whole graph. """
     def __init__(self, graph: OptGraph,
-                 nodes_to_analyze: List[OptNode] = None, edges_to_analyze: List[Edge] = None,
-                 nodes_approaches: List[Callable] = None, edges_approaches: List[Callable] = None):
+                 nodes_to_analyze: List[OptNode] = None, edges_to_analyze: List[Edge] = None):
 
         self.nodes_to_analyze = nodes_to_analyze or graph.nodes
         self.edges_to_analyze = edges_to_analyze or graph.get_edges()
         self.results = {'nodes': [], 'edges': []}
-        if nodes_approaches:
-            self.results['nodes'] = [ObjectSAResult(approaches=[approach.__name__ for approach in nodes_approaches])
-                                     for _ in nodes_to_analyze]
-        if edges_approaches:
-            self.results['edges'] = [ObjectSAResult(approaches=[approach.__name__ for approach in edges_approaches])
-                                     for _ in edges_to_analyze]
 
     @property
     def is_empty(self):
@@ -39,10 +33,10 @@ class SAAnalysisResults:
                 worst_result = cur_res
         return worst_result
 
-    def add_node_result(self, node_result):
+    def add_node_result(self, node_result: ObjectSAResult):
         """ Add calculated result for node. """
         self.results['nodes'].append(node_result)
 
-    def add_edge_result(self, edge_result):
+    def add_edge_result(self, edge_result: ObjectSAResult):
         """ Add calculated result for edge. """
         self.results['nodes'].append(edge_result)

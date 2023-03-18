@@ -30,12 +30,10 @@ class StructuralAnalysisApproachesRepository:
 
 
 class ObjectSAResult:
-    """ Class specifying results of Structural Analysis for one object(node or edge). """
-    def __init__(self, idx: int, entity: Union[GraphNode, Edge], approaches: List[str] = None):
-        self.idx = idx
+    """ Class specifying results of Structural Analysis for one entity(node or edge). """
+    def __init__(self, entity: Union[GraphNode, Edge]):
         self.entity = entity
         self.result_approaches: List[BaseSAApproachResult] = []
-        self._approaches = approaches
 
     def get_worst_result(self, metric_idx_to_optimize_by: int) -> float:
         """ Returns the worst result among all result classes. """

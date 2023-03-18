@@ -6,7 +6,7 @@ from golem.structural_analysis.graph_sa.result_presenting_structures.base_sa_app
 
 
 class ReplaceSAApproachResult(BaseSAApproachResult):
-    """ Class for replacing result approaches. """
+    """ Class for presenting replacing result approaches. """
     def __init__(self):
         """ Main dictionary `self.metrics` contains entities as key and
         list with metrics as values"""
@@ -18,9 +18,8 @@ class ReplaceSAApproachResult(BaseSAApproachResult):
 
     def get_worst_result(self, metric_idx_to_optimize_by: int) -> float:
         """ Returns value of the worst metric. """
-        return list(self.entities_metrics.values())[0][metric_idx_to_optimize_by]
+        return max([metrics[metric_idx_to_optimize_by] for metrics in list(self.entities_metrics.values())])
 
-    # TODO: fix multi-objective optimization is incorrect now (add idx of metric to look for)
     def get_worst_result_with_names(self, metric_idx_to_optimize_by: int) -> dict:
         """ Returns the worst metric among all calculated with its name and node's to replace to name. """
         worst_value = self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)

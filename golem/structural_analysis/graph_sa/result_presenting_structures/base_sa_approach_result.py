@@ -1,7 +1,7 @@
 
 
 class BaseSAApproachResult:
-    """ Base class for all result classes.
+    """ Base class for presenting all result classes.
     Specifies the main logic of setting and getting calculated metrics. """
 
     def get_worst_result(self, metric_idx_to_optimize_by: int) -> float:

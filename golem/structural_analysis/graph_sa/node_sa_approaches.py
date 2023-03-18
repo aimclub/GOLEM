@@ -56,9 +56,8 @@ class NodeAnalysis:
         :return: dict with Node analysis result per approach
         """
 
-        results = ObjectSAResult(idx=graph.nodes.index(node),
-                                 entity=node,
-                                 approaches=[approach.__name__ for approach in self.approaches])
+        results = ObjectSAResult(entity=node)
+
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
                 break
