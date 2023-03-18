@@ -18,9 +18,9 @@ than the change should be applied, otherwise not.
 
 There are two pseudocode samples to illustrate the way SA works.
 
-.. image:: img/sa.png
+.. image:: ..img/sa.png
 
-.. image:: img/sa_optimization.png
+.. image:: ../img/sa_optimization.png
 
 
 Usage example
