@@ -39,7 +39,7 @@ class EdgesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
 
-    def analyze(self, graph: OptGraph, results: SAAnalysisResults,
+    def analyze(self, graph: OptGraph, results: SAAnalysisResults = None,
                 edges_to_analyze: List[Edge] = None,
                 n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
@@ -52,6 +52,9 @@ class EdgesAnalysis:
         :param timer: timer indicating how much time is left for optimization
         :return edges_results: dict with analysis result per Edge
         """
+
+        if not results:
+            results = SAAnalysisResults(graph=graph)
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
