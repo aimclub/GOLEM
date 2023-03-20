@@ -40,10 +40,9 @@ Structural Analysis means structure modification like Node deletion, Node Replac
 Subtree Deletion, Edge Deletion or Edge Replacement.
 Within GOLEM, Structural Analysis can be applied on the different levels of graph:
 
-* The most common way to apply SA is to apply it to the whole graph
-using `GraphStructuralAnalysis`_. And also this is the only way to actually `optimize` graph --
-apply analysis results to it. It can be done with `optimize`_ method and also analysis results
-can be obtained by using `analyze`_ method.
+* The most common way to apply SA is to apply it to the whole graph using `GraphStructuralAnalysis`_. And also this is the only way to actually `optimize` graph --
+  apply analysis results to it. It can be done with `optimize`_ method and also analysis results
+  can be obtained by using `analyze`_ method.
 
 .. code-block:: python
 
@@ -77,7 +76,7 @@ can be obtained by using `analyze`_ method.
 
 
 * SA can also be applied only to nodes or to edges with `NodesAnalysis`_ or
-`EdgesAnalysis`_ respectively.
+  `EdgesAnalysis`_ respectively.
 
 .. code-block:: python
 
@@ -110,7 +109,7 @@ can be obtained by using `analyze`_ method.
 
 
 * If analysis of only one entity(node or edge) is needed, `NodeAnalysis`_ or
-`EdgeAnalysis`_ can be used.
+  `EdgeAnalysis`_ can be used.
 
 .. code-block:: python
 
