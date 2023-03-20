@@ -11,8 +11,8 @@ negative impact.
 Main concepts
 -------------
 
-The main logic of Structural Analysis is pretty simple: the algorithm tries to delete
-every part of the graph and therefore evaluates the changed one and compares its metric
+The main logic of Structural Analysis is pretty simple: the algorithm tries to delete or replace
+every part of graph, therefore evaluates the changed graph and compares its metric
 with the original one's. If metric with applied change is higher than it was before --
 than the change should be applied, otherwise not.
 
