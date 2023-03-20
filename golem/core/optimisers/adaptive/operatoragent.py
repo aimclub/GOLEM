@@ -60,11 +60,11 @@ class ExperienceBuffer:
 
 class OperatorAgent(ABC):
     @abstractmethod
-    def choose_action(self, obs: ObsType) -> ActType:
+    def choose_action(self, obs: Optional[ObsType]) -> ActType:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_action_probs(self, obs: ObsType) -> Sequence[float]:
+    def get_action_probs(self, obs: Optional[ObsType]) -> Sequence[float]:
         raise NotImplementedError()
 
     @abstractmethod

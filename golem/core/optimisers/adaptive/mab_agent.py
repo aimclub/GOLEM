@@ -3,6 +3,7 @@ from typing import Union, Sequence, Optional
 
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy
+from scipy.special import softmax
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
@@ -30,18 +31,17 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._agent.fit(decisions=self._indices, rewards=uniform_rewards)
 
     def _action_values(self) -> Sequence[float]:
-        return self._agent.predict_expectations()
+        prob_dict = self._agent.predict_expectations()
+        prob_list = [prob_dict[i] for i in range(len(prob_dict))]
+        return prob_list
 
     def choose_action(self, obs: ObsType) -> ActType:
         arm = self._agent.predict()
         action = self.actions[arm]
-        # if self._enable_logging:
-        #     self._log.info(f'action={action} expectations={self._action_values()}')
         return action
 
-    def get_action_probs(self, obs: ObsType) -> Optional[Sequence[float]]:
-        # TODO: normalise expectations in softmax?
-        return self._action_values()
+    def get_action_probs(self, obs: Optional[ObsType] = None) -> Optional[Sequence[float]]:
+        return softmax(self._action_values())
 
     def choose_nodes(self, graph: Graph, num_nodes: int = 1) -> Union[GraphNode, Sequence[GraphNode]]:
         subject_nodes = random.sample(graph.nodes, k=num_nodes)
@@ -55,7 +55,8 @@ class MultiArmedBanditAgent(OperatorAgent):
 
     def _dbg_log(self, actions, rewards):
         if self._enable_logging:
-            rr = np.array(rewards).round(4)
+            prec = 4
+            rr = np.array(rewards).round(prec)
             nonzero = rr[rr.nonzero()]
             msg = f'len={len(rr)} nonzero={len(nonzero)} '
             if len(nonzero) > 0:
@@ -64,4 +65,5 @@ class MultiArmedBanditAgent(OperatorAgent):
             self._log.info(msg)
             self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
 
-            self._log.info(f'expectations={self._action_values()}')
+            self._log.info(f'exp={np.round(self._action_values(), prec)} '
+                           f'probs={np.round(self.get_action_probs(), prec)}')
