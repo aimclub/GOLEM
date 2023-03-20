@@ -139,7 +139,7 @@ Within GOLEM, Structural Analysis can be applied on the different levels of grap
 
         analysis_result = sa.analyze(graph=opt_graph, node=opt_graph.nodes[0], objectives=[objective])
 
-But generally, all of this approaches to graph analysis can be embodied by
+But generally, all these approaches to graph analysis can be embodied by
 `GraphStructuralAnalysis`_.
 
 
