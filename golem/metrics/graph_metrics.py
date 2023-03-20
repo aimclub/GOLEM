@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import networkx as nx
 import numpy as np
 
@@ -21,6 +23,40 @@ def nxgraph_stats(graph: nx.Graph):
 
 def degree_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     return degree_stats([graph], [target_graph])
+
+
+def degree_dist_weighted(target_graph: nx.DiGraph,
+                         graph: nx.DiGraph,
+                         normalized: bool = False) -> float:
+    # Compute histogram of node degrees
+    degrees_t = np.array(nx.degree_histogram(target_graph), dtype=float)
+    degrees_g = np.array(nx.degree_histogram(graph), dtype=float)
+    return degree_dist_weighted_compute(degrees_t, degrees_g, normalized)
+
+
+def degree_dist_weighted_compute(degrees_t: Sequence[float],
+                                 degrees_g: Sequence[float],
+                                 normalized: bool = False) -> float:
+    degrees_t = np.asarray(degrees_t)
+    degrees_g = np.asarray(degrees_g)
+
+    # Extend arrays to the same length with zeros
+    common_len = max(len(degrees_t), len(degrees_g))
+    degrees_t.resize(common_len, refcheck=False)
+    degrees_g.resize(common_len, refcheck=False)
+
+    # Compute weights as normalized degrees
+    weights = np.arange(common_len).astype(float)
+    weights /= np.sum(weights)
+
+    # Normalize
+    if normalized:
+        degrees_t /= np.sum(degrees_t)
+        degrees_g /= np.sum(degrees_g)
+
+    # Compute distance between node degrees weighted by degree
+    dist = np.linalg.norm(weights * (degrees_t - degrees_g))
+    return dist
 
 
 def size_diff(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
