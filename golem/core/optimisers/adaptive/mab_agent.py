@@ -19,7 +19,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._indices = list(range(len(actions)))
         self._arm_by_action = dict(zip(actions, self._indices))
         self._agent = MAB(arms=self._indices,
-                          learning_policy=LearningPolicy.EpsilonGreedy(0.15),
+                          learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=1)
         self._initial_fit()
         self._enable_logging = enable_logging
