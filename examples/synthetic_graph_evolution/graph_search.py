@@ -19,7 +19,7 @@ from golem.metrics.graph_metrics import *
 
 def graph_search_setup(target_graph: nx.DiGraph,
                        optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
-                       node_types: Sequence[str] = ('X',),
+                       node_types: Sequence[str] = ('x',),
                        timeout: Optional[timedelta] = None,
                        num_iterations: Optional[int] = None):
     # Setup parameters
@@ -41,8 +41,8 @@ def graph_search_setup(target_graph: nx.DiGraph,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
             MutationTypesEnum.single_add,
-            MutationTypesEnum.single_drop,
             MutationTypesEnum.single_edge,
+            MutationTypesEnum.single_drop,
         ],
         crossover_types=[CrossoverTypesEnum.none]
     )
@@ -55,19 +55,13 @@ def graph_search_setup(target_graph: nx.DiGraph,
     # Setup objective that measures some graph-theoretic similarity measure
     objective = Objective(
         quality_metrics={
-            'sp_adj': partial(spectral_dist, target_graph, kind='adjacency'),
-            'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
+            # 'sp_adj': partial(spectral_dist, target_graph, kind='adjacency'),
+            # 'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
+            'degree': partial(degree_distance, target_graph),
         },
         complexity_metrics={
-            'degree': partial(degree_distance, target_graph),
             'graph_size': partial(size_diff, target_graph),
         },
-        is_multi_objective=gp_params.multi_objective,
-    )
-    objective = Objective(
-        quality_metrics={'sp_adj': partial(spectral_dist, target_graph, kind='adjacency')},
-        # quality_metrics={'degree': partial(degree_dist, target_graph)},
-        complexity_metrics={'graph_size': partial(size_diff, target_graph)},
         is_multi_objective=gp_params.multi_objective,
     )
 
