@@ -41,8 +41,8 @@ Subtree Deletion, Edge Deletion or Edge Replacement.
 Within GOLEM, Structural Analysis can be applied on the different levels of graph:
 
 * The most common way to apply SA is to apply it to the whole graph using `GraphStructuralAnalysis`_. And also this is the only way to actually `optimize` graph --
-  apply analysis results to it. It can be done with `optimize`_ method and also analysis results
-  can be obtained by using `analyze`_ method.
+  apply analysis results to it. It can be done with ``optimize`` method and also analysis results
+  can be obtained by using ``analyze`` method.
 
 .. code-block:: python
 
