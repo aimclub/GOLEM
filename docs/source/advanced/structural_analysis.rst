@@ -102,7 +102,7 @@ Within GOLEM, Structural Analysis can be applied on the different levels of grap
                                                       seed=1)
 
         # structural analysis will optimize given graph if at least one of the metrics was increased.
-        sa = NodesAnalysis(objective=[objective] * 2, node_factory=node_factory,
+        sa = NodesAnalysis(objective=objective, node_factory=node_factory,
                            requirements=requirements)
 
         analysis_result = sa.analyze(graph=opt_graph, n_jobs=1)
