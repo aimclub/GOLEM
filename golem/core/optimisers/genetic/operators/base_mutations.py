@@ -240,14 +240,13 @@ def single_drop_mutation(graph: OptGraph,
     removal_type = graph_gen_params.advisor.can_be_removed(node_to_del)
     if removal_type == RemoveType.with_direct_children:
         # TODO refactor workaround with data_source
+        graph.delete_node(node_to_del)
         nodes_to_delete = \
             [n for n in graph.nodes
              if n.descriptive_id.count('data_source') == 1
              and node_name in n.descriptive_id]
-        graph.delete_node(node_to_del)
         for child_node in nodes_to_delete:
-            if child_node in graph.nodes:
-                graph.delete_node(child_node)
+            graph.delete_node(child_node)
     elif removal_type == RemoveType.with_parents:
         graph.delete_subtree(node_to_del)
     elif removal_type != RemoveType.forbidden:
