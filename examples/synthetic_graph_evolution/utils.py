@@ -1,13 +1,15 @@
 from datetime import datetime
-from itertools import chain
+from itertools import chain, product
 from typing import Tuple, Optional, Sequence, Iterable
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from matplotlib import cm
 from networkx import gnp_random_graph
 
-from golem.metrics.graph_metrics import spectral_dists_all
+from golem.metrics.graph_metrics import spectral_dists_all, nxgraph_stats, degree_dist, degree_dist_weighted
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer
@@ -89,17 +91,15 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     axs = np.atleast_2d(axs)
     # Draw graphs
     for ax, graph in zip(chain(*axs), graphs):
-        colors, labeldict = _get_node_colors_and_labels(graph)
+        colors, labeldict, legend_handles = _get_node_colors_and_labels(graph)
         draw_fn(graph, ax=ax, arrows=True,
                 node_color=colors, with_labels=True, labels=labeldict)
+    fig.legend(handles=legend_handles)
     plt.show()
 
 
-def _get_node_colors_and_labels(graph: nx.Graph):
-    clr_cyan = '#2A788EFF'
-    clr_yellow = '#FDE725FF'
-    clr_green = '#7AD151FF'
-
+def _get_node_colors_and_labels(graph: nx.Graph, cmap_name='viridis'):
+    degrees = dict(graph.degree())
     if isinstance(graph, nx.DiGraph):
         roots = {n for n, d in graph.out_degree() if d == 0}
         sources = {n for n, d in graph.in_degree() if d == 0}
@@ -107,55 +107,34 @@ def _get_node_colors_and_labels(graph: nx.Graph):
         roots = {max(*graph.nodes(), key=lambda n: graph.degree[n])}
         sources = {min(*graph.nodes(), key=lambda n: graph.degree[n])}
 
+    max_degree = max(degrees.values())
+    root_cm = max_degree
+    src_cm = 0
+    colormap = cm.get_cmap(cmap_name, max_degree + 1)
     colors = []
     labels = {}
+
     for node, data in graph.nodes(data=True):
+        # Determine color of the node:
+        # if node is root -- use special 'min' color
+        # if node is source -- use special 'max' color
+        # else use node color according to colormap and node degree
         if node in roots:
-            color = clr_yellow
+            color = colormap(root_cm)
         elif node in sources:
-            color = clr_green
+            color = colormap(src_cm)
         else:
-            color = clr_cyan
+            color = colormap(graph.degree(node))
         colors.append(color)
+
+        # Get node label
         label = data.get('name') or str(node)
         labels[node] = label
-    return colors, labels
 
+    # Construct legend handles
+    root_legend = mpatches.Patch(color=colormap(root_cm), label='Root')
+    degree_legend = mpatches.Patch(color=colormap(max_degree // 2 + 1), label='Node Degree')
+    source_legend = mpatches.Patch(color=colormap(src_cm), label='Source')
+    handles = [root_legend, degree_legend, source_legend]
 
-def measure_graphs(target_graph, graph, vis=False):
-    start = datetime.now()
-    print("Computing metric...")
-    fitness = spectral_dists_all(target_graph, graph)
-    fitness2 = spectral_dists_all(target_graph, graph, match_size=False)
-    fitness3 = spectral_dists_all(target_graph, graph, k=10)
-    end = datetime.now() - start
-    print(f'metrics: {fitness}, computed for '
-          f'size {len(target_graph.nodes)} in {end.seconds} sec.')
-    print(f'metrics2: {fitness2}')
-    print(f'metrics3: {fitness3}')
-
-    if vis:
-        # 2 subplots
-        fig, axs = plt.subplots(nrows=1, ncols=2)
-        for g, ax in zip((target_graph, graph), axs):
-            plot_nx_graph(g, ax)
-
-        plt.title(f'metrics: {fitness.values}')
-        plt.show()
-
-
-def try_random(n=30, it=1):
-    graphs = []
-    for i in range(it):
-        for p in [0.05, 0.08, 0.15, 0.3]:
-            g1 = gnp_random_graph(n, p)
-            g2 = gnp_random_graph(n, p)
-            graphs.append(g1)
-            graphs.append(g2)
-            measure_graphs(g1, g2, vis=False)
-    draw_graphs_subplots(*graphs, size=12)
-    draw_graphs_subplots(graphs[0], size=8)
-
-
-if __name__ == "__main__":
-    try_random()
+    return colors, labels, handles
