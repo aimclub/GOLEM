@@ -6,6 +6,7 @@ import multiprocessing
 
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph, GraphNode
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
@@ -26,7 +27,7 @@ class GraphStructuralAnalysis:
     This class works as facade and allows to apply all kind of approaches
     to whole graph and separate nodes together.
 
-    :param objectives: list of objective functions for computing metric values
+    :param objective: list of objective functions for computing metric values
     :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to graph. Default: None
     :param requirements: extra requirements to define specific details for different approaches.\
@@ -35,7 +36,7 @@ class GraphStructuralAnalysis:
     Default: False
     """
 
-    def __init__(self, objectives: List[Callable],
+    def __init__(self, objective: Objective,
                  node_factory: OptNodeFactory,
                  is_preproc: bool = True,
                  approaches: List = None,
@@ -57,13 +58,13 @@ class GraphStructuralAnalysis:
                                              SubtreeDeletionAnalyze]
             self.edges_analyze_approaches = [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
 
-        self._nodes_analyze = NodesAnalysis(objectives=objectives,
+        self._nodes_analyze = NodesAnalysis(objective=objective,
                                             node_factory=node_factory,
                                             approaches=self.nodes_analyze_approaches,
                                             requirements=requirements,
                                             path_to_save=path_to_save)
 
-        self._edges_analyze = EdgesAnalysis(objectives=objectives,
+        self._edges_analyze = EdgesAnalysis(objective=objective,
                                             approaches=self.edges_analyze_approaches,
                                             requirements=requirements,
                                             path_to_save=path_to_save)

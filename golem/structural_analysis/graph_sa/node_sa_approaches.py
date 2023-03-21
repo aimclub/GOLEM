@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from os import makedirs
 from os.path import exists, join
-from typing import List, Optional, Type, Union, Dict, Callable, Any
+from typing import List, Optional, Type, Union, Dict, Callable, Any, Sequence
 
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph, GraphNode
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
@@ -43,7 +44,7 @@ class NodeAnalysis:
             StructuralAnalysisRequirements() if approaches_requirements is None else approaches_requirements
 
     def analyze(self, graph: Graph, node: GraphNode,
-                objectives: List[Callable],
+                objective: Objective,
                 timer: Optional[OptimisationTimer] = None) -> ObjectSAResult:
 
         """
@@ -51,7 +52,7 @@ class NodeAnalysis:
 
         :param graph: Graph containing the analyzed Node
         :param node: Node object to analyze in Graph
-        :param objectives: objective functions for computing metric values
+        :param objective: objective function for computing metric values
         :param timer: timer to check if the time allotted for structural analysis has expired
         :return: dict with Node analysis result per approach
         """
@@ -63,7 +64,7 @@ class NodeAnalysis:
                 break
 
             results.add_result(approach(graph=graph,
-                               objectives=objectives,
+                               objective=objective,
                                node_factory=self.node_factory,
                                requirements=self.approaches_requirements,
                                path_to_save=self.path_to_save).analyze(node=node))
@@ -74,16 +75,16 @@ class NodeAnalyzeApproach(ABC):
     """
     Base class for analysis approach.
     :param graph: Graph containing the analyzed Node
-    :param objectives: objective functions for computing metric values
+    :param objective: objective functions for computing metric values
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
         self._graph = graph
-        self._objectives = objectives
+        self._objective = objective
         self._node_factory = node_factory
         self._origin_metrics = list()
         self._requirements = \
@@ -109,54 +110,30 @@ class NodeAnalyzeApproach(ABC):
         """Changes the graph according to the approach"""
         pass
 
-    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> List[float]:
-        """ Iterate through all objectives and evaluate modified graph """
-        results = []
-        for objective in self._objectives:
-            metric = self._compare_with_origin_by_metric(modified_graph=modified_graph,
-                                                         objective=objective)
-            results.append(metric)
-        return results
-
-    def _compare_with_origin_by_metric(self, modified_graph: Graph,
-                                       objective: Callable) -> float:
-        """ Returns the ratio of metrics for the modified graph and the original one """
-
-        if modified_graph == self._graph:
-            return -1.0
-
-        obj_idx = self._objectives.index(objective)
+    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> Sequence[float]:
+        """ Returns all relative metrics calculated. """
+        modified_graph_metrics = self._objective(modified_graph).values
 
         if not self._origin_metrics:
-            self._origin_metrics = [objective(self._graph).value]
-        elif len(self._origin_metrics) <= obj_idx:
-            self._origin_metrics.append(objective(self._graph).value)
+            self._origin_metrics = self._objective(self._graph).values
 
-        modified_graph_metric = objective(modified_graph).value
-
-        if not self._origin_metrics[obj_idx]:
-            self.log.warning("Origin graph can not be evaluated")
-            return -1.0
-        if not modified_graph_metric:
-            self.log.warning("Modified graph can not be evaluated")
-            return -1.0
-
-        try:
-            if modified_graph_metric < 0.0:
-                res = modified_graph_metric / self._origin_metrics[obj_idx]
-            else:
-                res = self._origin_metrics[obj_idx] / modified_graph_metric
-        except ZeroDivisionError:
-            res = -1.0
-
+        res = []
+        for i in range(len(modified_graph_metrics)):
+            try:
+                if modified_graph_metrics[i] < 0.0:
+                    res.append(modified_graph_metrics[i] / self._origin_metrics[i])
+                else:
+                    res.append(self._origin_metrics[i] / modified_graph_metrics[i])
+            except ZeroDivisionError:
+                res.append([-1.0]*len(self._objective.metrics))
         return res
 
 
 class NodeDeletionAnalyze(NodeAnalyzeApproach):
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, node_factory, requirements)
+        super().__init__(graph, objective, node_factory, requirements)
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
@@ -172,7 +149,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if node is self._graph.root_node:
             self.log.warning(f'{node} node can not be deleted')
-            results.add_results(metrics_values=[-1.0]*len(self._objectives))
+            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(node)
@@ -181,7 +158,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
                 self.log.message(f'losses for {node.name}: {losses}')
                 del shortened_graph
             else:
-                losses = [-1.0]*len(self._objectives)
+                losses = [-1.0]*len(self._objective.metrics)
 
             results.add_results(metrics_values=losses)
             return results
@@ -218,10 +195,10 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
     and evaluate the score difference
     """
 
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, node_factory, requirements)
+        super().__init__(graph, objective, node_factory, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
@@ -288,8 +265,8 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         return samples
 
-    def _node_generation(self,
-                         node: GraphNode,
+    @staticmethod
+    def _node_generation(node: GraphNode,
                          node_factory: OptNodeFactory,
                          number_of_operations: int = 1) -> List[GraphNode]:
         """
@@ -319,10 +296,10 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
     """
     Approach to delete specified node subtree
     """
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, node_factory, requirements)
+        super().__init__(graph, objective, node_factory, requirements)
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') \
             if path_to_save is None else path_to_save
@@ -340,7 +317,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if node is self._graph.root_node:
             self.log.warning(f'{node} subtree can not be deleted')
-            results.add_results(metrics_values=[-1.0]*len(self._objectives))
+            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(node)
@@ -349,7 +326,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
                 self.log.message(f'losses for {node.name}: {losses}')
                 del shortened_graph
             else:
-                losses = [-1.0]*len(self._objectives)
+                losses = [-1.0]*len(self._objective.metrics)
 
             results.add_results(metrics_values=losses)
             return results

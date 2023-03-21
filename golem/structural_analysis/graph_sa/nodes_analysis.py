@@ -4,6 +4,7 @@ import multiprocessing
 
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph, GraphNode
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
@@ -19,20 +20,20 @@ class NodesAnalysis:
     To define which nodes to analyze pass them to nodes_to_analyze filed
     or all nodes will be analyzed.
 
-    :param objectives: objective functions for computing metric values
+    :param objective: objective functions for computing metric values
     :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, objectives: List[Callable],
+    def __init__(self, objective: Objective,
                  node_factory: OptNodeFactory,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
                  requirements: Optional[StructuralAnalysisRequirements] = None,
                  path_to_save: Optional[str] = None):
 
-        self.objectives = objectives
+        self.objective = objective
         self.node_factory = node_factory
         self.approaches = approaches
         self.requirements = \
@@ -72,7 +73,7 @@ class NodesAnalysis:
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
             cur_nodes_results = pool.starmap(node_analysis.analyze,
-                                       [[graph, node, self.objectives, timer]
+                                       [[graph, node, self.objective, timer]
                                         for node in nodes_to_analyze])
 
         for res in cur_nodes_results:

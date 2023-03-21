@@ -3,11 +3,12 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from os import makedirs
 from os.path import exists, join
-from typing import List, Optional, Type, Union, Tuple, Dict, Callable
+from typing import List, Optional, Type, Union, Tuple, Dict, Callable, Sequence
 
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph, GraphNode
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.entities.edge import Edge
@@ -44,14 +45,14 @@ class EdgeAnalysis:
             StructuralAnalysisRequirements() if approaches_requirements is None else approaches_requirements
 
     def analyze(self, graph: Graph, edge: Edge,
-                objectives: List[Callable],
+                objective: Callable,
                 timer: Optional[OptimisationTimer] = None) -> ObjectSAResult:
         """
         Method runs Edge analysis within defined approaches
 
         :param graph: graph containing the analyzed Edge
         :param edge: Edge object to analyze in Graph
-        :param objectives: list of objective functions for computing metric values
+        :param objective: objective function for computing metric values
         :param timer: timer to check if the time allotted for structural analysis has expired
         :return: dict with Edge analysis result per approach
         """
@@ -63,7 +64,7 @@ class EdgeAnalysis:
                 break
 
             results.add_result(approach(graph=graph,
-                               objectives=objectives,
+                               objective=objective,
                                requirements=self.approaches_requirements,
                                path_to_save=self.path_to_save).analyze(edge=edge))
 
@@ -75,15 +76,15 @@ class EdgeAnalyzeApproach(ABC):
     Base class for analysis approach.
 
     :param graph: Graph containing the analyzing Edge
-    :param objectives: objective function for computing metric values
+    :param objective: objective function for computing metric values
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
         self._graph = graph
-        self._objectives = objectives
+        self._objective = objective
         self._origin_metrics = None
         self._requirements = \
             StructuralAnalysisRequirements() if requirements is None else requirements
@@ -108,54 +109,29 @@ class EdgeAnalyzeApproach(ABC):
         """ Changes the graph according to the approach """
         pass
 
-    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> List[float]:
-        """ Iterate through all objectives and evaluate modified graph """
-        results = []
-        for objective in self._objectives:
-            if isinstance(modified_graph, list):
-                continue
-            metric = self._compare_with_origin_by_metric(modified_graph=modified_graph,
-                                                         objective=objective)
-            results.append(metric)
-        return results
+    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> Sequence[float]:
+        """ Returns all relative metrics calculated. """
+        modified_graph_metrics = self._objective(modified_graph).values
 
-    def _compare_with_origin_by_metric(self, modified_graph: Graph,
-                                       objective: Callable) -> float:
-        """ Returns the ratio of metrics for the modified graph and the original one """
-
-        if modified_graph == self._graph:
-            return -1
-
-        obj_idx = self._objectives.index(objective)
         if not self._origin_metrics:
-            self._origin_metrics = [objective(self._graph).value]
-        elif len(self._origin_metrics) <= obj_idx:
-            self._origin_metrics.append(objective(self._graph).value)
+            self._origin_metrics = self._objective(self._graph).values
 
-        modified_graph_metric = objective(modified_graph).value
-
-        if not self._origin_metrics[obj_idx]:
-            self.log.warning("Origin graph can not be evaluated")
-            return -1.0
-        if not modified_graph_metric:
-            self.log.warning("Modified graph can not be evaluated")
-            return -1.0
-
-        try:
-            if modified_graph_metric < 0.0:
-                res = modified_graph_metric / self._origin_metrics[obj_idx]
-            else:
-                res = self._origin_metrics[obj_idx] / modified_graph_metric
-        except ZeroDivisionError:
-            res = -1.0
-
+        res = []
+        for i in range(len(modified_graph_metrics)):
+            try:
+                if modified_graph_metrics[i] < 0.0:
+                    res.append(modified_graph_metrics[i] / self._origin_metrics[i])
+                else:
+                    res.append(self._origin_metrics[i] / modified_graph_metrics[i])
+            except ZeroDivisionError:
+                res.append([-1.0] * len(self._objective.metrics))
         return res
 
 
 class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, requirements)
+        super().__init__(graph, objective, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
@@ -172,7 +148,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
             self.log.warning('if remove this edge then get a graph of length one')
-            results.add_results(metrics_values=[-1.0]*len(self._objectives))
+            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(edge)
@@ -182,7 +158,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
                 del shortened_graph
             else:
                 self.log.warning('if remove this edge then get an invalid graph')
-                losses = [-1.0]*len(self._objectives)
+                losses = [-1.0]*len(self._objective.metrics)
 
         results.add_results(metrics_values=losses)
         return results
@@ -220,9 +196,9 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
        and evaluate the score difference
     """
 
-    def __init__(self, graph: Graph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objective: Objective,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
-        super().__init__(graph, objectives, requirements)
+        super().__init__(graph, objective, requirements)
 
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save

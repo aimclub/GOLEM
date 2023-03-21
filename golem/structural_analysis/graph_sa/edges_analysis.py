@@ -5,6 +5,7 @@ import multiprocessing
 
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeAnalysis
@@ -20,18 +21,18 @@ class EdgesAnalysis:
     To define which edges to analyze pass them to edges_to_analyze filed
     or all edges will be analyzed.
 
-    :param objectives: list of objective functions for computing metric values
+    :param objective: list of objective functions for computing metric values
     :param approaches: methods applied to edges to modify the graph or analyze certain operations.\
     Default: [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze]
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, objectives: List[Callable],
+    def __init__(self, objective: Objective,
                  approaches: Optional[List[Type[EdgeAnalyzeApproach]]] = None,
                  requirements: Optional[StructuralAnalysisRequirements] = None,
                  path_to_save: Optional[str] = None):
 
-        self.objectives = objectives
+        self.objective = objective
         self.approaches = approaches
         self.requirements = \
             StructuralAnalysisRequirements() if requirements is None else requirements
@@ -69,7 +70,7 @@ class EdgesAnalysis:
 
         with multiprocessing.Pool(processes=n_jobs) as pool:
             cur_edges_result = pool.starmap(edge_analysis.analyze,
-                                            [[graph, edge, self.objectives, timer]
+                                            [[graph, edge, self.objective, timer]
                                              for edge in edges_to_analyze])
         for res in cur_edges_result:
             results.add_edge_result(res)

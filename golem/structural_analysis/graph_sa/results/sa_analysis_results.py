@@ -39,4 +39,4 @@ class SAAnalysisResults:
 
     def add_edge_result(self, edge_result: ObjectSAResult):
         """ Add calculated result for edge. """
-        self.results['nodes'].append(edge_result)
+        self.results['edges'].append(edge_result)
