@@ -7,14 +7,14 @@ from typing import List, Optional, Type, Union, Tuple, Dict, Callable
 
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.dag.graph import Graph, GraphNode
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.entities.edge import Edge
-from golem.structural_analysis.graph_sa.result_presenting_structures.deletion_sa_approach_result import \
+from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult
-from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_result import ObjectSAResult
-from golem.structural_analysis.graph_sa.result_presenting_structures.replace_sa_approach_result import \
+from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
+from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
@@ -30,8 +30,8 @@ class EdgeAnalysis:
     """
 
     def __init__(self, approaches: Optional[List[Type['EdgeAnalyzeApproach']]] = None,
-                 approaches_requirements: StructuralAnalysisRequirements = None,
-                 path_to_save=None):
+                 approaches_requirements: Optional[StructuralAnalysisRequirements] = None,
+                 path_to_save: Optional[str] = None):
 
         self.approaches = [EdgeDeletionAnalyze, EdgeReplaceOperationAnalyze] \
             if approaches is None else approaches
@@ -43,9 +43,9 @@ class EdgeAnalysis:
         self.approaches_requirements = \
             StructuralAnalysisRequirements() if approaches_requirements is None else approaches_requirements
 
-    def analyze(self, graph: OptGraph, edge: Edge,
+    def analyze(self, graph: Graph, edge: Edge,
                 objectives: List[Callable],
-                timer: OptimisationTimer = None) -> ObjectSAResult:
+                timer: Optional[OptimisationTimer] = None) -> ObjectSAResult:
         """
         Method runs Edge analysis within defined approaches
 
@@ -79,7 +79,7 @@ class EdgeAnalyzeApproach(ABC):
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
         self._graph = graph
@@ -96,7 +96,7 @@ class EdgeAnalyzeApproach(ABC):
             makedirs(self._path_to_save)
 
     @abstractmethod
-    def analyze(self, edge: Tuple[OptNode, OptNode], **kwargs) -> Union[List[dict], List[float]]:
+    def analyze(self, edge: Tuple[GraphNode, GraphNode], **kwargs) -> Union[List[dict], List[float]]:
         """ Creates the difference metric(scorer, index, etc) of the changed
         graph in relation to the original one
         :param edge: set of edges to analyze
@@ -104,11 +104,11 @@ class EdgeAnalyzeApproach(ABC):
         pass
 
     @abstractmethod
-    def sample(self, *args) -> Union[List[OptGraph], OptGraph]:
+    def sample(self, *args) -> Union[List[Graph], Graph]:
         """ Changes the graph according to the approach """
         pass
 
-    def _compare_with_origin_by_metrics(self, modified_graph: OptGraph) -> List[float]:
+    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> List[float]:
         """ Iterate through all objectives and evaluate modified graph """
         results = []
         for objective in self._objectives:
@@ -119,7 +119,7 @@ class EdgeAnalyzeApproach(ABC):
             results.append(metric)
         return results
 
-    def _compare_with_origin_by_metric(self, modified_graph: OptGraph,
+    def _compare_with_origin_by_metric(self, modified_graph: Graph,
                                        objective: Callable) -> float:
         """ Returns the ratio of metrics for the modified graph and the original one """
 
@@ -153,7 +153,7 @@ class EdgeAnalyzeApproach(ABC):
 
 
 class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objectives, requirements)
 
@@ -187,7 +187,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         results.add_results(metrics_values=losses)
         return results
 
-    def sample(self, edge: Edge) -> Optional[OptGraph]:
+    def sample(self, edge: Edge) -> Optional[Graph]:
         """
         Checks if it is possible to delete an edge from the graph so that it remains valid,
         and if so, deletes
@@ -220,7 +220,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
        and evaluate the score difference
     """
 
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objectives, requirements)
 
@@ -274,7 +274,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
     def sample(self, edge: Edge,
                edges_idxs_to_replace_to: Optional[List[Edge]],
                number_of_random_operations: Optional[int] = 1) \
-            -> Dict[str, Union[List[OptGraph], List[Dict[str, int]]]]:
+            -> Dict[str, Union[List[Graph], List[Dict[str, int]]]]:
         """
         Tries to replace the given edge with a pool of edges available for replacement (see _edge_generation docstring)
         and validates the resulting graphs

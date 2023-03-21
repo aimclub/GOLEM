@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
-from golem.core.optimisers.graph import OptNode
+from golem.core.dag.graph import GraphNode
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 
 ReplacementAnalysisMetaParams = namedtuple('ReplacementAnalysisMetaParams', ['edges_to_replace_to',
@@ -32,7 +32,7 @@ class StructuralAnalysisRequirements:
     def __init__(self,
                  graph_verifier: GraphVerifier = None,
                  main_metric_idx: int = 0,
-                 replacement_nodes_to_replace_to: Optional[List[OptNode]] = None,
+                 replacement_nodes_to_replace_to: Optional[List[GraphNode]] = None,
                  replacement_number_of_random_operations_nodes: Optional[int] = 3,
                  replacement_edges_to_replace_to: Optional[List[Edge]] = None,
                  replacement_number_of_random_operations_edges: Optional[int] = 3,

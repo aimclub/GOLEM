@@ -6,14 +6,14 @@ from os.path import exists, join
 from typing import List, Optional, Type, Union, Dict, Callable, Any
 
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.dag.graph import Graph, GraphNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.graph_sa.result_presenting_structures.deletion_sa_approach_result import \
+from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult
-from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_result import ObjectSAResult
-from golem.structural_analysis.graph_sa.result_presenting_structures.replace_sa_approach_result import \
+from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
+from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
@@ -28,8 +28,8 @@ class NodeAnalysis:
 
     def __init__(self, node_factory: Any,
                  approaches: Optional[List[Type['NodeAnalyzeApproach']]] = None,
-                 approaches_requirements: StructuralAnalysisRequirements = None,
-                 path_to_save=None):
+                 approaches_requirements: Optional[StructuralAnalysisRequirements] = None,
+                 path_to_save: Optional[str] = None):
 
         self.node_factory = node_factory
 
@@ -42,9 +42,9 @@ class NodeAnalysis:
         self.approaches_requirements = \
             StructuralAnalysisRequirements() if approaches_requirements is None else approaches_requirements
 
-    def analyze(self, graph: OptGraph, node: OptNode,
+    def analyze(self, graph: Graph, node: GraphNode,
                 objectives: List[Callable],
-                timer: OptimisationTimer = None) -> ObjectSAResult:
+                timer: Optional[OptimisationTimer] = None) -> ObjectSAResult:
 
         """
         Method runs Node analysis within defined approaches
@@ -78,7 +78,7 @@ class NodeAnalyzeApproach(ABC):
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None,
                  path_to_save=None):
@@ -97,7 +97,7 @@ class NodeAnalyzeApproach(ABC):
             makedirs(self._path_to_save)
 
     @abstractmethod
-    def analyze(self, node: OptNode, **kwargs) -> Union[List[dict], List[float]]:
+    def analyze(self, node: GraphNode, **kwargs) -> Union[List[dict], List[float]]:
         """Creates the difference metric(scorer, index, etc) of the changed
         graph in relation to the original one
         :param node: the sequence number of the node as in DFS result
@@ -105,11 +105,11 @@ class NodeAnalyzeApproach(ABC):
         pass
 
     @abstractmethod
-    def sample(self, *args) -> Union[List[OptGraph], OptGraph]:
+    def sample(self, *args) -> Union[List[Graph], Graph]:
         """Changes the graph according to the approach"""
         pass
 
-    def _compare_with_origin_by_metrics(self, modified_graph: OptGraph) -> List[float]:
+    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> List[float]:
         """ Iterate through all objectives and evaluate modified graph """
         results = []
         for objective in self._objectives:
@@ -118,7 +118,7 @@ class NodeAnalyzeApproach(ABC):
             results.append(metric)
         return results
 
-    def _compare_with_origin_by_metric(self, modified_graph: OptGraph,
+    def _compare_with_origin_by_metric(self, modified_graph: Graph,
                                        objective: Callable) -> float:
         """ Returns the ratio of metrics for the modified graph and the original one """
 
@@ -153,7 +153,7 @@ class NodeAnalyzeApproach(ABC):
 
 
 class NodeDeletionAnalyze(NodeAnalyzeApproach):
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objectives, node_factory, requirements)
@@ -162,11 +162,11 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, node: OptNode, **kwargs) -> DeletionSAApproachResult:
+    def analyze(self, node: GraphNode, **kwargs) -> DeletionSAApproachResult:
         """
         Receives a graph without the specified node and tries to calculate the loss for it
 
-        :param node: OptNode object to analyze
+        :param node: GraphNode object to analyze
         :return: the ratio of modified graph score to origin score
         """
         results = DeletionSAApproachResult()
@@ -186,12 +186,12 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
             results.add_results(metrics_values=losses)
             return results
 
-    def sample(self, node: OptNode):
+    def sample(self, node: GraphNode):
         """
         Checks if it is possible to delete the node from the graph so that it remains valid,
         and if so, deletes
 
-        :param node: OptNode object to delete from Graph object
+        :param node: GraphNode object to delete from Graph object
         :return: Graph object without node
         """
         graph_sample = deepcopy(self._graph)
@@ -218,7 +218,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
     and evaluate the score difference
     """
 
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objectives, node_factory, requirements)
@@ -228,11 +228,11 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, node: OptNode, **kwargs) -> ReplaceSAApproachResult:
+    def analyze(self, node: GraphNode, **kwargs) -> ReplaceSAApproachResult:
         """
         Counts the loss on each changed graph received and returns losses
 
-        :param node: OptNode object to analyze
+        :param node: GraphNode object to analyze
 
         :return: the ratio of modified graph score to origin score
         """
@@ -251,13 +251,13 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         return result
 
-    def sample(self, node: OptNode,
-               nodes_to_replace_to: Optional[List[OptNode]],
-               number_of_random_operations: int = 1) -> Union[List[OptGraph], OptGraph]:
+    def sample(self, node: GraphNode,
+               nodes_to_replace_to: Optional[List[GraphNode]],
+               number_of_random_operations: int = 1) -> Union[List[Graph], Graph]:
         """
         Replaces the given node with a pool of nodes available for replacement (see _node_generation docstring)
 
-        :param node: OptNode object to replace
+        :param node: GraphNode object to replace
         :param nodes_to_replace_to: nodes provided for old_node replacement
         :param number_of_random_operations: number of replacement operations, \
         if nodes_to_replace_to not provided
@@ -289,9 +289,9 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
         return samples
 
     def _node_generation(self,
-                         node: OptNode,
+                         node: GraphNode,
                          node_factory: OptNodeFactory,
-                         number_of_operations: int = 1) -> List[OptNode]:
+                         number_of_operations: int = 1) -> List[GraphNode]:
         """
         The method returns possible nodes that can replace the given node
 
@@ -319,7 +319,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
     """
     Approach to delete specified node subtree
     """
-    def __init__(self, graph: OptGraph, objectives: List[Callable],
+    def __init__(self, graph: Graph, objectives: List[Callable],
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objectives, node_factory, requirements)
@@ -329,12 +329,12 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
-    def analyze(self, node: OptNode, **kwargs) -> DeletionSAApproachResult:
+    def analyze(self, node: GraphNode, **kwargs) -> DeletionSAApproachResult:
         """
         Receives a graph without the specified node's subtree and
         tries to calculate the loss for it
 
-        :param node: OptNode object to analyze
+        :param node: GraphNode object to analyze
         :return: the ratio of modified graph score to origin score
         """
         results = DeletionSAApproachResult()
@@ -354,13 +354,13 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
             results.add_results(metrics_values=losses)
             return results
 
-    def sample(self, node: OptNode):
+    def sample(self, node: GraphNode):
         """
         Checks if it is possible to delete the node's subtree from the graph so that it remains valid,
         and if so, deletes
 
-        :param node: OptNode object from which to delete subtree from OptGraph object
-        :return: OptGraph object without subtree
+        :param node: GraphNode object from which to delete subtree from Graph object
+        :return: Graph object without subtree
         """
         graph_sample = deepcopy(self._graph)
         node_index_to_delete = self._graph.nodes.index(node)

@@ -3,18 +3,18 @@ from typing import Optional, List, Type, Callable
 import multiprocessing
 
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.dag.graph import Graph, GraphNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeAnalysis
-from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
+from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 class NodesAnalysis:
     """
-    This class is for nodes structural analysis within a OptGraph .
+    This class is for nodes structural analysis within a Graph .
     It takes nodes and approaches to be applied to chosen nodes.
     To define which nodes to analyze pass them to nodes_to_analyze filed
     or all nodes will be analyzed.
@@ -29,7 +29,8 @@ class NodesAnalysis:
     def __init__(self, objectives: List[Callable],
                  node_factory: OptNodeFactory,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
-                 requirements: StructuralAnalysisRequirements = None, path_to_save=None):
+                 requirements: Optional[StructuralAnalysisRequirements] = None,
+                 path_to_save: Optional[str] = None):
 
         self.objectives = objectives
         self.node_factory = node_factory
@@ -40,9 +41,9 @@ class NodesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
 
-    def analyze(self, graph: OptGraph, results: SAAnalysisResults = None,
-                nodes_to_analyze: List[OptNode] = None,
-                n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
+    def analyze(self, graph: Graph, results: SAAnalysisResults = None,
+                nodes_to_analyze: Optional[List[GraphNode]] = None,
+                n_jobs: int = -1, timer: Optional[OptimisationTimer] = None) -> SAAnalysisResults:
         """
         Main method to run the analyze process for every node.
 
@@ -51,7 +52,7 @@ class NodesAnalysis:
         :param nodes_to_analyze: nodes to analyze. Default: all nodes
         :param n_jobs: n_jobs
         :param timer: timer indicating how much time is left for optimization
-        :return nodes_results: dict with analysis result per OptNode
+        :return nodes_results: dict with analysis result per GraphNode
         """
 
         if not results:

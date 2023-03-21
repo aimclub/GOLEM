@@ -2,10 +2,10 @@ from typing import List, Callable, Tuple, Optional, Union
 
 from golem.core.dag.graph_node import GraphNode
 from golem.structural_analysis.graph_sa.entities.edge import Edge
-from golem.structural_analysis.graph_sa.result_presenting_structures.base_sa_approach_result import BaseSAApproachResult
-from golem.structural_analysis.graph_sa.result_presenting_structures.deletion_sa_approach_result import \
+from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
+from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult
-from golem.structural_analysis.graph_sa.result_presenting_structures.replace_sa_approach_result import \
+from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
 
 NODE_DELETION = 'NodeDeletionAnalyze'
@@ -15,7 +15,7 @@ EDGE_DELETION = 'EdgeDeletionAnalyze'
 EDGE_REPLACEMENT = 'EdgeReplaceOperationAnalyze'
 
 
-class StructuralAnalysisApproachesRepository:
+class StructuralAnalysisResultsRepository:
     approaches_dict = {NODE_DELETION: {'result_class': DeletionSAApproachResult},
                        NODE_REPLACEMENT: {'result_class': ReplaceSAApproachResult},
                        SUBTREE_DELETION: {'result_class': DeletionSAApproachResult},
@@ -50,7 +50,7 @@ class ObjectSAResult:
         for app in self.result_approaches:
             if app.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by) == worst_result:
                 entity_type = 'edge' if isinstance(self.entity, Edge) else 'node'
-                sa_approach_name = StructuralAnalysisApproachesRepository()\
+                sa_approach_name = StructuralAnalysisResultsRepository()\
                     .get_method_by_result_class(app, entity_type)
                 result = {'entity': self.entity, 'approach_name': sa_approach_name}
                 result.update(app.get_worst_result_with_names(metric_idx_to_optimize_by=metric_idx_to_optimize_by))

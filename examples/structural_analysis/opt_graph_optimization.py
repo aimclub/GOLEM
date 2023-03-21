@@ -33,19 +33,21 @@ def custom_metric(graph: OptGraph, visualisation: bool = False) -> float:
 
 if __name__ == "__main__":
     opt_graph = get_opt_graph()
-    opt_graph.show()
+    # opt_graph.show()
 
-    objective = Objective({'custom': custom_metric})
-    node_factory = DefaultOptNodeFactory()
+    for i in range(20):
+        opt_graph = get_opt_graph()
+        objective = Objective({'custom': custom_metric})
+        node_factory = DefaultOptNodeFactory()
 
-    opt_graph = get_opt_graph()
-    requirements = StructuralAnalysisRequirements(graph_verifier=GraphVerifier(DEFAULT_DAG_RULES),
-                                                  main_metric_idx=0,
-                                                  seed=1)
+        opt_graph = get_opt_graph()
+        requirements = StructuralAnalysisRequirements(graph_verifier=GraphVerifier(DEFAULT_DAG_RULES),
+                                                      main_metric_idx=0,
+                                                      seed=1)
 
-    # structural analysis will optimize given graph if at least one of the metrics was increased.
-    sa = GraphStructuralAnalysis(objectives=[objective] * 2, node_factory=node_factory,
-                                 requirements=requirements)
+        # structural analysis will optimize given graph if at least one of the metrics was increased.
+        sa = GraphStructuralAnalysis(objectives=[objective], node_factory=node_factory,
+                                     requirements=requirements)
 
-    optimized_graph = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=5)
-    optimized_graph.show()
+        optimized_graph = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=5)
+    # optimized_graph.show()

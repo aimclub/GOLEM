@@ -5,7 +5,7 @@ from typing import List, Callable, Any, Optional
 import multiprocessing
 
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.dag.graph import Graph, GraphNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
@@ -16,7 +16,7 @@ from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeDeletionAnalyze, \
     NodeReplaceOperationAnalyze, SubtreeDeletionAnalyze
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
-from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
+from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -72,8 +72,8 @@ class GraphStructuralAnalysis:
         self._log = default_log('SA')
         self.path_to_save = path_to_save
 
-    def analyze(self, graph: OptGraph,
-                nodes_to_analyze: List[OptNode] = None, edges_to_analyze: List[Edge] = None,
+    def analyze(self, graph: Graph,
+                nodes_to_analyze: List[GraphNode] = None, edges_to_analyze: List[Edge] = None,
                 n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
         Applies defined structural analysis approaches
@@ -107,9 +107,9 @@ class GraphStructuralAnalysis:
 
         return result
 
-    def optimize(self, graph: OptGraph,
+    def optimize(self, graph: Graph,
                  n_jobs: int = -1, timer: OptimisationTimer = None,
-                 max_iter: int = 10) -> OptGraph:
+                 max_iter: int = 10) -> Graph:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
         of graph iteratively """
 
@@ -156,18 +156,18 @@ class GraphStructuralAnalysis:
         self._log.message(f'{iter} iterations passed during SA')
         self._log.message(f'The following actions were applied during SA: {actions_applied}')
 
-        if isinstance(graph, OptGraph):
+        if isinstance(graph, Graph):
             return graph
         else:
             return graph_before_sa
 
     @staticmethod
-    def apply_results(graph: OptGraph, analysis_result: Optional[dict] = None) -> OptGraph:
+    def apply_results(graph: Graph, analysis_result: Optional[dict] = None) -> Graph:
         """ Optimizes graph by applying actions specified in analysis_result """
         pass
 
     @staticmethod
-    def graph_preprocessing(graph: OptGraph):
+    def graph_preprocessing(graph: Graph):
         """ Graph preprocessing, which consists in removing consecutive nodes
         with the same models/operations in the graph """
         for node_child in reversed(graph.nodes):
@@ -185,7 +185,7 @@ class GraphStructuralAnalysis:
         return graph
 
 
-def _save_iteration_results(graph_before_sa: OptGraph, save_path: str = None):
+def _save_iteration_results(graph_before_sa: Graph, save_path: str = None):
     """ Save visualizations for SA per iteration """
     json_path = os.path.join(save_path, 'results_per_iteration.json')
     graph_save_path = os.path.join(save_path, 'result_graphs')

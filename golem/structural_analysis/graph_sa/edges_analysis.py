@@ -4,18 +4,18 @@ from typing import Optional, List, Type, Callable
 import multiprocessing
 
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph
+from golem.core.dag.graph import Graph
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeAnalysis
 from golem.structural_analysis.graph_sa.entities.edge import Edge
-from golem.structural_analysis.graph_sa.result_presenting_structures.sa_analysis_results import SAAnalysisResults
+from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
 class EdgesAnalysis:
     """
-    This class is for edges structural analysis within an OptGraph .
+    This class is for edges structural analysis within an Graph .
     It takes edges and approaches to be applied to chosen edges.
     To define which edges to analyze pass them to edges_to_analyze filed
     or all edges will be analyzed.
@@ -28,8 +28,8 @@ class EdgesAnalysis:
 
     def __init__(self, objectives: List[Callable],
                  approaches: Optional[List[Type[EdgeAnalyzeApproach]]] = None,
-                 requirements: StructuralAnalysisRequirements = None,
-                 path_to_save=None):
+                 requirements: Optional[StructuralAnalysisRequirements] = None,
+                 path_to_save: Optional[str] = None):
 
         self.objectives = objectives
         self.approaches = approaches
@@ -39,9 +39,9 @@ class EdgesAnalysis:
         self.path_to_save = \
             join(default_data_dir(), 'structural', 'edges_structural') if path_to_save is None else path_to_save
 
-    def analyze(self, graph: OptGraph, results: SAAnalysisResults = None,
-                edges_to_analyze: List[Edge] = None,
-                n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
+    def analyze(self, graph: Graph, results: Optional[SAAnalysisResults] = None,
+                edges_to_analyze: Optional[List[Edge]] = None,
+                n_jobs: int = -1, timer: Optional[OptimisationTimer] = None) -> SAAnalysisResults:
         """
         Main method to run the analyze process for every edge.
 

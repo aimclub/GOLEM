@@ -1,8 +1,8 @@
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.dag.graph import Graph, GraphNode
 
 
-def nodes_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
+def nodes_deletion(graph: Graph, worst_result: dict) -> Graph:
     """ Extracts the node index from the entity key and removes it from the graph """
 
     node_to_delete = worst_result["entity"]
@@ -13,7 +13,7 @@ def nodes_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
     return graph
 
 
-def nodes_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
+def nodes_replacement(graph: Graph, worst_result: dict) -> Graph:
     """ Extracts the node index and the operation to which it needs to be replaced from the entity key
     and replaces the node with a new one """
 
@@ -33,7 +33,7 @@ def nodes_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
     return graph
 
 
-def subtree_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
+def subtree_deletion(graph: Graph, worst_result: dict) -> Graph:
     """ Extracts the node index from the entity key and removes its subtree from the graph """
 
     node_to_delete = worst_result["entity"]
@@ -43,7 +43,7 @@ def subtree_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
     return graph
 
 
-def edges_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
+def edges_deletion(graph: Graph, worst_result: dict) -> Graph:
     """ Extracts the edge's nodes indices from the entity key and removes edge from the graph """
 
     parent_node = worst_result['entity'].parent_node
@@ -54,7 +54,7 @@ def edges_deletion(graph: OptGraph, worst_result: dict) -> OptGraph:
     return graph
 
 
-def edges_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
+def edges_replacement(graph: Graph, worst_result: dict) -> Graph:
     """ Extracts the edge's nodes indices and the new edge to which it needs to be replaced from the entity key
     and replaces the edge with a new one """
 
@@ -75,7 +75,7 @@ def edges_replacement(graph: OptGraph, worst_result: dict) -> OptGraph:
     return graph
 
 
-def get_same_node_from_graph(graph: OptGraph, node: OptNode) -> OptNode:
+def get_same_node_from_graph(graph: Graph, node: GraphNode) -> GraphNode:
     """ Returns the same node but from particular graph. """
     for cur_node in graph.nodes:
         if cur_node.description() == node.description():

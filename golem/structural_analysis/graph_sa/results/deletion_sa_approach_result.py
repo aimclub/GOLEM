@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from golem.structural_analysis.graph_sa.result_presenting_structures.base_sa_approach_result import BaseSAApproachResult
+from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
 
 
 class DeletionSAApproachResult(BaseSAApproachResult):

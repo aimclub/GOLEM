@@ -1,14 +1,14 @@
 from typing import List, Tuple, Callable, Optional
 
-from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.dag.graph import Graph, GraphNode
 from golem.structural_analysis.graph_sa.entities.edge import Edge
-from golem.structural_analysis.graph_sa.result_presenting_structures.object_sa_result import ObjectSAResult
+from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
 
 
 class SAAnalysisResults:
     """ Class presenting results of Structural Analysis for the whole graph. """
-    def __init__(self, graph: OptGraph,
-                 nodes_to_analyze: List[OptNode] = None, edges_to_analyze: List[Edge] = None):
+    def __init__(self, graph: Graph,
+                 nodes_to_analyze: List[GraphNode] = None, edges_to_analyze: List[Edge] = None):
 
         self.nodes_to_analyze = nodes_to_analyze or graph.nodes
         self.edges_to_analyze = edges_to_analyze or graph.get_edges()
