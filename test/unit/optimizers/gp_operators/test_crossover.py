@@ -5,9 +5,11 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from test.unit.utils import graph_first, graph_second, graph_sixth, graph_seventh, graph_eighth, graph_ninth, graph_with_single_node
+import pytest
 
 
-def test_crossover_zero_probability():
+@pytest.mark.parametrize('crossover_type', CrossoverTypesEnum)
+def test_crossover_zero_probability(crossover_type):
     graph_example_first = graph_first()
     graph_example_second = graph_second()
     
@@ -16,11 +18,10 @@ def test_crossover_zero_probability():
     parameters = GPAlgorithmParameters(crossover_prob=0)
     crossover = Crossover(parameters, requirements, graph_generation_params)
 
-    for crossover_type in CrossoverTypesEnum:
-        crossover.parameters.crossover_types = [crossover_type]
-        new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
-        assert new_graphs[0].graph == graph_example_first
-        assert new_graphs[1].graph == graph_example_second    
+    crossover.parameters.crossover_types = [crossover_type]
+    new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
+    assert new_graphs[0].graph == graph_example_first
+    assert new_graphs[1].graph == graph_example_second    
 
 
 def test_crossover_none():
@@ -66,7 +67,8 @@ def test_crossover_exchange_parents_both():
     assert any([new_graphs[1] == graph for graph in valid_graphs])  
 
 
-def test_crossover_with_single_node():
+@pytest.mark.parametrize('crossover_type', CrossoverTypesEnum)
+def test_crossover_with_single_node(crossover_type):
     graph_example_first = graph_with_single_node()
     graph_example_second = graph_with_single_node()
 
@@ -75,8 +77,7 @@ def test_crossover_with_single_node():
     parameters = GPAlgorithmParameters(crossover_prob=1)
     crossover = Crossover(parameters, requirements, graph_generation_params)
 
-    for crossover_type in CrossoverTypesEnum:
-        crossover.parameters.crossover_types = [crossover_type]
-        new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
-        assert new_graphs[0].graph == graph_example_first
-        assert new_graphs[1].graph == graph_example_second    
+    crossover.parameters.crossover_types = [crossover_type]
+    new_graphs = crossover([Individual(graph_example_first), Individual(graph_example_second)])
+    assert new_graphs[0].graph == graph_example_first
+    assert new_graphs[1].graph == graph_example_second    
