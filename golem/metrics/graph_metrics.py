@@ -21,13 +21,13 @@ def nxgraph_stats(graph: nx.Graph):
     return stats
 
 
-def degree_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
+def degree_distance_kernel(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     return degree_stats([graph], [target_graph])
 
 
-def degree_dist_weighted(target_graph: nx.DiGraph,
-                         graph: nx.DiGraph,
-                         normalized: bool = False) -> float:
+def degree_distance(target_graph: nx.DiGraph,
+                    graph: nx.DiGraph,
+                    normalized: bool = False) -> float:
     # Compute histogram of node degrees
     degrees_t = np.array(nx.degree_histogram(target_graph), dtype=float)
     degrees_g = np.array(nx.degree_histogram(graph), dtype=float)

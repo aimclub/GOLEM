@@ -57,7 +57,7 @@ def graph_search_setup(target_graph: nx.DiGraph,
             'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
         },
         complexity_metrics={
-            'degree': partial(degree_dist, target_graph),
+            'degree': partial(degree_distance, target_graph),
             'graph_size': partial(size_diff, target_graph),
         },
         is_multi_objective=True

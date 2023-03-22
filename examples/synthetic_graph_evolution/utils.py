@@ -7,9 +7,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib import cm
-from networkx import gnp_random_graph
 
-from golem.metrics.graph_metrics import spectral_dists_all, nxgraph_stats, degree_dist, degree_dist_weighted
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.graph_viz import GraphVisualizer

@@ -22,8 +22,8 @@ def get_all_quality_metrics(target_graph):
         'sp_lapl': partial(spectral_dist, target_graph, kind='laplacian'),
         'sp_lapl_norm': partial(spectral_dist, target_graph, kind='laplacian_norm'),
         'graph_size': partial(size_diff, target_graph),
-        'degree_dist_mmd': partial(degree_dist, target_graph),
-        'degree_dist': partial(degree_dist_weighted, target_graph),
+        'degree_dist_mmd': partial(degree_distance_kernel, target_graph),
+        'degree_dist': partial(degree_distance, target_graph),
     }
     return quality_metrics
 
