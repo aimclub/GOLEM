@@ -179,27 +179,3 @@ class SimultaneousTuner(HyperoptTuner):
 
         return metric_value
 
-    @staticmethod
-    def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
-
-        Args:
-            graph: graph to which parameters should be assigned
-            parameters: dictionary with parameters to set
-
-        Returns:
-            graph: graph with new hyperparameters in each node
-        """
-        # Set hyperparameters for every node
-        for node_id, node in enumerate(graph.nodes):
-            node_params = {key: value for key, value in parameters.items()
-                           if key.startswith(f'{str(node_id)} || {node.name}')}
-
-            if node_params is not None:
-                # Delete all prefix strings to get appropriate parameters names
-                new_params = convert_params(node_params)
-
-                # Update parameters in nodes
-                graph.nodes[node_id].parameters = new_params
-
-        return graph

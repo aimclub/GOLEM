@@ -187,24 +187,3 @@ class SequentialTuner(HyperoptTuner):
 
         metric_value = self.get_metric_value(graph=graph)
         return metric_value
-
-    @staticmethod
-    def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
-
-        Args:
-            graph: graph which contains the node
-            node_id: id of the node to which parameters should be assigned
-            node_params: dictionary with labeled parameters to set
-
-        Returns:
-            graph with new hyperparameters in each node
-        """
-
-        # Remove label prefixes
-        node_params = convert_params(node_params)
-
-        # Update parameters in nodes
-        graph.nodes[node_id].parameters = node_params
-
-        return graph
