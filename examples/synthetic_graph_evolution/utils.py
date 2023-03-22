@@ -77,9 +77,11 @@ def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
 
 
 def draw_graphs_subplots(*graphs: nx.Graph,
+                         titles: Optional[Sequence[str]] = None,
                          draw_fn=nx.draw_kamada_kawai,
                          size=10):
     graphs = [graphs] if not isinstance(graphs, Iterable) else graphs
+    titles = [f'Graph #{i+1}' for i in range(len(graphs))] if not titles else titles
     # Setup subplots
     ncols = int(np.ceil(np.sqrt(len(graphs))))
     nrows = len(graphs) // ncols
@@ -88,10 +90,11 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     fig, axs = plt.subplots(nrows, ncols, figsize=figsize)
     axs = np.atleast_2d(axs)
     # Draw graphs
-    for ax, graph in zip(chain(*axs), graphs):
+    for title, ax, graph in zip(titles, chain(*axs), graphs):
         colors, labeldict, legend_handles = _get_node_colors_and_labels(graph)
         draw_fn(graph, ax=ax, arrows=True,
                 node_color=colors, with_labels=True, labels=labeldict)
+        ax.set_title(title)
     fig.legend(handles=legend_handles)
     plt.show()
 

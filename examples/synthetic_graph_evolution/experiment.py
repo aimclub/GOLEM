@@ -69,7 +69,8 @@ def run_experiments(optimizer_setup: Callable,
             print('target graph stats: ', nxgraph_stats(target_graph), file=log)
             print('found graph stats: ', nxgraph_stats(found_nx_graph), file=log)
             if visualize:
-                draw_graphs_subplots(target_graph, found_nx_graph)
+                draw_graphs_subplots(target_graph, found_nx_graph,
+                                     titles=['Target Graph', 'Found Graph'])
                 history.show.fitness_line()
             history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
 
