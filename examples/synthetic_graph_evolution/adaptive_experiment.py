@@ -87,5 +87,6 @@ def run_adaptive_mutations(
 if __name__ == '__main__':
     run_adaptive_mutations(#gnp_probs=np.arange(0.05, 0.35, 0.05),
                            gnp_probs=[0.15, 0.3],
-                           trial_iterations=20,
+                           graph_size=100,
+                           trial_iterations=150,
                            visualize=True)

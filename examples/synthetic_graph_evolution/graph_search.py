@@ -65,6 +65,22 @@ def graph_search_setup(target_graph: nx.DiGraph,
         is_multi_objective=gp_params.multi_objective,
     )
 
+    ### Edge to node ratio
+    # def edge2node_ratio(graph) -> float:
+    #     return - graph.number_of_edges() / graph.number_of_nodes()
+    #
+    # target = edge2node_ratio(target_graph)
+    #
+    # objective = Objective({'edge/node ratio':
+    #                            edge2node_ratio
+    #                            # lambda graph: abs(target - edge2node_ratio(graph))
+    #                        })
+
+    ### Graph size
+    # objective = Objective({'graph_size': lambda graph: -graph.number_of_nodes()})
+    objective = Objective({'graph_size': lambda graph: abs(target_graph.number_of_nodes() -
+                                                           graph.number_of_nodes())})
+
     # Generate simple initial population with line graphs
     initial_graphs = [generate_labeled_graph('line', k+3, node_types)
                       for k in range(gp_params.pop_size)]
