@@ -5,7 +5,7 @@ from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashabl
 import numpy as np
 
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum
+from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum, MutationStrengthEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
