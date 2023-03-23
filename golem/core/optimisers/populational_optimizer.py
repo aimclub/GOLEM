@@ -115,8 +115,8 @@ class PopulationalOptimizer(GraphOptimizer):
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
                            metadata: Optional[Dict[str, Any]] = None):
         self.generations.append(next_population)
-        self._optimisation_callback(next_population, self.generations)
         self._log_to_history(next_population, label, metadata)
+        self._iteration_callback(next_population, self)
         self.population = next_population
 
         self.log.info(f'Generation num: {self.current_generation_num} size: {len(next_population)}')
