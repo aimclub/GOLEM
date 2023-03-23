@@ -61,10 +61,10 @@ class SequentialTuner(HyperoptTuner):
             operation_name = node.name
 
             # Get node's parameters to optimize
-            node_params = self.search_space.get_node_params(node_id=node_id,
-                                                            operation_name=operation_name)
+            node_params = self.search_space.get_node_params_for_hyperopt(node_id=node_id,
+                                                                         operation_name=operation_name)
 
-            if node_params is None:
+            if not node_params:
                 self.log.info(f'"{operation_name}" operation has no parameters to optimize')
             else:
                 # Apply tuning for current node
@@ -115,10 +115,10 @@ class SequentialTuner(HyperoptTuner):
         operation_name = node.name
 
         # Get node's parameters to optimize
-        node_params = self.search_space.get_node_params(node_id=node_index,
-                                                        operation_name=operation_name)
+        node_params = self.search_space.get_node_params_for_hyperopt(node_id=node_index,
+                                                                     operation_name=operation_name)
 
-        if node_params is None:
+        if not node_params:
             self._stop_tuning_with_message(f'"{operation_name}" operation has no parameters to optimize')
         else:
             # Apply tuning for current node

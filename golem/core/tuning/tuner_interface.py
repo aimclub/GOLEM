@@ -21,14 +21,17 @@ DomainGraphForTune = TypeVar('DomainGraphForTune')
 
 class BaseTuner(Generic[DomainGraphForTune]):
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
+                 search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
-                 iterations=100,
+                 iterations: int = 100,
                  n_jobs: int = -1):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
+        self.search_space = search_space
         self.n_jobs = n_jobs
         objective_evaluate.eval_n_jobs = self.n_jobs
         self.objective_evaluate = self.adapter.adapt_func(objective_evaluate.evaluate)
+
         self._default_metric_value = MAX_TUNING_METRIC_VALUE
         self.was_tuned = False
         self.init_graph = None
@@ -112,16 +115,15 @@ class HyperoptTuner(BaseTuner, ABC):
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
-                 iterations=100, early_stopping_rounds=None,
+                 iterations: int = 100, early_stopping_rounds=None,
                  timeout: timedelta = timedelta(minutes=5),
                  algo: Callable = None,
                  n_jobs: int = -1,
                  deviation: float = 0.05):
-        super().__init__(objective_evaluate, adapter, iterations, n_jobs)
+        super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs)
         iteration_stop_count = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
         self.early_stop_fn = no_progress_loss(iteration_stop_count=iteration_stop_count)
         self.max_seconds = int(timeout.seconds) if timeout is not None else None
-        self.search_space = search_space
         self.algo = algo
         self.deviation = deviation
         self.log = default_log(self)

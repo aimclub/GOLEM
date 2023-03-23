@@ -6,7 +6,7 @@ from hyperopt import Trials, fmin, space_eval
 from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import Timer
-from golem.core.tuning.search_space import get_node_operation_parameter_label, convert_params
+from golem.core.tuning.search_space import get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
 
 
@@ -14,6 +14,7 @@ class SimultaneousTuner(HyperoptTuner):
     """
         Class for hyperparameters optimization for all nodes simultaneously
     """
+
     def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         """ Function for hyperparameters tuning on the entire graph
 
@@ -139,13 +140,11 @@ class SimultaneousTuner(HyperoptTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            node_params = self.search_space.get_node_params(node_id=node_id,
-                                                            operation_name=operation_name)
+            node_params = self.search_space.get_node_params_for_hyperopt(node_id=node_id,
+                                                                         operation_name=operation_name)
+            parameters_dict.update(node_params)
 
-            if node_params is not None:
-                parameters_dict.update(node_params)
-
-            tunable_node_params = self.search_space.get_operation_parameter_range(operation_name)
+            tunable_node_params = self.search_space.get_parameters_for_operation(operation_name)
             if tunable_node_params:
                 tunable_initial_params = {get_node_operation_parameter_label(node_id, operation_name, p):
                                               node.parameters[p] for p in node.parameters if p in tunable_node_params}
@@ -178,4 +177,3 @@ class SimultaneousTuner(HyperoptTuner):
         metric_value = self.get_metric_value(graph=graph)
 
         return metric_value
-

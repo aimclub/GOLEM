@@ -1,5 +1,8 @@
 from typing import Dict, Tuple, Callable, List
 
+import numpy as np
+from hyperopt import hp
+
 
 class SearchSpace:
     """
@@ -8,13 +11,13 @@ class SearchSpace:
             {'operation_name': {'param_name': (hyperopt distribution function, [sampling scope]), ...}, ...},
             e.g. ``{'operation_name': {'param1': (hp.uniformint, [2, 21]), ...}, ..}
     """
+
     def __init__(self, search_space: Dict[str, Dict[str, Tuple[Callable, List]]]):
         self.parameters_per_operation = search_space
 
-    def get_operation_parameter_range(self, operation_name: str, parameter_name: str = None, label: str = 'default'):
+    def get_parameter_hyperopt_space(self, operation_name: str, parameter_name: str, label: str = 'default'):
         """
         Method return hyperopt object with search_space from search_space dictionary
-        If parameter name is not defined - return all available operations
 
         Args:
             operation_name: name of the operation
@@ -29,16 +32,16 @@ class SearchSpace:
         operation_parameters = self.parameters_per_operation.get(operation_name)
 
         if operation_parameters is not None:
-            # If there are not parameter_name - return list with all parameters
-            if parameter_name is None:
-                return list(operation_parameters)
-            else:
-                hyperopt_tuple = operation_parameters.get(parameter_name)
-                return hyperopt_tuple[0](label, *hyperopt_tuple[1])
+            parameter_properties = operation_parameters.get(parameter_name)
+            hyperopt_distribution = parameter_properties.get('hyperopt_dist')
+            sampling_scope = parameter_properties.get('sampling_scope')
+            if hyperopt_distribution == hp.loguniform:
+                sampling_scope = [np.log(x) for x in sampling_scope]
+            return hyperopt_distribution(label, *sampling_scope)
         else:
             return None
 
-    def get_node_params(self, node_id, operation_name):
+    def get_node_params_for_hyperopt(self, node_id, operation_name):
         """
         Method for forming dictionary with hyperparameters for considering
         operation as a part of the whole graph
@@ -50,24 +53,45 @@ class SearchSpace:
         and their range per operation
         """
 
-        # Get available parameters for operation
-        params_list = self.get_operation_parameter_range(operation_name)
+        # Get available parameters for current operation
+        params_list = self.get_parameters_for_operation(operation_name)
 
-        if params_list is None:
-            params_dict = None
-        else:
-            params_dict = {}
-            for parameter_name in params_list:
-                node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
+        params_dict = {}
+        for parameter_name in params_list:
+            node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
-                # For operation get range where search can be done
-                space = self.get_operation_parameter_range(operation_name=operation_name,
-                                                           parameter_name=parameter_name,
-                                                           label=node_op_parameter_name)
+            # For operation get range where search can be done
+            space = self.get_parameter_hyperopt_space(operation_name=operation_name,
+                                                      parameter_name=parameter_name,
+                                                      label=node_op_parameter_name)
 
-                params_dict.update({node_op_parameter_name: space})
+            params_dict.update({node_op_parameter_name: space})
 
         return params_dict
+
+    def get_node_params_for_iopt(self, node_id, operation_name):
+        # Get available parameters for operation
+        params_dict = self.parameters_per_operation.get(operation_name)
+
+        discrete_params_dict = {}
+        float_params_dict = {}
+
+        if params_dict is not None:
+
+            for parameter_name, parameter_properties in params_dict.items():
+                node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
+
+                parameter_type = parameter_properties.get(type)
+                if parameter_type == 'discrete':
+                    discrete_params_dict.update({node_op_parameter_name, parameter_properties.get('sampling_scope')})
+                elif parameter_type == 'continuous':
+                    float_params_dict.update({node_op_parameter_name, parameter_properties.get('sampling_scope')})
+
+        return float_params_dict, discrete_params_dict
+
+    def get_parameters_for_operation(self, operation_name: str) -> List[str]:
+        params_list = list(self.parameters_per_operation.get(operation_name).keys())
+        return params_list
 
 
 def get_node_operation_parameter_label(node_id: int, operation_name: str, parameter_name: str) -> str:
