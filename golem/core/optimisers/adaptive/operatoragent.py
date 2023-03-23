@@ -60,11 +60,11 @@ class ExperienceBuffer:
 
 class OperatorAgent(ABC):
     @abstractmethod
-    def choose_action(self, obs: Optional[ObsType]) -> ActType:
+    def partial_fit(self, experience: ExperienceBuffer):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_action_probs(self, obs: Optional[ObsType]) -> Sequence[float]:
+    def choose_action(self, obs: Optional[ObsType]) -> ActType:
         raise NotImplementedError()
 
     @abstractmethod
@@ -72,7 +72,11 @@ class OperatorAgent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def partial_fit(self, experience: ExperienceBuffer):
+    def get_action_probs(self, obs: Optional[ObsType]) -> Sequence[float]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_action_values(self, obs: Optional[ObsType]) -> Sequence[float]:
         raise NotImplementedError()
 
 
@@ -90,9 +94,6 @@ class RandomAgent(OperatorAgent):
         action = np.random.choice(self.actions, p=self.get_action_probs(obs))
         return action
 
-    def get_action_probs(self, obs: ObsType) -> Optional[Sequence[float]]:
-        return self._probs
-
     def choose_nodes(self, graph: Graph, num_nodes: int = 1) -> Union[GraphNode, Sequence[GraphNode]]:
         subject_nodes = random.sample(graph.nodes, k=num_nodes)
         return subject_nodes[0] if num_nodes == 1 else subject_nodes
@@ -100,6 +101,12 @@ class RandomAgent(OperatorAgent):
     def partial_fit(self, experience: ExperienceBuffer):
         actions, rewards = experience.get_experience()
         self._dbg_log(actions, rewards)
+
+    def get_action_probs(self, obs: ObsType) -> Optional[Sequence[float]]:
+        return self._probs
+
+    def get_action_values(self, obs: ObsType) -> Optional[Sequence[float]]:
+        return self._probs
 
     def _dbg_log(self, actions, rewards):
         if self._enable_logging:

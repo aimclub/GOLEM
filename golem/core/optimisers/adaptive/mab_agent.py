@@ -30,18 +30,18 @@ class MultiArmedBanditAgent(OperatorAgent):
         uniform_rewards = [1. / n] * n
         self._agent.fit(decisions=self._indices, rewards=uniform_rewards)
 
-    def _action_values(self) -> Sequence[float]:
-        prob_dict = self._agent.predict_expectations()
-        prob_list = [prob_dict[i] for i in range(len(prob_dict))]
-        return prob_list
-
     def choose_action(self, obs: ObsType) -> ActType:
         arm = self._agent.predict()
         action = self.actions[arm]
         return action
 
-    def get_action_probs(self, obs: Optional[ObsType] = None) -> Optional[Sequence[float]]:
-        return softmax(self._action_values())
+    def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
+        prob_dict = self._agent.predict_expectations()
+        prob_list = [prob_dict[i] for i in range(len(prob_dict))]
+        return prob_list
+
+    def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:
+        return softmax(self.get_action_values())
 
     def choose_nodes(self, graph: Graph, num_nodes: int = 1) -> Union[GraphNode, Sequence[GraphNode]]:
         subject_nodes = random.sample(graph.nodes, k=num_nodes)
@@ -65,5 +65,5 @@ class MultiArmedBanditAgent(OperatorAgent):
             self._log.info(msg)
             self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
 
-            self._log.info(f'exp={np.round(self._action_values(), prec)} '
+            self._log.info(f'exp={np.round(self.get_action_values(), prec)} '
                            f'probs={np.round(self.get_action_probs(), prec)}')
