@@ -118,6 +118,61 @@ def graph_fifth():
     return graph
 
 
+def graph_sixth():
+    #    a
+    #  /
+    # b ––– c
+    
+    node_a = LinkedGraphNode('a')     
+    node_b = LinkedGraphNode('b', nodes_from=[node_a])
+    node_c = LinkedGraphNode('c', nodes_from=[node_b])
+    
+    graph = GraphDelegate(node_c)
+    return graph
+
+def graph_seventh():
+    #  b    c
+    #   \  /
+    #    a
+    
+    node_a = LinkedGraphNode('a')  
+    node_b = LinkedGraphNode('b', nodes_from=[node_a])     
+    node_c = LinkedGraphNode('c', nodes_from=[node_a])
+    
+    graph = GraphDelegate() 
+    graph.add_node(node_b) 
+    graph.add_node(node_c)
+    return graph
+
+
+def graph_eighth():
+    #    a
+    #      \
+    # b ––– c
+    
+    node_a = LinkedGraphNode('a')     
+    node_b = LinkedGraphNode('b')
+    node_c = LinkedGraphNode('c', nodes_from=[node_a, node_b])
+    
+    graph = GraphDelegate(node_c)
+    return graph    
+
+
+def graph_ninth():
+    #    a
+    #  /
+    # b     c
+    
+    node_a = LinkedGraphNode('a')     
+    node_b = LinkedGraphNode('b', nodes_from=[node_a])
+    node_c = LinkedGraphNode('c')
+    
+    graph = GraphDelegate()
+    graph.add_node(node_b)
+    graph.add_node(node_c)
+    return graph
+
+
 def graph_with_single_node():
     node = LinkedGraphNode('a')
     graph = GraphDelegate(node)
