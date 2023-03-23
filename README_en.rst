@@ -5,7 +5,9 @@
 
 .. class:: center
 
-    |python| |pypi| |build| |docs| |license| |tg| |rus|
+    |sai| |itmo|
+
+    |python| |pypi| |build| |docs| |license| |tg| |rus| |mirror|
 
 
 Graph Optimization and Learning by Evolutionary Methods
@@ -110,12 +112,10 @@ workshops for their valuable advice and suggestions.
 Supported by
 ============
 
-.. image:: /docs/source/img/AIM-Strong_Sign_Norm-01_Colors.svg
-    :width: 400px
-    :align: center
-    :alt: Strong AI in industry logo
-
-The study is supported by the Research Center `Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`__ of `ITMO University <https://en.itmo.ru/>`__.
+The study is supported by the Research Center Strong Artificial Intelligence in Industry of ITMO University
+as part of the center's program:
+"Development and testing of an experimental prototype of the library of algorithms of strong AI
+in terms of basic algorithms of AutoML for structural learning of composite AI models, including automation of feature selection".
 
 Contacts
 ========
@@ -189,3 +189,15 @@ There are various cases solved with GOLEM's algorithms:
 
 .. |rus| image:: https://img.shields.io/badge/lang-ru-yellow.svg
             :target: /README.rst
+
+.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
+   :alt: Acknowledgement to ITMO
+   :target: https://en.itmo.ru/en/
+
+.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+   :alt: Acknowledgement to SAI
+   :target: https://sai.itmo.ru/
+
+.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+   :alt: GitLab mirror for this repository
+   :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

@@ -5,7 +5,9 @@
 
 .. class:: center
 
-    |python| |pypi| |build| |docs| |license| |tg| |eng|
+    |sai| |itmo|
+
+    |python| |pypi| |build| |docs| |license| |tg| |eng| |mirror|
 
 
 Оптимизация и обучение графовых моделей эволюционными методами
@@ -109,15 +111,15 @@ GOLEM можно установить с помощью ``pip``:
 Мы благодарны контрибьютерам за их важный вклад, а участникам многочисленных конференций и семинаров -
 за их ценные советы и предложения.
 
-Разработка ведётся при поддержке
-================================
+Поддержка
+=========
 
-.. image:: /docs/source/img/AIM-Strong_Sign_Norm-01_Colors.svg
-    :width: 400px
-    :align: center
-    :alt: Strong AI in industry logo
-
-Разработка поддерживается исследовательским центром `Сильный искусственный интеллект в промышленности <https://sai.itmo.ru/>`__ `Университета ИТМО <https://itmo.ru/>`__.
+Исследование проводится при поддержке Исследовательского центра сильного искусственного интеллекта в промышленности Университета ИТМО в рамках программы центра:
+М1. Выполнение опережающих исследований и разработок в области алгоритмов сильного ИИ.
+Мероприятие плана центра: Разработка и испытания экспериментального образца
+библиотеки алгоритмов сильного ИИ в части структурного обучения композитных математических моделей,
+представимых в форме вычислительных графов и их узлов
+(в т. ч. уравнений математической физики, вероятностных графовых моделей), для задач извлечения и структурирования знаний.
 
 Контакты
 ========
@@ -191,3 +193,15 @@ GOLEM можно установить с помощью ``pip``:
 
 .. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
             :target: /README_en.rst
+
+.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
+   :alt: Acknowledgement to ITMO
+   :target: https://itmo.ru
+
+.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+   :alt: Acknowledgement to SAI
+   :target: https://sai.itmo.ru/
+
+.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+   :alt: GitLab mirror for this repository
+   :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM
