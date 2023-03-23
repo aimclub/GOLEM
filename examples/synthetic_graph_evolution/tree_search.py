@@ -16,7 +16,7 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.metrics.edit_distance import tree_edit_dist
-from golem.metrics.graph_metrics import size_diff, degree_distance
+from golem.metrics.graph_metrics import degree_distance
 
 
 def tree_search_setup(target_graph: nx.DiGraph,
@@ -73,9 +73,12 @@ def tree_search_setup(target_graph: nx.DiGraph,
 
 
 if __name__ == '__main__':
-    """In this experiment Optimizer is expected to find the target graph 
+    """
+    In this experiment Optimizer is expected to find the target graph 
     (exact or almost exact, depending on available time and graph complexity)
     using Tree Edit Distance metric and a random tree (nx.random_tree) as target.
+    
+    This convergence can be seen from achieved metrics and visually from graph plots.
     """
     results_log = run_experiments(optimizer_setup=tree_search_setup,
                                   optimizer_cls=EvoGraphOptimizer,

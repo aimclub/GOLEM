@@ -10,6 +10,7 @@ from matplotlib import cm
 
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 from golem.visualisation.graph_viz import GraphVisualizer
 
 
@@ -80,7 +81,7 @@ def draw_graphs_subplots(*graphs: nx.Graph,
                          titles: Optional[Sequence[str]] = None,
                          draw_fn=nx.draw_kamada_kawai,
                          size=10):
-    graphs = [graphs] if not isinstance(graphs, Iterable) else graphs
+    graphs = ensure_wrapped_in_sequence(graphs)
     titles = [f'Graph #{i+1}' for i in range(len(graphs))] if not titles else titles
     # Setup subplots
     ncols = int(np.ceil(np.sqrt(len(graphs))))
