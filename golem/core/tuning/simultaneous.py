@@ -140,8 +140,8 @@ class SimultaneousTuner(HyperoptTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            node_params = self.search_space.get_node_params_for_hyperopt(node_id=node_id,
-                                                                         operation_name=operation_name)
+            node_params = self.search_space.get_node_parameters_for_hyperopt(node_id=node_id,
+                                                                             operation_name=operation_name)
             parameters_dict.update(node_params)
 
             tunable_node_params = self.search_space.get_parameters_for_operation(operation_name)

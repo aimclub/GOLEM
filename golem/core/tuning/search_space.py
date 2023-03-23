@@ -41,7 +41,7 @@ class SearchSpace:
         else:
             return None
 
-    def get_node_params_for_hyperopt(self, node_id, operation_name):
+    def get_node_parameters_for_hyperopt(self, node_id, operation_name):
         """
         Method for forming dictionary with hyperparameters for considering
         operation as a part of the whole graph
@@ -49,15 +49,15 @@ class SearchSpace:
         :param node_id: number of node in graph.nodes list
         :param operation_name: name of operation in the node
 
-        :return params_dict: dictionary-like structure with labeled hyperparameters
+        :return parameters_dict: dictionary-like structure with labeled hyperparameters
         and their range per operation
         """
 
         # Get available parameters for current operation
-        params_list = self.get_parameters_for_operation(operation_name)
+        parameters_list = self.get_parameters_for_operation(operation_name)
 
-        params_dict = {}
-        for parameter_name in params_list:
+        parameters_dict = {}
+        for parameter_name in parameters_list:
             node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
             # For operation get range where search can be done
@@ -65,33 +65,33 @@ class SearchSpace:
                                                       parameter_name=parameter_name,
                                                       label=node_op_parameter_name)
 
-            params_dict.update({node_op_parameter_name: space})
+            parameters_dict.update({node_op_parameter_name: space})
 
-        return params_dict
+        return parameters_dict
 
-    def get_node_params_for_iopt(self, node_id, operation_name):
+    def get_node_parameters_for_iopt(self, node_id, operation_name):
         # Get available parameters for operation
-        params_dict = self.parameters_per_operation.get(operation_name)
+        parameters_dict = self.parameters_per_operation.get(operation_name)
 
-        discrete_params_dict = {}
-        float_params_dict = {}
+        discrete_parameters_dict = {}
+        float_parameters_dict = {}
 
-        if params_dict is not None:
+        if parameters_dict is not None:
 
-            for parameter_name, parameter_properties in params_dict.items():
+            for parameter_name, parameter_properties in parameters_dict.items():
                 node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
                 parameter_type = parameter_properties.get('type')
                 if parameter_type == 'discrete':
-                    discrete_params_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
+                    discrete_parameters_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
                 elif parameter_type == 'continuous':
-                    float_params_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
+                    float_parameters_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
 
-        return float_params_dict, discrete_params_dict
+        return float_parameters_dict, discrete_parameters_dict
 
     def get_parameters_for_operation(self, operation_name: str) -> List[str]:
-        params_list = list(self.parameters_per_operation.get(operation_name, {}).keys())
-        return params_list
+        parameters_list = list(self.parameters_per_operation.get(operation_name, {}).keys())
+        return parameters_list
 
 
 def get_node_operation_parameter_label(node_id: int, operation_name: str, parameter_name: str) -> str:
@@ -103,20 +103,20 @@ def get_node_operation_parameter_label(node_id: int, operation_name: str, parame
     return node_op_parameter_name
 
 
-def convert_params(params):
+def convert_parameters(parameters):
     """
     Function removes labels from dictionary with operations
 
-    :param params: labeled parameters
-    :return new_params: dictionary without labels of node_id and operation_name
+    :param parameters: labeled parameters
+    :return new_parameters: dictionary without labels of node_id and operation_name
     """
 
-    new_params = {}
-    for operation_parameter, value in params.items():
+    new_parameters = {}
+    for operation_parameter, value in parameters.items():
         # Remove right part of the parameter name
         parameter_name = operation_parameter.split(' | ')[-1]
 
         if value is not None:
-            new_params.update({parameter_name: value})
+            new_parameters.update({parameter_name: value})
 
-    return new_params
+    return new_parameters

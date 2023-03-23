@@ -7,7 +7,7 @@ from hyperopt import tpe, fmin, space_eval
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
-from golem.core.tuning.search_space import SearchSpace, convert_params
+from golem.core.tuning.search_space import SearchSpace, convert_parameters
 from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
 
 
@@ -61,8 +61,8 @@ class SequentialTuner(HyperoptTuner):
             operation_name = node.name
 
             # Get node's parameters to optimize
-            node_params = self.search_space.get_node_params_for_hyperopt(node_id=node_id,
-                                                                         operation_name=operation_name)
+            node_params = self.search_space.get_node_parameters_for_hyperopt(node_id=node_id,
+                                                                             operation_name=operation_name)
 
             if not node_params:
                 self.log.info(f'"{operation_name}" operation has no parameters to optimize')
@@ -115,8 +115,8 @@ class SequentialTuner(HyperoptTuner):
         operation_name = node.name
 
         # Get node's parameters to optimize
-        node_params = self.search_space.get_node_params_for_hyperopt(node_id=node_index,
-                                                                     operation_name=operation_name)
+        node_params = self.search_space.get_node_parameters_for_hyperopt(node_id=node_index,
+                                                                         operation_name=operation_name)
 
         if not node_params:
             self._stop_tuning_with_message(f'"{operation_name}" operation has no parameters to optimize')

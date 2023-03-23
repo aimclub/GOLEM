@@ -14,7 +14,7 @@ from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
 from golem.core.optimisers.timer import Timer
-from golem.core.tuning.search_space import SearchSpace, convert_params
+from golem.core.tuning.search_space import SearchSpace, convert_parameters
 
 DomainGraphForTune = TypeVar('DomainGraphForTune')
 
@@ -24,13 +24,15 @@ class BaseTuner(Generic[DomainGraphForTune]):
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
                  iterations: int = 100,
-                 n_jobs: int = -1):
+                 n_jobs: int = -1,
+                 deviation: float = 0.05):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
         self.search_space = search_space
         self.n_jobs = n_jobs
         objective_evaluate.eval_n_jobs = self.n_jobs
         self.objective_evaluate = self.adapter.adapt_func(objective_evaluate.evaluate)
+        self.deviation = deviation
 
         self._default_metric_value = MAX_TUNING_METRIC_VALUE
         self.was_tuned = False
@@ -51,86 +53,6 @@ class BaseTuner(Generic[DomainGraphForTune]):
           Graph with optimized hyperparameters
         """
         raise NotImplementedError()
-
-    @staticmethod
-    def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
-
-        Args:
-            graph: graph to which parameters should be assigned
-            parameters: dictionary with parameters to set
-
-        Returns:
-            graph: graph with new hyperparameters in each node
-        """
-        # Set hyperparameters for every node
-        for node_id, node in enumerate(graph.nodes):
-            node_params = {key: value for key, value in parameters.items()
-                           if key.startswith(f'{str(node_id)} || {node.name}')}
-
-            if node_params is not None:
-                BaseTuner.set_arg_node(graph, node_id, node_params)
-
-        return graph
-
-    @staticmethod
-    def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
-
-        Args:
-            graph: graph which contains the node
-            node_id: id of the node to which parameters should be assigned
-            node_params: dictionary with labeled parameters to set
-
-        Returns:
-            graph with new hyperparameters in each node
-        """
-
-        # Remove label prefixes
-        node_params = convert_params(node_params)
-
-        # Update parameters in nodes
-        graph.nodes[node_id].parameters = node_params
-
-        return graph
-
-    def _stop_tuning_with_message(self, message: str):
-        self.log.message(message)
-        self.obtained_metric = self.init_metric
-
-
-class HyperoptTuner(BaseTuner, ABC):
-    """
-    Base class for hyperparameters optimization based on hyperopt library
-    
-    Args:
-      objective_evaluate: objective to optimize
-      adapter: the function for processing of external object that should be optimized
-      iterations: max number of iterations
-      timeout: max time for tuning
-      search_space: SearchSpace instance
-      algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
-      n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
-      deviation: required improvement (in percent) of a metric to return tuned graph.
-        By default, ``deviation=0.05``, which means that tuned graph will be returned
-        if it's metric will be at least 0.05% better than the initial.
-    """
-
-    def __init__(self, objective_evaluate: ObjectiveEvaluate,
-                 search_space: SearchSpace,
-                 adapter: BaseOptimizationAdapter = None,
-                 iterations: int = 100, early_stopping_rounds=None,
-                 timeout: timedelta = timedelta(minutes=5),
-                 algo: Callable = None,
-                 n_jobs: int = -1,
-                 deviation: float = 0.05):
-        super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs)
-        iteration_stop_count = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
-        self.early_stop_fn = no_progress_loss(iteration_stop_count=iteration_stop_count)
-        self.max_seconds = int(timeout.seconds) if timeout is not None else None
-        self.algo = algo
-        self.deviation = deviation
-        self.log = default_log(self)
 
     def init_check(self, graph: OptGraph) -> None:
         """
@@ -205,6 +127,85 @@ class HyperoptTuner(BaseTuner, ABC):
         if not graph_fitness.valid:
             return self._default_metric_value
         return metric_value
+
+    @staticmethod
+    def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:
+        """ Method for parameters setting to a graph
+
+        Args:
+            graph: graph to which parameters should be assigned
+            parameters: dictionary with parameters to set
+
+        Returns:
+            graph: graph with new hyperparameters in each node
+        """
+        # Set hyperparameters for every node
+        for node_id, node in enumerate(graph.nodes):
+            node_params = {key: value for key, value in parameters.items()
+                           if key.startswith(f'{str(node_id)} || {node.name}')}
+
+            if node_params is not None:
+                BaseTuner.set_arg_node(graph, node_id, node_params)
+
+        return graph
+
+    @staticmethod
+    def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
+        """ Method for parameters setting to a graph
+
+        Args:
+            graph: graph which contains the node
+            node_id: id of the node to which parameters should be assigned
+            node_params: dictionary with labeled parameters to set
+
+        Returns:
+            graph with new hyperparameters in each node
+        """
+
+        # Remove label prefixes
+        node_params = convert_parameters(node_params)
+
+        # Update parameters in nodes
+        graph.nodes[node_id].parameters = node_params
+
+        return graph
+
+    def _stop_tuning_with_message(self, message: str):
+        self.log.message(message)
+        self.obtained_metric = self.init_metric
+
+
+class HyperoptTuner(BaseTuner, ABC):
+    """
+    Base class for hyperparameters optimization based on hyperopt library
+    
+    Args:
+      objective_evaluate: objective to optimize
+      adapter: the function for processing of external object that should be optimized
+      iterations: max number of iterations
+      timeout: max time for tuning
+      search_space: SearchSpace instance
+      algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
+      n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
+      deviation: required improvement (in percent) of a metric to return tuned graph.
+        By default, ``deviation=0.05``, which means that tuned graph will be returned
+        if it's metric will be at least 0.05% better than the initial.
+    """
+
+    def __init__(self, objective_evaluate: ObjectiveEvaluate,
+                 search_space: SearchSpace,
+                 adapter: BaseOptimizationAdapter = None,
+                 iterations: int = 100, early_stopping_rounds=None,
+                 timeout: timedelta = timedelta(minutes=5),
+                 algo: Callable = None,
+                 n_jobs: int = -1,
+                 deviation: float = 0.05):
+        super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs, deviation)
+        iteration_stop_count = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
+        self.early_stop_fn = no_progress_loss(iteration_stop_count=iteration_stop_count)
+        self.max_seconds = int(timeout.seconds) if timeout is not None else None
+        self.algo = algo
+        self.log = default_log(self)
 
     def _update_remaining_time(self, tuner_timer: Timer):
         self.max_seconds = self.max_seconds - tuner_timer.minutes_from_start * 60

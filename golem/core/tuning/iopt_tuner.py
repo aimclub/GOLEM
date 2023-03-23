@@ -17,11 +17,11 @@ from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
 
 @dataclass
 class IOptProblemParameters:
-    float_params_names: List[str] = field(default_factory=list)
-    discrete_params_names: List[str] = field(default_factory=list)
-    lower_bounds_of_float_params: List[float] = field(default_factory=list)
-    upper_bounds_of_float_params: List[float] = field(default_factory=list)
-    discrete_params_vals: List[List[Any]] = field(default_factory=list)
+    float_parameters_names: List[str] = field(default_factory=list)
+    discrete_parameters_names: List[str] = field(default_factory=list)
+    lower_bounds_of_float_parameters: List[float] = field(default_factory=list)
+    upper_bounds_of_float_parameters: List[float] = field(default_factory=list)
+    discrete_parameters_vals: List[List[Any]] = field(default_factory=list)
 
     @staticmethod
     def from_parameters_dicts(float_parameters_dict: Optional[Dict[str, List]] = None,
@@ -29,22 +29,23 @@ class IOptProblemParameters:
         float_parameters_dict = float_parameters_dict or {}
         discrete_parameters_dict = discrete_parameters_dict or {}
 
-        float_params_names = list(float_parameters_dict.keys())
-        discrete_params_names = list(discrete_parameters_dict.keys())
+        float_parameters_names = list(float_parameters_dict.keys())
+        discrete_parameters_names = list(discrete_parameters_dict.keys())
 
-        lower_bounds_of_float_params = [bounds[0] for bounds in float_parameters_dict.values()]
-        upper_bounds_of_float_params = [bounds[1] for bounds in float_parameters_dict.values()]
-        discrete_params_vals = [values_set for values_set in discrete_parameters_dict.values()]
+        lower_bounds_of_float_parameters = [bounds[0] for bounds in float_parameters_dict.values()]
+        upper_bounds_of_float_parameters = [bounds[1] for bounds in float_parameters_dict.values()]
+        discrete_parameters_vals = [values_set for values_set in discrete_parameters_dict.values()]
 
-        # TODO: Remove - for now IOpt handles only float variables, so we append discrete parameters to float ones
-        float_params_names.extend(discrete_params_names)
-        lower_bounds_of_discrete_params = [bounds[0] for bounds in discrete_parameters_dict.values()]
-        upper_bounds_of_discrete_params = [bounds[1] for bounds in discrete_parameters_dict.values()]
-        lower_bounds_of_float_params.extend(lower_bounds_of_discrete_params)
-        upper_bounds_of_float_params.extend(upper_bounds_of_discrete_params)
+        # TODO: Remove - for now IOpt handles only float variables, so we treat discrete parameters as float ones
+        float_parameters_names.extend(discrete_parameters_names)
+        lower_bounds_of_discrete_parameters = [bounds[0] for bounds in discrete_parameters_dict.values()]
+        upper_bounds_of_discrete_parameters = [bounds[1] for bounds in discrete_parameters_dict.values()]
+        lower_bounds_of_float_parameters.extend(lower_bounds_of_discrete_parameters)
+        upper_bounds_of_float_parameters.extend(upper_bounds_of_discrete_parameters)
 
-        return IOptProblemParameters(float_params_names, discrete_params_names, lower_bounds_of_float_params,
-                                     upper_bounds_of_float_params, discrete_params_vals)
+        return IOptProblemParameters(float_parameters_names, discrete_parameters_names,
+                                     lower_bounds_of_float_parameters,
+                                     upper_bounds_of_float_parameters, discrete_parameters_vals)
 
 
 class GolemProblem(Problem, Generic[DomainGraphForTune]):
@@ -57,20 +58,20 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
         self.numberOfObjectives = 1
         self.numberOfConstraints = 0
 
-        self.discreteVariableNames = problem_parameters.discrete_params_names
-        self.discreteVariableValues = problem_parameters.discrete_params_vals
+        self.discreteVariableNames = problem_parameters.discrete_parameters_names
+        self.discreteVariableValues = problem_parameters.discrete_parameters_vals
         self.numberOfDiscreteVariables = len(self.discreteVariableNames)
 
-        self.floatVariableNames = problem_parameters.float_params_names
-        self.lowerBoundOfFloatVariables = problem_parameters.lower_bounds_of_float_params
-        self.upperBoundOfFloatVariables = problem_parameters.upper_bounds_of_float_params
+        self.floatVariableNames = problem_parameters.float_parameters_names
+        self.lowerBoundOfFloatVariables = problem_parameters.lower_bounds_of_float_parameters
+        self.upperBoundOfFloatVariables = problem_parameters.upper_bounds_of_float_parameters
         self.numberOfFloatVariables = len(self.floatVariableNames)
 
         self._default_metric_value = np.inf
 
     def Calculate(self, point: Point, functionValue: FunctionValue) -> FunctionValue:
-        new_params = get_parameters_dict_from_iopt_point(point, self.floatVariableNames, self.discreteVariableNames)
-        BaseTuner.set_arg_graph(self.graph, new_params)
+        new_parameters = get_parameters_dict_from_iopt_point(point, self.floatVariableNames, self.discreteVariableNames)
+        BaseTuner.set_arg_graph(self.graph, new_parameters)
         graph_fitness = self.objective_evaluate(self.graph)
         metric_value = graph_fitness.value if graph_fitness.valid else self._default_metric_value
         functionValue.value = metric_value
@@ -82,32 +83,49 @@ class IOptTuner(BaseTuner):
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
                  iterations: int = 100,
-                 n_jobs: int = -1):
+                 n_jobs: int = -1,
+                 eps: float = 0.01,
+                 r: float = 2.0,
+                 evolvent_density: int = 10,
+                 eps_r: float = 0.001,
+                 refine_solution: bool = False
+                 ):
         super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs)
+        self.solver_parameters = SolverParameters(r=np.double(r), eps=np.double(eps), itersLimit=iterations,
+                                                  evolventDensity=evolvent_density, epsR=np.double(eps_r),
+                                                  refineSolution=refine_solution)
 
     def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
         graph = self.adapter.adapt(graph)
-
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
 
-        if not problem_parameters.discrete_params_names and not problem_parameters.float_params_names:
+        self.init_check(graph)
+
+        no_parameters_to_optimize = (not problem_parameters.discrete_parameters_names and
+                                     not problem_parameters.float_parameters_names)
+        if no_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
         else:
             initial_point = Point(**initial_parameters) if initial_parameters else None
+            self.solver_parameters.startPoint = initial_point
 
             problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
+            solver = Solver(problem, parameters=self.solver_parameters)
 
-            method_params = SolverParameters(r=np.double(3.0), itersLimit=self.iterations, startPoint=initial_point)
-            solver = Solver(problem, parameters=method_params)
-
-            cfol = ConsoleFullOutputListener(mode='full')
-            solver.AddListener(cfol)
+            console_output = ConsoleFullOutputListener(mode='full')
+            solver.AddListener(console_output)
 
             solution = solver.Solve()
             best_point = solution.bestTrials[0].point
-            best_params = get_parameters_dict_from_iopt_point(best_point, problem_parameters.float_params_names,
-                                                              problem_parameters.discrete_params_names)
-            graph = self.set_arg_graph(graph, best_params)
+            best_parameters = get_parameters_dict_from_iopt_point(best_point, problem_parameters.float_parameters_names,
+                                                                  problem_parameters.discrete_parameters_names)
+            tuned_graph = self.set_arg_graph(graph, best_parameters)
+
+            # Validation is the optimization do well
+            graph = self.final_check(tuned_graph)
+
+            self.was_tuned = True
+
         tuned_graph = self.adapter.restore(graph)
         return tuned_graph
 
@@ -129,35 +147,39 @@ class IOptTuner(BaseTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            float_node_params, discrete_node_params = self.search_space.get_node_params_for_iopt(
+            float_node_parameters, discrete_node_parameters = self.search_space.get_node_parameters_for_iopt(
                 node_id=node_id, operation_name=operation_name)
 
-            for parameter, bounds in float_node_params.items():
+            # Set initial parameters for search
+            for parameter, bounds in float_node_parameters.items():
+                # If parameter is not set use parameter minimum possible value
                 initaial_value = node.parameters.get(parameter) or bounds[0]
                 initial_parameters['floatVariables'].append(initaial_value)
 
-            for parameter, bounds in discrete_node_params.items():
+            for parameter, bounds in discrete_node_parameters.items():
+                # If parameter is not set use parameter minimum possible value
                 initaial_value = node.parameters.get(parameter) or bounds[0]
                 initial_parameters['discreteVariables'].append(initaial_value)
 
-            float_parameters_dict.update(float_node_params)
-            discrete_parameters_dict.update(discrete_node_params)
+            float_parameters_dict.update(float_node_parameters)
+            discrete_parameters_dict.update(discrete_node_parameters)
         parameters_dict = IOptProblemParameters.from_parameters_dicts(float_parameters_dict, discrete_parameters_dict)
         return parameters_dict, initial_parameters
 
 
-def get_parameters_dict_from_iopt_point(point: Point, float_params_names: List[str], discrete_params_names: List[str]) \
+def get_parameters_dict_from_iopt_point(point: Point, float_parameters_names: List[str],
+                                        discrete_parameters_names: List[str]) \
         -> Dict[str, Any]:
-    float_params = dict(zip(float_params_names, point.floatVariables)) \
+    float_parameters = dict(zip(float_parameters_names, point.floatVariables)) \
         if point.floatVariables is not None else {}
-    discrete_params = dict(zip(discrete_params_names, point.discreteVariables)) \
+    discrete_parameters = dict(zip(discrete_parameters_names, point.discreteVariables)) \
         if point.discreteVariables is not None else {}
 
     # TODO: Remove workaround - for now IOpt handles only float variables, so discrete parameters
     #  are optimized as continuous and we need to round them
-    for parameter_name in float_params:
-        if parameter_name in discrete_params_names:
-            float_params[parameter_name] = round(float_params[parameter_name])
+    for parameter_name in float_parameters:
+        if parameter_name in discrete_parameters_names:
+            float_parameters[parameter_name] = round(float_parameters[parameter_name])
 
-    params_dict = {**float_params, **discrete_params}
-    return params_dict
+    parameters_dict = {**float_parameters, **discrete_parameters}
+    return parameters_dict
