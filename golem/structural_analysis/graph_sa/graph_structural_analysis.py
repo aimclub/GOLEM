@@ -1,7 +1,7 @@
 import json
 import os
 from copy import deepcopy
-from typing import List, Callable, Any, Optional
+from typing import List, Optional
 import multiprocessing
 
 from golem.core.log import default_log
@@ -75,14 +75,15 @@ class GraphStructuralAnalysis:
 
     def analyze(self, graph: Graph,
                 nodes_to_analyze: List[GraphNode] = None, edges_to_analyze: List[Edge] = None,
-                n_jobs: int = -1, timer: OptimisationTimer = None) -> SAAnalysisResults:
+                n_jobs: int = 1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
         Applies defined structural analysis approaches
 
         :param graph: graph object to analyze
         :param nodes_to_analyze: nodes to analyze. Default: all nodes
         :param edges_to_analyze: edges to analyze. Default: all edges
-        :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
+        :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's).
+        Tip: if specified graph isn't huge (as NN, for example) than set n_jobs to default value.
         :param timer: timer with timeout left for optimization
         """
 
@@ -109,10 +110,15 @@ class GraphStructuralAnalysis:
         return result
 
     def optimize(self, graph: Graph,
-                 n_jobs: int = -1, timer: OptimisationTimer = None,
+                 n_jobs: int = 1, timer: OptimisationTimer = None,
                  max_iter: int = 10) -> Graph:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
-        of graph iteratively """
+        of graph iteratively
+        :param graph: graph object to analyze
+        :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's).
+        Tip: if specified graph isn't huge (as NN, for example) than set n_jobs to default value.
+        :param timer: timer with timeout left for optimization.
+        :param max_iter: max number of iterations of analysis. """
 
         approaches_repo = StructuralAnalysisApproachesRepository()
         approaches = self._nodes_analyze.approaches + self._edges_analyze.approaches
@@ -193,11 +199,6 @@ def _save_iteration_results(graph_before_sa: Graph, save_path: str = None):
     graph_before_sa.save(graph_save_path)
     if not os.path.exists(graph_save_path):
         os.makedirs(graph_save_path)
-    try:
-        draw_nx_dag(graph=graph_before_sa, save_path=save_path, json_path=json_path)
-    except Exception as ex:
-        log = default_log('draw_viz')
-        log.error(f'Visualisation failed: {ex}')
 
 
 def _save_iteration_results_to_json(analysis_results: dict, save_path: str = None):

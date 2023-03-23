@@ -11,6 +11,7 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
+from golem.structural_analysis.base_sa_approaches import BaseAnalyzeApproach
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
@@ -71,62 +72,27 @@ class NodeAnalysis:
         return results
 
 
-class NodeAnalyzeApproach(ABC):
+class NodeAnalyzeApproach(BaseAnalyzeApproach, ABC):
     """
-    Base class for analysis approach.
+    Base class for node analysis approach.
     :param graph: Graph containing the analyzed Node
     :param objective: objective functions for computing metric values
+    :param node_factory: node factory to choose nodes to replace to
     :param path_to_save: path to save results to. Default: ~home/Fedot/structural
     """
 
-    def __init__(self, graph: Graph, objective: Objective,
-                 node_factory: OptNodeFactory,
-                 requirements: StructuralAnalysisRequirements = None,
-                 path_to_save=None):
-        self._graph = graph
-        self._objective = objective
+    def __init__(self, graph: Graph, objective: Objective, node_factory: OptNodeFactory,
+                 requirements: StructuralAnalysisRequirements = None, path_to_save=None):
+        super().__init__(graph, objective, requirements)
         self._node_factory = node_factory
-        self._origin_metrics = list()
-        self._requirements = \
-            StructuralAnalysisRequirements() if requirements is None else requirements
 
+        self._origin_metrics = list()
         self._path_to_save = \
             join(default_data_dir(), 'structural', 'nodes_structural') if path_to_save is None else path_to_save
         self.log = default_log(prefix='node_analysis')
 
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
-
-    @abstractmethod
-    def analyze(self, node: GraphNode, **kwargs) -> Union[List[dict], List[float]]:
-        """Creates the difference metric(scorer, index, etc) of the changed
-        graph in relation to the original one
-        :param node: the sequence number of the node as in DFS result
-        """
-        pass
-
-    @abstractmethod
-    def sample(self, *args) -> Union[List[Graph], Graph]:
-        """Changes the graph according to the approach"""
-        pass
-
-    def _compare_with_origin_by_metrics(self, modified_graph: Graph) -> Sequence[float]:
-        """ Returns all relative metrics calculated. """
-        modified_graph_metrics = self._objective(modified_graph).values
-
-        if not self._origin_metrics:
-            self._origin_metrics = self._objective(self._graph).values
-
-        res = []
-        for i in range(len(modified_graph_metrics)):
-            try:
-                if modified_graph_metrics[i] < 0.0:
-                    res.append(modified_graph_metrics[i] / self._origin_metrics[i])
-                else:
-                    res.append(self._origin_metrics[i] / modified_graph_metrics[i])
-            except ZeroDivisionError:
-                res.append([-1.0]*len(self._objective.metrics))
-        return res
 
 
 class NodeDeletionAnalyze(NodeAnalyzeApproach):

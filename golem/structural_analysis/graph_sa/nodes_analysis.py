@@ -44,7 +44,7 @@ class NodesAnalysis:
 
     def analyze(self, graph: Graph, results: SAAnalysisResults = None,
                 nodes_to_analyze: Optional[List[GraphNode]] = None,
-                n_jobs: int = -1, timer: Optional[OptimisationTimer] = None) -> SAAnalysisResults:
+                n_jobs: int = 1, timer: Optional[OptimisationTimer] = None) -> SAAnalysisResults:
         """
         Main method to run the analyze process for every node.
 

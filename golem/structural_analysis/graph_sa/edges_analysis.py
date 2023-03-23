@@ -42,7 +42,7 @@ class EdgesAnalysis:
 
     def analyze(self, graph: Graph, results: Optional[SAAnalysisResults] = None,
                 edges_to_analyze: Optional[List[Edge]] = None,
-                n_jobs: int = -1, timer: Optional[OptimisationTimer] = None) -> SAAnalysisResults:
+                n_jobs: int = 1, timer: Optional[OptimisationTimer] = None) -> SAAnalysisResults:
         """
         Main method to run the analyze process for every edge.
 
