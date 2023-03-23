@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Callable, List
+from typing import Dict, Tuple, Callable, List, Union
 
 import numpy as np
 from hyperopt import hp
@@ -12,7 +12,7 @@ class SearchSpace:
             e.g. ``{'operation_name': {'param1': (hp.uniformint, [2, 21]), ...}, ..}
     """
 
-    def __init__(self, search_space: Dict[str, Dict[str, Tuple[Callable, List]]]):
+    def __init__(self, search_space: Dict[str, Dict[str, Dict[str, Union[Callable, List, str]]]]):
         self.parameters_per_operation = search_space
 
     def get_parameter_hyperopt_space(self, operation_name: str, parameter_name: str, label: str = 'default'):
@@ -33,8 +33,8 @@ class SearchSpace:
 
         if operation_parameters is not None:
             parameter_properties = operation_parameters.get(parameter_name)
-            hyperopt_distribution = parameter_properties.get('hyperopt_dist')
-            sampling_scope = parameter_properties.get('sampling_scope')
+            hyperopt_distribution = parameter_properties.get('hyperopt-dist')
+            sampling_scope = parameter_properties.get('sampling-scope')
             if hyperopt_distribution == hp.loguniform:
                 sampling_scope = [np.log(x) for x in sampling_scope]
             return hyperopt_distribution(label, *sampling_scope)
@@ -81,16 +81,16 @@ class SearchSpace:
             for parameter_name, parameter_properties in params_dict.items():
                 node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
-                parameter_type = parameter_properties.get(type)
+                parameter_type = parameter_properties.get('type')
                 if parameter_type == 'discrete':
-                    discrete_params_dict.update({node_op_parameter_name, parameter_properties.get('sampling_scope')})
+                    discrete_params_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
                 elif parameter_type == 'continuous':
-                    float_params_dict.update({node_op_parameter_name, parameter_properties.get('sampling_scope')})
+                    float_params_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
 
         return float_params_dict, discrete_params_dict
 
     def get_parameters_for_operation(self, operation_name: str) -> List[str]:
-        params_list = list(self.parameters_per_operation.get(operation_name).keys())
+        params_list = list(self.parameters_per_operation.get(operation_name, {}).keys())
         return params_list
 
 

@@ -94,6 +94,10 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         return graph
 
+    def _stop_tuning_with_message(self, message: str):
+        self.log.message(message)
+        self.obtained_metric = self.init_metric
+
 
 class HyperoptTuner(BaseTuner, ABC):
     """
@@ -201,10 +205,6 @@ class HyperoptTuner(BaseTuner, ABC):
         if not graph_fitness.valid:
             return self._default_metric_value
         return metric_value
-
-    def _stop_tuning_with_message(self, message: str):
-        self.log.message(message)
-        self.obtained_metric = self.init_metric
 
     def _update_remaining_time(self, tuner_timer: Timer):
         self.max_seconds = self.max_seconds - tuner_timer.minutes_from_start * 60

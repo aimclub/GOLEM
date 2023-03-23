@@ -46,24 +46,12 @@ class IOptProblemParameters:
         return IOptProblemParameters(float_params_names, discrete_params_names, lower_bounds_of_float_params,
                                      upper_bounds_of_float_params, discrete_params_vals)
 
-    def append_float_parameter(self, name: str, bounds: List):
-        self.float_params_names.append(name)
-        self.lower_bounds_of_float_params.append(bounds[0])
-        self.upper_bounds_of_float_params.append(bounds[1])
-
-    def append_discrete_parameter(self, name: str, values: List):
-        self.discrete_params_names.append(name)
-        self.discrete_params_vals.append(values)
-
 
 class GolemProblem(Problem, Generic[DomainGraphForTune]):
     def __init__(self, graph: DomainGraphForTune, objective_evaluate: ObjectiveEvaluate,
-                 problem_parameters: IOptProblemParameters,
-                 n_jobs: int = -1):
+                 problem_parameters: IOptProblemParameters):
         super().__init__()
-        self.n_jobs = n_jobs
-        objective_evaluate.eval_n_jobs = self.n_jobs
-        self.objective_evaluate = objective_evaluate.evaluate
+        self.objective_evaluate = objective_evaluate
         self.graph = graph
 
         self.numberOfObjectives = 1
@@ -102,22 +90,25 @@ class IOptTuner(BaseTuner):
 
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
 
-        initial_point = Point(**initial_parameters) if initial_parameters else None
+        if not problem_parameters.discrete_params_names and not problem_parameters.float_params_names:
+            self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+        else:
+            initial_point = Point(**initial_parameters) if initial_parameters else None
 
-        problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
+            problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
 
-        method_params = SolverParameters(r=np.double(3.0), itersLimit=self.iterations, startPoint=initial_point)
-        solver = Solver(problem, parameters=method_params)
+            method_params = SolverParameters(r=np.double(3.0), itersLimit=self.iterations, startPoint=initial_point)
+            solver = Solver(problem, parameters=method_params)
 
-        cfol = ConsoleFullOutputListener(mode='full')
-        solver.AddListener(cfol)
+            cfol = ConsoleFullOutputListener(mode='full')
+            solver.AddListener(cfol)
 
-        solution = solver.Solve()
-        best_point = solution.bestTrials[0].point
-        best_params = get_parameters_dict_from_iopt_point(best_point, problem_parameters.float_params_names,
-                                                          problem_parameters.discrete_params_names)
-        tuned_graph = self.set_arg_graph(graph, best_params)
-        tuned_graph = self.adapter.restore(tuned_graph)
+            solution = solver.Solve()
+            best_point = solution.bestTrials[0].point
+            best_params = get_parameters_dict_from_iopt_point(best_point, problem_parameters.float_params_names,
+                                                              problem_parameters.discrete_params_names)
+            graph = self.set_arg_graph(graph, best_params)
+        tuned_graph = self.adapter.restore(graph)
         return tuned_graph
 
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[IOptProblemParameters, dict]:
