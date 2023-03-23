@@ -240,9 +240,11 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         self.population_evaluation_info(evaluated_pop_size=len(successful_evals),
                                         pop_size=len(individuals))
         if not successful_evals:
-            single_ind = choice(individuals)
-            evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
-            successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
+            for single_ind in individuals:
+                evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
+                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
+                if successful_evals:
+                    break
         MemoryAnalytics.log(self.logger,
                             additional_info='parallel evaluation of population',
                             logging_level=logging.INFO)
