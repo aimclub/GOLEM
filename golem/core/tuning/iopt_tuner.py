@@ -95,7 +95,7 @@ class IOptTuner(BaseTuner):
                                                   evolventDensity=evolvent_density, epsR=np.double(eps_r),
                                                   refineSolution=refine_solution)
 
-    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
+    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         graph = self.adapter.adapt(graph)
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
 
@@ -112,8 +112,9 @@ class IOptTuner(BaseTuner):
             problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
             solver = Solver(problem, parameters=self.solver_parameters)
 
-            console_output = ConsoleFullOutputListener(mode='full')
-            solver.AddListener(console_output)
+            if show_progress:
+                console_output = ConsoleFullOutputListener(mode='full')
+                solver.AddListener(console_output)
 
             solution = solver.Solve()
             best_point = solution.bestTrials[0].point
