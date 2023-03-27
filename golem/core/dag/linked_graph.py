@@ -100,6 +100,7 @@ class LinkedGraph(Graph, Copyable):
 
     @copy_doc(Graph.node_children)
     def node_children(self, node: GraphNode) -> List[Optional[GraphNode]]:
+        """ Returns list of children of specified node. """
         return [other_node for other_node in self._nodes
                 if other_node.nodes_from and
                 node in other_node.nodes_from]

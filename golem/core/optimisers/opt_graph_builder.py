@@ -129,8 +129,8 @@ class OptGraphBuilder(GraphBuilder):
 
     def _get_node_from_branch_with_idx(self, branch_idx: int, node_idx_in_branch: int):
         head_node = self.heads[branch_idx]
-        branch_pipeline = OptGraph(head_node)
-        return branch_pipeline.nodes[node_idx_in_branch]
+        branch_graph = OptGraph(head_node)
+        return branch_graph.nodes[node_idx_in_branch]
 
     def join_branches(self, operation_type: Optional[str], params: Optional[Dict] = None):
         """ Joins all current branches with provided operation as ensemble node.
@@ -199,7 +199,7 @@ def merge_opt_graph_builders(previous: OptGraphBuilder, following: OptGraphBuild
     If one of the builders is empty -- the other one is returned, no merging is performed.
     State of the passed builders is preserved as they were, after merging new builder is returned.
 
-    :return: PipelineBuilder if merging is well-defined, None otherwise.
+    :return: GraphBuilder if merging is well-defined, None otherwise.
     """
 
     if not following.heads:
