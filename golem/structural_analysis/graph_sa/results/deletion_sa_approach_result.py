@@ -18,6 +18,6 @@ class DeletionSAApproachResult(BaseSAApproachResult):
     def get_worst_result_with_names(self, metric_idx_to_optimize_by: int) -> dict:
         return {'value': self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)}
 
-    def get_all_results(self) -> List[float]:
+    def get_dict_results(self) -> List[float]:
         """ Returns all calculated results. """
         return self.metrics

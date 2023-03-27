@@ -19,3 +19,7 @@ class BaseSAApproachResult:
     def add_results(self, **kwargs):
         """ Adds newly calculated results. """
         raise NotImplementedError
+
+    def get_dict_results(self) -> dict:
+        """ Returns dict representation of results. """
+        raise NotImplementedError()

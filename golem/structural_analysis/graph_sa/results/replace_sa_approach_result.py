@@ -3,6 +3,7 @@ from typing import List, Dict, Tuple, Any, Union
 from golem.core.dag.graph import GraphNode
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
+from golem.structural_analysis.graph_sa.results.utils import get_entity_str
 
 
 class ReplaceSAApproachResult(BaseSAApproachResult):
@@ -30,3 +31,11 @@ class ReplaceSAApproachResult(BaseSAApproachResult):
     def get_all_results(self) -> Dict[str, float]:
         """ Returns all calculated results. """
         return self.entities_metrics
+
+    def get_dict_results(self) -> Dict[int, List[float]]:
+        """ Returns dict representation of results. """
+        dict_results = {}
+        for entity in self.entities_metrics:
+            entity_str = get_entity_str(entity=entity)
+            dict_results[entity_str] = self.entities_metrics[entity]
+        return dict_results

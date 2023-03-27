@@ -7,6 +7,7 @@ from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result impo
     DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
+from golem.structural_analysis.graph_sa.results.utils import get_entity_str
 
 NODE_DELETION = 'NodeDeletionAnalyze'
 NODE_REPLACEMENT = 'NodeReplaceOperationAnalyze'
@@ -28,6 +29,11 @@ class StructuralAnalysisResultsRepository:
                     and entity_class in method.lower():
                 return method
 
+    def get_class_by_str(self, result_str: str) -> BaseSAApproachResult:
+        for method in self.approaches_dict.keys():
+            if result_str == method:
+                return self.approaches_dict[method]['result_class']
+
 
 class ObjectSAResult:
     """ Class specifying results of Structural Analysis for one entity(node or edge). """
@@ -47,14 +53,28 @@ class ObjectSAResult:
     def get_worst_result_with_names(self, metric_idx_to_optimize_by: int) -> dict:
         """ Returns worst result with additional information. """
         worst_result = self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)
-        for app in self.result_approaches:
-            if app.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by) == worst_result:
-                entity_type = 'edge' if isinstance(self.entity, Edge) else 'node'
-                sa_approach_name = StructuralAnalysisResultsRepository()\
-                    .get_method_by_result_class(app, entity_type)
+        for approach in self.result_approaches:
+            if approach.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by) == worst_result:
+                sa_approach_name = self._get_approach_name(approach=approach, entity=self.entity)
                 result = {'entity': self.entity, 'approach_name': sa_approach_name}
-                result.update(app.get_worst_result_with_names(metric_idx_to_optimize_by=metric_idx_to_optimize_by))
+                result.update(approach.get_worst_result_with_names(metric_idx_to_optimize_by=metric_idx_to_optimize_by))
                 return result
 
     def add_result(self, result: BaseSAApproachResult):
         self.result_approaches.append(result)
+
+    def get_dict_results(self) -> dict:
+        """ Returns dict representation of results. """
+        results = dict()
+        entity_str = get_entity_str(self.entity)
+        for approach in self.result_approaches:
+            sa_approach_name = self._get_approach_name(approach=approach, entity=self.entity)
+            results[sa_approach_name] = approach.get_dict_results()
+        return {entity_str: results}
+
+    @staticmethod
+    def _get_approach_name(approach: BaseSAApproachResult, entity: Union[GraphNode, Edge]):
+        entity_type = 'edge' if isinstance(entity, Edge) else 'node'
+        sa_approach_name = StructuralAnalysisResultsRepository() \
+            .get_method_by_result_class(approach, entity_type)
+        return sa_approach_name
