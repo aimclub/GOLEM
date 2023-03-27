@@ -14,8 +14,8 @@ def equivalent_subtree(graph_first: Any, graph_second: Any) -> List[Tuple[Any, A
         # check if both nodes are primary or secondary
         # TODO: use normal overriding of __eq__ method instead of instance check
         if hasattr(node_first, 'is_primary') and hasattr(node_second, 'is_primary'):
-            is_same_pipeline_node_type = node_first.is_primary == node_second.is_primary
-            is_same_type = is_same_type and is_same_pipeline_node_type
+            is_same_graph_node_type = node_first.is_primary == node_second.is_primary
+            is_same_type = is_same_type and is_same_graph_node_type
 
         node_first_children = node_first.nodes_from
         node_second_children = node_second.nodes_from
