@@ -245,9 +245,6 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             previous_parent_node = sample_graph.nodes[previous_parent_node_index]
             previous_child_node = sample_graph.nodes[previous_child_node_index]
 
-            sample_graph.disconnect_nodes(node_parent=previous_parent_node,
-                                          node_child=previous_child_node,
-                                          clean_up_leftovers=False)
             # connect nodes
             next_parent_node = sample_graph.nodes[replacing_nodes_idx['parent_node_idx']]
             next_child_node = sample_graph.nodes[replacing_nodes_idx['child_node_idx']]
@@ -255,6 +252,10 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             if next_parent_node in sample_graph.nodes and \
                next_child_node in sample_graph.nodes:
                 sample_graph.connect_nodes(next_parent_node, next_child_node)
+
+            sample_graph.disconnect_nodes(node_parent=previous_parent_node,
+                                          node_child=previous_child_node,
+                                          clean_up_leftovers=False)
 
             verifier = self._requirements.graph_verifier
             if not verifier.verify(sample_graph):
@@ -312,9 +313,11 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                     continue
                 if [parent_node, child_node] in edges_in_graph or [child_node, parent_node] in edges_in_graph:
                     continue
+                if cur_graph.nodes.index(parent_node) == child_node_index and \
+                        cur_graph.nodes.index(child_node) == parent_node_index:
+                    continue
                 available_edges_idx.append({'parent_node_idx': cur_graph.nodes.index(parent_node),
                                             'child_node_idx': cur_graph.nodes.index(child_node)})
 
-        # random.seed(self._requirements.seed + len(self._graph))
         edges_for_replacement = random.sample(available_edges_idx, min(number_of_operations, len(available_edges_idx)))
         return edges_for_replacement
