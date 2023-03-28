@@ -86,7 +86,7 @@ class RandomAgent(OperatorAgent):
                  probs: Optional[Sequence[float]] = None,
                  enable_logging: bool = True):
         self.actions = list(actions)
-        self._probs = probs
+        self._probs = [1./ len(actions)] * len(actions)
         self._enable_logging = enable_logging
         self._log = default_log(self)
 
@@ -102,10 +102,10 @@ class RandomAgent(OperatorAgent):
         actions, rewards = experience.get_experience()
         self._dbg_log(actions, rewards)
 
-    def get_action_probs(self, obs: ObsType) -> Optional[Sequence[float]]:
+    def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         return self._probs
 
-    def get_action_values(self, obs: ObsType) -> Optional[Sequence[float]]:
+    def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         return self._probs
 
     def _dbg_log(self, actions, rewards):
