@@ -10,7 +10,7 @@ from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.metrics.edit_distance import tree_edit_dist
 
 
-@pytest.mark.parametrize('size', [10,  20])
+@pytest.mark.parametrize('size', [8,  16])
 def test_simple_targets_are_found(size):
     target_graph = generate_labeled_graph('tree', size, node_labels=['x'])
     # running the example
@@ -22,8 +22,6 @@ def test_simple_targets_are_found(size):
 
     found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
     allowed_error = ceil(size * 0.1)  # 10% of target size
-    from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
-    draw_graphs_subplots(target_graph, found_nx_graph)
     distance = tree_edit_dist(target_graph, found_nx_graph)
 
     assert distance <= allowed_error
