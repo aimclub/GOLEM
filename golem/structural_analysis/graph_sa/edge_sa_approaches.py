@@ -58,7 +58,9 @@ class EdgeAnalysis:
         :return: dict with Edge analysis result per approach
         """
 
-        results = ObjectSAResult(entity=edge)
+        results = ObjectSAResult(entity_idx=
+                                 f'{graph.nodes.index(edge.parent_node)}_{graph.nodes.index(edge.child_node)}',
+                                 entity_type='edge')
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
@@ -207,10 +209,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                     parent_node_idx += char
                 else:
                     continue
-            result.add_results(entity_to_replace_to=Edge(child_node=self._graph.nodes[int(child_node_idx)],
-                                                         parent_node=self._graph.nodes[int(parent_node_idx)]),
+            result.add_results(entity_to_replace_to=f'{parent_node_idx}_{child_node_idx}',
                                metrics_values=loss_per_sample)
-
         return result
 
     def sample(self, edge: Edge,

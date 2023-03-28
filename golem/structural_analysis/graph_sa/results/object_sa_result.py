@@ -7,7 +7,7 @@ from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result impo
     DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
-from golem.structural_analysis.graph_sa.results.utils import get_entity_str
+
 
 NODE_DELETION = 'NodeDeletionAnalyze'
 NODE_REPLACEMENT = 'NodeReplaceOperationAnalyze'
@@ -37,8 +37,9 @@ class StructuralAnalysisResultsRepository:
 
 class ObjectSAResult:
     """ Class specifying results of Structural Analysis for one entity(node or edge). """
-    def __init__(self, entity: Union[GraphNode, Edge]):
-        self.entity = entity
+    def __init__(self, entity_idx: str, entity_type: str):
+        self.entity_idx = entity_idx
+        self.entity_type = entity_type
         self.result_approaches: List[BaseSAApproachResult] = []
 
     def get_worst_result(self, metric_idx_to_optimize_by: int) -> float:
@@ -55,8 +56,8 @@ class ObjectSAResult:
         worst_result = self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)
         for approach in self.result_approaches:
             if approach.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by) == worst_result:
-                sa_approach_name = self._get_approach_name(approach=approach, entity=self.entity)
-                result = {'entity': self.entity, 'approach_name': sa_approach_name}
+                sa_approach_name = self._get_approach_name(approach=approach)
+                result = {'entity_idx': self.entity_idx, 'approach_name': sa_approach_name}
                 result.update(approach.get_worst_result_with_names(metric_idx_to_optimize_by=metric_idx_to_optimize_by))
                 return result
 
@@ -66,15 +67,12 @@ class ObjectSAResult:
     def get_dict_results(self) -> dict:
         """ Returns dict representation of results. """
         results = dict()
-        entity_str = get_entity_str(self.entity)
         for approach in self.result_approaches:
-            sa_approach_name = self._get_approach_name(approach=approach, entity=self.entity)
+            sa_approach_name = self._get_approach_name(approach=approach)
             results[sa_approach_name] = approach.get_dict_results()
-        return {entity_str: results}
+        return {self.entity_idx: results}
 
-    @staticmethod
-    def _get_approach_name(approach: BaseSAApproachResult, entity: Union[GraphNode, Edge]):
-        entity_type = 'edge' if isinstance(entity, Edge) else 'node'
+    def _get_approach_name(self, approach: BaseSAApproachResult):
         sa_approach_name = StructuralAnalysisResultsRepository() \
-            .get_method_by_result_class(approach, entity_type)
+            .get_method_by_result_class(approach, self.entity_type)
         return sa_approach_name

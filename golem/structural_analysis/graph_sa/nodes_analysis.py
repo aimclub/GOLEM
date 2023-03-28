@@ -57,7 +57,7 @@ class NodesAnalysis:
         """
 
         if not results:
-            results = SAAnalysisResults(graph=graph)
+            results = SAAnalysisResults()
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
@@ -76,7 +76,6 @@ class NodesAnalysis:
                                        [[graph, node, self.objective, timer]
                                         for node in nodes_to_analyze])
 
-        for res in cur_nodes_results:
-            results.add_node_result(res)
+        results.add_results(cur_nodes_results)
 
         return results

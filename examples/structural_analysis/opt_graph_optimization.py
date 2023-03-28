@@ -1,3 +1,4 @@
+import os
 import random
 from functools import partial
 
@@ -9,8 +10,10 @@ from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
+from golem.core.paths import project_root
 from golem.metrics.graph_metrics import degree_dist, size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
+from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
@@ -72,5 +75,8 @@ if __name__ == "__main__":
     sa = GraphStructuralAnalysis(objective=objective, node_factory=node_factory,
                                  requirements=requirements)
 
-    optimized_graph = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=5)
-    optimized_graph.show()
+    graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=1)
+    graph.show()
+
+    path_to_save = os.path.join(project_root(), 'sa_results.json')
+    results.save(path=path_to_save, datetime_in_path=False)

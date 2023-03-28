@@ -58,7 +58,8 @@ class NodeAnalysis:
         :return: dict with Node analysis result per approach
         """
 
-        results = ObjectSAResult(entity=node)
+        results = ObjectSAResult(entity_idx=str(graph.nodes.index(node)),
+                                 entity_type='node')
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
@@ -190,7 +191,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
             loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
             self.log.message(f'losses: {loss_per_sample}\n')
 
-            result.add_results(entity_to_replace_to=sample_graph.nodes[node_id], metrics_values=loss_per_sample)
+            result.add_results(entity_to_replace_to=sample_graph.nodes[node_id].name, metrics_values=loss_per_sample)
 
         return result
 
