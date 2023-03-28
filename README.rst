@@ -132,16 +132,13 @@ GOLEM можно установить с помощью ``pip``:
 
 Если вы используете наш проект в своей работе или исследовании, мы будем признательны за цитирование.
 
-.. code-block:: bibtex
-
-  @article{nikitin2021automated,
+@article{nikitin2021automated,
   title = {Automated evolutionary approach for the design of composite machine learning pipelines},
   author = {Nikolay O. Nikitin and Pavel Vychuzhanin and Mikhail Sarafanov and Iana S. Polonskaia and Ilia Revin and Irina V. Barabanova and Gleb Maximov and Anna V. Kalyuzhnaya and Alexander Boukhanovsky},
   journal = {Future Generation Computer Systems},
   year = {2021},
   issn = {0167-739X},
-  doi = {https://doi.org/10.1016/j.future.2021.08.022}
-  }
+  doi = {https://doi.org/10.1016/j.future.2021.08.022}}
 
 Публикации, описывающие применение GOLEM для прикладных задач:
 ==============================================================
