@@ -28,6 +28,10 @@ def degree_distance_kernel(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float
 def degree_distance(target_graph: nx.DiGraph,
                     graph: nx.DiGraph,
                     normalized: bool = False) -> float:
+    """This is a heuristic metric for graphs where central
+    nodes are more important than peripheral ones. The "heavier"
+    the nodes (i.e. the higher their degree), the more significant
+    the difference in number of such nodes between two graphs."""
     # Compute histogram of node degrees
     degrees_t = np.array(nx.degree_histogram(target_graph), dtype=float)
     degrees_g = np.array(nx.degree_histogram(graph), dtype=float)
@@ -46,7 +50,7 @@ def degree_dist_weighted_compute(degrees_t: Sequence[float],
     degrees_g.resize(common_len, refcheck=False)
 
     # Compute weights as normalized degrees
-    weights = np.arange(common_len).astype(float)
+    weights = np.arange(1, common_len + 1).astype(float)
     weights /= np.sum(weights)
 
     # Normalize
