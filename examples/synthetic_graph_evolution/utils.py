@@ -1,12 +1,13 @@
 from datetime import datetime
 from itertools import chain, product
-from typing import Tuple, Optional, Sequence, Iterable
+from typing import Tuple, Optional, Sequence, Iterable, Any
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib import cm
+from scipy.special import softmax
 
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
@@ -140,3 +141,20 @@ def _get_node_colors_and_labels(graph: nx.Graph, cmap_name='viridis'):
     handles = [root_legend, degree_legend, source_legend]
 
     return colors, labels, handles
+
+
+def plot_action_values(stats: Sequence[Sequence[float]],
+                       action_tags: Optional[Sequence[Any]] = None):
+    # Plot stackplot of how action expectations and probabilities changed
+    x = np.arange(len(stats))
+    y = np.array(stats).T
+    y_prob = softmax(y, axis=0)
+
+    labels = [str(action) for action in action_tags]
+    fig, ax = plt.subplots(nrows=1, ncols=2)
+    ax[0].stackplot(x, y)
+    ax[1].stackplot(x, y_prob, labels=labels)
+
+    ax[1].set(ylim=(0, 1.0), yticks=np.linspace(0., 1., 20))
+    if action_tags:
+        ax[1].legend(loc='upper left')

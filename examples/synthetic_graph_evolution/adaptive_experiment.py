@@ -1,15 +1,18 @@
 from datetime import datetime, timedelta
-from typing import Sequence, Type, Callable, Optional
+from typing import Sequence, Type, Callable, Optional, List
 
 import numpy as np
+from matplotlib import pyplot as plt
+from scipy.special import softmax
 from scipy.stats import pearsonr
 
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds, postprocess_nx_graph
-from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, plot_action_values
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
+from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.metrics.graph_metrics import *
 
 
@@ -24,15 +27,24 @@ def run_adaptive_mutations(
     node_types = ['x']
     stats_node_to_edge_ratios = []
     stats_action_probs = []
+    stats_action_value = []
+    stats_action_value_log: List[List[float]] = []
+
+    def log_action_values(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
+        values = optimizer.mutation.agent.get_action_values(obs=None)
+        stats_action_value_log.append(list(values))
 
     for prob in gnp_probs:
+        stats_action_value_log = []
+
+        # Generate target graph
         nx_graph = nx.gnp_random_graph(graph_size, prob, directed=True)
         target_graph = postprocess_nx_graph(nx_graph, node_labels=node_types)
-
         # One of the target statistics
         ne_ratio = target_graph.number_of_edges() / target_graph.number_of_nodes()
         stats_node_to_edge_ratios.append(ne_ratio)
 
+        # Build the optimizer and setup the logger
         optimizer, objective = optimizer_setup(
             target_graph,
             optimizer_cls=EvoGraphOptimizer,
@@ -40,6 +52,8 @@ def run_adaptive_mutations(
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=trial_iterations,
         )
+        optimizer.set_iteration_callback(log_action_values)
+        # Run the optimizer
         found_graphs = optimizer.optimise(objective)
         found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
         history = optimizer.history
@@ -55,8 +69,11 @@ def run_adaptive_mutations(
         print(f'P(add_edge)/P(add_node) = {action_prob_ratio:.3f}')
         if visualize:
             found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
-            draw_graphs_subplots(target_graph, found_nx_graph)
+            draw_graphs_subplots(target_graph, found_nx_graph,
+                                 titles=['Target Graph', 'Found Graph'])
             history.show.fitness_line()
+            plot_action_values(stats_action_value_log, action_tags=agent.actions)
+            plt.show()
 
     # Compute correlation coefficient for given statistics
     result = pearsonr(stats_node_to_edge_ratios, stats_action_probs)
@@ -68,4 +85,7 @@ def run_adaptive_mutations(
 
 
 if __name__ == '__main__':
-    run_adaptive_mutations(gnp_probs=np.arange(0.05, 0.35, 0.05))
+    run_adaptive_mutations(#gnp_probs=np.arange(0.05, 0.35, 0.05),
+                           gnp_probs=[0.15, 0.3],
+                           trial_iterations=20,
+                           visualize=True)
