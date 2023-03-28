@@ -67,11 +67,12 @@ class SAAnalysisResults(Serializable):
             key = 'edges'
         else:
             key = 'nodes'
-        iter_num = self._find_last_empty_iter(key=key)
+        iter_num = self._get_last_empty_iter(key=key)
         for result in results:
             self.results_per_iteration[str(iter_num)][key].append(result)
 
-    def _find_last_empty_iter(self, key: str):
+    def _get_last_empty_iter(self, key: str):
+        """ Returns number of last iteration with empty key field. """
         for i, result in enumerate(self.results_per_iteration.values()):
             if not result[key]:
                 return i
@@ -79,6 +80,7 @@ class SAAnalysisResults(Serializable):
         return list(self.results_per_iteration.keys())[-1]
 
     def save(self, path: str = None, datetime_in_path: bool = True) -> dict:
+        """ Saves SA results in json format. """
         dict_results = dict()
         for iter in self.results_per_iteration.keys():
             dict_results[iter] = {}
@@ -106,6 +108,7 @@ class SAAnalysisResults(Serializable):
 
     @staticmethod
     def load(source: Union[str, dict], graph: Optional[Graph] = None):
+        """ Loads SA results from json format. """
         if isinstance(source, str):
             source = json.load(open(source))
 
@@ -132,5 +135,3 @@ class SAAnalysisResults(Serializable):
                 sa_result.add_results(type_list)
 
         return sa_result
-
-
