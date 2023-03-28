@@ -112,9 +112,10 @@ workshops for their valuable advice and suggestions.
 Supported by
 ============
 
-The study is supported by the Research Center Strong Artificial Intelligence in Industry of ITMO University 
-as part of the plan of the center's program: Development and testing of an experimental prototype of the library 
-of strong AI algorithms in terms of basic algorithms of automatic ML for structural training of composite AI models, 
+The study is supported by the Research `Center Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`_
+of `ITMO University <https://itmo.ru/>`_ as part of the plan of the center's program: 
+Development and testing of an experimental prototype of the library of strong AI algorithms 
+in terms of basic algorithms of automatic ML for structural training of composite AI models, 
 including automation of feature selection
 
 Contacts
