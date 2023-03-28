@@ -43,7 +43,6 @@ def test_save_sa_results():
 
 
 def test_load_sa_results():
-    """ Results can be loaded in two ways """
     graph = get_opt_graph()
     path = os.path.join(TEST_FILE_NAME)
     result_load = SAAnalysisResults.load(source=path, graph=graph)
