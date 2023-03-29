@@ -10,27 +10,23 @@ def equivalent_subtree(graph_first: Any, graph_second: Any) -> List[Tuple[Any, A
     def structural_equivalent_nodes(node_first, node_second):
         nodes = []
         is_same_type = type(node_first) == type(node_second)
-
         # check if both nodes are primary or secondary
         # TODO: use normal overriding of __eq__ method instead of instance check
         if hasattr(node_first, 'is_primary') and hasattr(node_second, 'is_primary'):
             is_same_graph_node_type = node_first.is_primary == node_second.is_primary
             is_same_type = is_same_type and is_same_graph_node_type
 
-        node_first_children = node_first.nodes_from
-        node_second_children = node_second.nodes_from
-        if is_same_type and (not node_first.nodes_from or
-                             node_first_children and node_second_children and
-                             len(node_first_children) == len(node_second_children)):
+        if is_same_type and len(node_first.nodes_from) == len(node_second.nodes_from):
             nodes.append((node_first, node_second))
-            if node_first.nodes_from:
-                for node1_child, node2_child in zip(node_first.nodes_from, node_second.nodes_from):
-                    nodes_set = structural_equivalent_nodes(node1_child, node2_child)
-                    if nodes_set:
-                        nodes += nodes_set
+            for node1_child, node2_child in zip(node_first.nodes_from, node_second.nodes_from):
+                nodes_set = structural_equivalent_nodes(node1_child, node2_child)
+                nodes.extend(nodes_set)
         return nodes
 
-    pairs_set = structural_equivalent_nodes(graph_first.root_node, graph_second.root_node)
+    pairs_set = []
+    for root_first, root_second in zip(graph_first.root_nodes(), graph_second.root_nodes()):
+        equivalent_pairs = structural_equivalent_nodes(root_first, root_second)
+        pairs_set.extend(equivalent_pairs)
     return pairs_set
 
 
