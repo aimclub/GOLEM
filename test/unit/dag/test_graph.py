@@ -4,7 +4,7 @@ from random import seed
 import numpy as np
 import pytest
 
-from golem.core.dag.graph import Graph
+from golem.core.dag.graph import Graph, ReconnectKind
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.dag.linked_graph_node import LinkedGraphNode
@@ -116,6 +116,40 @@ def test_delete_intermediate_node():
     assert first in final.nodes_from
     assert not graph.node_children(third)
     assert graph.depth == 2
+
+
+def test_delete_leave_cycle():
+    first = GraphNode(content='n1')
+    second = GraphNode(content='n2', nodes_from=[first])
+    third = GraphNode(content='n3', nodes_from=[second])
+    final = GraphNode(content='n4', nodes_from=[third])
+    graph = GraphImpl(final)
+    graph.connect_nodes(final, first)
+
+    assert len(graph.get_edges()) == 4
+
+    graph.delete_node(third, reconnect=ReconnectKind.single)
+
+    assert third not in graph.nodes
+    assert len(graph.get_edges()) == 3
+    assert (second, final) in graph.get_edges()
+
+
+def test_delete_break_cycle():
+    first = GraphNode(content='n1')
+    second = GraphNode(content='n2', nodes_from=[first])
+    third = GraphNode(content='n3', nodes_from=[second])
+    final = GraphNode(content='n4', nodes_from=[third])
+    graph = GraphImpl(final)
+    graph.connect_nodes(final, first)
+
+    assert len(graph.get_edges()) == 4
+
+    graph.delete_node(third, reconnect=ReconnectKind.none)
+
+    assert third not in graph.nodes
+    assert len(graph.get_edges()) == 2
+    assert not final.nodes_from
 
 
 def test_delete_node_with_duplicated_edges():

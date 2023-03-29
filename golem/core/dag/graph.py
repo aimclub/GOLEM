@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from os import PathLike
 from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
 
@@ -6,6 +7,13 @@ from golem.core.dag.graph_node import GraphNode
 from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
 
 NodeType = TypeVar('NodeType', bound=GraphNode, covariant=False, contravariant=False)
+
+
+class ReconnectKind(Enum):
+    """Defines allowed kinds of removals in Graph. Used by mutations."""
+    none = 'none'  # do not reconnect predecessors
+    single = 'single'  # reconnect a predecessor only if it's single
+    all = 'all'  # reconnect all predecessors to all successors
 
 
 class Graph(ABC):
@@ -41,12 +49,13 @@ class Graph(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_node(self, node: GraphNode):
+    def delete_node(self, node: GraphNode, reconnect: ReconnectKind = ReconnectKind.single):
         """Removes ``node`` from the graph.
         If ``node`` has only one child, then connects all of the ``node`` parents to it.
 
         Args:
             node: node of the graph to be deleted
+            reconnect: defines how to treat left edges between parents and children
         """
         raise NotImplementedError()
 

@@ -1,6 +1,6 @@
 from typing import Union, Sequence, List, Optional, Tuple, Type
 
-from golem.core.dag.graph import Graph
+from golem.core.dag.graph import Graph, ReconnectKind
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.linked_graph import LinkedGraph
 
@@ -26,8 +26,8 @@ class GraphDelegate(Graph):
     def update_subtree(self, old_subtree: GraphNode, new_subtree: GraphNode):
         self.operator.update_subtree(old_subtree, new_subtree)
 
-    def delete_node(self, node: GraphNode):
-        self.operator.delete_node(node)
+    def delete_node(self, node: GraphNode, reconnect: ReconnectKind = ReconnectKind.single):
+        self.operator.delete_node(node, reconnect)
 
     def delete_subtree(self, subtree: GraphNode):
         self.operator.delete_subtree(subtree)

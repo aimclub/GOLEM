@@ -6,10 +6,11 @@ from golem.core.utilities.data_structures import ComparableEnum as Enum
 
 class RemoveType(Enum):
     """Defines allowed kinds of removals in Graph. Used by mutations."""
+    forbidden = 'forbidden'
     node_only = 'node_only'
+    node_rewire = 'node_rewire'
     with_direct_children = 'with_direct_children'
     with_parents = 'with_parents'
-    forbidden = 'forbidden'
 
 
 class DefaultChangeAdvisor:
