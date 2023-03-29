@@ -44,7 +44,7 @@ def tree_search_setup(target_graph: nx.DiGraph,
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_drop,
         ],
-        crossover_types=[CrossoverTypesEnum.subtree]
+        crossover_types=[CrossoverTypesEnum.none]
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
