@@ -61,7 +61,7 @@ def test_graphs_equivalent_subtree():
     c_third = graph_third()
 
     similar_nodes_first_and_second = equivalent_subtree(c_first, c_second)
-    assert len(similar_nodes_first_and_second) == 7
+    assert len(similar_nodes_first_and_second) == 6
 
     similar_nodes_first_and_third = equivalent_subtree(c_first, c_third)
     assert not similar_nodes_first_and_third

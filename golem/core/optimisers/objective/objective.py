@@ -24,6 +24,8 @@ class ObjectiveInfo:
         Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""
         values = fitness.values if isinstance(fitness, Fitness) else fitness
         fitness_info_str = [f'{name}={value:.3f}'
+                            if value is not None
+                            else f'{name}=None'
                             for name, value in zip(self.metric_names, values)]
         return f"<{' '.join(fitness_info_str)}>"
 

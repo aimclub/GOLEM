@@ -1,13 +1,9 @@
-from datetime import timedelta
-from typing import Optional, Callable, Dict
+from typing import Sequence
 
 import networkx as nx
 import numpy as np
-from networkx import graph_edit_distance
 
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.metrics.graph_features import degree_stats
-from libs.netcomp import edit_distance
 from libs.netcomp import _eigs, normalized_laplacian_eig
 from libs.netcomp import laplacian_matrix
 
@@ -25,50 +21,52 @@ def nxgraph_stats(graph: nx.Graph):
     return stats
 
 
-def degree_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
+def degree_distance_kernel(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     return degree_stats([graph], [target_graph])
 
 
-def get_edit_dist_metric(target_graph: nx.DiGraph,
-                         timeout=timedelta(seconds=60),
-                         upper_bound: Optional[int] = None,
-                         requirements: Optional[GraphRequirements] = None,
-                         ) -> Callable[[nx.DiGraph], float]:
-    def node_match(node_content_1: Dict, node_content_2: Dict) -> bool:
-        operations_do_match = node_content_1.get('name') == node_content_2.get('name')
-        return True or operations_do_match
+def degree_distance(target_graph: nx.DiGraph,
+                    graph: nx.DiGraph,
+                    normalized: bool = False) -> float:
+    """This is a heuristic metric for graphs where central
+    nodes are more important than peripheral ones. The "heavier"
+    the nodes (i.e. the higher their degree), the more significant
+    the difference in number of such nodes between two graphs."""
+    # Compute histogram of node degrees
+    degrees_t = np.array(nx.degree_histogram(target_graph), dtype=float)
+    degrees_g = np.array(nx.degree_histogram(graph), dtype=float)
+    return degree_dist_weighted_compute(degrees_t, degrees_g, normalized)
 
-    if requirements:
-        upper_bound = upper_bound or int(np.sqrt(requirements.max_depth * requirements.max_arity)),
-        timeout = timeout or requirements.max_graph_fit_time
 
-    def metric(graph: nx.DiGraph) -> float:
-        ged = graph_edit_distance(target_graph, graph,
-                                  node_match=node_match,
-                                  upper_bound=upper_bound,
-                                  timeout=timeout.seconds if timeout else None,
-                                 )
-        return ged or upper_bound
+def degree_dist_weighted_compute(degrees_t: Sequence[float],
+                                 degrees_g: Sequence[float],
+                                 normalized: bool = False) -> float:
+    degrees_t = np.asarray(degrees_t)
+    degrees_g = np.asarray(degrees_g)
 
-    return metric
+    # Extend arrays to the same length with zeros
+    common_len = max(len(degrees_t), len(degrees_g))
+    degrees_t.resize(common_len, refcheck=False)
+    degrees_g.resize(common_len, refcheck=False)
+
+    # Compute weights as normalized degrees
+    weights = np.arange(1, common_len + 1).astype(float)
+    weights /= np.sum(weights)
+
+    # Normalize
+    if normalized:
+        degrees_t /= np.sum(degrees_t)
+        degrees_g /= np.sum(degrees_g)
+
+    # Compute distance between node degrees weighted by degree
+    dist = np.linalg.norm(weights * (degrees_t - degrees_g))
+    return dist
 
 
 def size_diff(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     nodes_diff = abs(target_graph.number_of_nodes() - graph.number_of_nodes())
     edges_diff = abs(target_graph.number_of_edges() - graph.number_of_edges())
     return nodes_diff + np.sqrt(edges_diff)
-
-
-def matrix_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
-    target_adj = nx.adjacency_matrix(target_graph)
-    adj = nx.adjacency_matrix(graph)
-    nmin, nmax = min_max(target_adj.shape[0], adj.shape[0])
-    if nmin != nmax:
-        shape = (nmax, nmax)
-        target_adj.resize(shape)
-        adj.resize(shape)
-    value = edit_distance(target_adj, adj)
-    return value
 
 
 def spectral_dist(target_graph: nx.DiGraph, graph: nx.DiGraph,
