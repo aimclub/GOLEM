@@ -4,7 +4,7 @@ from random import choice, randint, random, sample
 from typing import TYPE_CHECKING
 
 from golem.core.adapter import register_native
-from golem.core.dag.graph import ReconnectKind
+from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
 from golem.core.optimisers.advisor import RemoveType
@@ -251,9 +251,9 @@ def single_drop_mutation(graph: OptGraph,
     elif removal_type == RemoveType.with_parents:
         graph.delete_subtree(node_to_del)
     elif removal_type == RemoveType.node_rewire:
-        graph.delete_node(node_to_del, reconnect=ReconnectKind.all)
+        graph.delete_node(node_to_del, reconnect=ReconnectType.all)
     elif removal_type == RemoveType.node_only:
-        graph.delete_node(node_to_del, reconnect=ReconnectKind.none)
+        graph.delete_node(node_to_del, reconnect=ReconnectType.none)
     elif removal_type == RemoveType.forbidden:
         pass
     else:

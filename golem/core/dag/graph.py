@@ -9,7 +9,7 @@ from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
 NodeType = TypeVar('NodeType', bound=GraphNode, covariant=False, contravariant=False)
 
 
-class ReconnectKind(Enum):
+class ReconnectType(Enum):
     """Defines allowed kinds of removals in Graph. Used by mutations."""
     none = 'none'  # do not reconnect predecessors
     single = 'single'  # reconnect a predecessor only if it's single
@@ -49,7 +49,7 @@ class Graph(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_node(self, node: GraphNode, reconnect: ReconnectKind = ReconnectKind.single):
+    def delete_node(self, node: GraphNode, reconnect: ReconnectType = ReconnectType.single):
         """Removes ``node`` from the graph.
         If ``node`` has only one child, then connects all of the ``node`` parents to it.
 

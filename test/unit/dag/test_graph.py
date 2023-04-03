@@ -4,7 +4,7 @@ from random import seed
 import numpy as np
 import pytest
 
-from golem.core.dag.graph import Graph, ReconnectKind
+from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.dag.linked_graph_node import LinkedGraphNode
@@ -128,7 +128,7 @@ def test_delete_leave_cycle():
 
     assert len(graph.get_edges()) == 4
 
-    graph.delete_node(third, reconnect=ReconnectKind.single)
+    graph.delete_node(third, reconnect=ReconnectType.single)
 
     assert third not in graph.nodes
     assert len(graph.get_edges()) == 3
@@ -145,7 +145,7 @@ def test_delete_break_cycle():
 
     assert len(graph.get_edges()) == 4
 
-    graph.delete_node(third, reconnect=ReconnectKind.none)
+    graph.delete_node(third, reconnect=ReconnectType.none)
 
     assert third not in graph.nodes
     assert len(graph.get_edges()) == 2

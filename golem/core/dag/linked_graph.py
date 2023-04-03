@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, Callable, Sequence
 
 from networkx import graph_edit_distance, set_node_attributes
 
-from golem.core.dag.graph import Graph, ReconnectKind
+from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth
 from golem.core.dag.convert import graph_structure_as_nx_graph
@@ -34,24 +34,24 @@ class LinkedGraph(Graph, Copyable):
         pass
 
     @copy_doc(Graph.delete_node)
-    def delete_node(self, node: GraphNode, reconnect: ReconnectKind = ReconnectKind.single) -> object:
+    def delete_node(self, node: GraphNode, reconnect: ReconnectType = ReconnectType.single) -> object:
         node_children_cached = self.node_children(node)
 
         self._nodes.remove(node)
         for node_child in node_children_cached:
             node_child.nodes_from.remove(node)
 
-        if reconnect == ReconnectKind.single:
+        if reconnect == ReconnectType.single:
             # if removed node had a single child
             # then reconnect it to preceding parent nodes.
             if node.nodes_from and len(node_children_cached) == 1:
                 child = node_children_cached[0]
                 child.nodes_from.extend(node.nodes_from)
-        elif reconnect == ReconnectKind.all:
+        elif reconnect == ReconnectType.all:
             if node.nodes_from:
                 for child in node_children_cached:
                     child.nodes_from.extend(node.nodes_from)
-        elif reconnect == ReconnectKind.none:
+        elif reconnect == ReconnectType.none:
             pass
 
         self._postprocess_nodes(self, self._nodes)
