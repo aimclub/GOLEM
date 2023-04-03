@@ -25,7 +25,7 @@ class DefaultChangeAdvisor:
         return possible_operations
 
     def can_be_removed(self, node: OptNode) -> RemoveType:
-        return RemoveType.node_only
+        return RemoveType.node_rewire
 
     def propose_parent(self, node: OptNode, possible_operations: List[Any]) -> List[Any]:
         return possible_operations
