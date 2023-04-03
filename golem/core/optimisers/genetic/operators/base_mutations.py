@@ -172,7 +172,8 @@ def add_as_child(graph: OptGraph,
     graph.connect_nodes(node_parent=node_to_mutate, node_child=new_node)
     if new_node_child:
         graph.connect_nodes(node_parent=new_node, node_child=new_node_child)
-        graph.disconnect_nodes(node_parent=node_to_mutate, node_child=new_node_child)
+        graph.disconnect_nodes(node_parent=node_to_mutate, node_child=new_node_child,
+                               clean_up_leftovers=True)
 
     return graph
 
