@@ -76,7 +76,8 @@ def run_adaptive_mutations(
         agent = optimizer.mutation.agent
         action_probs = dict(zip(agent.actions, agent.get_action_probs()))
         # Mutation probabilities ratio is another target statistic
-        action_prob_ratio = action_probs[MutationTypesEnum.single_edge] / action_probs[MutationTypesEnum.single_add]
+        action_prob_ratio = action_probs.get(MutationTypesEnum.single_edge, 0.) / \
+                            action_probs.get(MutationTypesEnum.single_add, 1.)
         stats_action_probs.append(action_prob_ratio)
 
         print(f'N(edges)/N(nodes)= {ne_ratio:.3f}')
@@ -107,4 +108,6 @@ if __name__ == '__main__':
     trees = generate_trees(graph_sizes=[10, 20, 30, 50])
     run_adaptive_mutations(trees,
                            optimizer_setup=tree_search_setup,
-                           trial_iterations=200, visualize=True)
+                           trial_iterations=2000,
+                           trial_timeout=30,
+                           visualize=True)
