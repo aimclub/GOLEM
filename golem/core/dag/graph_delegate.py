@@ -39,7 +39,7 @@ class GraphDelegate(Graph):
         self.operator.connect_nodes(node_parent, node_child)
 
     def disconnect_nodes(self, node_parent: GraphNode, node_child: GraphNode,
-                         clean_up_leftovers: bool = True):
+                         clean_up_leftovers: bool = False):
         self.operator.disconnect_nodes(node_parent, node_child, clean_up_leftovers)
 
     def get_edges(self) -> Sequence[Tuple[GraphNode, GraphNode]]:

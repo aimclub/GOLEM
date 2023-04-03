@@ -93,7 +93,7 @@ class Graph(ABC):
 
     @abstractmethod
     def disconnect_nodes(self, node_parent: GraphNode, node_child: GraphNode,
-                         clean_up_leftovers: bool = True):
+                         clean_up_leftovers: bool = False):
         """Removes an edge between two nodes
 
         Args:

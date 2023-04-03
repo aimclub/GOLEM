@@ -132,7 +132,7 @@ class LinkedGraph(Graph, Copyable):
 
     @copy_doc(Graph.disconnect_nodes)
     def disconnect_nodes(self, node_parent: GraphNode, node_child: GraphNode,
-                         clean_up_leftovers: bool = True):
+                         clean_up_leftovers: bool = False):
         if node_parent not in node_child.nodes_from:
             return
         if node_parent not in self._nodes or node_child not in self._nodes:
