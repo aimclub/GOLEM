@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, Callable, Sequence
 
 from networkx import graph_edit_distance, set_node_attributes
 
-from golem.core.dag.graph import Graph
+from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth
 from golem.core.dag.convert import graph_structure_as_nx_graph
@@ -34,19 +34,25 @@ class LinkedGraph(Graph, Copyable):
         pass
 
     @copy_doc(Graph.delete_node)
-    def delete_node(self, node: GraphNode):
+    def delete_node(self, node: GraphNode, reconnect: ReconnectType = ReconnectType.single) -> object:
         node_children_cached = self.node_children(node)
 
         self._nodes.remove(node)
         for node_child in node_children_cached:
             node_child.nodes_from.remove(node)
 
-        # if removed node had a single child
-        # then reconnect it to preceding parent nodes.
-        if node.nodes_from and len(node_children_cached) == 1:
-            child = node_children_cached[0]
-            for node_from in node.nodes_from:
-                child.nodes_from.append(node_from)
+        if reconnect == ReconnectType.single:
+            # if removed node had a single child
+            # then reconnect it to preceding parent nodes.
+            if node.nodes_from and len(node_children_cached) == 1:
+                child = node_children_cached[0]
+                child.nodes_from.extend(node.nodes_from)
+        elif reconnect == ReconnectType.all:
+            if node.nodes_from:
+                for child in node_children_cached:
+                    child.nodes_from.extend(node.nodes_from)
+        elif reconnect == ReconnectType.none:
+            pass
 
         self._postprocess_nodes(self, self._nodes)
 
@@ -126,7 +132,7 @@ class LinkedGraph(Graph, Copyable):
 
     @copy_doc(Graph.disconnect_nodes)
     def disconnect_nodes(self, node_parent: GraphNode, node_child: GraphNode,
-                         clean_up_leftovers: bool = True):
+                         clean_up_leftovers: bool = False):
         if node_parent not in node_child.nodes_from:
             return
         if node_parent not in self._nodes or node_child not in self._nodes:
