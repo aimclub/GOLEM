@@ -5,7 +5,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from textwrap import wrap
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Union, List
 from uuid import uuid4
 
 import networkx as nx
@@ -176,8 +176,6 @@ class GraphVisualizer:
         fig, ax = plt.subplots(figsize=(7, 7))
         fig.set_dpi(dpi)
 
-        # nx_graph = BaseNetworkxAdapter().restore(self.graph)
-        # nx.draw_kamada_kawai(nx_graph, arrows=True, ax=ax)
         self.draw_nx_dag(self.graph, ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
                          graph_to_nx_convert_func)
         if not save_path:
@@ -300,7 +298,7 @@ class GraphVisualizer:
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
 
-    def set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.Graph,
+    def set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.DiGraph,
                    longest_sequence: int, longest_y_sequence: int, font_size_scale: float):
         """ Set labels with scores to nodes and edges. """
 
@@ -310,7 +308,7 @@ class GraphVisualizer:
             if longest_y_sequence == 1:
                 bias_scale = 0.25  # Fits between the central line and the upper bound.
             else:
-                bias_scale = 1 / longest_y_sequence / 2 * 0.9  # Fits between the narrowest horizontal rows.
+                bias_scale = 1 / longest_y_sequence / 3 * 0.9  # Fits between the narrowest horizontal rows.
             bias = y_size * bias_scale
             return bias
 
@@ -319,6 +317,27 @@ class GraphVisualizer:
             max_size = 25
             size = max(max_size * (1 - np.log10(nodes_amount)), min_size)
             return size * size_scale
+
+        def match_labels_with_nx_nodes(nx_graph: nx.DiGraph, labels: Dict[int, str]) -> Dict[str, str]:
+            """ Matches index of node in GOLEM graph with networkx node name. """
+            nx_nodes = list(nx_graph.nodes.keys())
+            nx_labels = {}
+            for index in labels:
+                nx_labels[nx_nodes[index]] = labels[index]
+            return nx_labels
+
+        def match_labels_with_nx_edges(nx_graph: nx.DiGraph, labels: Dict[int, str]) \
+                -> Dict[Tuple[str, str], List[str]]:
+            """ Matches index of edge in GOLEM graph with tuple of networkx nodes names. """
+            nx_nodes = list(nx_graph.nodes.keys())
+            edges = self.graph.get_edges()
+            nx_labels = {}
+            for index in labels:
+                edge = edges[index]
+                parent_node_nx = nx_nodes[self.graph.nodes.index(edge[0])]
+                child_node_nx = nx_nodes[self.graph.nodes.index(edge[1])]
+                nx_labels[(parent_node_nx, child_node_nx)] = labels[index]
+            return nx_labels
 
         nodes_labels = self.visuals_params.get('nodes_labels', None)
         edges_labels = self.visuals_params.get('edges_labels', None)
@@ -333,13 +352,11 @@ class GraphVisualizer:
             bbox = dict(alpha=0.9, color='w')
             for value in labels_pos.values():
                 value[1] += bias
-            labels = dict.fromkeys(list(labels_pos.keys()))
-            for i, key in enumerate(labels):
-                labels[key] = nodes_labels[i]
 
+            nodes_nx_labels = match_labels_with_nx_nodes(nx_graph=nx_graph, labels=nodes_labels)
             nx.draw_networkx_labels(
                 nx_graph, labels_pos,
-                labels=labels,
+                labels=nodes_nx_labels,
                 font_color='black',
                 font_size=font_size,
                 bbox=bbox
@@ -353,21 +370,18 @@ class GraphVisualizer:
             for value in labels_pos_edges.values():
                 value[1] += label_bias_y
 
-        edges_label = dict()
-        i = 0
-        for u, v, e in nx_graph.edges(data=True):
-            edges_label[(u, v)] = edges_labels[i]
-            i += 1
+        edges_nx_labels = match_labels_with_nx_edges(nx_graph=nx_graph, labels=edges_labels)
         # Set labels for edges
         for u, v, e in nx_graph.edges(data=True):
-            # edge_labels[(u, v)] = edges_labels[i]
+            if (u, v) not in edges_nx_labels:
+                continue
             current_pos = labels_pos_edges
             if 'edge_center_position' in e:
                 x, y = e['edge_center_position']
-                plt.text(x, y, edges_label[(u, v)], bbox=bbox, fontsize=font_size)
+                plt.text(x, y, edges_nx_labels[(u, v)], bbox=bbox, fontsize=font_size)
             else:
                 nx.draw_networkx_edge_labels(
-                    nx_graph, current_pos, {(u, v): edges_label[(u, v)]},
+                    nx_graph, current_pos, {(u, v): edges_nx_labels[(u, v)]},
                     label_pos=0.5, ax=ax,
                     font_color='black',
                     font_size=font_size,
