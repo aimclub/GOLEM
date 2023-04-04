@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import os
+from copy import deepcopy
 from pathlib import Path
 from textwrap import wrap
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Union
@@ -185,8 +186,7 @@ class GraphVisualizer:
             plt.savefig(save_path, dpi=dpi)
             plt.close()
 
-    @staticmethod
-    def draw_nx_dag(graph: GraphType, ax: Optional[plt.Axes] = None,
+    def draw_nx_dag(self, graph: GraphType, ax: Optional[plt.Axes] = None,
                     node_color: Optional[NodeColorType] = None,
                     node_size_scale: float = 1, font_size_scale: float = 1, edge_curvature_scale: float = 1,
                     graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph):
@@ -284,6 +284,8 @@ class GraphVisualizer:
         for u, v, e in nx_graph.edges(data=True):
             nx.draw_networkx_edges(nx_graph, pos, edgelist=[(u, v)], node_size=node_size, ax=ax, arrowsize=10,
                                    arrowstyle=arrow_style, connectionstyle=e['connectionstyle'])
+        self.set_labels(ax, pos, nx_graph,
+                        longest_sequence, longest_sequence, font_size_scale)
         # Rescale the figure for all nodes to fit in.
         x_1, x_2 = ax.get_xlim()
         y_1, y_2 = ax.get_ylim()
@@ -297,6 +299,81 @@ class GraphVisualizer:
 
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
+
+    def set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.Graph,
+                   longest_sequence: int, longest_y_sequence: int, font_size_scale: float):
+        """ Set labels with scores to nodes and edges. """
+
+        def calculate_labels_bias(ax: plt.Axes, longest_y_sequence: int):
+            y_1, y_2 = ax.get_ylim()
+            y_size = y_2 - y_1
+            if longest_y_sequence == 1:
+                bias_scale = 0.25  # Fits between the central line and the upper bound.
+            else:
+                bias_scale = 1 / longest_y_sequence / 2 * 0.9  # Fits between the narrowest horizontal rows.
+            bias = y_size * bias_scale
+            return bias
+
+        def _get_scaled_font_size(nodes_amount: int, size_scale: float) -> float:
+            min_size = 11
+            max_size = 25
+            size = max(max_size * (1 - np.log10(nodes_amount)), min_size)
+            return size * size_scale
+
+        nodes_labels = self.visuals_params.get('nodes_labels', None)
+        edges_labels = self.visuals_params.get('edges_labels', None)
+        if not edges_labels and not nodes_labels:
+            return
+
+        bias = calculate_labels_bias(ax, longest_y_sequence)
+        if nodes_labels:
+            # Set labels for nodes
+            labels_pos = deepcopy(pos)
+            font_size = _get_scaled_font_size(longest_sequence, font_size_scale * 0.7)
+            bbox = dict(alpha=0.9, color='w')
+            for value in labels_pos.values():
+                value[1] += bias
+            labels = dict.fromkeys(list(labels_pos.keys()))
+            for i, key in enumerate(labels):
+                labels[key] = nodes_labels[i]
+
+            nx.draw_networkx_labels(
+                nx_graph, labels_pos,
+                labels=labels,
+                font_color='black',
+                font_size=font_size,
+                bbox=bbox
+            )
+
+        if not edges_labels:
+            return
+        labels_pos_edges = deepcopy(pos)
+        label_bias_y = 2 / 3 * bias
+        if len(set([coord[1] for coord in pos.values()])) == 1 and len(list(pos.values())) > 2:
+            for value in labels_pos_edges.values():
+                value[1] += label_bias_y
+
+        edges_label = dict()
+        i = 0
+        for u, v, e in nx_graph.edges(data=True):
+            edges_label[(u, v)] = edges_labels[i]
+            i += 1
+        # Set labels for edges
+        for u, v, e in nx_graph.edges(data=True):
+            # edge_labels[(u, v)] = edges_labels[i]
+            current_pos = labels_pos_edges
+            if 'edge_center_position' in e:
+                x, y = e['edge_center_position']
+                plt.text(x, y, edges_label[(u, v)], bbox=bbox, fontsize=font_size)
+            else:
+                nx.draw_networkx_edge_labels(
+                    nx_graph, current_pos, {(u, v): edges_label[(u, v)]},
+                    label_pos=0.5, ax=ax,
+                    font_color='black',
+                    font_size=font_size,
+                    rotate=False,
+                    bbox=bbox
+                )
 
 
 def get_hierarchy_pos(graph: nx.DiGraph, max_line_length: int = 6) -> Tuple[Dict[Any, Tuple[float, float]], int]:

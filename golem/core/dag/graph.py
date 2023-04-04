@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from os import PathLike
-from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
+from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar, Any
 
 from golem.core.dag.graph_node import GraphNode
 from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
@@ -205,7 +205,8 @@ class Graph(ABC):
     def show(self, save_path: Optional[Union[PathLike, str]] = None, engine: Optional[str] = None,
              node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
              node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
-             edge_curvature_scale: Optional[float] = None):
+             edge_curvature_scale: Optional[float] = None,
+             visuals_params: Optional[Dict[str, Any]] = None):
         """Visualizes graph or saves its picture to the specified ``path``
 
         Args:
@@ -216,9 +217,10 @@ class Graph(ABC):
             font_size_scale: use to make font size bigger or lesser. Supported only for the engine 'matplotlib'.
             edge_curvature_scale: use to make edges more or less curved. Supported only for the engine 'matplotlib'.
             dpi: DPI of the output image. Not supported for the engine 'pyvis'.
+            visuals_params: params for visualization
         """
-        GraphVisualizer(self).visualise(save_path, engine, node_color, dpi, node_size_scale, font_size_scale,
-                                        edge_curvature_scale)
+        GraphVisualizer(graph=self, visuals_params=visuals_params)\
+            .visualise(save_path, engine, node_color, dpi, node_size_scale, font_size_scale, edge_curvature_scale)
 
     @property
     def graph_description(self) -> Dict:
