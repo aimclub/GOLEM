@@ -1,4 +1,5 @@
 from datetime import timedelta
+from functools import partial
 from pprint import pprint
 from typing import Callable, Optional, List
 
@@ -12,6 +13,8 @@ from examples.synthetic_graph_evolution.utils import draw_graphs_subplots, plot_
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.operators.operator import PopulationT
+from golem.core.optimisers.objective import Objective
+from golem.metrics.edit_distance import tree_edit_dist
 from golem.metrics.graph_metrics import *
 
 
@@ -28,36 +31,26 @@ def generate_gnp_graphs(graph_size: int,
     return targets
 
 
-def generate_trees(graph_sizes: Sequence[int]):
+def generate_trees(graph_sizes: Sequence[int], node_types: Sequence[str] = ('x',)):
     trees = [nx.random_tree(n, create_using=nx.DiGraph) for n in graph_sizes]
-    trees = [postprocess_nx_graph(g) for g in trees]
+    trees = [postprocess_nx_graph(g, node_labels=node_types) for g in trees]
     return trees
 
 
 def run_adaptive_mutations(
         target: nx.DiGraph,
-        optimizer_setup: Callable = graph_search_setup,
-        trial_timeout: int = 15,
-        trial_iterations: Optional[int] = 500,
+        objective: Objective,
+        optimizer: EvoGraphOptimizer,
         visualize: bool = True,
 ):
-    node_types = ['x']
     stats_action_value_log: List[List[float]] = []
 
     def log_action_values(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
         values = optimizer.mutation.agent.get_action_values(obs=None)
         stats_action_value_log.append(list(values))
 
-    # Build the optimizer and setup the logger
-    optimizer, objective = optimizer_setup(
-        target,
-        optimizer_cls=EvoGraphOptimizer,
-        node_types=node_types,
-        timeout=timedelta(minutes=trial_timeout),
-        num_iterations=trial_iterations,
-    )
+    # Setup the logger and run the optimizer
     optimizer.set_iteration_callback(log_action_values)
-    # Run the optimizer
     found_graphs = optimizer.optimise(objective)
     found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
     history = optimizer.history
@@ -75,22 +68,59 @@ def run_adaptive_mutations(
     return stats_action_value_log
 
 
+def run_experiment_graphs(trial_timeout: int = 15, trial_iterations: Optional[int] = 500):
+    node_types = ['x']
+    for target in generate_gnp_graphs(gnp_probs=[0.15, 0.3], graph_size=100, node_types=node_types):
+        # Setup objective that measures some graph-theoretic similarity measure
+        objective = Objective(
+            quality_metrics={
+                'sp_adj': partial(spectral_dist, target, kind='adjacency'),
+                'sp_lapl': partial(spectral_dist, target, kind='laplacian'),
+            },
+            complexity_metrics={
+                'graph_size': partial(size_diff, target),
+                'degree': partial(degree_distance, target),
+            },
+            is_multi_objective=True,
+        )
+
+        # Build the optimizer
+        optimizer, _ = graph_search_setup(
+            objective=objective,
+            optimizer_cls=EvoGraphOptimizer,
+            node_types=node_types,
+            timeout=timedelta(minutes=trial_timeout),
+            num_iterations=trial_iterations,
+        )
+
+        run_adaptive_mutations(target, objective, optimizer, visualize=True)
+
+
+def run_experiment_trees(trial_timeout: int = 15, trial_iterations: Optional[int] = 500):
+    node_types = ['x']
+    for target in generate_trees(graph_sizes=[10, 20, 30, 50], node_types=node_types):
+        # Setup objective that measures some graph-theoretic similarity measure
+        objective = Objective(
+            quality_metrics={'edit_dist': partial(tree_edit_dist, target)},
+            complexity_metrics={'degree': partial(degree_distance, target)},
+            is_multi_objective=False,
+        )
+
+        # Build the optimizer
+        optimizer, _ = tree_search_setup(
+            objective=objective,
+            optimizer_cls=EvoGraphOptimizer,
+            node_types=node_types,
+            timeout=timedelta(minutes=trial_timeout),
+            num_iterations=trial_iterations,
+        )
+
+        run_adaptive_mutations(target, objective, optimizer, visualize=True)
+
+
 if __name__ == '__main__':
     """Run adaptive optimizer on different targets to see how adaptive agent converges 
     to different probabilities of actions (i.e. mutations) for different targets."""
 
-    target_graphs = generate_gnp_graphs(gnp_probs=[0.15, 0.3], graph_size=100)
-    for target in target_graphs:
-        run_adaptive_mutations(target,
-                               optimizer_setup=graph_search_setup,
-                               trial_iterations=200,
-                               trial_timeout=30,
-                               visualize=True)
-
-    trees = generate_trees(graph_sizes=[10, 20, 30, 50])
-    for tree in trees:
-        run_adaptive_mutations(tree,
-                               optimizer_setup=tree_search_setup,
-                               trial_iterations=2000,
-                               trial_timeout=30,
-                               visualize=True)
+    run_experiment_trees(trial_timeout=15, trial_iterations=2000)
+    run_experiment_graphs(trial_timeout=15, trial_iterations=2000)
