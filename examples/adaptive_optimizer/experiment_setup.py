@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 
 import networkx as nx
 from matplotlib import pyplot as plt
@@ -13,9 +13,9 @@ from golem.core.optimisers.objective import Objective
 
 
 def run_adaptive_mutations(
-        target: nx.DiGraph,
-        objective: Objective,
         optimizer: EvoGraphOptimizer,
+        objective: Objective,
+        target: Optional[nx.DiGraph] = None,
         visualize: bool = True,
 ):
     """This experiment setup outputs graphic of relative action probabilities
@@ -37,8 +37,11 @@ def run_adaptive_mutations(
     pprint(stats_action_value_log)
     if visualize:
         found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
-        draw_graphs_subplots(target, found_nx_graph,
-                             titles=['Target Graph', 'Found Graph'])
+        if target is not None:
+            draw_graphs_subplots(target, found_nx_graph,
+                                 titles=['Target Graph', 'Found Graph'])
+        else:
+            draw_graphs_subplots(found_nx_graph, titles=['Found Graph'])
         history.show.fitness_line()
         plot_action_values(stats_action_value_log, action_tags=agent.actions)
         plt.show()
