@@ -42,9 +42,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)
         self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
-        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params,
-                                 operator_agent=MultiArmedBanditAgent(graph_optimizer_params.mutation_types)
-                                 )
+        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params )
         self.inheritance = Inheritance(graph_optimizer_params, self.selection)
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,

@@ -1,11 +1,12 @@
 from copy import deepcopy
-from random import choice, random
-from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional, Sequence
+from random import random
+from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
 import numpy as np
 
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.adaptive.operatoragent import OperatorAgent, RandomAgent, ExperienceBuffer
+from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
+from golem.core.optimisers.adaptive.operatoragent import OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum, MutationStrengthEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
@@ -30,14 +31,26 @@ class Mutation(Operator):
                  requirements: GraphRequirements,
                  graph_gen_params: GraphGenerationParams,
                  mutations_repo: Optional[MutationRepo] = None,
-                 operator_agent: Optional[OperatorAgent] = None,
                  ):
         super().__init__(parameters, requirements)
         self.graph_generation_params = graph_gen_params
         self.parameters = parameters
         self._mutations_repo = mutations_repo or base_mutations_repo
-        self._operator_agent = operator_agent or RandomAgent(actions=self.parameters.mutation_types)
+        self._operator_agent = self._init_operator_agent(parameters)
         self.agent_experience = ExperienceBuffer()
+
+    @staticmethod
+    def _init_operator_agent(parameters: 'GPAlgorithmParameters'):
+        kind = parameters.adaptive_mutation_type
+        if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
+            agent = RandomAgent(actions=parameters.mutation_types)
+        elif kind == MutationAgentTypeEnum.bandit:
+            agent = MultiArmedBanditAgent(parameters.mutation_types)
+        elif kind == MutationAgentTypeEnum.contextual_bandit:
+            raise NotImplementedError()
+        else:
+            raise TypeError(f'Unknown parameter {kind}')
+        return agent
 
     @property
     def agent(self) -> OperatorAgent:

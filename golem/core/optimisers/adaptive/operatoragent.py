@@ -1,6 +1,7 @@
 import random
 from abc import ABC, abstractmethod
-from typing import Union, Sequence, Hashable, Any, Dict, Tuple, Optional, List
+from enum import Enum
+from typing import Union, Sequence, Hashable, Tuple, Optional, List
 
 import numpy as np
 
@@ -11,6 +12,13 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 
 ObsType = Graph
 ActType = Hashable
+
+
+class MutationAgentTypeEnum(Enum):
+    default = 'random'
+    random = 'random'
+    bandit = 'bandit'
+    contextual_bandit = 'contextual_bandit'
 
 
 class ExperienceBuffer:

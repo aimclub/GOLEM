@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence, Union, Any
 
+from golem.core.optimisers.adaptive.operatoragent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import MutationStrengthEnum, MutationTypesEnum, \
     simple_mutation_set
 from golem.core.optimisers.optimizer import AlgorithmParameters
@@ -23,6 +24,13 @@ class GPAlgorithmParameters(AlgorithmParameters):
     attempts before continuing
     :param mutation_strength: strength of mutation in tree (using in certain mutation types)
     :param min_pop_size_with_elitism: minimal population size with which elitism is applicable
+
+    :param adaptive_mutation_type: Experimental feature! Enables adaptive Mutation agent.
+
+    Adaptive mutation agent uses specified algorithm. 'random' type is the default non-adaptive version.
+    Requires crossover_types to be CrossoverTypesEnum.none for correct adaptive learning.
+    MutationAgentTypeEnum.bandit uses Multi-Armed Bandit (MAB) learning algorithm.
+    MutationAgentTypeEnum.contextual bandit uses contextual MAB learning algorithm.
 
     :param selection_types: Sequence of selection operators types
     :param crossover_types: Sequence of crossover operators types
@@ -56,6 +64,8 @@ class GPAlgorithmParameters(AlgorithmParameters):
     max_num_of_operator_attempts: int = 100
     mutation_strength: MutationStrengthEnum = MutationStrengthEnum.mean
     min_pop_size_with_elitism: int = 5
+
+    adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
 
     selection_types: Sequence[SelectionTypesEnum] = \
         (SelectionTypesEnum.tournament,)
