@@ -158,7 +158,7 @@ if __name__ == '__main__':
     """Run adaptive optimizer on different targets to see how adaptive agent converges 
     to different probabilities of actions (i.e. mutations) for different targets."""
 
-    run_experiment_node_num(trial_timeout=15, trial_iterations=2000)
-    run_experiment_edge_num(trial_timeout=15, trial_iterations=2000)
-    run_experiment_trees(trial_timeout=15, trial_iterations=2000)
-    run_experiment_graphs_ratio_edges_nodes(trial_timeout=15, trial_iterations=2000)
+    run_experiment_node_num(trial_timeout=2, trial_iterations=500)
+    run_experiment_edge_num(trial_timeout=2, trial_iterations=500)
+    run_experiment_trees(trial_timeout=10, trial_iterations=2000)
+    run_experiment_graphs_ratio_edges_nodes(trial_timeout=10, trial_iterations=2000)
