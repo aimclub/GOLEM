@@ -4,7 +4,7 @@ from typing import Sequence
 import numpy as np
 import pytest
 
-from examples.synthetic_graph_evolution import experiment_setup
+from examples.synthetic_graph_evolution.experiment_setup import run_trial
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
@@ -16,20 +16,20 @@ def run_graph_trial(optimizer_cls):
     # input data initialization
     target_graph = generate_labeled_graph('gnp', 20, node_labels=['X', 'Y'])
     # running the example
-    return experiment.run_trial(target_graph=target_graph,
-                                optimizer_setup=graph_search_setup,
-                                optimizer_cls=optimizer_cls,
-                                timeout=timedelta(minutes=1))
+    return run_trial(target_graph=target_graph,
+                     optimizer_setup=graph_search_setup,
+                     optimizer_cls=optimizer_cls,
+                     timeout=timedelta(minutes=1))
 
 
 def run_tree_trial(optimizer_cls):
     # input data initialization
     target_graph = generate_labeled_graph('tree', 10, node_labels=['X', 'Y'])
     # running the example
-    return experiment.run_trial(target_graph=target_graph,
-                                optimizer_setup=tree_search_setup,
-                                optimizer_cls=optimizer_cls,
-                                timeout=timedelta(minutes=1))
+    return run_trial(target_graph=target_graph,
+                     optimizer_setup=tree_search_setup,
+                     optimizer_cls=optimizer_cls,
+                     timeout=timedelta(minutes=1))
 
 
 @pytest.mark.parametrize('run_fun', [run_graph_trial, run_tree_trial])
