@@ -4,7 +4,7 @@ from typing import Sequence
 import numpy as np
 import pytest
 
-from examples.synthetic_graph_evolution import experiment
+from examples.synthetic_graph_evolution import experiment_setup
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup

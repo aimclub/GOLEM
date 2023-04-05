@@ -3,7 +3,7 @@ from math import ceil
 
 import pytest
 
-from examples.synthetic_graph_evolution import experiment
+from examples.synthetic_graph_evolution import experiment_setup
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
