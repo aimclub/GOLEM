@@ -36,14 +36,13 @@ def generate_trees(graph_sizes: Sequence[int]):
 
 
 def run_adaptive_mutations(
-        targets: Sequence[nx.DiGraph],
+        target: nx.DiGraph,
         optimizer_setup: Callable = graph_search_setup,
         trial_timeout: int = 15,
         trial_iterations: Optional[int] = 500,
         visualize: bool = False,
 ):
     node_types = ['x']
-    stats_node_to_edge_ratios = []
     stats_action_probs = []
     stats_action_value_log: List[List[float]] = []
 
@@ -51,52 +50,39 @@ def run_adaptive_mutations(
         values = optimizer.mutation.agent.get_action_values(obs=None)
         stats_action_value_log.append(list(values))
 
-    for target_graph in targets:
-        stats_action_value_log = []
+    # Build the optimizer and setup the logger
+    optimizer, objective = optimizer_setup(
+        target,
+        optimizer_cls=EvoGraphOptimizer,
+        node_types=node_types,
+        timeout=timedelta(minutes=trial_timeout),
+        num_iterations=trial_iterations,
+    )
+    optimizer.set_iteration_callback(log_action_values)
+    # Run the optimizer
+    found_graphs = optimizer.optimise(objective)
+    found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
+    history = optimizer.history
 
-        # One of the target statistics
-        ne_ratio = target_graph.number_of_edges() / target_graph.number_of_nodes()
-        stats_node_to_edge_ratios.append(ne_ratio)
+    # Get action probabilities
+    agent = optimizer.mutation.agent
+    action_probs = dict(zip(agent.actions, agent.get_action_probs()))
+    # Mutation probabilities ratio is another target statistic
+    action_prob_ratio = action_probs.get(MutationTypesEnum.single_edge, 0.) / \
+                        action_probs.get(MutationTypesEnum.single_add, 1.)
+    stats_action_probs.append(action_prob_ratio)
 
-        # Build the optimizer and setup the logger
-        optimizer, objective = optimizer_setup(
-            target_graph,
-            optimizer_cls=EvoGraphOptimizer,
-            node_types=node_types,
-            timeout=timedelta(minutes=trial_timeout),
-            num_iterations=trial_iterations,
-        )
-        optimizer.set_iteration_callback(log_action_values)
-        # Run the optimizer
-        found_graphs = optimizer.optimise(objective)
-        found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
-        history = optimizer.history
-
-        # Get action probabilities
-        agent = optimizer.mutation.agent
-        action_probs = dict(zip(agent.actions, agent.get_action_probs()))
-        # Mutation probabilities ratio is another target statistic
-        action_prob_ratio = action_probs.get(MutationTypesEnum.single_edge, 0.) / \
-                            action_probs.get(MutationTypesEnum.single_add, 1.)
-        stats_action_probs.append(action_prob_ratio)
-
-        print(f'N(edges)/N(nodes)= {ne_ratio:.3f}')
-        print(f'P(add_edge)/P(add_node) = {action_prob_ratio:.3f}')
-        if visualize:
-            found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
-            draw_graphs_subplots(target_graph, found_nx_graph,
-                                 titles=['Target Graph', 'Found Graph'])
-            history.show.fitness_line()
-            plot_action_values(stats_action_value_log, action_tags=agent.actions)
-            plt.show()
-
-    # Compute correlation coefficient for given statistics
-    result = pearsonr(stats_node_to_edge_ratios, stats_action_probs)
-    print(f'N(edges)/N(nodes)= {np.round(stats_node_to_edge_ratios, 3)}')
-    print(f'P(add_edge)/P(add_node) = {np.round(stats_action_probs, 3)}')
-    print(result)
-
-    return result
+    # One of the target statistics
+    ne_ratio = target.number_of_edges() / target.number_of_nodes()
+    print(f'N(edges)/N(nodes)= {ne_ratio:.3f}')
+    print(f'P(add_edge)/P(add_node) = {action_prob_ratio:.3f}')
+    if visualize:
+        found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
+        draw_graphs_subplots(target, found_nx_graph,
+                             titles=['Target Graph', 'Found Graph'])
+        history.show.fitness_line()
+        plot_action_values(stats_action_value_log, action_tags=agent.actions)
+        plt.show()
 
 
 if __name__ == '__main__':
