@@ -121,7 +121,7 @@ def run_experiment_graphs_ratio_edges_nodes(trial_timeout: int = 15, trial_itera
 
 def run_experiment_trees(trial_timeout: int = 15, trial_iterations: Optional[int] = 500):
     node_types = ['x']
-    for target in generate_trees(graph_sizes=[10, 20, 30, 50], node_types=node_types):
+    for target in generate_trees(graph_sizes=[20, 30, 50], node_types=node_types):
         # Setup objective that measures some graph-theoretic similarity measure
         objective = Objective(
             quality_metrics={'edit_dist': partial(tree_edit_dist, target)},
