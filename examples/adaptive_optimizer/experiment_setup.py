@@ -37,11 +37,12 @@ def run_adaptive_mutations(
     pprint(stats_action_value_log)
     if visualize:
         found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
+        final_metrics = objective(found_nx_graph).value
         if target is not None:
             draw_graphs_subplots(target, found_nx_graph,
-                                 titles=['Target Graph', 'Found Graph'])
+                                 titles=['Target Graph', f'Found Graph ({final_metrics})'])
         else:
-            draw_graphs_subplots(found_nx_graph, titles=['Found Graph'])
+            draw_graphs_subplots(found_nx_graph, titles=[f'Found Graph ({final_metrics})'])
         history.show.fitness_line()
         plot_action_values(stats_action_value_log, action_tags=agent.actions)
         plt.show()

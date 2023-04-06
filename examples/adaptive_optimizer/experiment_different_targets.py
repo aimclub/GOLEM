@@ -51,9 +51,8 @@ def get_graph_gp_params(objective: Objective):
     )
 
 
-def run_experiment_node_num(target_sizes: Sequence[int] = (10, 100, 200),
-                            trial_timeout: int = 15,
-                            trial_iterations: Optional[int] = 2500):
+def run_experiment_node_num(target_sizes: Sequence[int] = (100, 400),
+                            trial_timeout: int = 15):
     for target_size in target_sizes:
         # Setup simple objective that searches for required graph size (number of nodes)
         objective = Objective({'graph_size': lambda graph: abs(target_size -
@@ -65,14 +64,13 @@ def run_experiment_node_num(target_sizes: Sequence[int] = (10, 100, 200),
             optimizer_cls=EvoGraphOptimizer,
             algorithm_parameters=get_graph_gp_params(objective),
             timeout=timedelta(minutes=trial_timeout),
-            num_iterations=trial_iterations,
+            num_iterations=target_size * 3,
         )
         run_adaptive_mutations(optimizer, objective, visualize=True)
 
 
-def run_experiment_edge_num(target_sizes: Sequence[int] = (10, 100, 200),
-                            trial_timeout: int = 15,
-                            trial_iterations: Optional[int] = 2500):
+def run_experiment_edge_num(target_sizes: Sequence[int] = (100, 400),
+                            trial_timeout: int = 15):
     for target_size in target_sizes:
         # Setup simple objective that searches for required graph size (number of nodes)
         objective = Objective({'graph_size': lambda graph: abs(target_size -
@@ -84,7 +82,7 @@ def run_experiment_edge_num(target_sizes: Sequence[int] = (10, 100, 200),
             optimizer_cls=EvoGraphOptimizer,
             algorithm_parameters=get_graph_gp_params(objective),
             timeout=timedelta(minutes=trial_timeout),
-            num_iterations=trial_iterations,
+            num_iterations=target_size * 3,
         )
         run_adaptive_mutations(optimizer, objective, visualize=True)
 
@@ -158,7 +156,7 @@ if __name__ == '__main__':
     """Run adaptive optimizer on different targets to see how adaptive agent converges 
     to different probabilities of actions (i.e. mutations) for different targets."""
 
-    run_experiment_node_num(trial_timeout=2, trial_iterations=500)
-    run_experiment_edge_num(trial_timeout=2, trial_iterations=500)
+    run_experiment_node_num(trial_timeout=2)
+    run_experiment_edge_num(trial_timeout=2)
     run_experiment_trees(trial_timeout=10, trial_iterations=2000)
     run_experiment_graphs_ratio_edges_nodes(trial_timeout=10, trial_iterations=2000)

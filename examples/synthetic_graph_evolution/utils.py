@@ -83,6 +83,19 @@ def draw_graphs_subplots(*graphs: nx.Graph,
                          draw_fn=nx.draw,
                          size: int = 10,
                          show: bool = True):
+    """Draw 1 or several NetworkX graphs
+    with coloring of roots, sources and node degrees.
+
+    Args:
+        graphs: 1 or many instances of nx.Graph
+        titles: optional sequence of titles for graph subplots
+        color_degrees: flag specifying if graph nodes must be colored relative to their degree
+        with_labels: flag specifying if graph nodes must be drawn with labels
+        draw_fn: nx.draw_* primitive for drawing graph subplots
+        size: figure size, passed to plt.subplots(figsize=...)
+        show: if plt.show() is necessary
+    """
+
     graphs = ensure_wrapped_in_sequence(graphs)
     titles = [f'Graph #{i+1}' for i in range(len(graphs))] if not titles else titles
     # Setup subplots
