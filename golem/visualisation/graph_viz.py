@@ -282,8 +282,8 @@ class GraphVisualizer:
         for u, v, e in nx_graph.edges(data=True):
             nx.draw_networkx_edges(nx_graph, pos, edgelist=[(u, v)], node_size=node_size, ax=ax, arrowsize=10,
                                    arrowstyle=arrow_style, connectionstyle=e['connectionstyle'])
-        self.set_labels(ax, pos, nx_graph,
-                        longest_sequence, longest_sequence, font_size_scale)
+        self._set_labels(ax, pos, nx_graph,
+                         longest_sequence, longest_sequence, font_size_scale)
         # Rescale the figure for all nodes to fit in.
         x_1, x_2 = ax.get_xlim()
         y_1, y_2 = ax.get_ylim()
@@ -298,8 +298,8 @@ class GraphVisualizer:
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
 
-    def set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.DiGraph,
-                   longest_sequence: int, longest_y_sequence: int, font_size_scale: float):
+    def _set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.DiGraph,
+                    longest_sequence: int, longest_y_sequence: int, font_size_scale: float):
         """ Set labels with scores to nodes and edges. """
 
         def calculate_labels_bias(ax: plt.Axes, longest_y_sequence: int):
