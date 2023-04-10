@@ -69,16 +69,16 @@ if __name__ == "__main__":
     sa = GraphStructuralAnalysis(objective=objective, node_factory=node_factory,
                                  requirements=requirements,
                                  path_to_save=path_to_save,
-                                 is_visualize_per_iteration=True)
-
+                                 is_visualize_per_iteration=False)
+    #
     graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=3)
     #
     # path_to_save = os.path.join(project_root(), 'sa')
     # results = SAAnalysisResults.load(source=os.path.join(path_to_save, '6.json'))
-    # optimized_graph = GraphStructuralAnalysis.visualize_on_graph(graph=get_opt_graph(), analysis_result=results,
-    #                                                              metric_idx_to_optimize_by=0,
-    #                                                              mode="by_iteration",
-    #                                                              font_size_scale=0.6)
+    optimized_graph = GraphStructuralAnalysis.visualize_on_graph(graph=get_opt_graph(), analysis_result=results,
+                                                                 metric_idx_to_optimize_by=0,
+                                                                 mode="by_iteration",
+                                                                 font_size_scale=0.6)
 
     # optimized_graph.show()
     # graph.show()

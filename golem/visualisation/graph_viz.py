@@ -331,10 +331,7 @@ class GraphVisualizer:
             nx_nodes = list(nx_graph.nodes.keys())
             nx_labels = {}
             for index in labels:
-                try:
-                    nx_labels[nx_nodes[index]] = labels[index]
-                except IndexError:
-                    print('b')
+                nx_labels[nx_nodes[index]] = labels[index]
             return nx_labels
 
         def match_labels_with_nx_edges(nx_graph: nx.DiGraph, labels: Dict[int, str]) \

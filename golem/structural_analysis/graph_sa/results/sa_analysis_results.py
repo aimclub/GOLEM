@@ -43,10 +43,8 @@ class SAAnalysisResults(Serializable):
         :param iter: iteration on which to search for. """
         worst_value = None
         worst_result = None
-        if not iter:
+        if iter is None:
             iter = list(self.results_per_iteration.keys())[-1]
-        if str(iter) not in self.results_per_iteration.keys():
-            raise IndexError("No such iteration found.")
 
         nodes_results = self.results_per_iteration[str(iter)]['node']
         edges_results = self.results_per_iteration[str(iter)]['edge']

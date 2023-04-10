@@ -9,7 +9,6 @@ from golem.core.dag.graph import Graph, GraphNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.core.paths import project_root
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeDeletionAnalyze, \
     EdgeReplaceOperationAnalyze
 from golem.structural_analysis.graph_sa.edges_analysis import EdgesAnalysis
@@ -144,11 +143,6 @@ class GraphStructuralAnalysis:
 
         while not converged:
             iter += 1
-            if len(analysis_result.results_per_iteration[list(analysis_result.results_per_iteration.keys())[-1]]['node']) != graph.length:
-                print('a')
-            if len(analysis_result.results_per_iteration[list(analysis_result.results_per_iteration.keys())[-1]]['edge']) != len(graph.get_edges()):
-                print('cc')
-
             worst_result = analysis_result.get_info_about_worst_result(
                 metric_idx_to_optimize_by=self.main_metric_idx)
             if self.is_visualize_per_iteration:
@@ -261,8 +255,6 @@ class GraphStructuralAnalysis:
 
         for i in iters:
             nodes_labels, edges_labels = get_nodes_and_edges_labels(analysis_result=analysis_result, iter=i)
-            if len(nodes_labels) != graph.length and mode != 'final':
-                print('c')
             if not (mode == 'final' and i != iters[-1]):
                 graph.show(node_color=node_color, dpi=dpi, node_size_scale=node_size_scale,
                            nodes_labels=nodes_labels, font_size_scale=font_size_scale,
