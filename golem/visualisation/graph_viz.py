@@ -56,7 +56,8 @@ class GraphVisualizer:
     def visualise(self, save_path: Optional[PathType] = None, engine: Optional[str] = None,
                   node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
                   node_size_scale: Optional[float] = None,
-                  font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None):
+                  font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
+                  nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
         engine = engine or self.get_predefined_value('engine')
 
         if not self.graph.nodes:
@@ -64,7 +65,7 @@ class GraphVisualizer:
 
         if engine == 'matplotlib':
             self.__draw_with_networkx(save_path, node_color, dpi, node_size_scale, font_size_scale,
-                                      edge_curvature_scale)
+                                      edge_curvature_scale, nodes_labels, edges_labels)
         elif engine == 'pyvis':
             self.__draw_with_pyvis(save_path, node_color)
         elif engine == 'graphviz':
@@ -163,7 +164,8 @@ class GraphVisualizer:
                              node_color: Optional[NodeColorType] = None,
                              dpi: Optional[int] = None, node_size_scale: Optional[float] = None,
                              font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
-                             graph_to_nx_convert_func: Optional[Callable] = None):
+                             graph_to_nx_convert_func: Optional[Callable] = None,
+                             nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
         save_path = save_path or self.get_predefined_value('save_path')
         node_color = node_color or self.get_predefined_value('node_color')
         dpi = dpi or self.get_predefined_value('dpi')
@@ -177,7 +179,7 @@ class GraphVisualizer:
         fig.set_dpi(dpi)
 
         self.draw_nx_dag(self.graph, ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
-                         graph_to_nx_convert_func)
+                         graph_to_nx_convert_func, nodes_labels, edges_labels)
         if not save_path:
             plt.show()
         else:
@@ -187,7 +189,8 @@ class GraphVisualizer:
     def draw_nx_dag(self, graph: GraphType, ax: Optional[plt.Axes] = None,
                     node_color: Optional[NodeColorType] = None,
                     node_size_scale: float = 1, font_size_scale: float = 1, edge_curvature_scale: float = 1,
-                    graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph):
+                    graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph,
+                    nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
 
         def draw_nx_labels(pos, node_labels, ax, max_sequence_length, font_size_scale=1.0):
             def get_scaled_font_size(nodes_amount):
@@ -282,8 +285,10 @@ class GraphVisualizer:
         for u, v, e in nx_graph.edges(data=True):
             nx.draw_networkx_edges(nx_graph, pos, edgelist=[(u, v)], node_size=node_size, ax=ax, arrowsize=10,
                                    arrowstyle=arrow_style, connectionstyle=e['connectionstyle'])
-        self._set_labels(ax, pos, nx_graph,
-                         longest_sequence, longest_sequence, font_size_scale)
+        if nodes_labels or edges_labels:
+            self._set_labels(ax, pos, nx_graph,
+                             longest_sequence, longest_sequence, font_size_scale,
+                             nodes_labels, edges_labels)
         # Rescale the figure for all nodes to fit in.
         x_1, x_2 = ax.get_xlim()
         y_1, y_2 = ax.get_ylim()
@@ -299,7 +304,8 @@ class GraphVisualizer:
         return self.visuals_params.get(param)
 
     def _set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.DiGraph,
-                    longest_sequence: int, longest_y_sequence: int, font_size_scale: float):
+                    longest_sequence: int, longest_y_sequence: int, font_size_scale: float,
+                    nodes_labels: List[Dict[int, str]], edges_labels: List[Dict[int, str]]):
         """ Set labels with scores to nodes and edges. """
 
         def calculate_labels_bias(ax: plt.Axes, longest_y_sequence: int):
@@ -339,8 +345,6 @@ class GraphVisualizer:
                 nx_labels[(parent_node_nx, child_node_nx)] = labels[index]
             return nx_labels
 
-        nodes_labels = self.visuals_params.get('nodes_labels', None)
-        edges_labels = self.visuals_params.get('edges_labels', None)
         if not edges_labels and not nodes_labels:
             return
 

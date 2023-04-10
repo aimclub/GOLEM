@@ -23,5 +23,4 @@ if __name__ == "__main__":
     for i, edge in enumerate(graph.get_edges()):
         edges_labels[i] = f'{edge[0].name}_{edge[1].name}'
 
-    graph.show(visuals_params={'nodes_labels': nodes_labels,
-                               'edges_labels': edges_labels})
+    graph.show(nodes_labels=nodes_labels, edges_labels=edges_labels)
