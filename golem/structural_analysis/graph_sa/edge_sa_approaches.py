@@ -1,13 +1,12 @@
 import random
-from abc import ABC, abstractmethod
+from abc import ABC
 from copy import deepcopy
 from os import makedirs
 from os.path import exists, join
-from typing import List, Optional, Type, Union, Tuple, Dict, Callable, Sequence
+from typing import List, Optional, Type, Union, Dict, Callable
 
-from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
-from golem.core.dag.graph import Graph, GraphNode
+from golem.core.dag.graph import Graph
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
@@ -265,9 +264,9 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                 self.log.message(f'replace edge child: {next_child_node}')
                 samples.append(sample_graph)
                 edges_nodes_idx_to_replace_to.append({'parent_node_id':
-                                                          replacing_nodes_idx['parent_node_idx'],
+                                                     replacing_nodes_idx['parent_node_idx'],
                                                       'child_node_id':
-                                                          replacing_nodes_idx['child_node_idx']})
+                                                     replacing_nodes_idx['child_node_idx']})
 
         if not edges_nodes_idx_to_replace_to:
             res = {'samples': [self._graph], 'edges_nodes_idx_to_replace_to':

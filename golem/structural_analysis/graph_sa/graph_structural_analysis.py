@@ -142,13 +142,12 @@ class GraphStructuralAnalysis:
         analysis_result = self.analyze(graph=graph, result=result, timer=timer, n_jobs=n_jobs)
         if self.path_to_save:
             _save_iteration_results(graph_before_sa=graph_before_sa,
-                                    iteration_result=analysis_result,
                                     save_path=self.path_to_save)
         converged = False
         iter = 0
 
         if analysis_result.is_empty:
-            self._log.message(f'0 actions were taken during SA')
+            self._log.message('0 actions were taken during SA')
             return graph, analysis_result
 
         while not converged:
@@ -173,7 +172,6 @@ class GraphStructuralAnalysis:
                                                timer=timer)
                 if self.path_to_save:
                     _save_iteration_results(graph_before_sa=graph_before_sa,
-                                            iteration_result=analysis_result,
                                             save_path=self.path_to_save)
             else:
                 converged = True
@@ -210,9 +208,8 @@ class GraphStructuralAnalysis:
         return graph
 
 
-def _save_iteration_results(graph_before_sa: Graph, iteration_result: SAAnalysisResults, save_path: str = None):
+def _save_iteration_results(graph_before_sa: Graph, save_path: str = None):
     """ Save visualizations for SA per iteration """
-    json_path = os.path.join(save_path, 'results_per_iteration.json')
     graph_save_path = os.path.join(save_path, 'result_graphs')
     graph_before_sa.save(graph_save_path)
     if not os.path.exists(graph_save_path):

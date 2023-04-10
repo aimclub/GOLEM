@@ -1,14 +1,13 @@
 import json
 import os.path
 from datetime import datetime
-from typing import List, Tuple, Callable, Optional, Union, Dict, Any
+from typing import List, Optional, Union
 
-from golem.core.dag.graph import Graph, GraphNode
+from golem.core.dag.graph import Graph
 from golem.core.log import default_log
 from golem.core.paths import project_root
 from golem.core.utilities.serializable import Serializable
 from golem.serializers import Serializer
-from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult, \
     StructuralAnalysisResultsRepository
@@ -24,7 +23,7 @@ class SAAnalysisResults(Serializable):
 
     def _add_empty_iteration_results(self):
         last_iter_num = int(list(self.results_per_iteration.keys())[-1]) if self.results_per_iteration.keys() else -1
-        self.results_per_iteration.update({str(last_iter_num+1): self._init_iteration_result()})
+        self.results_per_iteration.update({str(last_iter_num + 1): self._init_iteration_result()})
 
     @staticmethod
     def _init_iteration_result():
@@ -62,7 +61,7 @@ class SAAnalysisResults(Serializable):
 
     def add_results(self, results: List[ObjectSAResult]):
         if not results:
-            return 
+            return
         if results[0].entity_type == 'edges':
             key = 'edges'
         else:

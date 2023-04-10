@@ -269,8 +269,8 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objective, node_factory, requirements)
         self._path_to_save = \
-            join(default_data_dir(), 'structural', 'nodes_structural') \
-                if path_to_save is None else path_to_save
+            join(default_data_dir(), 'structural', 'nodes_structural')\
+            if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
 
