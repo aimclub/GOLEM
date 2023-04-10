@@ -1,7 +1,7 @@
 import json
 import os
 from copy import deepcopy
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import multiprocessing
 
 from golem.core.log import default_log
@@ -74,12 +74,14 @@ class GraphStructuralAnalysis:
         self.path_to_save = path_to_save
 
     def analyze(self, graph: Graph,
+                result: SAAnalysisResults = None,
                 nodes_to_analyze: List[GraphNode] = None, edges_to_analyze: List[Edge] = None,
                 n_jobs: int = 1, timer: OptimisationTimer = None) -> SAAnalysisResults:
         """
         Applies defined structural analysis approaches
 
         :param graph: graph object to analyze
+        :param result: analysis result
         :param nodes_to_analyze: nodes to analyze. Default: all nodes
         :param edges_to_analyze: edges to analyze. Default: all edges
         :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's).
@@ -87,7 +89,8 @@ class GraphStructuralAnalysis:
         :param timer: timer with timeout left for optimization
         """
 
-        result = SAAnalysisResults(graph=graph)
+        if not result:
+            result = SAAnalysisResults()
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
@@ -110,15 +113,21 @@ class GraphStructuralAnalysis:
         return result
 
     def optimize(self, graph: Graph,
+                 analysis_result: Optional[SAAnalysisResults] = None,
                  n_jobs: int = 1, timer: OptimisationTimer = None,
-                 max_iter: int = 10) -> Graph:
+                 max_iter: int = 10) -> Tuple[Graph, SAAnalysisResults]:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
         of graph iteratively
-        :param graph: graph object to analyze
+        :param graph: graph object to analyze.
+        :param analysis_result: if graph was already analyzed than analysis results could be applied.
         :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's).
         Tip: if specified graph isn't huge (as NN, for example) than set n_jobs to default value.
         :param timer: timer with timeout left for optimization.
         :param max_iter: max number of iterations of analysis. """
+
+        if analysis_result:
+            optimized_graph = self.apply_results(graph=graph, analysis_result=analysis_result)
+            return optimized_graph, analysis_result
 
         approaches_repo = StructuralAnalysisApproachesRepository()
         approaches = self._nodes_analyze.approaches + self._edges_analyze.approaches
@@ -127,20 +136,25 @@ class GraphStructuralAnalysis:
         # what actions were applied on the graph and how many
         actions_applied = dict.fromkeys(approaches_names, 0)
 
+        result = SAAnalysisResults()
+
         graph_before_sa = deepcopy(graph)
-        analysis_results = self.analyze(graph=graph, timer=timer, n_jobs=n_jobs)
+        analysis_result = self.analyze(graph=graph, result=result, timer=timer, n_jobs=n_jobs)
+        if self.path_to_save:
+            _save_iteration_results(graph_before_sa=graph_before_sa,
+                                    save_path=self.path_to_save)
         converged = False
         iter = 0
 
-        if analysis_results.is_empty:
-            self._log.message(f'0 actions were taken during SA')
-            return graph
+        if analysis_result.is_empty:
+            self._log.message('0 actions were taken during SA')
+            return graph, analysis_result
 
         while not converged:
             iter += 1
-            worst_result = analysis_results.get_info_about_worst_result(
+            worst_result = analysis_result.get_info_about_worst_result(
                 metric_idx_to_optimize_by=self.main_metric_idx)
-            if worst_result['value'] > 1.0:
+            if worst_result['value'] > 1.2:
                 # apply the worst approach
                 postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])
                 graph = postproc_method(graph=graph, worst_result=worst_result)
@@ -152,25 +166,27 @@ class GraphStructuralAnalysis:
                 if max_iter and iter >= max_iter:
                     break
 
-                analysis_results = self.analyze(graph=graph, n_jobs=n_jobs,
-                                                timer=timer)
+                analysis_result = self.analyze(graph=graph,
+                                               result=result,
+                                               n_jobs=n_jobs,
+                                               timer=timer)
+                if self.path_to_save:
+                    _save_iteration_results(graph_before_sa=graph_before_sa,
+                                            save_path=self.path_to_save)
             else:
                 converged = True
-
-        if self.path_to_save:
-            _save_iteration_results(graph_before_sa=graph_before_sa, save_path=self.path_to_save)
 
         self._log.message(f'{iter} iterations passed during SA')
         self._log.message(f'The following actions were applied during SA: {actions_applied}')
 
         if isinstance(graph, Graph):
-            return graph
+            return graph, analysis_result
         else:
-            return graph_before_sa
+            return graph_before_sa, analysis_result
 
     @staticmethod
-    def apply_results(graph: Graph, analysis_result: Optional[dict] = None) -> Graph:
-        """ Optimizes graph by applying actions specified in analysis_result """
+    def apply_results(graph: Graph, analysis_result: SAAnalysisResults) -> Graph:
+        """ Optimizes graph by applying actions specified in analysis_result. """
         pass
 
     @staticmethod
@@ -194,7 +210,6 @@ class GraphStructuralAnalysis:
 
 def _save_iteration_results(graph_before_sa: Graph, save_path: str = None):
     """ Save visualizations for SA per iteration """
-    json_path = os.path.join(save_path, 'results_per_iteration.json')
     graph_save_path = os.path.join(save_path, 'result_graphs')
     graph_before_sa.save(graph_save_path)
     if not os.path.exists(graph_save_path):

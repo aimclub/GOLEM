@@ -1,9 +1,9 @@
 import random
-from abc import ABC, abstractmethod
+from abc import ABC
 from copy import deepcopy
 from os import makedirs
 from os.path import exists, join
-from typing import List, Optional, Type, Union, Dict, Callable, Any, Sequence
+from typing import List, Optional, Type, Union, Any
 
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph, GraphNode
@@ -58,17 +58,18 @@ class NodeAnalysis:
         :return: dict with Node analysis result per approach
         """
 
-        results = ObjectSAResult(entity=node)
+        results = ObjectSAResult(entity_idx=str(graph.nodes.index(node)),
+                                 entity_type='node')
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
                 break
 
             results.add_result(approach(graph=graph,
-                               objective=objective,
-                               node_factory=self.node_factory,
-                               requirements=self.approaches_requirements,
-                               path_to_save=self.path_to_save).analyze(node=node))
+                                        objective=objective,
+                                        node_factory=self.node_factory,
+                                        requirements=self.approaches_requirements,
+                                        path_to_save=self.path_to_save).analyze(node=node))
         return results
 
 
@@ -115,7 +116,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if node is self._graph.root_node:
             self.log.warning(f'{node} node can not be deleted')
-            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
+            results.add_results(metrics_values=[-1.0] * len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(node)
@@ -124,7 +125,7 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
                 self.log.message(f'losses for {node.name}: {losses}')
                 del shortened_graph
             else:
-                losses = [-1.0]*len(self._objective.metrics)
+                losses = [-1.0] * len(self._objective.metrics)
 
             results.add_results(metrics_values=losses)
             return results
@@ -190,7 +191,7 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
             loss_per_sample = self._compare_with_origin_by_metrics(sample_graph)
             self.log.message(f'losses: {loss_per_sample}\n')
 
-            result.add_results(entity_to_replace_to=sample_graph.nodes[node_id], metrics_values=loss_per_sample)
+            result.add_results(entity_to_replace_to=sample_graph.nodes[node_id].name, metrics_values=loss_per_sample)
 
         return result
 
@@ -262,12 +263,13 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
     """
     Approach to delete specified node subtree
     """
+
     def __init__(self, graph: Graph, objective: Objective,
                  node_factory: OptNodeFactory,
                  requirements: StructuralAnalysisRequirements = None, path_to_save=None):
         super().__init__(graph, objective, node_factory, requirements)
         self._path_to_save = \
-            join(default_data_dir(), 'structural', 'nodes_structural') \
+            join(default_data_dir(), 'structural', 'nodes_structural')\
             if path_to_save is None else path_to_save
         if not exists(self._path_to_save):
             makedirs(self._path_to_save)
@@ -283,7 +285,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if node is self._graph.root_node:
             self.log.warning(f'{node} subtree can not be deleted')
-            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
+            results.add_results(metrics_values=[-1.0] * len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(node)
@@ -292,7 +294,7 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
                 self.log.message(f'losses for {node.name}: {losses}')
                 del shortened_graph
             else:
-                losses = [-1.0]*len(self._objective.metrics)
+                losses = [-1.0] * len(self._objective.metrics)
 
             results.add_results(metrics_values=losses)
             return results

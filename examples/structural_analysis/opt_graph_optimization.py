@@ -1,3 +1,4 @@
+import os
 import random
 from functools import partial
 
@@ -9,7 +10,8 @@ from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
-from golem.metrics.graph_metrics import degree_dist, size_diff
+from golem.core.paths import project_root
+from golem.metrics.graph_metrics import degree_distance, size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -27,13 +29,13 @@ def get_opt_graph() -> OptGraph:
 
 def quality_custom_metric_1(_: OptGraph) -> float:
     """ Get toy metric for demonstration. """
-    metric = -1*random.randint(80, 100)/100
+    metric = -1 * random.randint(80, 100) / 100
     return metric
 
 
 def quality_custom_metric_2(_: OptGraph) -> float:
     """ Get one more toy metric for demonstration. """
-    metric = -1*random.randint(70, 110)/100
+    metric = -1 * random.randint(70, 110) / 100
     return metric
 
 
@@ -55,7 +57,7 @@ if __name__ == "__main__":
         },
         complexity_metrics={
             'degree': partial(complexity_metric,
-                              adapter=adapter, metric=partial(degree_dist, adapter.restore(opt_graph))),
+                              adapter=adapter, metric=partial(degree_distance, adapter.restore(opt_graph))),
             'graph_size': partial(complexity_metric,
                                   adapter=adapter, metric=partial(size_diff, adapter.restore(opt_graph))),
         },
@@ -72,5 +74,8 @@ if __name__ == "__main__":
     sa = GraphStructuralAnalysis(objective=objective, node_factory=node_factory,
                                  requirements=requirements)
 
-    optimized_graph = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=5)
-    optimized_graph.show()
+    graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=2)
+    graph.show()
+
+    path_to_save = os.path.join(project_root(), 'sa_results.json')
+    results.save(path=path_to_save, datetime_in_path=False)
