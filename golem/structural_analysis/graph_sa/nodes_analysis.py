@@ -1,5 +1,5 @@
 from os.path import join
-from typing import Optional, List, Type, Callable
+from typing import Optional, List, Type
 import multiprocessing
 
 from golem.core.log import default_log

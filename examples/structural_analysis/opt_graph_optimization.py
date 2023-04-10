@@ -29,13 +29,13 @@ def get_opt_graph() -> OptGraph:
 
 def quality_custom_metric_1(_: OptGraph) -> float:
     """ Get toy metric for demonstration. """
-    metric = -1*random.randint(80, 100)/100
+    metric = -1 * random.randint(80, 100) / 100
     return metric
 
 
 def quality_custom_metric_2(_: OptGraph) -> float:
     """ Get one more toy metric for demonstration. """
-    metric = -1*random.randint(70, 110)/100
+    metric = -1 * random.randint(70, 110) / 100
     return metric
 
 

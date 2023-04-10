@@ -67,9 +67,9 @@ class EdgeAnalysis:
                 break
 
             results.add_result(approach(graph=graph,
-                               objective=objective,
-                               requirements=self.approaches_requirements,
-                               path_to_save=self.path_to_save).analyze(edge=edge))
+                                        objective=objective,
+                                        requirements=self.approaches_requirements,
+                                        path_to_save=self.path_to_save).analyze(edge=edge))
 
         return results
 
@@ -116,7 +116,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
             self.log.warning('if remove this edge then get a graph of length one')
-            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
+            results.add_results(metrics_values=[-1.0] * len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(edge)
@@ -126,7 +126,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
                 del shortened_graph
             else:
                 self.log.warning('if remove this edge then get an invalid graph')
-                losses = [-1.0]*len(self._objective.metrics)
+                losses = [-1.0] * len(self._objective.metrics)
 
         results.add_results(metrics_values=losses)
         return results
@@ -250,7 +250,7 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             next_child_node = sample_graph.nodes[replacing_nodes_idx['child_node_idx']]
 
             if next_parent_node in sample_graph.nodes and \
-               next_child_node in sample_graph.nodes:
+                    next_child_node in sample_graph.nodes:
                 sample_graph.connect_nodes(next_parent_node, next_child_node)
 
             sample_graph.disconnect_nodes(node_parent=previous_parent_node,
@@ -265,14 +265,14 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                 self.log.message(f'replace edge child: {next_child_node}')
                 samples.append(sample_graph)
                 edges_nodes_idx_to_replace_to.append({'parent_node_id':
-                                                      replacing_nodes_idx['parent_node_idx'],
+                                                          replacing_nodes_idx['parent_node_idx'],
                                                       'child_node_id':
-                                                      replacing_nodes_idx['child_node_idx']})
+                                                          replacing_nodes_idx['child_node_idx']})
 
         if not edges_nodes_idx_to_replace_to:
             res = {'samples': [self._graph], 'edges_nodes_idx_to_replace_to':
-                                                [{'parent_node_id': self._graph.nodes.index(edge.parent_node),
-                                                 'child_node_id': self._graph.nodes.index(edge.child_node)}]}
+                [{'parent_node_id': self._graph.nodes.index(edge.parent_node),
+                  'child_node_id': self._graph.nodes.index(edge.child_node)}]}
             return res
 
         return {'samples': samples, 'edges_nodes_idx_to_replace_to': edges_nodes_idx_to_replace_to}

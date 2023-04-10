@@ -1,13 +1,10 @@
-from typing import List, Callable, Tuple, Optional, Union
+from typing import List
 
-from golem.core.dag.graph_node import GraphNode
-from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
-
 
 NODE_DELETION = 'NodeDeletionAnalyze'
 NODE_REPLACEMENT = 'NodeReplaceOperationAnalyze'
@@ -37,6 +34,7 @@ class StructuralAnalysisResultsRepository:
 
 class ObjectSAResult:
     """ Class specifying results of Structural Analysis for one entity(node or edge). """
+
     def __init__(self, entity_idx: str, entity_type: str):
         self.entity_idx = entity_idx
         self.entity_type = entity_type

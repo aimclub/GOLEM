@@ -1,10 +1,11 @@
-from typing import List, Dict
+from typing import List
 
 from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
 
 
 class DeletionSAApproachResult(BaseSAApproachResult):
     """ Class for presenting deletion result approaches. """
+
     def __init__(self):
         self.metrics = []
 
