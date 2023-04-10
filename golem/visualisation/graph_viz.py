@@ -57,15 +57,17 @@ class GraphVisualizer:
                   node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
                   node_size_scale: Optional[float] = None,
                   font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
-                  nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
+                  nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         engine = engine or self.get_predefined_value('engine')
 
         if not self.graph.nodes:
             raise ValueError('Empty graph can not be visualized.')
 
         if engine == 'matplotlib':
-            self.__draw_with_networkx(save_path, node_color, dpi, node_size_scale, font_size_scale,
-                                      edge_curvature_scale, nodes_labels, edges_labels)
+            self.__draw_with_networkx(save_path=save_path, node_color=node_color, dpi=dpi,
+                                      node_size_scale=node_size_scale, font_size_scale=font_size_scale,
+                                      edge_curvature_scale=edge_curvature_scale,
+                                      nodes_labels=nodes_labels, edges_labels=edges_labels)
         elif engine == 'pyvis':
             self.__draw_with_pyvis(save_path, node_color)
         elif engine == 'graphviz':
@@ -165,7 +167,7 @@ class GraphVisualizer:
                              dpi: Optional[int] = None, node_size_scale: Optional[float] = None,
                              font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
                              graph_to_nx_convert_func: Optional[Callable] = None,
-                             nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
+                             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         save_path = save_path or self.get_predefined_value('save_path')
         node_color = node_color or self.get_predefined_value('node_color')
         dpi = dpi or self.get_predefined_value('dpi')
@@ -190,7 +192,7 @@ class GraphVisualizer:
                     node_color: Optional[NodeColorType] = None,
                     node_size_scale: float = 1, font_size_scale: float = 1, edge_curvature_scale: float = 1,
                     graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph,
-                    nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
+                    nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
 
         def draw_nx_labels(pos, node_labels, ax, max_sequence_length, font_size_scale=1.0):
             def get_scaled_font_size(nodes_amount):
@@ -305,7 +307,7 @@ class GraphVisualizer:
 
     def _set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.DiGraph,
                     longest_sequence: int, longest_y_sequence: int, font_size_scale: float,
-                    nodes_labels: List[Dict[int, str]], edges_labels: List[Dict[int, str]]):
+                    nodes_labels: Dict[int, str], edges_labels: Dict[int, str]):
         """ Set labels with scores to nodes and edges. """
 
         def calculate_labels_bias(ax: plt.Axes, longest_y_sequence: int):
@@ -329,7 +331,10 @@ class GraphVisualizer:
             nx_nodes = list(nx_graph.nodes.keys())
             nx_labels = {}
             for index in labels:
-                nx_labels[nx_nodes[index]] = labels[index]
+                try:
+                    nx_labels[nx_nodes[index]] = labels[index]
+                except IndexError:
+                    print('b')
             return nx_labels
 
         def match_labels_with_nx_edges(nx_graph: nx.DiGraph, labels: Dict[int, str]) \

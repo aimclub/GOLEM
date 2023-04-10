@@ -27,7 +27,7 @@ class SAAnalysisResults(Serializable):
 
     @staticmethod
     def _init_iteration_result():
-        return {'nodes': [], 'edges': []}
+        return {'node': [], 'edge': []}
 
     @property
     def is_empty(self):
@@ -48,8 +48,8 @@ class SAAnalysisResults(Serializable):
         if str(iter) not in self.results_per_iteration.keys():
             raise IndexError("No such iteration found.")
 
-        nodes_results = self.results_per_iteration[str(iter)]['nodes']
-        edges_results = self.results_per_iteration[str(iter)]['edges']
+        nodes_results = self.results_per_iteration[str(iter)]['node']
+        edges_results = self.results_per_iteration[str(iter)]['edge']
 
         for i, res in enumerate(nodes_results + edges_results):
             cur_res = res.get_worst_result_with_names(
@@ -62,10 +62,10 @@ class SAAnalysisResults(Serializable):
     def add_results(self, results: List[ObjectSAResult]):
         if not results:
             return
-        if results[0].entity_type == 'edges':
-            key = 'edges'
+        if results[0].entity_type == 'edge':
+            key = 'edge'
         else:
-            key = 'nodes'
+            key = 'node'
         iter_num = self._get_last_empty_iter(key=key)
         for result in results:
             self.results_per_iteration[str(iter_num)][key].append(result)
@@ -93,11 +93,11 @@ class SAAnalysisResults(Serializable):
         json_data = json.dumps(dict_results, cls=Serializer)
 
         if not path:
-            path = os.path.join(project_root(), 'sa_results.json')
+            path = os.path.join(project_root(), 'sa', 'sa_results.json')
         if datetime_in_path:
             file_name = os.path.basename(path).split('.')[0]
             file_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{file_name}.json"
-            path = os.path.join(os.path.dirname(path), file_name)
+            path = os.path.join(os.path.dirname(path), 'sa', file_name)
 
         with open(path, 'w', encoding='utf-8') as f:
             f.write(json_data)

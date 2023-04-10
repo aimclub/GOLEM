@@ -17,9 +17,11 @@ from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApproach, NodeDeletionAnalyze, \
     NodeReplaceOperationAnalyze, SubtreeDeletionAnalyze
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
+from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
 from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
+from golem.visualisation.graph_viz import NodeColorType
 
 
 class GraphStructuralAnalysis:
@@ -41,11 +43,11 @@ class GraphStructuralAnalysis:
                  is_preproc: bool = True,
                  approaches: List = None,
                  requirements: StructuralAnalysisRequirements = None,
-                 path_to_save=None):
+                 path_to_save: str = None,
+                 is_visualize_per_iteration: bool = False):
 
         self.is_preproc = is_preproc
-
-        self._log = default_log(self)
+        self._log = default_log(prefix='SA')
 
         if approaches:
             self.nodes_analyze_approaches = [approach for approach in approaches
@@ -70,8 +72,8 @@ class GraphStructuralAnalysis:
                                             path_to_save=path_to_save)
 
         self.main_metric_idx = requirements.main_metric_idx
-        self._log = default_log('SA')
         self.path_to_save = path_to_save
+        self.is_visualize_per_iteration = is_visualize_per_iteration
 
     def analyze(self, graph: Graph,
                 result: SAAnalysisResults = None,
@@ -113,21 +115,15 @@ class GraphStructuralAnalysis:
         return result
 
     def optimize(self, graph: Graph,
-                 analysis_result: Optional[SAAnalysisResults] = None,
                  n_jobs: int = 1, timer: OptimisationTimer = None,
                  max_iter: int = 10) -> Tuple[Graph, SAAnalysisResults]:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
         of graph iteratively
         :param graph: graph object to analyze.
-        :param analysis_result: if graph was already analyzed than analysis results could be applied.
         :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's).
         Tip: if specified graph isn't huge (as NN, for example) than set n_jobs to default value.
         :param timer: timer with timeout left for optimization.
         :param max_iter: max number of iterations of analysis. """
-
-        if analysis_result:
-            optimized_graph = self.apply_results(graph=graph, analysis_result=analysis_result)
-            return optimized_graph, analysis_result
 
         approaches_repo = StructuralAnalysisApproachesRepository()
         approaches = self._nodes_analyze.approaches + self._edges_analyze.approaches
@@ -138,23 +134,29 @@ class GraphStructuralAnalysis:
 
         result = SAAnalysisResults()
 
-        graph_before_sa = deepcopy(graph)
         analysis_result = self.analyze(graph=graph, result=result, timer=timer, n_jobs=n_jobs)
-        if self.path_to_save:
-            _save_iteration_results(graph_before_sa=graph_before_sa,
-                                    save_path=self.path_to_save)
         converged = False
         iter = 0
 
         if analysis_result.is_empty:
-            self._log.message('0 actions were taken during SA')
+            self._log.message(f'{iter} actions were taken during SA')
             return graph, analysis_result
 
         while not converged:
             iter += 1
+            if len(analysis_result.results_per_iteration[list(analysis_result.results_per_iteration.keys())[-1]]['node']) != graph.length:
+                print('a')
+            if len(analysis_result.results_per_iteration[list(analysis_result.results_per_iteration.keys())[-1]]['edge']) != len(graph.get_edges()):
+                print('cc')
+
             worst_result = analysis_result.get_info_about_worst_result(
                 metric_idx_to_optimize_by=self.main_metric_idx)
-            if worst_result['value'] > 1.2:
+            if self.is_visualize_per_iteration:
+                self.visualize_on_graph(graph=deepcopy(graph), analysis_result=analysis_result,
+                                        metric_idx_to_optimize_by=self.main_metric_idx,
+                                        mode='final',
+                                        font_size_scale=0.6)
+            if worst_result['value'] > 1:
                 # apply the worst approach
                 postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])
                 graph = postproc_method(graph=graph, worst_result=worst_result)
@@ -170,24 +172,106 @@ class GraphStructuralAnalysis:
                                                result=result,
                                                n_jobs=n_jobs,
                                                timer=timer)
-                if self.path_to_save:
-                    _save_iteration_results(graph_before_sa=graph_before_sa,
-                                            save_path=self.path_to_save)
             else:
                 converged = True
 
         self._log.message(f'{iter} iterations passed during SA')
         self._log.message(f'The following actions were applied during SA: {actions_applied}')
 
-        if isinstance(graph, Graph):
-            return graph, analysis_result
-        else:
-            return graph_before_sa, analysis_result
+        if self.path_to_save:
+            if not os.path.exists(self.path_to_save):
+                os.makedirs(self.path_to_save)
+            analysis_result.save(path=self.path_to_save)
+
+        return graph, analysis_result
 
     @staticmethod
-    def apply_results(graph: Graph, analysis_result: SAAnalysisResults) -> Graph:
+    def apply_results(graph: Graph, analysis_result: SAAnalysisResults,
+                      metric_idx_to_optimize_by: int, iter: int = None) -> Graph:
         """ Optimizes graph by applying actions specified in analysis_result. """
-        pass
+        def optimize_on_iter(graph: Graph, analysis_result: SAAnalysisResults,
+                             metric_idx_to_optimize_by: int, iter: int = None):
+            worst_result = analysis_result.get_info_about_worst_result(
+                metric_idx_to_optimize_by=metric_idx_to_optimize_by, iter=iter)
+            approaches_repo = StructuralAnalysisApproachesRepository()
+            postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])
+            graph = postproc_method(graph=graph, worst_result=worst_result)
+            return graph
+
+        if iter is not None:
+            return optimize_on_iter(graph=graph, analysis_result=analysis_result,
+                                    metric_idx_to_optimize_by=metric_idx_to_optimize_by, iter=iter)
+
+        num_of_iter = len(analysis_result.results_per_iteration)
+        for i in range(num_of_iter):
+            graph = optimize_on_iter(graph=graph, analysis_result=analysis_result,
+                                     metric_idx_to_optimize_by=metric_idx_to_optimize_by, iter=iter)
+        return graph
+
+    @staticmethod
+    def visualize_on_graph(graph: Graph, analysis_result: SAAnalysisResults,
+                           metric_idx_to_optimize_by: int, mode: str = 'final',
+                           save_path: str = None, node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
+                           node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
+                           edge_curvature_scale: Optional[float] = None):
+        """ Visualizes results of Structural Analysis on graph(s).
+        :param graph: initial graph before SA
+        :param analysis_result: results of Structural Analysis
+        :param metric_idx_to_optimize_by: index of optimized metric
+        :param mode: 'first' -- visualize only first iteration of SA,
+                     'final' - visualize only the last iteration of SA,
+                     'by_iteration' -- visualize every iteration of SA.
+        :param save_path: path to save visualizations
+        :param node_color: color of nodes to use.
+        :param node_size_scale: use to make node size bigger or lesser. Supported only for the engine 'matplotlib'.
+        :param font_size_scale: use to make font size bigger or lesser. Supported only for the engine 'matplotlib'.
+        :param edge_curvature_scale: use to make edges more or less curved. Supported only for the engine 'matplotlib'.
+        :param dpi: DPI of the output image. Not supported for the engine 'pyvis'.
+        """
+        def get_nodes_and_edges_labels(analysis_result: SAAnalysisResults, iter: int):
+
+            def get_str_labels(result: ObjectSAResult) -> str:
+                approaches = result.result_approaches
+                cur_label = ''
+                for approach in approaches:
+                    approach_name = result._get_approach_name(approach=approach)
+                    if 'del' in approach_name.lower():
+                        short_approach_name = 'D'
+                    else:
+                        short_approach_name = 'R'
+                    cur_label += f'{short_approach_name}: {approach.get_rounded_metrics(idx=2)}\n'
+                return cur_label
+
+            nodes_labels = {}
+            for i, node_result in enumerate(analysis_result.results_per_iteration[str(iter)]['node']):
+                nodes_labels[i] = get_str_labels(result=node_result)
+
+            edges_labels = {}
+            for i, edge_result in enumerate(analysis_result.results_per_iteration[str(iter)]['edge']):
+                edges_labels[i] = get_str_labels(result=edge_result)
+
+            return nodes_labels, edges_labels
+
+        num_of_iter = len(analysis_result.results_per_iteration)
+
+        if mode == 'first':
+            iters = [0]
+        else:
+            iters = range(num_of_iter)
+
+        for i in iters:
+            nodes_labels, edges_labels = get_nodes_and_edges_labels(analysis_result=analysis_result, iter=i)
+            if len(nodes_labels) != graph.length and mode != 'final':
+                print('c')
+            if not (mode == 'final' and i != iters[-1]):
+                graph.show(node_color=node_color, dpi=dpi, node_size_scale=node_size_scale,
+                           nodes_labels=nodes_labels, font_size_scale=font_size_scale,
+                           edge_curvature_scale=edge_curvature_scale,
+                           edges_labels=edges_labels, save_path=save_path)
+            if mode == 'by_iteration':
+                graph = GraphStructuralAnalysis.apply_results(graph=graph, analysis_result=analysis_result,
+                                                              metric_idx_to_optimize_by=metric_idx_to_optimize_by,
+                                                              iter=i)
 
     @staticmethod
     def graph_preprocessing(graph: Graph):
@@ -206,29 +290,3 @@ class GraphStructuralAnalysis:
                 node_to_delete = [node for node in graph.nodes if node.uid == uid][0]
                 graph.delete_node(node_to_delete)
         return graph
-
-
-def _save_iteration_results(graph_before_sa: Graph, save_path: str = None):
-    """ Save visualizations for SA per iteration """
-    graph_save_path = os.path.join(save_path, 'result_graphs')
-    graph_before_sa.save(graph_save_path)
-    if not os.path.exists(graph_save_path):
-        os.makedirs(graph_save_path)
-
-
-def _save_iteration_results_to_json(analysis_results: dict, save_path: str = None):
-    """ Save SA actions scores in json file """
-    if save_path:
-        save_path = os.path.join(save_path, 'results_per_iteration.json')
-    else:
-        save_path = os.path.join(project_root(), 'examples', 'structural_analysis',
-                                 'show_sa_on_graph', 'results_per_iteration.json')
-    if not os.path.exists(save_path):
-        json_data = [analysis_results]
-        with open(save_path, 'w') as file:
-            file.write(json.dumps(json_data, indent=2, ensure_ascii=False))
-    else:
-        data = json.load(open(save_path))
-        data.append(analysis_results)
-        with open(save_path, 'w', encoding="utf-8") as file:
-            json.dump(data, file, indent=2, ensure_ascii=False)

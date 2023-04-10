@@ -1,5 +1,6 @@
 import networkx as nx
 from networkx import isolates, simple_cycles
+from typing import Sequence
 
 from golem.core.adapter import register_native
 from golem.core.dag.convert import graph_structure_as_nx_graph
@@ -10,7 +11,7 @@ ERROR_PREFIX = 'Invalid graph configuration:'
 
 @register_native
 def has_root(graph: Graph):
-    if graph.root_node:
+    if isinstance(graph.root_node, Sequence) and len(graph.root_node) == 1 or not isinstance(graph.root_node, Sequence):
         return True
 
 

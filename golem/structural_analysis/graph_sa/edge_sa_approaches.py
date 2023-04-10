@@ -113,19 +113,14 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         :return: the ratio of modified graph score to origin score
         """
         results = DeletionSAApproachResult()
-        if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
-            self.log.warning('if remove this edge then get a graph of length one')
-            results.add_results(metrics_values=[-1.0] * len(self._objective.metrics))
-            return results
+        shortened_graph = self.sample(edge)
+        if shortened_graph:
+            losses = self._compare_with_origin_by_metrics(shortened_graph)
+            self.log.message(f'loss: {losses}')
+            del shortened_graph
         else:
-            shortened_graph = self.sample(edge)
-            if shortened_graph:
-                losses = self._compare_with_origin_by_metrics(shortened_graph)
-                self.log.message(f'loss: {losses}')
-                del shortened_graph
-            else:
-                self.log.warning('if remove this edge then get an invalid graph')
-                losses = [-1.0] * len(self._objective.metrics)
+            self.log.warning('if remove this edge then get an invalid graph')
+            losses = [-1.0] * len(self._objective.metrics)
 
         results.add_results(metrics_values=losses)
         return results

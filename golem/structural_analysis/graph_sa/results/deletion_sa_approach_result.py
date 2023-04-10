@@ -22,3 +22,9 @@ class DeletionSAApproachResult(BaseSAApproachResult):
     def get_dict_results(self) -> List[float]:
         """ Returns all calculated results. """
         return self.metrics
+
+    def get_rounded_metrics(self, idx: int = 2) -> list:
+        return [round(metric, idx) for metric in self.metrics]
+
+    def __str__(self):
+        return 'DeletionSAApproachResult'

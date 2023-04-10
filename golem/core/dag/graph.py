@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from os import PathLike
-from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar, Any
+from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
 
 from golem.core.dag.graph_node import GraphNode
 from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
@@ -206,7 +206,7 @@ class Graph(ABC):
              node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
              node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
              edge_curvature_scale: Optional[float] = None,
-             nodes_labels: List[Dict[int, str]] = None, edges_labels: List[Dict[int, str]] = None):
+             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         """Visualizes graph or saves its picture to the specified ``path``
 
         Args:

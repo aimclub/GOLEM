@@ -70,7 +70,7 @@ class ObjectSAResult:
             results[sa_approach_name] = approach.get_dict_results()
         return {self.entity_idx: results}
 
-    def _get_approach_name(self, approach: BaseSAApproachResult):
+    def _get_approach_name(self, approach: BaseSAApproachResult) -> str:
         sa_approach_name = StructuralAnalysisResultsRepository() \
             .get_method_by_result_class(approach, self.entity_type)
         return sa_approach_name
