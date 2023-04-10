@@ -11,7 +11,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
 from golem.core.paths import project_root
-from golem.metrics.graph_metrics import degree_dist, size_diff
+from golem.metrics.graph_metrics import degree_distance, size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         },
         complexity_metrics={
             'degree': partial(complexity_metric,
-                              adapter=adapter, metric=partial(degree_dist, adapter.restore(opt_graph))),
+                              adapter=adapter, metric=partial(degree_distance, adapter.restore(opt_graph))),
             'graph_size': partial(complexity_metric,
                                   adapter=adapter, metric=partial(size_diff, adapter.restore(opt_graph))),
         },
