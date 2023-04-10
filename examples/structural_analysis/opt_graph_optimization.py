@@ -1,6 +1,5 @@
 import os
 import random
-from functools import partial
 
 from typing import Callable
 
@@ -11,9 +10,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
 from golem.core.paths import project_root
-from golem.metrics.graph_metrics import degree_distance, size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
-from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
 
