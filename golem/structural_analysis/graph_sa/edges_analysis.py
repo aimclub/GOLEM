@@ -1,5 +1,5 @@
 from os.path import join
-from typing import Optional, List, Type, Callable
+from typing import Optional, List, Type
 
 import multiprocessing
 
@@ -55,7 +55,7 @@ class EdgesAnalysis:
         """
 
         if not results:
-            results = SAAnalysisResults(graph=graph)
+            results = SAAnalysisResults()
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
@@ -72,7 +72,6 @@ class EdgesAnalysis:
             cur_edges_result = pool.starmap(edge_analysis.analyze,
                                             [[graph, edge, self.objective, timer]
                                              for edge in edges_to_analyze])
-        for res in cur_edges_result:
-            results.add_edge_result(res)
+        results.add_results(cur_edges_result)
 
         return results

@@ -1,13 +1,12 @@
 import random
-from abc import ABC, abstractmethod
+from abc import ABC
 from copy import deepcopy
 from os import makedirs
 from os.path import exists, join
-from typing import List, Optional, Type, Union, Tuple, Dict, Callable, Sequence
+from typing import List, Optional, Type, Union, Dict, Callable
 
-from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
-from golem.core.dag.graph import Graph, GraphNode
+from golem.core.dag.graph import Graph
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
@@ -58,16 +57,18 @@ class EdgeAnalysis:
         :return: dict with Edge analysis result per approach
         """
 
-        results = ObjectSAResult(entity=edge)
+        results = ObjectSAResult(entity_idx=
+                                 f'{graph.nodes.index(edge.parent_node)}_{graph.nodes.index(edge.child_node)}',
+                                 entity_type='edge')
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
                 break
 
             results.add_result(approach(graph=graph,
-                               objective=objective,
-                               requirements=self.approaches_requirements,
-                               path_to_save=self.path_to_save).analyze(edge=edge))
+                                        objective=objective,
+                                        requirements=self.approaches_requirements,
+                                        path_to_save=self.path_to_save).analyze(edge=edge))
 
         return results
 
@@ -114,7 +115,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         results = DeletionSAApproachResult()
         if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
             self.log.warning('if remove this edge then get a graph of length one')
-            results.add_results(metrics_values=[-1.0]*len(self._objective.metrics))
+            results.add_results(metrics_values=[-1.0] * len(self._objective.metrics))
             return results
         else:
             shortened_graph = self.sample(edge)
@@ -124,7 +125,7 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
                 del shortened_graph
             else:
                 self.log.warning('if remove this edge then get an invalid graph')
-                losses = [-1.0]*len(self._objective.metrics)
+                losses = [-1.0] * len(self._objective.metrics)
 
         results.add_results(metrics_values=losses)
         return results
@@ -207,10 +208,8 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                     parent_node_idx += char
                 else:
                     continue
-            result.add_results(entity_to_replace_to=Edge(child_node=self._graph.nodes[int(child_node_idx)],
-                                                         parent_node=self._graph.nodes[int(parent_node_idx)]),
+            result.add_results(entity_to_replace_to=f'{parent_node_idx}_{child_node_idx}',
                                metrics_values=loss_per_sample)
-
         return result
 
     def sample(self, edge: Edge,
@@ -245,16 +244,17 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             previous_parent_node = sample_graph.nodes[previous_parent_node_index]
             previous_child_node = sample_graph.nodes[previous_child_node_index]
 
-            sample_graph.disconnect_nodes(node_parent=previous_parent_node,
-                                          node_child=previous_child_node,
-                                          clean_up_leftovers=False)
             # connect nodes
             next_parent_node = sample_graph.nodes[replacing_nodes_idx['parent_node_idx']]
             next_child_node = sample_graph.nodes[replacing_nodes_idx['child_node_idx']]
 
             if next_parent_node in sample_graph.nodes and \
-               next_child_node in sample_graph.nodes:
+                    next_child_node in sample_graph.nodes:
                 sample_graph.connect_nodes(next_parent_node, next_child_node)
+
+            sample_graph.disconnect_nodes(node_parent=previous_parent_node,
+                                          node_child=previous_child_node,
+                                          clean_up_leftovers=False)
 
             verifier = self._requirements.graph_verifier
             if not verifier.verify(sample_graph):
@@ -264,14 +264,14 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                 self.log.message(f'replace edge child: {next_child_node}')
                 samples.append(sample_graph)
                 edges_nodes_idx_to_replace_to.append({'parent_node_id':
-                                                      replacing_nodes_idx['parent_node_idx'],
+                                                     replacing_nodes_idx['parent_node_idx'],
                                                       'child_node_id':
-                                                      replacing_nodes_idx['child_node_idx']})
+                                                     replacing_nodes_idx['child_node_idx']})
 
         if not edges_nodes_idx_to_replace_to:
             res = {'samples': [self._graph], 'edges_nodes_idx_to_replace_to':
-                                                [{'parent_node_id': self._graph.nodes.index(edge.parent_node),
-                                                 'child_node_id': self._graph.nodes.index(edge.child_node)}]}
+                [{'parent_node_id': self._graph.nodes.index(edge.parent_node),
+                  'child_node_id': self._graph.nodes.index(edge.child_node)}]}
             return res
 
         return {'samples': samples, 'edges_nodes_idx_to_replace_to': edges_nodes_idx_to_replace_to}
@@ -312,9 +312,11 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
                     continue
                 if [parent_node, child_node] in edges_in_graph or [child_node, parent_node] in edges_in_graph:
                     continue
+                if cur_graph.nodes.index(parent_node) == child_node_index and \
+                        cur_graph.nodes.index(child_node) == parent_node_index:
+                    continue
                 available_edges_idx.append({'parent_node_idx': cur_graph.nodes.index(parent_node),
                                             'child_node_idx': cur_graph.nodes.index(child_node)})
 
-        # random.seed(self._requirements.seed + len(self._graph))
         edges_for_replacement = random.sample(available_edges_idx, min(number_of_operations, len(available_edges_idx)))
         return edges_for_replacement

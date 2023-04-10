@@ -12,10 +12,10 @@ class BaseSAApproachResult:
         """ Returns the worst result with additional info. """
         raise NotImplementedError()
 
-    def get_all_results(self):
-        """ Returns all calculated metrics. """
-        raise NotImplementedError()
-
     def add_results(self, **kwargs):
         """ Adds newly calculated results. """
         raise NotImplementedError
+
+    def get_dict_results(self) -> dict:
+        """ Returns dict representation of results. """
+        raise NotImplementedError()

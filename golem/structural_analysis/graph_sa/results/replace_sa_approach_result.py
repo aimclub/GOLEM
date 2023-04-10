@@ -1,7 +1,5 @@
-from typing import List, Dict, Tuple, Any, Union
+from typing import List, Dict
 
-from golem.core.dag.graph import GraphNode
-from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
 
 
@@ -12,7 +10,7 @@ class ReplaceSAApproachResult(BaseSAApproachResult):
         list with metrics as values"""
         self.entities_metrics = dict()
 
-    def add_results(self, entity_to_replace_to: Union[GraphNode, Edge], metrics_values: List[float]):
+    def add_results(self, entity_to_replace_to: str, metrics_values: List[float]):
         """ Sets value for specified metric. """
         self.entities_metrics[entity_to_replace_to] = metrics_values
 
@@ -27,6 +25,6 @@ class ReplaceSAApproachResult(BaseSAApproachResult):
             if list(self.entities_metrics[entity])[metric_idx_to_optimize_by] == worst_value:
                 return {'value': worst_value, 'entity_to_replace_to': entity}
 
-    def get_all_results(self) -> Dict[str, float]:
-        """ Returns all calculated results. """
+    def get_dict_results(self) -> Dict[int, List[float]]:
+        """ Returns dict representation of results. """
         return self.entities_metrics

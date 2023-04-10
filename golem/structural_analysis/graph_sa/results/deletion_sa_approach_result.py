@@ -1,10 +1,11 @@
-from typing import List, Dict
+from typing import List
 
 from golem.structural_analysis.graph_sa.results.base_sa_approach_result import BaseSAApproachResult
 
 
 class DeletionSAApproachResult(BaseSAApproachResult):
     """ Class for presenting deletion result approaches. """
+
     def __init__(self):
         self.metrics = []
 
@@ -18,6 +19,6 @@ class DeletionSAApproachResult(BaseSAApproachResult):
     def get_worst_result_with_names(self, metric_idx_to_optimize_by: int) -> dict:
         return {'value': self.get_worst_result(metric_idx_to_optimize_by=metric_idx_to_optimize_by)}
 
-    def get_all_results(self) -> List[float]:
+    def get_dict_results(self) -> List[float]:
         """ Returns all calculated results. """
         return self.metrics

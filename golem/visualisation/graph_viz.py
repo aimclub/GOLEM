@@ -35,7 +35,7 @@ NodeColorType = Union[MatplotlibColorType, LabelsColorMapType, NodeColorFunction
 
 
 class GraphVisualizer:
-    def __init__(self, graph: GraphType, visuals_params: Optional[Dict[str, Any]] = None):
+    def __init__(self, graph: GraphType, visuals_params: Optional[Dict[str, Any]] = None, ):
         visuals_params = visuals_params or {}
         default_visuals_params = dict(
             engine='matplotlib',
@@ -256,9 +256,9 @@ class GraphVisualizer:
                     continue  # The node is adjacent to the edge.
                 p_3 = np.array(pos[node_id])
                 distance_to_node = abs(np.cross(p_1_2, p_3 - p_1)) / p_1_2_length
-                if (distance_to_node > min(node_distance_gap, min_distance_found)  # The node is too far.
-                        or ((p_3 - p_1) @ p_1_2) < 0  # There's no perpendicular from the node to the edge.
-                        or ((p_3 - p_2) @ -p_1_2) < 0):
+                if (distance_to_node > min(node_distance_gap, min_distance_found) or  # The node is too far.
+                        ((p_3 - p_1) @ p_1_2) < 0 or  # There's no perpendicular from the node to the edge.
+                        ((p_3 - p_2) @ -p_1_2) < 0):
                     continue
                 min_distance_found = distance_to_node
                 closest_node_id = node_id
