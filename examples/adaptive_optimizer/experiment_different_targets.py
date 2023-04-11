@@ -154,7 +154,7 @@ def run_experiment_trees(trial_timeout: int = 15, trial_iterations: Optional[int
 
 
 if __name__ == '__main__':
-    """Run adaptive optimizer on different targets to see how adaptive agent converges 
+    """Run adaptive optimizer on different targets to see how adaptive agent converges
     to different probabilities of actions (i.e. mutations) for different targets."""
 
     run_experiment_node_num(trial_timeout=2)

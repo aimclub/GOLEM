@@ -5,13 +5,17 @@ from itertools import product
 from pathlib import Path
 from typing import Sequence, Type, Callable, Optional
 
+import networkx as nx
+import numpy as np
+
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.metrics.edit_distance import get_edit_dist_metric, matrix_edit_dist
-from golem.metrics.graph_metrics import *
+from golem.metrics.graph_metrics import \
+    spectral_dist, size_diff, degree_distance_kernel, degree_distance, nxgraph_stats
 
 
 def get_all_quality_metrics(target_graph):
