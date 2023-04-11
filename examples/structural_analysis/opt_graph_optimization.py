@@ -1,5 +1,6 @@
 import os
 import random
+from functools import partial
 
 from typing import Callable
 
@@ -10,6 +11,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
 from golem.core.paths import project_root
+from golem.metrics.graph_metrics import size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -51,7 +53,12 @@ if __name__ == "__main__":
     objective = Objective(
         quality_metrics={
             'quality_custom_1': quality_custom_metric_1,
-        }
+        },
+        complexity_metrics={
+            'graph_size': partial(complexity_metric,
+                                  adapter=adapter, metric=partial(size_diff, adapter.restore(opt_graph))),
+        },
+        is_multi_objective=True
     )
 
     node_factory = DefaultOptNodeFactory()
@@ -70,6 +77,7 @@ if __name__ == "__main__":
 
     graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=3)
 
+    # to show SA results on each iteration
     optimized_graph = GraphStructuralAnalysis.visualize_on_graph(graph=get_opt_graph(), analysis_result=results,
                                                                  metric_idx_to_optimize_by=0,
                                                                  mode="by_iteration",
