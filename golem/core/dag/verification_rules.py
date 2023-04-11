@@ -5,13 +5,20 @@ from typing import Sequence
 from golem.core.adapter import register_native
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph import Graph
+from golem.core.dag.graph_node import GraphNode
 
 ERROR_PREFIX = 'Invalid graph configuration:'
 
 
 @register_native
 def has_root(graph: Graph):
-    if isinstance(graph.root_node, Sequence) and len(graph.root_node) == 1 or not isinstance(graph.root_node, Sequence):
+    if graph.root_node:
+        return True
+
+
+@register_native
+def has_one_root(graph: Graph):
+    if isinstance(graph.root_node, GraphNode):
         return True
 
 

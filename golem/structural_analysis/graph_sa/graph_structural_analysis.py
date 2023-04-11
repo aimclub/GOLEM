@@ -1,6 +1,6 @@
 import os
 from copy import deepcopy
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple
 import multiprocessing
 
 from golem.core.log import default_log
@@ -45,7 +45,7 @@ class GraphStructuralAnalysis:
                  is_visualize_per_iteration: bool = False):
 
         self.is_preproc = is_preproc
-        self._log = default_log(prefix='SA')
+        self._log = default_log(prefix='GraphStructuralAnalysis')
 
         if approaches:
             self.nodes_analyze_approaches = [approach for approach in approaches
@@ -182,6 +182,7 @@ class GraphStructuralAnalysis:
     def apply_results(graph: Graph, analysis_result: SAAnalysisResults,
                       metric_idx_to_optimize_by: int, iter: int = None) -> Graph:
         """ Optimizes graph by applying actions specified in analysis_result. """
+
         def optimize_on_iter(graph: Graph, analysis_result: SAAnalysisResults,
                              metric_idx_to_optimize_by: int, iter: int = None) -> Graph:
             """ Get worst result on specified iteration and process graph with it. """
@@ -222,6 +223,7 @@ class GraphStructuralAnalysis:
         :param edge_curvature_scale: use to make edges more or less curved. Supported only for the engine 'matplotlib'.
         :param dpi: DPI of the output image. Not supported for the engine 'pyvis'.
         """
+
         def get_nodes_and_edges_labels(analysis_result: SAAnalysisResults, iter: int) -> tuple[
             dict[int, str], dict[int, str]]:
             """ Get nodes and edges labels in dictionary form. """
