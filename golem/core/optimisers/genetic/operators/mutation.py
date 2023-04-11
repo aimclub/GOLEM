@@ -6,8 +6,10 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
-from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
-from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum, MutationStrengthEnum
+from golem.core.optimisers.adaptive.operator_agent import \
+    OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
+from golem.core.optimisers.genetic.operators.base_mutations import \
+    base_mutations_repo, MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -18,7 +20,6 @@ from golem.core.utilities.data_structures import unzip
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-
 
 MutationFunc = Callable[[Graph, GraphRequirements, GraphGenerationParams, AlgorithmParameters], Graph]
 MutationIdType = Hashable

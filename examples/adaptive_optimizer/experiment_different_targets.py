@@ -1,6 +1,7 @@
 from datetime import timedelta
 from functools import partial
-from typing import Optional
+from typing import Optional, Sequence
+import networkx as nx
 
 from examples.adaptive_optimizer.experiment_setup import run_adaptive_mutations
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
@@ -14,7 +15,7 @@ from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
 from golem.metrics.edit_distance import tree_edit_dist
-from golem.metrics.graph_metrics import *
+from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
 
 
 def generate_gnp_graphs(graph_size: int,

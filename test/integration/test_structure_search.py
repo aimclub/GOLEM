@@ -10,7 +10,7 @@ from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.metrics.edit_distance import tree_edit_dist
 
 
-@pytest.mark.parametrize('size', [8,  16])
+@pytest.mark.parametrize('size', [8, 16])
 def test_simple_targets_are_found(size):
     target_graph = generate_labeled_graph('tree', size, node_labels=['x'])
     # running the example

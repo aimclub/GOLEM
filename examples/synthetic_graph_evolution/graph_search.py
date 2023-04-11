@@ -1,6 +1,8 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional
+from typing import Type, Optional, Sequence
+
+import networkx as nx
 
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
@@ -15,7 +17,7 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
-from golem.metrics.graph_metrics import *
+from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
 
 
 def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,

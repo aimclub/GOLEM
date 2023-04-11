@@ -8,7 +8,6 @@ from golem.core.dag.graph_verifier import GraphVerifier, VerifierRuleType
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.log import default_log
 from golem.core.optimisers.advisor import DefaultChangeAdvisor
-from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.genetic.evaluation import DelegateEvaluator
 from golem.core.optimisers.genetic.operators.operator import PopulationT

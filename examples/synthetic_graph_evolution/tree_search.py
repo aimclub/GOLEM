@@ -81,10 +81,10 @@ def tree_search_setup(target_graph: Optional[nx.DiGraph] = None,
 
 if __name__ == '__main__':
     """
-    In this experiment Optimizer is expected to find the target graph 
+    In this experiment Optimizer is expected to find the target graph
     (exact or almost exact, depending on available time and graph complexity)
     using Tree Edit Distance metric and a random tree (nx.random_tree) as target.
-    
+
     This convergence can be seen from achieved metrics and visually from graph plots.
     """
     results_log = run_experiments(optimizer_setup=tree_search_setup,
