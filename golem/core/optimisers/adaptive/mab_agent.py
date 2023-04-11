@@ -8,7 +8,7 @@ from scipy.special import softmax
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
-from golem.core.optimisers.adaptive.operatoragent import OperatorAgent, ActType, ObsType, ExperienceBuffer
+from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
 
 
 class MultiArmedBanditAgent(OperatorAgent):

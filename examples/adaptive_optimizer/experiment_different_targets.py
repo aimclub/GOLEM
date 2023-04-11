@@ -6,7 +6,7 @@ from examples.adaptive_optimizer.experiment_setup import run_adaptive_mutations
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.generators import postprocess_nx_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
-from golem.core.optimisers.adaptive.operatoragent import MutationAgentTypeEnum
+from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum

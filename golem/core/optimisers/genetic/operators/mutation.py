@@ -6,7 +6,7 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
-from golem.core.optimisers.adaptive.operatoragent import OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
+from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum, MutationStrengthEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
