@@ -45,7 +45,7 @@ class GraphStructuralAnalysis:
                  is_visualize_per_iteration: bool = False):
 
         self.is_preproc = is_preproc
-        self._log = default_log(prefix='GraphStructuralAnalysis')
+        self._log = default_log(self)
 
         if approaches:
             self.nodes_analyze_approaches = [approach for approach in approaches
