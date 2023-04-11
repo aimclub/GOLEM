@@ -26,7 +26,9 @@ def tree_search_setup(target_graph: Optional[nx.DiGraph] = None,
                       node_types: Sequence[str] = ('x',),
                       timeout: Optional[timedelta] = None,
                       num_iterations: Optional[int] = None):
-    if target_graph is not None:
+    if target_graph is not None and objective is not None:
+        raise ValueError('Please provide either target or objective, not both')
+    elif target_graph is not None:
         # Setup objective:
         # - primary metric is edit distance between 2 trees
         # - secondary metric is difference in node degree distribution
