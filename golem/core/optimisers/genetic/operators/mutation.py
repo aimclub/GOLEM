@@ -80,7 +80,8 @@ class Mutation(Operator):
                                         metadata=self.requirements.static_individual_metadata)
                 break
             else:
-                self.agent_experience.log_invalid(individual, mutation_applied)
+                # Collect invalid actions
+                self.agent_experience.collect_experience(individual.graph, mutation_applied, reward=-1.0)
         else:
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')

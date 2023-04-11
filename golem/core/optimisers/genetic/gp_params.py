@@ -19,7 +19,8 @@ class GPAlgorithmParameters(AlgorithmParameters):
 
     :param crossover_prob: crossover probability (the chance that two chromosomes exchange some of their parts)
     :param mutation_prob: mutation probability
-    :param variable_mutation_num: determines if in each syle mutations applies once or possibly few times
+    :param variable_mutation_num: determines if in each iteration mutation is applied once
+    or possibly few times for each individual
     :param max_num_of_operator_attempts: max number of unsuccessful operator (mutation/crossover)
     attempts before continuing
     :param mutation_strength: strength of mutation in tree (using in certain mutation types)

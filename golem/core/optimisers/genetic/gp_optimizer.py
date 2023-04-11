@@ -133,7 +133,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             new_population = evaluator(new_population)
             if new_population:
                 # Perform adaptive learning
-                experience.log_results(new_population)
+                experience.collect_results(new_population)
                 self.mutation.agent.partial_fit(experience)
                 return new_population
             else:

@@ -15,13 +15,16 @@ ActType = Hashable
 
 
 class MutationAgentTypeEnum(Enum):
-    default = 'random'
+    default = 'default'
     random = 'random'
     bandit = 'bandit'
     contextual_bandit = 'contextual_bandit'
 
 
 class ExperienceBuffer:
+    """Buffer for learning experience of ``OperatorAgent``.
+    Keeps (State, Action, Reward) lists until retrieval."""
+
     def __init__(self):
         self.reset()
 
@@ -32,11 +35,11 @@ class ExperienceBuffer:
         self._prev_pop = set()
         self._next_pop = set()
 
-    def log_results(self, results: Sequence[Individual]):
+    def collect_results(self, results: Sequence[Individual]):
         for ind in results:
-            self.log_result(ind)
+            self.collect_result(ind)
 
-    def log_result(self, result: Individual):
+    def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
             return
         if not result.parent_operator or result.parent_operator.type_ != 'mutation':
@@ -48,17 +51,15 @@ class ExperienceBuffer:
         prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
         # we're minimising the fitness, that's why less is better
         reward = prev_fitness - result.fitness.value if prev_fitness is not None else 0.
-        self.log_experience(obs, action, reward)
+        self.collect_experience(obs, action, reward)
 
-    def log_invalid(self, obs: Individual, action: ActType):
-        self.log_experience(obs.graph, action, reward=-1.0)
-
-    def log_experience(self, obs: ObsType, action: ActType, reward: float):
+    def collect_experience(self, obs: ObsType, action: ActType, reward: float):
         self._observations.append(obs)
         self._actions.append(action)
         self._rewards.append(reward)
 
-    def get_experience(self) -> Tuple[List[ActType], List[float]]:
+    def retrieve_experience(self) -> Tuple[List[ActType], List[float]]:
+        """Get all collected experience and clear the experience buffer."""
         actions, rewards = self._actions, self._rewards
         next_pop = self._next_pop
         self.reset()
@@ -107,7 +108,7 @@ class RandomAgent(OperatorAgent):
         return subject_nodes[0] if num_nodes == 1 else subject_nodes
 
     def partial_fit(self, experience: ExperienceBuffer):
-        actions, rewards = experience.get_experience()
+        actions, rewards = experience.retrieve_experience()
         self._dbg_log(actions, rewards)
 
     def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:

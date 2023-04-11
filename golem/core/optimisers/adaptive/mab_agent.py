@@ -48,7 +48,8 @@ class MultiArmedBanditAgent(OperatorAgent):
         return subject_nodes[0] if num_nodes == 1 else subject_nodes
 
     def partial_fit(self, experience: ExperienceBuffer):
-        actions, rewards = experience.get_experience()
+        """Continues learning of underlying agent with new experience."""
+        actions, rewards = experience.retrieve_experience()
         self._dbg_log(actions, rewards)
         arms = [self._arm_by_action[action] for action in actions]
         self._agent.partial_fit(decisions=arms, rewards=rewards)
