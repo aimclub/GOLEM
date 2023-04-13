@@ -79,6 +79,27 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
 
 
 class IOptTuner(BaseTuner):
+    """
+    Base class for hyperparameters optimization based on hyperopt library
+
+    Args:
+        objective_evaluate: objective to optimize
+        adapter: the function for processing of external object that should be optimized
+        iterations: max number of iterations
+        search_space: SearchSpace instance
+        n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
+        eps: The accuracy of the solution of the problem. Less value - higher search accuracy, less likely to stop
+            prematurely.
+        r: Reliability parameter. Higher r is slower convergence, higher probability of finding a global minimum.
+        evolvent_density: Density of the evolvent. By default :math:`2^{-10}` on hypercube :math:`[0,1]^N`,
+             which means, that the maximum search accuracy is :math:`2^{-10}`.
+        eps_r: Parameter that affects the speed of solving the task. epsR = 0 - slow convergence
+             to the exact solution, epsR>0 - quick converge to the neighborhood of the solution.
+        refine_solution: if true, then the solution will be refined with local search.
+        deviation: required improvement (in percent) of a metric to return tuned graph.
+            By default, ``deviation=0.05``, which means that tuned graph will be returned
+            if it's metric will be at least 0.05% better than the initial.
+    """
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
@@ -88,9 +109,9 @@ class IOptTuner(BaseTuner):
                  r: float = 2.0,
                  evolvent_density: int = 10,
                  eps_r: float = 0.001,
-                 refine_solution: bool = False
-                 ):
-        super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs)
+                 refine_solution: bool = False,
+                 deviation: float = 0.05):
+        super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs, deviation)
         self.solver_parameters = SolverParameters(r=np.double(r), eps=np.double(eps), itersLimit=iterations,
                                                   evolventDensity=evolvent_density, epsR=np.double(eps_r),
                                                   refineSolution=refine_solution)
@@ -171,6 +192,7 @@ class IOptTuner(BaseTuner):
 def get_parameters_dict_from_iopt_point(point: Point, float_parameters_names: List[str],
                                         discrete_parameters_names: List[str]) \
         -> Dict[str, Any]:
+    """Constructs a dict with all hyperparameters """
     float_parameters = dict(zip(float_parameters_names, point.floatVariables)) \
         if point.floatVariables is not None else {}
     discrete_parameters = dict(zip(discrete_parameters_names, point.discreteVariables)) \

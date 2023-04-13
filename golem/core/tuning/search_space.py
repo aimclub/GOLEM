@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Callable, List, Union
+from typing import Dict, Callable, List, Union
 
 import numpy as np
 from hyperopt import hp
@@ -8,8 +8,10 @@ class SearchSpace:
     """
     Args:
         search_space: dictionary with parameters and their search_space
-            {'operation_name': {'param_name': (hyperopt distribution function, [sampling scope]), ...}, ...},
-            e.g. ``{'operation_name': {'param1': (hp.uniformint, [2, 21]), ...}, ..}
+            {'operation_name': {'param_name': {'hyperopt-dist': hyperopt distribution function,
+            'sampling-scope': [sampling scope], 'type': 'discrete' or 'continuous'}, ...}, ...},
+            e.g. ``{'operation_name': {'param1': {'hyperopt-dist': hp.uniformint, 'sampling-scope': [2, 21]),
+            'type': 'discrete'}, ...}, ..}
     """
 
     def __init__(self, search_space: Dict[str, Dict[str, Dict[str, Union[Callable, List, str]]]]):
@@ -43,14 +45,15 @@ class SearchSpace:
 
     def get_node_parameters_for_hyperopt(self, node_id, operation_name):
         """
-        Method for forming dictionary with hyperparameters for considering
-        operation as a part of the whole graph
+        Method for forming dictionary with hyperparameters of the node operation for the ``HyperoptTuner``
 
-        :param node_id: number of node in graph.nodes list
-        :param operation_name: name of operation in the node
+        Args:
+            node_id: number of node in graph.nodes list
+            operation_name: name of operation in the node
 
-        :return parameters_dict: dictionary-like structure with labeled hyperparameters
-        and their range per operation
+        Returns:
+            parameters_dict: dictionary-like structure with labeled hyperparameters
+            and their range per operation
         """
 
         # Get available parameters for current operation
@@ -70,6 +73,19 @@ class SearchSpace:
         return parameters_dict
 
     def get_node_parameters_for_iopt(self, node_id, operation_name):
+        """
+        Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``
+
+        Args:
+            node_id: number of node in graph.nodes list
+            operation_name: name of operation in the node
+
+        Returns:
+            float_parameters_dict: dictionary-like structure with labeled float hyperparameters
+            and their range per operation
+            discrete_parameters_dict: dictionary-like structure with labeled discrete hyperparameters
+            and their range per operation
+        """
         # Get available parameters for operation
         parameters_dict = self.parameters_per_operation.get(operation_name)
 
@@ -83,9 +99,11 @@ class SearchSpace:
 
                 parameter_type = parameter_properties.get('type')
                 if parameter_type == 'discrete':
-                    discrete_parameters_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
+                    discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                                    .get('sampling-scope')})
                 elif parameter_type == 'continuous':
-                    float_parameters_dict.update({node_op_parameter_name: parameter_properties.get('sampling-scope')})
+                    float_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                                 .get('sampling-scope')})
 
         return float_parameters_dict, discrete_parameters_dict
 
@@ -107,8 +125,11 @@ def convert_parameters(parameters):
     """
     Function removes labels from dictionary with operations
 
-    :param parameters: labeled parameters
-    :return new_parameters: dictionary without labels of node_id and operation_name
+    Args:
+        parameters: labeled parameters
+
+    Returns:
+        new_parameters: dictionary without labels of node_id and operation_name
     """
 
     new_parameters = {}

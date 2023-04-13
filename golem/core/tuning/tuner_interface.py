@@ -20,6 +20,19 @@ DomainGraphForTune = TypeVar('DomainGraphForTune')
 
 
 class BaseTuner(Generic[DomainGraphForTune]):
+    """
+    Base class for hyperparameters optimization
+
+    Args:
+      objective_evaluate: objective to optimize
+      adapter: the function for processing of external object that should be optimized
+      iterations: max number of iterations
+      search_space: SearchSpace instance
+      n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
+      deviation: required improvement (in percent) of a metric to return tuned graph.
+        By default, ``deviation=0.05``, which means that tuned graph will be returned
+        if it's metric will be at least 0.05% better than the initial.
+    """
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
