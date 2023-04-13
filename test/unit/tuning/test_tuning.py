@@ -109,4 +109,3 @@ def test_node_tuning(search_space, graph):
         final_metric = obj_eval.evaluate(tuned_graph)
         assert final_metric is not None
         assert init_metric <= final_metric
-

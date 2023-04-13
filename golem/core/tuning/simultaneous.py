@@ -147,7 +147,7 @@ class SimultaneousTuner(HyperoptTuner):
             tunable_node_params = self.search_space.get_parameters_for_operation(operation_name)
             if tunable_node_params:
                 tunable_initial_params = {get_node_operation_parameter_label(node_id, operation_name, p):
-                                              node.parameters[p] for p in node.parameters if p in tunable_node_params}
+                                          node.parameters[p] for p in node.parameters if p in tunable_node_params}
                 if tunable_initial_params:
                     initial_parameters.update(tunable_initial_params)
 

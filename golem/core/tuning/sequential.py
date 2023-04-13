@@ -7,7 +7,7 @@ from hyperopt import tpe, fmin, space_eval
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
-from golem.core.tuning.search_space import SearchSpace, convert_parameters
+from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
 
 
