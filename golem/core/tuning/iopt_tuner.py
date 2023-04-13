@@ -127,8 +127,9 @@ class IOptTuner(BaseTuner):
         if no_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
         else:
-            initial_point = Point(**initial_parameters) if initial_parameters else None
-            self.solver_parameters.startPoint = initial_point
+            if initial_parameters:
+                initial_point = Point(**initial_parameters)
+                self.solver_parameters.startPoint = initial_point
 
             problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
             solver = Solver(problem, parameters=self.solver_parameters)

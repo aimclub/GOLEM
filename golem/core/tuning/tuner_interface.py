@@ -189,9 +189,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
 
 class HyperoptTuner(BaseTuner, ABC):
-    """
-    Base class for hyperparameters optimization based on hyperopt library
-    
+    """Base class for hyperparameters optimization based on hyperopt library
+
     Args:
       objective_evaluate: objective to optimize
       adapter: the function for processing of external object that should be optimized
