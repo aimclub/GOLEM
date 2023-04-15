@@ -31,7 +31,7 @@ class SurrogateDispatcher(SequentialDispatcher):
                         logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> OptionalEvalResult:
 
         start_time = timeit.default_timer()
-        fitness = to_fitness(self.surrogate_model(graph))
+        fitness = to_fitness(self.surrogate_model(graph, objective=self._objective_eval))
         end_time = timeit.default_timer()
 
         eval_res = GraphEvalResult(
