@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional, Sequence
+from typing import Type, Optional
 
 import networkx as nx
 
@@ -69,7 +69,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
         mutation_types=[
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_edge,
-            MutationTypesEnum.single_drop,
+            MutationTypesEnum.single_drop
         ],
         crossover_types=[CrossoverTypesEnum.none],
         surrogate_model=RandomValuesSurrogateModel()
