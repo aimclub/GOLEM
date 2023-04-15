@@ -14,6 +14,7 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
+from golem.core.optimisers.meta.surrogate_model import RandomValuesSurrogateModel
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
@@ -70,7 +71,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
             MutationTypesEnum.single_edge,
             MutationTypesEnum.single_drop,
         ],
-        crossover_types=[CrossoverTypesEnum.none]
+        crossover_types=[CrossoverTypesEnum.none],
+        surrogate_model=RandomValuesSurrogateModel()
     )
     gp_params = algorithm_parameters or default_gp_params
     graph_gen_params = GraphGenerationParams(
