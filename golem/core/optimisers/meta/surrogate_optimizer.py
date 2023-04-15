@@ -30,7 +30,8 @@ class SurrogateOptimizer(EvoGraphOptimizer):
         self.surrogate_dispatcher = SurrogateDispatcher(adapter=graph_generation_params.adapter,
                                                         n_jobs=requirements.n_jobs,
                                                         graph_cleanup_fn=_try_unfit_graph,
-                                                        delegate_evaluator=graph_generation_params.remote_evaluator)
+                                                        delegate_evaluator=graph_generation_params.remote_evaluator,
+                                                        surrogate_model=surrogate_model)
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
         # eval_dispatcher defines how to evaluate objective on the whole population
