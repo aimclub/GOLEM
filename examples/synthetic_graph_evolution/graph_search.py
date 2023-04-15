@@ -1,6 +1,8 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional
+from typing import Type, Optional, Sequence
+
+import networkx as nx
 
 import networkx as nx
 
@@ -17,6 +19,8 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.meta.surrogate_model import RandomValuesSurrogateModel
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
+from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.metrics.graph_metrics import spectral_dist, degree_distance, size_diff
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
 
@@ -71,8 +75,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
             MutationTypesEnum.single_edge,
             MutationTypesEnum.single_drop
         ],
-        crossover_types=[CrossoverTypesEnum.none],
-        surrogate_model=RandomValuesSurrogateModel()
+        crossover_types=[CrossoverTypesEnum.none]
     )
     gp_params = algorithm_parameters or default_gp_params
     graph_gen_params = GraphGenerationParams(

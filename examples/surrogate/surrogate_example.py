@@ -1,28 +1,28 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional
+from typing import Type, Optional, Sequence
+
+import networkx as nx
 
 from examples.synthetic_graph_evolution.experiment import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
-from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.meta.surrogate_model import RandomValuesSurrogateModel
 from golem.core.optimisers.meta.surrogate_optimizer import SurrogateOptimizer
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.metrics.graph_metrics import *
+from golem.metrics.graph_metrics import spectral_dist
 
 
 def surrogate_graph_search_setup(target_graph: nx.DiGraph,
-                       optimizer_cls: Type[GraphOptimizer] = SurrogateOptimizer,
-                       node_types: Sequence[str] = ('X',),
-                       timeout: Optional[timedelta] = None,
-                       num_iterations: Optional[int] = None):
+                                 optimizer_cls: Type[GraphOptimizer] = SurrogateOptimizer,
+                                 node_types: Sequence[str] = ('X',),
+                                 timeout: Optional[timedelta] = None,
+                                 num_iterations: Optional[int] = None):
     # Setup parameters
     num_nodes = target_graph.number_of_nodes()
     requirements = GraphRequirements(
