@@ -12,6 +12,11 @@ from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
 
 
 class SurrogateOptimizer(EvoGraphOptimizer):
+    """
+    Surrogate optimizer that uses surrogate model for evaluating part of individuals
+
+    Additionally, we need to pass surrogate_model object
+    """
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Sequence[OptGraph],
@@ -28,9 +33,9 @@ class SurrogateOptimizer(EvoGraphOptimizer):
                                                         delegate_evaluator=graph_generation_params.remote_evaluator)
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
-
         # eval_dispatcher defines how to evaluate objective on the whole population
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
+        # surrogate_dispatcher defines how to evaluate objective with surrogate model
         surrogate_evaluator = self.surrogate_dispatcher.dispatch(objective, self.timer)
 
         with self.timer, self._progressbar:

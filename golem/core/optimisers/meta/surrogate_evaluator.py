@@ -11,9 +11,11 @@ from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 
 
 class SurrogateDispatcher(SequentialDispatcher):
-    """Evaluates objective function on population in sequential way.
+    """Evaluates objective function with surrogate model.
 
         Usage: call `dispatch(objective_function)` to get evaluation function.
+
+        Additionally, we need to pass surrogate_model object
     """
 
     def __init__(self,
