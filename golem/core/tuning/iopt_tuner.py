@@ -70,12 +70,33 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
         self._default_metric_value = np.inf
 
     def Calculate(self, point: Point, functionValue: FunctionValue) -> FunctionValue:
-        new_parameters = get_parameters_dict_from_iopt_point(point, self.floatVariableNames, self.discreteVariableNames)
+        new_parameters = GolemProblem.get_parameters_dict_from_iopt_point(point,
+                                                                          self.floatVariableNames,
+                                                                          self.discreteVariableNames)
         BaseTuner.set_arg_graph(self.graph, new_parameters)
         graph_fitness = self.objective_evaluate(self.graph)
         metric_value = graph_fitness.value if graph_fitness.valid else self._default_metric_value
         functionValue.value = metric_value
         return functionValue
+
+    @staticmethod
+    def get_parameters_dict_from_iopt_point(point: Point,
+                                            float_parameters_names: List[str],
+                                            discrete_parameters_names: List[str]) -> Dict[str, Any]:
+        """Constructs a dict with all hyperparameters """
+        float_parameters = dict(zip(float_parameters_names, point.floatVariables)) \
+            if point.floatVariables is not None else {}
+        discrete_parameters = dict(zip(discrete_parameters_names, point.discreteVariables)) \
+            if point.discreteVariables is not None else {}
+
+        # TODO: Remove workaround - for now IOpt handles only float variables, so discrete parameters
+        #  are optimized as continuous and we need to round them
+        for parameter_name in float_parameters:
+            if parameter_name in discrete_parameters_names:
+                float_parameters[parameter_name] = round(float_parameters[parameter_name])
+
+        parameters_dict = {**float_parameters, **discrete_parameters}
+        return parameters_dict
 
 
 class IOptTuner(BaseTuner):
@@ -100,6 +121,7 @@ class IOptTuner(BaseTuner):
             By default, ``deviation=0.05``, which means that tuned graph will be returned
             if it's metric will be at least 0.05% better than the initial.
     """
+
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
@@ -148,8 +170,10 @@ class IOptTuner(BaseTuner):
 
             solution = solver.Solve()
             best_point = solution.bestTrials[0].point
-            best_parameters = get_parameters_dict_from_iopt_point(best_point, problem_parameters.float_parameters_names,
-                                                                  problem_parameters.discrete_parameters_names)
+            best_parameters = GolemProblem.get_parameters_dict_from_iopt_point(
+                best_point,
+                problem_parameters.float_parameters_names,
+                problem_parameters.discrete_parameters_names)
             tuned_graph = self.set_arg_graph(graph, best_parameters)
 
             # Validation is the optimization do well
@@ -178,8 +202,10 @@ class IOptTuner(BaseTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            float_node_parameters, discrete_node_parameters = self.search_space.get_node_parameters_for_iopt(
-                node_id=node_id, operation_name=operation_name)
+            float_node_parameters, discrete_node_parameters = get_node_parameters_for_iopt(
+                self.search_space,
+                node_id=node_id,
+                operation_name=operation_name)
 
             # Set initial parameters for search
             for parameter, bounds in float_node_parameters.items():
@@ -196,25 +222,6 @@ class IOptTuner(BaseTuner):
             discrete_parameters_dict.update(discrete_node_parameters)
         parameters_dict = IOptProblemParameters.from_parameters_dicts(float_parameters_dict, discrete_parameters_dict)
         return parameters_dict, initial_parameters
-
-
-def get_parameters_dict_from_iopt_point(point: Point,
-                                        float_parameters_names: List[str],
-                                        discrete_parameters_names: List[str]) -> Dict[str, Any]:
-    """Constructs a dict with all hyperparameters """
-    float_parameters = dict(zip(float_parameters_names, point.floatVariables)) \
-        if point.floatVariables is not None else {}
-    discrete_parameters = dict(zip(discrete_parameters_names, point.discreteVariables)) \
-        if point.discreteVariables is not None else {}
-
-    # TODO: Remove workaround - for now IOpt handles only float variables, so discrete parameters
-    #  are optimized as continuous and we need to round them
-    for parameter_name in float_parameters:
-        if parameter_name in discrete_parameters_names:
-            float_parameters[parameter_name] = round(float_parameters[parameter_name])
-
-    parameters_dict = {**float_parameters, **discrete_parameters}
-    return parameters_dict
 
 
 def get_node_parameters_for_iopt(search_space, node_id, operation_name):

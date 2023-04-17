@@ -17,41 +17,6 @@ class SearchSpace:
     def __init__(self, search_space: Dict[str, Dict[str, Dict[str, Union[Callable, List, str]]]]):
         self.parameters_per_operation = search_space
 
-    def get_node_parameters_for_iopt(self, node_id, operation_name):
-        """
-        Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``
-
-        Args:
-            node_id: number of node in graph.nodes list
-            operation_name: name of operation in the node
-
-        Returns:
-            float_parameters_dict: dictionary-like structure with labeled float hyperparameters
-            and their range per operation
-            discrete_parameters_dict: dictionary-like structure with labeled discrete hyperparameters
-            and their range per operation
-        """
-        # Get available parameters for operation
-        parameters_dict = self.parameters_per_operation.get(operation_name)
-
-        discrete_parameters_dict = {}
-        float_parameters_dict = {}
-
-        if parameters_dict is not None:
-
-            for parameter_name, parameter_properties in parameters_dict.items():
-                node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
-
-                parameter_type = parameter_properties.get('type')
-                if parameter_type == 'discrete':
-                    discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                                    .get('sampling-scope')})
-                elif parameter_type == 'continuous':
-                    float_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                                 .get('sampling-scope')})
-
-        return float_parameters_dict, discrete_parameters_dict
-
     def get_parameters_for_operation(self, operation_name: str) -> List[str]:
         parameters_list = list(self.parameters_per_operation.get(operation_name, {}).keys())
         return parameters_list
