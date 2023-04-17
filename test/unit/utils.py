@@ -7,6 +7,7 @@ from golem.core.dag.graph import Graph
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.linked_graph_node import LinkedGraphNode
+from golem.core.optimisers.graph import OptNode
 
 
 def nodes_same(left_nodes: Sequence[GraphNode], right_nodes: Sequence[GraphNode]) -> bool:
@@ -130,6 +131,7 @@ def graph_sixth():
     graph = GraphDelegate(node_c)
     return graph
 
+
 def graph_seventh():
     #  b    c
     #   \  /
@@ -170,6 +172,39 @@ def graph_ninth():
     graph = GraphDelegate()
     graph.add_node(node_b)
     graph.add_node(node_c)
+    return graph
+
+
+def graph_with_multi_roots_first():
+    #   17   16
+    #   |  /    \
+    #   15       14
+    #     \      |  \
+    #      13    12  11
+
+    node1 = LinkedGraphNode('11')
+    node2 = LinkedGraphNode('12')
+    node3 = LinkedGraphNode('13')
+    node4 = LinkedGraphNode('14', nodes_from=[node1, node2])
+    node5 = LinkedGraphNode('15', nodes_from=[node3])
+    node6 = LinkedGraphNode('16', nodes_from=[node4, node5])
+    node7 = LinkedGraphNode('17', nodes_from=[node5])
+
+    graph = GraphDelegate([node6, node7])
+    return graph
+
+
+def graph_with_multi_roots_second():
+    #   24   23
+    #   |  /    \
+    #   22       21
+
+    node21 = LinkedGraphNode('21')
+    node22 = LinkedGraphNode('22')
+    node23 = LinkedGraphNode('23', nodes_from=[node21, node22])
+    node24 = LinkedGraphNode('24', nodes_from=[node22])
+
+    graph = GraphDelegate([node23, node24])
     return graph
 
 

@@ -6,7 +6,8 @@ from golem.core.optimisers.archive import ParetoFront
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.gp_operators import filter_duplicates, replace_subtrees, equivalent_subtree
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth
+from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_with_multi_roots_second, \
+    graph_with_multi_roots_first
 
 
 def test_filter_duplicates():
@@ -72,7 +73,7 @@ def test_graphs_equivalent_subtree():
     for graphs, answers in zip(graphs_to_search_in, subgraphs_counts):
         graph_1, graph_2 = graphs
         answer_primary, answer_non_primary = answers
-        # get all common subgraphs. primary nodes are not considered.
+
         # get all common subgraphs. primary nodes are considered too.
         similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
                                                             with_primary_nodes=False)
@@ -82,3 +83,18 @@ def test_graphs_equivalent_subtree():
         similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
                                                             with_primary_nodes=True)
         assert len(similar_nodes_first_and_second) == answer_non_primary
+
+
+def test_graphs_with_multi_root_equivalent_subtree():
+    graph_first = graph_with_multi_roots_first()
+    graph_second = graph_with_multi_roots_second()
+
+    # get all common subgraphs. primary nodes are considered too.
+    similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_first, graph_second=graph_second,
+                                                        with_primary_nodes=False)
+    assert len(similar_nodes_first_and_second) == 2
+
+    # get all common subgraphs. primary nodes are considered too.
+    similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_first, graph_second=graph_second,
+                                                        with_primary_nodes=True)
+    assert len(similar_nodes_first_and_second) == 8
