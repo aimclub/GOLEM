@@ -115,7 +115,7 @@ class SAAnalysisResults(Serializable):
                 type_list = []
                 for entity_idx in source[iter][entity_type]:
                     cur_result = ObjectSAResult(entity_idx=entity_idx,
-                                                entity_type=entity_type)
+                                                entity_type=EntityTypesEnum(entity_type))
                     dict_results = source[iter][entity_type][entity_idx]
                     for approach in dict_results:
                         app = results_repo.get_class_by_str(approach)()
