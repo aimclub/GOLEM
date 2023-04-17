@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import datetime
 import os
+from copy import deepcopy
 from pathlib import Path
 from textwrap import wrap
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Union, List
 from uuid import uuid4
 
 import networkx as nx
@@ -55,15 +56,18 @@ class GraphVisualizer:
     def visualise(self, save_path: Optional[PathType] = None, engine: Optional[str] = None,
                   node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
                   node_size_scale: Optional[float] = None,
-                  font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None):
+                  font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
+                  nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         engine = engine or self.get_predefined_value('engine')
 
         if not self.graph.nodes:
             raise ValueError('Empty graph can not be visualized.')
 
         if engine == 'matplotlib':
-            self.__draw_with_networkx(save_path, node_color, dpi, node_size_scale, font_size_scale,
-                                      edge_curvature_scale)
+            self.__draw_with_networkx(save_path=save_path, node_color=node_color, dpi=dpi,
+                                      node_size_scale=node_size_scale, font_size_scale=font_size_scale,
+                                      edge_curvature_scale=edge_curvature_scale,
+                                      nodes_labels=nodes_labels, edges_labels=edges_labels)
         elif engine == 'pyvis':
             self.__draw_with_pyvis(save_path, node_color)
         elif engine == 'graphviz':
@@ -162,7 +166,8 @@ class GraphVisualizer:
                              node_color: Optional[NodeColorType] = None,
                              dpi: Optional[int] = None, node_size_scale: Optional[float] = None,
                              font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
-                             graph_to_nx_convert_func: Optional[Callable] = None):
+                             graph_to_nx_convert_func: Optional[Callable] = None,
+                             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         save_path = save_path or self.get_predefined_value('save_path')
         node_color = node_color or self.get_predefined_value('node_color')
         dpi = dpi or self.get_predefined_value('dpi')
@@ -175,21 +180,19 @@ class GraphVisualizer:
         fig, ax = plt.subplots(figsize=(7, 7))
         fig.set_dpi(dpi)
 
-        # nx_graph = BaseNetworkxAdapter().restore(self.graph)
-        # nx.draw_kamada_kawai(nx_graph, arrows=True, ax=ax)
         self.draw_nx_dag(self.graph, ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
-                         graph_to_nx_convert_func)
+                         graph_to_nx_convert_func, nodes_labels, edges_labels)
         if not save_path:
             plt.show()
         else:
             plt.savefig(save_path, dpi=dpi)
             plt.close()
 
-    @staticmethod
-    def draw_nx_dag(graph: GraphType, ax: Optional[plt.Axes] = None,
+    def draw_nx_dag(self, graph: GraphType, ax: Optional[plt.Axes] = None,
                     node_color: Optional[NodeColorType] = None,
                     node_size_scale: float = 1, font_size_scale: float = 1, edge_curvature_scale: float = 1,
-                    graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph):
+                    graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph,
+                    nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
 
         def draw_nx_labels(pos, node_labels, ax, max_sequence_length, font_size_scale=1.0):
             def get_scaled_font_size(nodes_amount):
@@ -284,6 +287,10 @@ class GraphVisualizer:
         for u, v, e in nx_graph.edges(data=True):
             nx.draw_networkx_edges(nx_graph, pos, edgelist=[(u, v)], node_size=node_size, ax=ax, arrowsize=10,
                                    arrowstyle=arrow_style, connectionstyle=e['connectionstyle'])
+        if nodes_labels or edges_labels:
+            self._set_labels(ax, pos, nx_graph,
+                             longest_sequence, longest_sequence, font_size_scale,
+                             nodes_labels, edges_labels)
         # Rescale the figure for all nodes to fit in.
         x_1, x_2 = ax.get_xlim()
         y_1, y_2 = ax.get_ylim()
@@ -297,6 +304,96 @@ class GraphVisualizer:
 
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
+
+    def _set_labels(self, ax: plt.Axes, pos: Any, nx_graph: nx.DiGraph,
+                    longest_sequence: int, longest_y_sequence: int, font_size_scale: float,
+                    nodes_labels: Dict[int, str], edges_labels: Dict[int, str]):
+        """ Set labels with scores to nodes and edges. """
+
+        def calculate_labels_bias(ax: plt.Axes, longest_y_sequence: int):
+            y_1, y_2 = ax.get_ylim()
+            y_size = y_2 - y_1
+            if longest_y_sequence == 1:
+                bias_scale = 0.25  # Fits between the central line and the upper bound.
+            else:
+                bias_scale = 1 / longest_y_sequence / 3 * 0.9  # Fits between the narrowest horizontal rows.
+            bias = y_size * bias_scale
+            return bias
+
+        def _get_scaled_font_size(nodes_amount: int, size_scale: float) -> float:
+            min_size = 11
+            max_size = 25
+            size = max(max_size * (1 - np.log10(nodes_amount)), min_size)
+            return size * size_scale
+
+        def match_labels_with_nx_nodes(nx_graph: nx.DiGraph, labels: Dict[int, str]) -> Dict[str, str]:
+            """ Matches index of node in GOLEM graph with networkx node name. """
+            nx_nodes = list(nx_graph.nodes.keys())
+            nx_labels = {}
+            for index in labels:
+                nx_labels[nx_nodes[index]] = labels[index]
+            return nx_labels
+
+        def match_labels_with_nx_edges(nx_graph: nx.DiGraph, labels: Dict[int, str]) \
+                -> Dict[Tuple[str, str], List[str]]:
+            """ Matches index of edge in GOLEM graph with tuple of networkx nodes names. """
+            nx_nodes = list(nx_graph.nodes.keys())
+            edges = self.graph.get_edges()
+            nx_labels = {}
+            for index in labels:
+                edge = edges[index]
+                parent_node_nx = nx_nodes[self.graph.nodes.index(edge[0])]
+                child_node_nx = nx_nodes[self.graph.nodes.index(edge[1])]
+                nx_labels[(parent_node_nx, child_node_nx)] = labels[index]
+            return nx_labels
+
+        if not edges_labels and not nodes_labels:
+            return
+
+        bias = calculate_labels_bias(ax, longest_y_sequence)
+        if nodes_labels:
+            # Set labels for nodes
+            labels_pos = deepcopy(pos)
+            font_size = _get_scaled_font_size(longest_sequence, font_size_scale * 0.7)
+            bbox = dict(alpha=0.9, color='w')
+            for value in labels_pos.values():
+                value[1] += bias
+
+            nodes_nx_labels = match_labels_with_nx_nodes(nx_graph=nx_graph, labels=nodes_labels)
+            nx.draw_networkx_labels(
+                nx_graph, labels_pos,
+                labels=nodes_nx_labels,
+                font_color='black',
+                font_size=font_size,
+                bbox=bbox
+            )
+
+        if not edges_labels:
+            return
+        labels_pos_edges = deepcopy(pos)
+        label_bias_y = 2 / 3 * bias
+        if len(set([coord[1] for coord in pos.values()])) == 1 and len(list(pos.values())) > 2:
+            for value in labels_pos_edges.values():
+                value[1] += label_bias_y
+
+        edges_nx_labels = match_labels_with_nx_edges(nx_graph=nx_graph, labels=edges_labels)
+        # Set labels for edges
+        for u, v, e in nx_graph.edges(data=True):
+            if (u, v) not in edges_nx_labels:
+                continue
+            current_pos = labels_pos_edges
+            if 'edge_center_position' in e:
+                x, y = e['edge_center_position']
+                plt.text(x, y, edges_nx_labels[(u, v)], bbox=bbox, fontsize=font_size)
+            else:
+                nx.draw_networkx_edge_labels(
+                    nx_graph, current_pos, {(u, v): edges_nx_labels[(u, v)]},
+                    label_pos=0.5, ax=ax,
+                    font_color='black',
+                    font_size=font_size,
+                    rotate=False,
+                    bbox=bbox
+                )
 
 
 def get_hierarchy_pos(graph: nx.DiGraph, max_line_length: int = 6) -> Tuple[Dict[Any, Tuple[float, float]], int]:
