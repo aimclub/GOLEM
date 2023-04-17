@@ -60,14 +60,25 @@ def test_graphs_equivalent_subtree():
     c_second = graph_second()
     c_third = graph_third()
 
-    similar_nodes_first_and_second = equivalent_subtree(c_first, c_second)
-    assert len(similar_nodes_first_and_second) == 6
+    graphs_to_search_in = [[c_first, c_second],
+                           [c_first, c_third],
+                           [c_second, c_third],
+                           [c_third, c_third]]
+    subgraphs_counts = [[4, 24],
+                        [0, 12],
+                        [0, 15],
+                        [1, 10]]
 
-    similar_nodes_first_and_third = equivalent_subtree(c_first, c_third)
-    assert not similar_nodes_first_and_third
+    for graphs, answers in zip(graphs_to_search_in, subgraphs_counts):
+        graph_1, graph_2 = graphs
+        answer_primary, answer_non_primary = answers
+        # get all common subgraphs. primary nodes are not considered.
+        # get all common subgraphs. primary nodes are considered too.
+        similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
+                                                            with_primary_nodes=False)
+        assert len(similar_nodes_first_and_second) == answer_primary
 
-    similar_nodes_second_and_third = equivalent_subtree(c_second, c_third)
-    assert not similar_nodes_second_and_third
-
-    similar_nodes_third = equivalent_subtree(c_third, c_third)
-    assert len(similar_nodes_third) == 4
+        # get all common subgraphs. primary nodes are considered too.
+        similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
+                                                            with_primary_nodes=True)
+        assert len(similar_nodes_first_and_second) == answer_non_primary

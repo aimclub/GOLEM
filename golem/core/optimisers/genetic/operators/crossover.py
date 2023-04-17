@@ -108,20 +108,29 @@ class Crossover(Operator):
 
 
 @register_native
-def subtree_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int) -> Tuple[OptGraph, OptGraph]:
+def subtree_crossover(graph_1: OptGraph, graph_2: OptGraph,
+                      max_depth: int, inplace: bool = True) -> Tuple[OptGraph, OptGraph]:
     """Performed by the replacement of random subtree
     in first selected parent to random subtree from the second parent"""
-    random_layer_in_graph_first = choice(range(graph_first.depth))
-    min_second_layer = 1 if random_layer_in_graph_first == 0 and graph_second.depth > 1 else 0
-    random_layer_in_graph_second = choice(range(min_second_layer, graph_second.depth))
 
-    node_from_graph_first = choice(nodes_from_layer(graph_first, random_layer_in_graph_first))
-    node_from_graph_second = choice(nodes_from_layer(graph_second, random_layer_in_graph_second))
+    if not inplace:
+        graph_1 = deepcopy(graph_1)
+        graph_2 = deepcopy(graph_2)
+    else:
+        graph_1 = graph_1
+        graph_2 = graph_2
 
-    replace_subtrees(graph_first, graph_second, node_from_graph_first, node_from_graph_second,
+    random_layer_in_graph_first = choice(range(graph_1.depth))
+    min_second_layer = 1 if random_layer_in_graph_first == 0 and graph_2.depth > 1 else 0
+    random_layer_in_graph_second = choice(range(min_second_layer, graph_2.depth))
+
+    node_from_graph_first = choice(nodes_from_layer(graph_1, random_layer_in_graph_first))
+    node_from_graph_second = choice(nodes_from_layer(graph_2, random_layer_in_graph_second))
+
+    replace_subtrees(graph_1, graph_2, node_from_graph_first, node_from_graph_second,
                      random_layer_in_graph_first, random_layer_in_graph_second, max_depth)
 
-    return graph_first, graph_second
+    return graph_1, graph_2
 
 
 @register_native
@@ -161,10 +170,7 @@ def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_
                 child_new = GraphNode(str(child))  
                 graph.add_node(child_new)
             new_edges.append((parent_new, child_new))    
-        return new_edges      
-    
-    old_edges1 = []
-    old_edges2 = []
+        return new_edges
 
     edges_1 = graph_first.get_edges()
     edges_2 = graph_second.get_edges()
@@ -194,7 +200,7 @@ def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_
 
 
 @register_native
-def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int):
     """For the selected node for the first parent, change the parent nodes to 
     the parent nodes of the same node of the second parent. Thus, the first child is obtained. 
     The second child is a copy of the second parent"""
@@ -233,7 +239,7 @@ def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph
 
 
 @register_native
-def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
+def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int):
     """For the selected node for the first parent, change the parent nodes to 
     the parent nodes of the same node of the second parent. Thus, the first child is obtained. 
     The second child is formed in a similar way"""
