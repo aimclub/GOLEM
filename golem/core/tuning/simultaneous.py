@@ -84,8 +84,11 @@ class SimultaneousTuner(HyperoptTuner):
 
         return final_graph
 
-    def _search_near_initial_parameters(self, graph: OptGraph, search_space: dict, initial_parameters: dict,
-                                        trials: Trials, show_progress: bool = True) -> Tuple[Trials, int]:
+    def _search_near_initial_parameters(self, graph: OptGraph,
+                                        search_space: dict,
+                                        initial_parameters: dict,
+                                        trials: Trials,
+                                        show_progress: bool = True) -> Tuple[Trials, int]:
         """ Method to search using the search space where parameters initially set for the graph are fixed.
         This allows not to lose results obtained while composition process
 

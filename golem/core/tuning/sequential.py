@@ -26,9 +26,15 @@ class SequentialTuner(HyperoptTuner):
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
                  inverse_node_order=False):
-        super().__init__(objective_evaluate=objective_evaluate, search_space=search_space, adapter=adapter,
-                         iterations=iterations, early_stopping_rounds=early_stopping_rounds,
-                         timeout=timeout, n_jobs=n_jobs, deviation=deviation, algo=algo)
+        super().__init__(objective_evaluate,
+                         search_space,
+                         adapter,
+                         iterations,
+                         early_stopping_rounds,
+                         timeout,
+                         n_jobs,
+                         deviation,
+                         algo)
 
         self.inverse_node_order = inverse_node_order
 
@@ -117,7 +123,8 @@ class SequentialTuner(HyperoptTuner):
         operation_name = node.name
 
         # Get node's parameters to optimize
-        node_params = get_node_parameters_for_hyperopt(self.search_space, node_id=node_index,
+        node_params = get_node_parameters_for_hyperopt(self.search_space,
+                                                       node_id=node_index,
                                                        operation_name=operation_name)
 
         if not node_params:

@@ -214,15 +214,21 @@ class HyperoptTuner(BaseTuner, ABC):
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: BaseOptimizationAdapter = None,
-                 iterations: int = 100, early_stopping_rounds=None,
+                 iterations: int = 100,
+                 early_stopping_rounds=None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
                  algo: Callable = None):
         early_stopping_rounds = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
-        super().__init__(objective_evaluate=objective_evaluate, search_space=search_space, adapter=adapter,
-                         iterations=iterations, timeout=timeout, early_stopping_rounds=early_stopping_rounds,
-                         n_jobs=n_jobs, deviation=deviation)
+        super().__init__(objective_evaluate,
+                         search_space,
+                         adapter,
+                         iterations,
+                         timeout,
+                         early_stopping_rounds,
+                         n_jobs,
+                         deviation)
 
         self.early_stop_fn = no_progress_loss(iteration_stop_count=self.early_stopping_rounds)
         self.max_seconds = int(timeout.seconds) if timeout is not None else None

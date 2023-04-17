@@ -111,10 +111,17 @@ class IOptTuner(BaseTuner):
                  eps_r: float = 0.001,
                  refine_solution: bool = False,
                  deviation: float = 0.05):
-        super().__init__(objective_evaluate=objective_evaluate, search_space=search_space, adapter=adapter,
-                         iterations=iterations, n_jobs=n_jobs, deviation=deviation)
-        self.solver_parameters = SolverParameters(r=np.double(r), eps=np.double(eps), itersLimit=iterations,
-                                                  evolventDensity=evolvent_density, epsR=np.double(eps_r),
+        super().__init__(objective_evaluate,
+                         search_space,
+                         adapter,
+                         iterations=iterations,
+                         n_jobs=n_jobs,
+                         deviation=deviation)
+        self.solver_parameters = SolverParameters(r=np.double(r),
+                                                  eps=np.double(eps),
+                                                  itersLimit=iterations,
+                                                  evolventDensity=evolvent_density,
+                                                  epsR=np.double(eps_r),
                                                   refineSolution=refine_solution)
 
     def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
@@ -191,9 +198,9 @@ class IOptTuner(BaseTuner):
         return parameters_dict, initial_parameters
 
 
-def get_parameters_dict_from_iopt_point(point: Point, float_parameters_names: List[str],
-                                        discrete_parameters_names: List[str]) \
-        -> Dict[str, Any]:
+def get_parameters_dict_from_iopt_point(point: Point,
+                                        float_parameters_names: List[str],
+                                        discrete_parameters_names: List[str]) -> Dict[str, Any]:
     """Constructs a dict with all hyperparameters """
     float_parameters = dict(zip(float_parameters_names, point.floatVariables)) \
         if point.floatVariables is not None else {}
