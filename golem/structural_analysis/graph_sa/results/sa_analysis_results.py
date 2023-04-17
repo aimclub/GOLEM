@@ -11,6 +11,7 @@ from golem.serializers import Serializer
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult, \
     StructuralAnalysisResultsRepository
+from golem.structural_analysis.graph_sa.results.utils import EntityTypesEnum
 
 
 class SAAnalysisResults(Serializable):
@@ -23,21 +24,21 @@ class SAAnalysisResults(Serializable):
 
     def _add_empty_iteration_results(self):
         last_iter_num = int(list(self.results_per_iteration.keys())[-1]) if self.results_per_iteration.keys() else -1
-        self.results_per_iteration.update({str(last_iter_num + 1): self._init_iteration_result()})
+        self.results_per_iteration.update({(last_iter_num + 1): self._init_iteration_result()})
 
     @staticmethod
-    def _init_iteration_result():
-        return {'node': [], 'edge': []}
+    def _init_iteration_result() -> dict:
+        return {EntityTypesEnum.node.value: [], EntityTypesEnum.edge.value: []}
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """ Bool value indicating is there any calculated results. """
-        if self.results_per_iteration['0'] is None and \
-                self.results_per_iteration['0'] is None:
+        if self.results_per_iteration[0] is None and \
+                self.results_per_iteration[0] is None:
             return True
         return False
 
-    def get_info_about_worst_result(self, metric_idx_to_optimize_by: int, iter: Optional[int] = None):
+    def get_info_about_worst_result(self, metric_idx_to_optimize_by: int, iter: Optional[int] = None) -> dict:
         """ Returns info about the worst result.
         :param metric_idx_to_optimize_by: metric idx to optimize by
         :param iter: iteration on which to search for. """
@@ -46,8 +47,8 @@ class SAAnalysisResults(Serializable):
         if iter is None:
             iter = list(self.results_per_iteration.keys())[-1]
 
-        nodes_results = self.results_per_iteration[str(iter)]['node']
-        edges_results = self.results_per_iteration[str(iter)]['edge']
+        nodes_results = self.results_per_iteration[iter][EntityTypesEnum.node.value]
+        edges_results = self.results_per_iteration[iter][EntityTypesEnum.edge.value]
 
         for i, res in enumerate(nodes_results + edges_results):
             cur_res = res.get_worst_result_with_names(
@@ -60,15 +61,12 @@ class SAAnalysisResults(Serializable):
     def add_results(self, results: List[ObjectSAResult]):
         if not results:
             return
-        if results[0].entity_type == 'edge':
-            key = 'edge'
-        else:
-            key = 'node'
+        key = results[0].entity_type.value
         iter_num = self._get_last_empty_iter(key=key)
         for result in results:
-            self.results_per_iteration[str(iter_num)][key].append(result)
+            self.results_per_iteration[iter_num][key].append(result)
 
-    def _get_last_empty_iter(self, key: str):
+    def _get_last_empty_iter(self, key: str) -> int:
         """ Returns number of last iteration with empty key field. """
         for i, result in enumerate(self.results_per_iteration.values()):
             if not result[key]:
@@ -104,7 +102,7 @@ class SAAnalysisResults(Serializable):
         return dict_results
 
     @staticmethod
-    def load(source: Union[str, dict], graph: Optional[Graph] = None):
+    def load(source: Union[str, dict], graph: Optional[Graph] = None) -> 'SAAnalysisResults':
         """ Loads SA results from json format. """
         if isinstance(source, str):
             source = json.load(open(source))

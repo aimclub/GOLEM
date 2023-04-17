@@ -17,6 +17,7 @@ from golem.structural_analysis.graph_sa.node_sa_approaches import NodeAnalyzeApp
 from golem.structural_analysis.graph_sa.nodes_analysis import NodesAnalysis
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
 from golem.structural_analysis.graph_sa.results.sa_analysis_results import SAAnalysisResults
+from golem.structural_analysis.graph_sa.results.utils import EntityTypesEnum
 from golem.structural_analysis.graph_sa.sa_approaches_repository import StructuralAnalysisApproachesRepository
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 from golem.visualisation.graph_viz import NodeColorType
@@ -242,11 +243,11 @@ class GraphStructuralAnalysis:
                 return cur_label
 
             nodes_labels = {}
-            for i, node_result in enumerate(analysis_result.results_per_iteration[str(iter)]['node']):
+            for i, node_result in enumerate(analysis_result.results_per_iteration[iter][EntityTypesEnum.node.value]):
                 nodes_labels[i] = get_str_labels(result=node_result)
 
             edges_labels = {}
-            for i, edge_result in enumerate(analysis_result.results_per_iteration[str(iter)]['edge']):
+            for i, edge_result in enumerate(analysis_result.results_per_iteration[iter][EntityTypesEnum.edge.value]):
                 edges_labels[i] = get_str_labels(result=edge_result)
 
             return nodes_labels, edges_labels

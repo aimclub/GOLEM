@@ -1,7 +1,13 @@
+from enum import Enum
 from typing import Union, Tuple
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
+
+
+class EntityTypesEnum(Enum):
+    node = 'node'
+    edge = 'edge'
 
 
 def get_entity_from_str(graph: Graph, entity_str: str) -> Union[GraphNode, Tuple[GraphNode, GraphNode]]:

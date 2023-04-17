@@ -17,6 +17,7 @@ from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result impo
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
 from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
+from golem.structural_analysis.graph_sa.results.utils import EntityTypesEnum
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
@@ -59,7 +60,7 @@ class NodeAnalysis:
         """
 
         results = ObjectSAResult(entity_idx=str(graph.nodes.index(node)),
-                                 entity_type='node')
+                                 entity_type=EntityTypesEnum.node)
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():

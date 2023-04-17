@@ -5,6 +5,7 @@ from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result impo
     DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
+from golem.structural_analysis.graph_sa.results.utils import EntityTypesEnum
 
 NODE_DELETION = 'NodeDeletionAnalyze'
 NODE_REPLACEMENT = 'NodeReplaceOperationAnalyze'
@@ -35,7 +36,7 @@ class StructuralAnalysisResultsRepository:
 class ObjectSAResult:
     """ Class specifying results of Structural Analysis for one entity(node or edge). """
 
-    def __init__(self, entity_idx: str, entity_type: str):
+    def __init__(self, entity_idx: str, entity_type: EntityTypesEnum):
         self.entity_idx = entity_idx
         self.entity_type = entity_type
         self.result_approaches: List[BaseSAApproachResult] = []
@@ -72,5 +73,5 @@ class ObjectSAResult:
 
     def _get_approach_name(self, approach: BaseSAApproachResult) -> str:
         sa_approach_name = StructuralAnalysisResultsRepository() \
-            .get_method_by_result_class(approach, self.entity_type)
+            .get_method_by_result_class(approach, self.entity_type.value)
         return sa_approach_name
