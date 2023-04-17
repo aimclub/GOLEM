@@ -7,7 +7,6 @@ from golem.core.dag.graph import Graph
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.linked_graph_node import LinkedGraphNode
-from golem.core.optimisers.graph import OptNode
 
 
 def nodes_same(left_nodes: Sequence[GraphNode], right_nodes: Sequence[GraphNode]) -> bool:

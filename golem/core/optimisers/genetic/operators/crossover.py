@@ -151,7 +151,7 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
 
 @register_native
 def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth):
-    """Parents exchange a certain number of edges with each other. The number of 
+    """Parents exchange a certain number of edges with each other. The number of
     edges is defined as half of the minimum number of edges of both parents, rounded up"""
 
     def find_edges_in_other_graph(edges, graph: OptGraph):
@@ -201,8 +201,8 @@ def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_
 
 @register_native
 def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int):
-    """For the selected node for the first parent, change the parent nodes to 
-    the parent nodes of the same node of the second parent. Thus, the first child is obtained. 
+    """For the selected node for the first parent, change the parent nodes to
+    the parent nodes of the same node of the second parent. Thus, the first child is obtained.
     The second child is a copy of the second parent"""
 
     def find_nodes_in_other_graph(nodes, graph: OptGraph):
@@ -240,8 +240,8 @@ def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph
 
 @register_native
 def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int):
-    """For the selected node for the first parent, change the parent nodes to 
-    the parent nodes of the same node of the second parent. Thus, the first child is obtained. 
+    """For the selected node for the first parent, change the parent nodes to
+    the parent nodes of the same node of the second parent. Thus, the first child is obtained.
     The second child is formed in a similar way"""
 
     parents_in_first_graph = []
