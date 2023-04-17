@@ -1,14 +1,15 @@
-from rdkit.Chem.QED import qed
-from rdkit.Chem import RDConfig, Descriptors
 import os
 import sys
 
+from rdkit import RDConfig
+from rdkit.Chem import Descriptors
+from rdkit.Chem.QED import qed
 from rdkit.Chem.rdchem import RWMol
+
+from examples.molecule_search.mol_graph import MolGraph
 
 sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
 import sascorer
-
-from examples.molecule_search.mol_graph import MolGraph
 
 
 def qed_score(mol_graph: MolGraph):
@@ -46,6 +47,7 @@ def normalized_sa_score(mol_graph: MolGraph):
 
 
 def cl_score(mol_graph: MolGraph):
+    # https://github.com/reymond-group/GDBChEMBL
     pass
 
 
@@ -55,4 +57,3 @@ if __name__ == '__main__':
     print('SA score', sa_score(graph))
     print('penalized LogP', penalised_logp(graph))
     print('normalized SA score', normalized_sa_score(graph))
-
