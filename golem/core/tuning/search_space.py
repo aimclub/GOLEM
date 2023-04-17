@@ -17,61 +17,6 @@ class SearchSpace:
     def __init__(self, search_space: Dict[str, Dict[str, Dict[str, Union[Callable, List, str]]]]):
         self.parameters_per_operation = search_space
 
-    def get_parameter_hyperopt_space(self, operation_name: str, parameter_name: str, label: str = 'default'):
-        """
-        Method return hyperopt object with search_space from search_space dictionary
-
-        Args:
-            operation_name: name of the operation
-            parameter_name: name of hyperparameter of particular operation
-            label: label to assign in hyperopt pyll
-
-        Returns:
-            dictionary with appropriate range
-        """
-
-        # Get available parameters for current operation
-        operation_parameters = self.parameters_per_operation.get(operation_name)
-
-        if operation_parameters is not None:
-            parameter_properties = operation_parameters.get(parameter_name)
-            hyperopt_distribution = parameter_properties.get('hyperopt-dist')
-            sampling_scope = parameter_properties.get('sampling-scope')
-            if hyperopt_distribution == hp.loguniform:
-                sampling_scope = [np.log(x) for x in sampling_scope]
-            return hyperopt_distribution(label, *sampling_scope)
-        else:
-            return None
-
-    def get_node_parameters_for_hyperopt(self, node_id, operation_name):
-        """
-        Method for forming dictionary with hyperparameters of the node operation for the ``HyperoptTuner``
-
-        Args:
-            node_id: number of node in graph.nodes list
-            operation_name: name of operation in the node
-
-        Returns:
-            parameters_dict: dictionary-like structure with labeled hyperparameters
-            and their range per operation
-        """
-
-        # Get available parameters for current operation
-        parameters_list = self.get_parameters_for_operation(operation_name)
-
-        parameters_dict = {}
-        for parameter_name in parameters_list:
-            node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
-
-            # For operation get range where search can be done
-            space = self.get_parameter_hyperopt_space(operation_name=operation_name,
-                                                      parameter_name=parameter_name,
-                                                      label=node_op_parameter_name)
-
-            parameters_dict.update({node_op_parameter_name: space})
-
-        return parameters_dict
-
     def get_node_parameters_for_iopt(self, node_id, operation_name):
         """
         Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``

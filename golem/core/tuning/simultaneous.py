@@ -7,7 +7,7 @@ from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import get_node_operation_parameter_label
-from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
+from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune, get_node_parameters_for_hyperopt
 
 
 class SimultaneousTuner(HyperoptTuner):
@@ -140,14 +140,14 @@ class SimultaneousTuner(HyperoptTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            node_params = self.search_space.get_node_parameters_for_hyperopt(node_id=node_id,
-                                                                             operation_name=operation_name)
+            node_params = get_node_parameters_for_hyperopt(self.search_space, node_id=node_id,
+                                                           operation_name=operation_name)
             parameters_dict.update(node_params)
 
             tunable_node_params = self.search_space.get_parameters_for_operation(operation_name)
             if tunable_node_params:
                 tunable_initial_params = {get_node_operation_parameter_label(node_id, operation_name, p):
-                                          node.parameters[p] for p in node.parameters if p in tunable_node_params}
+                                              node.parameters[p] for p in node.parameters if p in tunable_node_params}
                 if tunable_initial_params:
                     initial_parameters.update(tunable_initial_params)
 

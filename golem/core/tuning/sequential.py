@@ -8,7 +8,7 @@ from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
 from golem.core.tuning.search_space import SearchSpace
-from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
+from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune, get_node_parameters_for_hyperopt
 
 
 class SequentialTuner(HyperoptTuner):
@@ -19,13 +19,16 @@ class SequentialTuner(HyperoptTuner):
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: Optional[BaseOptimizationAdapter] = None,
-                 iterations=100, early_stopping_rounds=None,
+                 iterations=100,
+                 early_stopping_rounds=None,
                  timeout: timedelta = timedelta(minutes=5),
-                 inverse_node_order=False,
+                 n_jobs: int = -1,
+                 deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 n_jobs: int = -1):
-        super().__init__(objective_evaluate, search_space, adapter, iterations, early_stopping_rounds,
-                         timeout, algo, n_jobs)
+                 inverse_node_order=False):
+        super().__init__(objective_evaluate=objective_evaluate, search_space=search_space, adapter=adapter,
+                         iterations=iterations, early_stopping_rounds=early_stopping_rounds,
+                         timeout=timeout, n_jobs=n_jobs, deviation=deviation, algo=algo)
 
         self.inverse_node_order = inverse_node_order
 
@@ -61,8 +64,7 @@ class SequentialTuner(HyperoptTuner):
             operation_name = node.name
 
             # Get node's parameters to optimize
-            node_params = self.search_space.get_node_parameters_for_hyperopt(node_id=node_id,
-                                                                             operation_name=operation_name)
+            node_params = get_node_parameters_for_hyperopt(self.search_space, node_id, operation_name)
 
             if not node_params:
                 self.log.info(f'"{operation_name}" operation has no parameters to optimize')
@@ -115,8 +117,8 @@ class SequentialTuner(HyperoptTuner):
         operation_name = node.name
 
         # Get node's parameters to optimize
-        node_params = self.search_space.get_node_parameters_for_hyperopt(node_id=node_index,
-                                                                         operation_name=operation_name)
+        node_params = get_node_parameters_for_hyperopt(self.search_space, node_id=node_index,
+                                                       operation_name=operation_name)
 
         if not node_params:
             self._stop_tuning_with_message(f'"{operation_name}" operation has no parameters to optimize')

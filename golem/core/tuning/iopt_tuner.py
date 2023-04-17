@@ -11,7 +11,7 @@ from iOpt.trial import Point, FunctionValue
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
-from golem.core.tuning.search_space import SearchSpace
+from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
 
 
@@ -111,7 +111,8 @@ class IOptTuner(BaseTuner):
                  eps_r: float = 0.001,
                  refine_solution: bool = False,
                  deviation: float = 0.05):
-        super().__init__(objective_evaluate, search_space, adapter, iterations, n_jobs, deviation)
+        super().__init__(objective_evaluate=objective_evaluate, search_space=search_space, adapter=adapter,
+                         iterations=iterations, n_jobs=n_jobs, deviation=deviation)
         self.solver_parameters = SolverParameters(r=np.double(r), eps=np.double(eps), itersLimit=iterations,
                                                   evolventDensity=evolvent_density, epsR=np.double(eps_r),
                                                   refineSolution=refine_solution)
@@ -207,3 +208,39 @@ def get_parameters_dict_from_iopt_point(point: Point, float_parameters_names: Li
 
     parameters_dict = {**float_parameters, **discrete_parameters}
     return parameters_dict
+
+
+def get_node_parameters_for_iopt(search_space, node_id, operation_name):
+    """
+    Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``
+
+    Args:
+        node_id: number of node in graph.nodes list
+        operation_name: name of operation in the node
+
+    Returns:
+        float_parameters_dict: dictionary-like structure with labeled float hyperparameters
+        and their range per operation
+        discrete_parameters_dict: dictionary-like structure with labeled discrete hyperparameters
+        and their range per operation
+    """
+    # Get available parameters for operation
+    parameters_dict = search_space.parameters_per_operation.get(operation_name)
+
+    discrete_parameters_dict = {}
+    float_parameters_dict = {}
+
+    if parameters_dict is not None:
+
+        for parameter_name, parameter_properties in parameters_dict.items():
+            node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
+
+            parameter_type = parameter_properties.get('type')
+            if parameter_type == 'discrete':
+                discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                                .get('sampling-scope')})
+            elif parameter_type == 'continuous':
+                float_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                             .get('sampling-scope')})
+
+    return float_parameters_dict, discrete_parameters_dict
