@@ -60,6 +60,8 @@ def equivalent_subtree(graph_first: Any, graph_second: Any, with_primary_nodes: 
     pairs_set = []
     for node_first in graph_first.nodes:
         for node_second in graph_second.nodes:
+            if (node_first, node_second) in pairs_set:
+                continue
             equivalent_pairs = structural_equivalent_nodes(node_first, node_second)
             pairs_set.extend(equivalent_pairs)
 
