@@ -19,13 +19,13 @@ class SequentialTuner(HyperoptTuner):
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
                  search_space: SearchSpace,
                  adapter: Optional[BaseOptimizationAdapter] = None,
-                 iterations=100,
-                 early_stopping_rounds=None,
+                 iterations: int = 100,
+                 early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 inverse_node_order=False):
+                 inverse_node_order: bool = False):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
