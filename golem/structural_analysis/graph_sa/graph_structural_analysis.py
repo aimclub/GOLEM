@@ -225,8 +225,8 @@ class GraphStructuralAnalysis:
         :param dpi: DPI of the output image. Not supported for the engine 'pyvis'.
         """
 
-        def get_nodes_and_edges_labels(analysis_result: SAAnalysisResults, iter: int) -> tuple[
-            dict[int, str], dict[int, str]]:
+        def get_nodes_and_edges_labels(analysis_result: SAAnalysisResults, iter: int) \
+                -> tuple[dict[int, str], dict[int, str]]:
             """ Get nodes and edges labels in dictionary form. """
 
             def get_str_labels(result: ObjectSAResult) -> str:
