@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional, Sequence
+from typing import Type, Optional
 
 import networkx as nx
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
@@ -11,7 +11,6 @@ from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
-from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
