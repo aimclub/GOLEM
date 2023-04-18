@@ -1,7 +1,7 @@
 from bn_model import BNModel
 from copy import deepcopy
 from math import ceil
-from random import choice, sample
+from random import choice, sample, randint
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from itertools import chain
 
@@ -152,13 +152,10 @@ def custom_crossover_exchange_parents_one(graph_first, graph_second, max_depth):
     return new_graph_first, graph_second
 
 
-
-# Структурные мутации
-# задаем три варианта мутации: добавление узла, удаление узла, разворот узла
 def custom_mutation_add_structure(graph: BNModel, **kwargs):
-    num_mut = 100
+    count = 100
     try:
-        for _ in range(num_mut):
+        for _ in range(count):
             rid = choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
             other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
@@ -167,7 +164,7 @@ def custom_mutation_add_structure(graph: BNModel, **kwargs):
                                  other_random_node.descriptive_id not in
                                  [n.descriptive_id for n in ordered_subnodes_hierarchy(random_node)])
             if nodes_not_cycling:
-                graph.operator.connect_nodes(random_node, other_random_node)
+                other_random_node.nodes_from.append(random_node)
                 break
 
     except Exception as ex:
@@ -176,14 +173,14 @@ def custom_mutation_add_structure(graph: BNModel, **kwargs):
  
 
 def custom_mutation_delete_structure(graph: BNModel, **kwargs):
-    num_mut = 100
+    count = 100
     try:
-        for _ in range(num_mut):
+        for _ in range(count):
             rid = choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
             other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
             if random_node.nodes_from is not None and other_random_node in random_node.nodes_from:
-                graph.operator.disconnect_nodes(other_random_node, random_node, False)
+                random_node.nodes_from.remove(other_random_node)
                 break
     except Exception as ex:
         print(ex) 
@@ -191,16 +188,36 @@ def custom_mutation_delete_structure(graph: BNModel, **kwargs):
 
 
 def custom_mutation_reverse_structure(graph: BNModel, **kwargs):
-    num_mut = 100
+    count = 100
     try:
-        for _ in range(num_mut):
+        for _ in range(count):
             rid = choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
             other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
             if random_node.nodes_from is not None and other_random_node in random_node.nodes_from:
-                graph.operator.reverse_edge(other_random_node, random_node)   
+                random_node.nodes_from.remove(other_random_node)
+                other_random_node.nodes_from.append(random_node)
                 break         
     except Exception as ex:
         print(ex)  
     return graph
 
+
+def custom_mutation_change_node(graph: BNModel, **kwargs):
+
+    count = 100
+    try:
+        for _ in range(count):
+            rid = choice(range(len(graph.nodes)))
+            random_node = graph.nodes[rid]
+            other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
+            random_node_parents = [n for n in random_node.nodes_from]
+            other_random_node_parents = [n for n in other_random_node.nodes_from]
+            random_node.nodes_from = other_random_node_parents
+            other_random_node.nodes_from = random_node_parents
+            break
+
+
+    except Exception as ex:
+        graph.log.warn(f'Incorrect connection: {ex}')
+    return graph
