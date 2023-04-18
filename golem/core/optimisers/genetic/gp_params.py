@@ -29,7 +29,8 @@ class GPAlgorithmParameters(AlgorithmParameters):
     :param adaptive_mutation_type: Experimental feature! Enables adaptive Mutation agent.
 
     Adaptive mutation agent uses specified algorithm. 'random' type is the default non-adaptive version.
-    Requires crossover_types to be CrossoverTypesEnum.none for correct adaptive learning.
+    Requires crossover_types to be CrossoverTypesEnum.none for correct adaptive learning,
+    so that fitness changes depend only on agent's actions (chosen mutations).
     MutationAgentTypeEnum.bandit uses Multi-Armed Bandit (MAB) learning algorithm.
     MutationAgentTypeEnum.contextual bandit uses contextual MAB learning algorithm.
 
