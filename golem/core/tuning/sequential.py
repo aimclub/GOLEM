@@ -26,15 +26,8 @@ class SequentialTuner(HyperoptTuner):
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
                  inverse_node_order: bool = False):
-        super().__init__(objective_evaluate,
-                         search_space,
-                         adapter,
-                         iterations,
-                         early_stopping_rounds,
-                         timeout,
-                         n_jobs,
-                         deviation,
-                         algo)
+        super().__init__(objective_evaluate, search_space, adapter, iterations, early_stopping_rounds, timeout, n_jobs,
+                         deviation, algo)
 
         self.inverse_node_order = inverse_node_order
 

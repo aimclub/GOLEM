@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import Callable, TypeVar, Generic, Optional
 
 import numpy as np
-from hyperopt import hp
+from hyperopt import hp, tpe
 from hyperopt.early_stop import no_progress_loss
 
 from golem.core.adapter import BaseOptimizationAdapter
@@ -48,7 +48,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.search_space = search_space
         self.n_jobs = n_jobs
         objective_evaluate.eval_n_jobs = self.n_jobs
-        self.objective_evaluate = self.adapter.adapt_func(objective_evaluate.evaluate)
+        self.objective_evaluate = self.adapter.adapt_func(objective_evaluate)
         self.deviation = deviation
 
         self.timeout = timeout
@@ -219,14 +219,14 @@ class HyperoptTuner(BaseTuner, ABC):
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
-                 algo: Callable = None):
+                 algo: Callable = tpe.suggest):
         early_stopping_rounds = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
                          iterations,
-                         timeout,
                          early_stopping_rounds,
+                         timeout,
                          n_jobs,
                          deviation)
 
