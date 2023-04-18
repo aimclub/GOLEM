@@ -35,11 +35,13 @@ class Objective(ObjectiveInfo, ObjectiveFunction):
     on Graphs and keeps information about metrics used."""
 
     def __init__(self,
-                 quality_metrics: Dict[Any, Callable],
+                 quality_metrics: Union[Callable, Dict[Any, Callable]],
                  complexity_metrics: Optional[Dict[Any, Callable]] = None,
                  is_multi_objective: bool = False,
                  ):
         self._log = default_log(self)
+        if isinstance(quality_metrics, Callable):
+            quality_metrics = {'metric': quality_metrics}
         self.quality_metrics = quality_metrics
         self.complexity_metrics = complexity_metrics or {}
         metric_names = [str(metric_id) for metric_id, _ in self.metrics]
