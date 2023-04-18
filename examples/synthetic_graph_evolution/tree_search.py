@@ -62,10 +62,8 @@ def tree_search_setup(target_graph: nx.DiGraph,
     )
 
     # Generate simple initial population with small tree graphs
-    initial_graphs = [generate_labeled_graph('tree', 5)
-                      for k in range(gp_params.pop_size)]
-    initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
-
+    initial_graphs = [generate_labeled_graph('tree', 5, node_types)
+                      for _ in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective
