@@ -23,7 +23,7 @@ class MolAdapter(BaseOptimizationAdapter):
         return mol_graph
 
     def _adapt(self, adaptee: MolGraph) -> OptGraph:
-        nx_graph = adaptee.nx_graph
+        nx_graph = adaptee.get_nx_graph()
         digraph = nx_to_directed(nx_graph)
         digraph = store_edges_params_in_nodes(digraph)
         return self.nx_adapter.adapt(digraph)

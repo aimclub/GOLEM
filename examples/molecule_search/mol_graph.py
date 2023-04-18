@@ -9,7 +9,7 @@ from rdkit.Chem.Draw import rdMolDraw2D
 
 class MolGraph:
     def __init__(self, rw_molecule: Chem.RWMol):
-        self.rw_molecule = rw_molecule
+        self._rw_molecule = rw_molecule
 
     @staticmethod
     def from_smiles(smiles: str):
@@ -18,6 +18,7 @@ class MolGraph:
 
     @staticmethod
     def from_nx_graph(graph: nx.Graph):
+        """Original code: https://github.com/maxhodak/keras-molecules"""
         mol = Chem.RWMol()
         atomic_nums = nx.get_node_attributes(graph, 'atomic_num')
         chiral_tags = nx.get_node_attributes(graph, 'chiral_tag')
@@ -47,11 +48,11 @@ class MolGraph:
         SanitizeMol(mol)
         return mol
 
-    @property
-    def nx_graph(self) -> nx.Graph:
+    def get_nx_graph(self) -> nx.Graph:
+        """Original code: https://github.com/maxhodak/keras-molecules"""
         graph = nx.Graph()
 
-        for atom in self.rw_molecule.GetAtoms():
+        for atom in self._rw_molecule.GetAtoms():
             graph.add_node(atom.GetIdx(),
                            atomic_num=atom.GetAtomicNum(),
                            formal_charge=atom.GetFormalCharge(),
@@ -59,20 +60,22 @@ class MolGraph:
                            hybridization=atom.GetHybridization(),
                            num_explicit_hs=atom.GetNumExplicitHs(),
                            is_aromatic=atom.GetIsAromatic())
-        for bond in self.rw_molecule.GetBonds():
+        for bond in self._rw_molecule.GetBonds():
             graph.add_edge(bond.GetBeginAtomIdx(),
                            bond.GetEndAtomIdx(),
                            bond_type=bond.GetBondType())
         return graph
 
-    @property
-    def smiles(self) -> str:
-        return MolToSmiles(self.rw_molecule)
+    def get_smiles(self, aromatic: bool = False) -> str:
+        return MolToSmiles(self._rw_molecule)
+
+    def get_rw_molecule(self, aromatic: bool = False) -> Chem.RWMol:
+        return self._rw_molecule
 
     def show(self):
         drawer = rdMolDraw2D.MolDraw2DCairo(300, 300)
         drawer.drawOptions().addStereoAnnotation = False
-        drawer.DrawMolecule(self.rw_molecule)
+        drawer.DrawMolecule(self._rw_molecule)
         drawer.FinishDrawing()
         bytes_images = drawer.GetDrawingText()
         image = Image.open(io.BytesIO(bytes_images))
