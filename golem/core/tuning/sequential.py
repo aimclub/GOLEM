@@ -161,23 +161,17 @@ class SequentialTuner(HyperoptTuner):
         Returns:
             updated graph with tuned parameters in particular node
         """
-        best_parameters = fmin(partial(self._objective,
-                                       graph=graph,
-                                       node_id=node_id
-                                       ),
+        best_parameters = fmin(partial(self._objective, graph=graph, node_id=node_id),
                                node_params,
                                algo=self.algo,
                                max_evals=iterations_per_node,
                                early_stop_fn=self.early_stop_fn,
                                timeout=seconds_per_node)
 
-        best_parameters = space_eval(space=node_params,
-                                     hp_assignment=best_parameters)
+        best_parameters = space_eval(space=node_params, hp_assignment=best_parameters)
 
         # Set best params for this node in the graph
-        graph = self.set_arg_node(graph=graph,
-                                  node_id=node_id,
-                                  node_params=best_parameters)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best_parameters)
         return graph
 
     def _objective(self, node_params: dict, graph: OptGraph, node_id: int) -> float:
@@ -193,8 +187,7 @@ class SequentialTuner(HyperoptTuner):
         """
 
         # Set hyperparameters for node
-        graph = self.set_arg_node(graph=graph, node_id=node_id,
-                                  node_params=node_params)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)
 
         metric_value = self.get_metric_value(graph=graph)
         return metric_value

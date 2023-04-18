@@ -49,7 +49,8 @@ class IOptProblemParameters:
 
 
 class GolemProblem(Problem, Generic[DomainGraphForTune]):
-    def __init__(self, graph: DomainGraphForTune, objective_evaluate: ObjectiveEvaluate,
+    def __init__(self, graph: DomainGraphForTune,
+                 objective_evaluate: ObjectiveEvaluate,
                  problem_parameters: IOptProblemParameters):
         super().__init__()
         self.objective_evaluate = objective_evaluate
@@ -223,7 +224,8 @@ class IOptTuner(BaseTuner):
         return parameters_dict, initial_parameters
 
 
-def get_node_parameters_for_iopt(search_space: SearchSpace, node_id: int, operation_name: str):
+def get_node_parameters_for_iopt(search_space: SearchSpace, node_id: int, operation_name: str) \
+        -> Tuple[Dict[str, List], Dict[str, List]]:
     """
     Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``
 

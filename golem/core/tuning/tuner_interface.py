@@ -1,11 +1,12 @@
 from abc import abstractmethod, ABC
 from copy import deepcopy
 from datetime import timedelta
-from typing import Callable, TypeVar, Generic, Optional
+from typing import Callable, TypeVar, Generic, Optional, Dict
 
 import numpy as np
 from hyperopt import hp, tpe
 from hyperopt.early_stop import no_progress_loss
+from hyperopt.pyll import Apply
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import IdentityAdapter
@@ -27,8 +28,10 @@ class BaseTuner(Generic[DomainGraphForTune]):
     Args:
       objective_evaluate: objective to optimize
       adapter: the function for processing of external object that should be optimized
-      iterations: max number of iterations
       search_space: SearchSpace instance
+      iterations: max number of iterations
+      early_stopping_rounds: Optional max number of stagnating iterations for early stopping.
+      timeout: max time for tuning
       n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
       deviation: required improvement (in percent) of a metric to return tuned graph.
         By default, ``deviation=0.05``, which means that tuned graph will be returned
@@ -202,14 +205,16 @@ class HyperoptTuner(BaseTuner, ABC):
     Args:
       objective_evaluate: objective to optimize
       adapter: the function for processing of external object that should be optimized
-      iterations: max number of iterations
-      timeout: max time for tuning
       search_space: SearchSpace instance
-      algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
+      iterations: max number of iterations
+      early_stopping_rounds: Optional max number of stagnating iterations for early stopping. If ``None``, will be set
+          to ``max(100, int(np.sqrt(iterations) * 10))``.
+      timeout: max time for tuning
       n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
       deviation: required improvement (in percent) of a metric to return tuned graph.
         By default, ``deviation=0.05``, which means that tuned graph will be returned
         if it's metric will be at least 0.05% better than the initial.
+      algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
     """
 
     def __init__(self, objective_evaluate: ObjectiveEvaluate,
@@ -243,7 +248,7 @@ class HyperoptTuner(BaseTuner, ABC):
 def get_parameter_hyperopt_space(search_space: SearchSpace,
                                  operation_name: str,
                                  parameter_name: str,
-                                 label: str = 'default'):
+                                 label: str = 'default') -> Optional[Apply]:
     """
     Function return hyperopt object with search_space from search_space dictionary
 
@@ -254,7 +259,7 @@ def get_parameter_hyperopt_space(search_space: SearchSpace,
         label: label to assign in hyperopt pyll
 
     Returns:
-        dictionary with appropriate range
+        parameter range
     """
 
     # Get available parameters for current operation
@@ -271,7 +276,8 @@ def get_parameter_hyperopt_space(search_space: SearchSpace,
         return None
 
 
-def get_node_parameters_for_hyperopt(search_space: SearchSpace, node_id: int, operation_name: str):
+def get_node_parameters_for_hyperopt(search_space: SearchSpace, node_id: int, operation_name: str) \
+        -> Dict[str, Apply]:
     """
     Function for forming dictionary with hyperparameters of the node operation for the ``HyperoptTuner``
 

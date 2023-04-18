@@ -71,8 +71,7 @@ class SimultaneousTuner(HyperoptTuner):
                     if is_best_trial_with_init_params:
                         best = {**best, **init_parameters}
 
-                    tuned_graph = self.set_arg_graph(graph=graph,
-                                                     parameters=best)
+                    tuned_graph = self.set_arg_graph(graph=graph, parameters=best)
 
                     # Validation is the optimization do well
                     graph = self.final_check(tuned_graph)
