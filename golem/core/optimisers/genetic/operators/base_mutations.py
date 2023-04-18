@@ -59,7 +59,7 @@ def get_mutation_prob(mut_id: MutationStrengthEnum, node: GraphNode,
 def simple_mutation(graph: OptGraph,
                     requirements: GraphRequirements,
                     graph_gen_params: GraphGenerationParams,
-                    parameters: 'GPAlgorithmParameters',
+                    parameters: 'GPAlgorithmParameters'
                     ) -> OptGraph:
     """
     This type of mutation is passed over all nodes of the tree started from the root node and changes
@@ -96,7 +96,7 @@ def simple_mutation(graph: OptGraph,
 def single_edge_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters',
+                         parameters: 'GPAlgorithmParameters'
                          ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
@@ -182,7 +182,7 @@ def add_as_child(graph: OptGraph,
 def single_add_mutation(graph: OptGraph,
                         requirements: GraphRequirements,
                         graph_gen_params: GraphGenerationParams,
-                        parameters: AlgorithmParameters,
+                        parameters: AlgorithmParameters
                         ) -> OptGraph:
     """
     Add new node between two sequential existing modes
@@ -209,7 +209,7 @@ def single_add_mutation(graph: OptGraph,
 def single_change_mutation(graph: OptGraph,
                            requirements: GraphRequirements,
                            graph_gen_params: GraphGenerationParams,
-                           parameters: AlgorithmParameters,
+                           parameters: AlgorithmParameters
                            ) -> OptGraph:
     """
     Change node between two sequential existing modes.
@@ -228,7 +228,7 @@ def single_change_mutation(graph: OptGraph,
 def single_drop_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: AlgorithmParameters,
+                         parameters: AlgorithmParameters
                          ) -> OptGraph:
     """
     Drop single node from graph.

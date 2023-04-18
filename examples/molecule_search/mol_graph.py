@@ -5,21 +5,23 @@ from PIL import Image
 from rdkit import Chem
 from rdkit.Chem import MolFromSmiles, MolToSmiles, SanitizeMol
 from rdkit.Chem.Draw import rdMolDraw2D
+from rdkit.Chem.rdchem import Atom, BondType, RWMol
 
 
 class MolGraph:
-    def __init__(self, rw_molecule: Chem.RWMol):
+    def __init__(self, rw_molecule: RWMol):
         self._rw_molecule = rw_molecule
 
     @staticmethod
     def from_smiles(smiles: str):
-        rw_molecule = MolFromSmiles(smiles)
+        molecule = MolFromSmiles(smiles)
+        rw_molecule = RWMol(molecule)
         return MolGraph(rw_molecule)
 
     @staticmethod
     def from_nx_graph(graph: nx.Graph):
         """Original code: https://github.com/maxhodak/keras-molecules"""
-        mol = Chem.RWMol()
+        mol = RWMol()
         atomic_nums = nx.get_node_attributes(graph, 'atomic_num')
         chiral_tags = nx.get_node_attributes(graph, 'chiral_tag')
         formal_charges = nx.get_node_attributes(graph, 'formal_charge')
@@ -48,6 +50,10 @@ class MolGraph:
         SanitizeMol(mol)
         return mol
 
+    @property
+    def heavy_atoms_number(self) -> int:
+        return self._rw_molecule.GetNumAtoms()
+
     def get_nx_graph(self) -> nx.Graph:
         """Original code: https://github.com/maxhodak/keras-molecules"""
         graph = nx.Graph()
@@ -69,8 +75,16 @@ class MolGraph:
     def get_smiles(self, aromatic: bool = False) -> str:
         return MolToSmiles(self._rw_molecule)
 
-    def get_rw_molecule(self, aromatic: bool = False) -> Chem.RWMol:
+    def get_rw_molecule(self, aromatic: bool = False) -> RWMol:
         return self._rw_molecule
+
+    def add_atom(self, atom_type: str):
+        atom = Atom(atom_type)
+        atom.SetBoolProp("mutability", True)
+        self._rw_molecule.AddAtom(atom)
+
+    def add_bond(self, from_atom, to_atom):
+        self._rw_molecule.AddBond(from_atom, to_atom, BondType.SINGLE)
 
     def show(self):
         drawer = rdMolDraw2D.MolDraw2DCairo(300, 300)
