@@ -14,7 +14,7 @@ from golem.core.optimisers.genetic.operators.operator import PopulationT, Operat
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
-from golem.core.optimisers.optimization_parameters import GraphRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements, OptimizationParameters
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
 from golem.core.utilities.data_structures import unzip
 
@@ -37,16 +37,17 @@ class Mutation(Operator):
         self.graph_generation_params = graph_gen_params
         self.parameters = parameters
         self._mutations_repo = mutations_repo or base_mutations_repo
-        self._operator_agent = self._init_operator_agent(parameters)
+        self._operator_agent = self._init_operator_agent(parameters, requirements)
         self.agent_experience = ExperienceBuffer()
 
     @staticmethod
-    def _init_operator_agent(parameters: 'GPAlgorithmParameters'):
+    def _init_operator_agent(parameters: 'GPAlgorithmParameters',
+                             requirements: OptimizationParameters):
         kind = parameters.adaptive_mutation_type
         if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
             agent = RandomAgent(actions=parameters.mutation_types)
         elif kind == MutationAgentTypeEnum.bandit:
-            agent = MultiArmedBanditAgent(parameters.mutation_types)
+            agent = MultiArmedBanditAgent(parameters.mutation_types, n_jobs=requirements.n_jobs)
         elif kind == MutationAgentTypeEnum.contextual_bandit:
             raise NotImplementedError()
         else:
