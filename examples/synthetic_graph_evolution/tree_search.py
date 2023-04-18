@@ -43,7 +43,6 @@ def tree_search_setup(target_graph: nx.DiGraph,
         mutation_types=[
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_drop,
-            MutationTypesEnum.single_edge,
         ],
         crossover_types=[CrossoverTypesEnum.subtree]
     )
