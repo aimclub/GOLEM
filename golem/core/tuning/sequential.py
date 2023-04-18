@@ -26,8 +26,14 @@ class SequentialTuner(HyperoptTuner):
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
                  inverse_node_order: bool = False):
-        super().__init__(objective_evaluate, search_space, adapter, iterations, early_stopping_rounds, timeout, n_jobs,
-                         deviation, algo)
+        super().__init__(objective_evaluate,
+                         search_space,
+                         adapter,
+                         iterations,
+                         early_stopping_rounds, timeout,
+                         n_jobs,
+                         deviation,
+                         algo)
 
         self.inverse_node_order = inverse_node_order
 
@@ -137,7 +143,10 @@ class SequentialTuner(HyperoptTuner):
         final_graph = self.adapter.restore(final_graph)
         return final_graph
 
-    def _optimize_node(self, graph: OptGraph, node_id: int, node_params: dict, iterations_per_node: int,
+    def _optimize_node(self, graph: OptGraph,
+                       node_id: int,
+                       node_params: dict,
+                       iterations_per_node: int,
                        seconds_per_node: int) -> OptGraph:
         """
         Method for node optimization

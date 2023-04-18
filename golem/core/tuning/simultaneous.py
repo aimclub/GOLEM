@@ -47,9 +47,11 @@ class SimultaneousTuner(HyperoptTuner):
                 try:
                     # try searching using initial parameters
                     # (uses original search space with fixed initial parameters)
-                    trials, init_trials_num = self._search_near_initial_parameters(graph, parameters_dict,
+                    trials, init_trials_num = self._search_near_initial_parameters(graph,
+                                                                                   parameters_dict,
                                                                                    init_parameters,
-                                                                                   trials, show_progress)
+                                                                                   trials,
+                                                                                   show_progress)
                     self._update_remaining_time(global_tuner_timer)
                     if self.max_seconds > MIN_TIME_FOR_TUNING_IN_SEC:
                         best = fmin(partial(self._objective, graph=graph),

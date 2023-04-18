@@ -1,7 +1,6 @@
 from typing import Dict, Callable, List, Union
 
-import numpy as np
-from hyperopt import hp
+OperationParametersMapping = Dict[str, Dict[str, Dict[str, Union[Callable, List, str]]]]
 
 
 class SearchSpace:
@@ -10,14 +9,20 @@ class SearchSpace:
         search_space: dictionary with parameters and their search_space
             {'operation_name': {'param_name': {'hyperopt-dist': hyperopt distribution function,
                                                'sampling-scope': [sampling scope],
-                                               'type': 'discrete', 'continuous', 'categorical'}, ...}, ...},
+                                               'type': 'discrete', 'continuous' or 'categorical'}, ...}, ...},
 
             e.g. ``{'operation_name': {'param1': {'hyperopt-dist': hp.uniformint,
                                                   'sampling-scope': [2, 21]),
-                                                  'type': 'discrete'}, ...}, ..}
+                                                  'type': 'discrete'},
+                                       'param2': {'hyperopt-dist': hp.loguniform,
+                                                  'sampling-scope': [0.001, 1]),
+                                                  'type': 'continuous'},
+                                       'param3': {'hyperopt-dist': hp.choice,
+                                                  'sampling-scope': [['svd', 'lsqr', 'eigen']),
+                                                  'type': 'categorical'}...}, ..}
     """
 
-    def __init__(self, search_space: Dict[str, Dict[str, Dict[str, Union[Callable, List, str]]]]):
+    def __init__(self, search_space: OperationParametersMapping):
         self.parameters_per_operation = search_space
 
     def get_parameters_for_operation(self, operation_name: str) -> List[str]:

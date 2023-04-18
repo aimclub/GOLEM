@@ -202,9 +202,9 @@ class IOptTuner(BaseTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            float_node_parameters, discrete_node_parameters = self.get_node_parameters(
-                node_id=node_id,
-                operation_name=operation_name)
+            float_node_parameters, discrete_node_parameters = get_node_parameters_for_iopt(self.search_space,
+                                                                                           node_id,
+                                                                                           operation_name)
 
             # Set initial parameters for search
             for parameter, bounds in float_node_parameters.items():
@@ -222,37 +222,39 @@ class IOptTuner(BaseTuner):
         parameters_dict = IOptProblemParameters.from_parameters_dicts(float_parameters_dict, discrete_parameters_dict)
         return parameters_dict, initial_parameters
 
-    def get_node_parameters(self, node_id, operation_name):
-        """
-        Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``
 
-        Args:
-            node_id: number of node in graph.nodes list
-            operation_name: name of operation in the node
+def get_node_parameters_for_iopt(search_space: SearchSpace, node_id: int, operation_name: str):
+    """
+    Method for forming dictionary with hyperparameters of node operation for the ``IOptTuner``
 
-        Returns:
-            float_parameters_dict: dictionary-like structure with labeled float hyperparameters
-            and their range per operation
-            discrete_parameters_dict: dictionary-like structure with labeled discrete hyperparameters
-            and their range per operation
-        """
-        # Get available parameters for operation
-        parameters_dict = self.search_space.parameters_per_operation.get(operation_name)
+    Args:
+        search_space: SearchSpace with parameters per operation
+        node_id: number of node in graph.nodes list
+        operation_name: name of operation in the node
 
-        discrete_parameters_dict = {}
-        float_parameters_dict = {}
+    Returns:
+        float_parameters_dict: dictionary-like structure with labeled float hyperparameters
+        and their range per operation
+        discrete_parameters_dict: dictionary-like structure with labeled discrete hyperparameters
+        and their range per operation
+    """
+    # Get available parameters for operation
+    parameters_dict = search_space.parameters_per_operation.get(operation_name)
 
-        if parameters_dict is not None:
+    discrete_parameters_dict = {}
+    float_parameters_dict = {}
 
-            for parameter_name, parameter_properties in parameters_dict.items():
-                node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
+    if parameters_dict is not None:
 
-                parameter_type = parameter_properties.get('type')
-                if parameter_type == 'discrete':
-                    discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                                    .get('sampling-scope')})
-                elif parameter_type == 'continuous':
-                    float_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                                 .get('sampling-scope')})
+        for parameter_name, parameter_properties in parameters_dict.items():
+            node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
-        return float_parameters_dict, discrete_parameters_dict
+            parameter_type = parameter_properties.get('type')
+            if parameter_type == 'discrete':
+                discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                                .get('sampling-scope')})
+            elif parameter_type == 'continuous':
+                float_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                             .get('sampling-scope')})
+
+    return float_parameters_dict, discrete_parameters_dict
