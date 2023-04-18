@@ -217,7 +217,7 @@ class HyperoptTuner(BaseTuner, ABC):
       algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
     """
 
-    def __init__(self, objective_evaluate: ObjectiveEvaluate,
+    def __init__(self, objective_evaluate: ObjectiveFunction,
                  search_space: SearchSpace,
                  adapter: Optional[BaseOptimizationAdapter] = None,
                  iterations: int = 100,

@@ -6,7 +6,7 @@ from hyperopt import tpe, fmin, space_eval
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.objective import ObjectiveEvaluate
+from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune, get_node_parameters_for_hyperopt
 
@@ -16,7 +16,7 @@ class SequentialTuner(HyperoptTuner):
     Class for hyperparameters optimization for all nodes sequentially
     """
 
-    def __init__(self, objective_evaluate: ObjectiveEvaluate,
+    def __init__(self, objective_evaluate: ObjectiveFunction,
                  search_space: SearchSpace,
                  adapter: Optional[BaseOptimizationAdapter] = None,
                  iterations: int = 100,
