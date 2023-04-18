@@ -11,7 +11,8 @@ from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.meta.surrogate_optimizer import SurrogateOptimizer
+from golem.core.optimisers.meta.surrogate_model import SurrogateModel, RandomValuesSurrogateModel
+from golem.core.optimisers.meta.surrogate_optimizer import SurrogateEachNgenOptimizer
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
@@ -19,7 +20,8 @@ from golem.metrics.graph_metrics import spectral_dist
 
 
 def surrogate_graph_search_setup(target_graph: nx.DiGraph,
-                                 optimizer_cls: Type[GraphOptimizer] = SurrogateOptimizer,
+                                 optimizer_cls: Type[GraphOptimizer] = SurrogateEachNgenOptimizer,
+                                 surrogate_model: Type[SurrogateModel] = RandomValuesSurrogateModel(),
                                  node_types: Sequence[str] = ('X',),
                                  timeout: Optional[timedelta] = None,
                                  num_iterations: Optional[int] = None):
@@ -64,12 +66,14 @@ def surrogate_graph_search_setup(target_graph: nx.DiGraph,
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Build the optimizer
-    optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
+    optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params,
+                              surrogate_model=surrogate_model)
     return optimiser, objective
 
 
 if __name__ == '__main__':
-    results_log = run_experiments(optimizer_setup=surrogate_graph_search_setup,
+    results_log = run_experiments(optimizer_setup=partial(surrogate_graph_search_setup),
+                                  optimizer_cls=SurrogateEachNgenOptimizer,
                                   graph_names=['2ring', 'gnp'],
                                   graph_sizes=[30, 100],
                                   num_trials=1,

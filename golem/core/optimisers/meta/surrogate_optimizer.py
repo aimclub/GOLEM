@@ -11,7 +11,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError, _try_unfit_graph
 
 
-class SurrogateOptimizer(EvoGraphOptimizer):
+class SurrogateEachNgenOptimizer(EvoGraphOptimizer):
     """
     Surrogate optimizer that uses surrogate model for evaluating part of individuals
 
@@ -23,10 +23,12 @@ class SurrogateOptimizer(EvoGraphOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters,
-                 surrogate_model=RandomValuesSurrogateModel()
+                 surrogate_model=RandomValuesSurrogateModel(),
+                 surrogate_each_n_gen=5
                  ):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.surrogate_model = surrogate_model
+        self.surrogate_each_n_gen = surrogate_each_n_gen
         self.surrogate_dispatcher = SurrogateDispatcher(adapter=graph_generation_params.adapter,
                                                         n_jobs=requirements.n_jobs,
                                                         graph_cleanup_fn=_try_unfit_graph,
@@ -40,16 +42,13 @@ class SurrogateOptimizer(EvoGraphOptimizer):
         surrogate_evaluator = self.surrogate_dispatcher.dispatch(objective, self.timer)
 
         with self.timer, self._progressbar:
-
             self._initial_population(evaluator)
-            gen_num = 0
             while not self.stop_optimization():
                 try:
-                    if gen_num % 5 == 0:
+                    if self.generations.generation_num % self.surrogate_each_n_gen == 0:
                         new_population = self._evolve_population(surrogate_evaluator)
                     else:
                         new_population = self._evolve_population(evaluator)
-                    gen_num += 1
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
                     return [ind.graph for ind in self.best_individuals]
