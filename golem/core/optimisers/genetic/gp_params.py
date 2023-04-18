@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Sequence, Union, Any
 
 from golem.core.optimisers.genetic.operators.base_mutations import MutationStrengthEnum, MutationTypesEnum, \
-    rich_mutation_set
+    simple_mutation_set
 from golem.core.optimisers.optimizer import AlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.elitism import ElitismTypesEnum
@@ -60,9 +60,8 @@ class GPAlgorithmParameters(AlgorithmParameters):
     selection_types: Sequence[SelectionTypesEnum] = \
         (SelectionTypesEnum.tournament,)
     crossover_types: Sequence[Union[CrossoverTypesEnum, Any]] = \
-        (CrossoverTypesEnum.subtree,
-         CrossoverTypesEnum.one_point)
-    mutation_types: Sequence[Union[MutationTypesEnum, Any]] = rich_mutation_set
+        (CrossoverTypesEnum.one_point,)
+    mutation_types: Sequence[Union[MutationTypesEnum, Any]] = simple_mutation_set,
     elitism_type: ElitismTypesEnum = ElitismTypesEnum.keep_n_best
     regularization_type: RegularizationTypesEnum = RegularizationTypesEnum.none
     genetic_scheme_type: GeneticSchemeTypesEnum = GeneticSchemeTypesEnum.generational
