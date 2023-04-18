@@ -1,13 +1,11 @@
 import random
 from typing import Union, Sequence, Optional
 
-import numpy as np
 from mabwiser.mab import MAB, LearningPolicy
 from scipy.special import softmax
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
-from golem.core.log import default_log
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
 
 
@@ -15,6 +13,7 @@ class MultiArmedBanditAgent(OperatorAgent):
     def __init__(self,
                  actions: Sequence[ActType],
                  enable_logging: bool = True):
+        super().__init__(enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
         self._arm_by_action = dict(zip(actions, self._indices))
@@ -22,8 +21,6 @@ class MultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=1)
         self._initial_fit()
-        self._enable_logging = enable_logging
-        self._log = default_log(self)
 
     def _initial_fit(self):
         n = len(self.actions)
@@ -49,22 +46,7 @@ class MultiArmedBanditAgent(OperatorAgent):
 
     def partial_fit(self, experience: ExperienceBuffer):
         """Continues learning of underlying agent with new experience."""
-        actions, rewards = experience.retrieve_experience()
-        self._dbg_log(actions, rewards)
+        obs, actions, rewards = experience.retrieve_experience()
+        self._dbg_log(obs, actions, rewards)
         arms = [self._arm_by_action[action] for action in actions]
         self._agent.partial_fit(decisions=arms, rewards=rewards)
-
-    def _dbg_log(self, actions, rewards):
-        if self._enable_logging:
-            prec = 4
-            rr = np.array(rewards).round(prec)
-            nonzero = rr[rr.nonzero()]
-            msg = f'len={len(rr)} nonzero={len(nonzero)} '
-            if len(nonzero) > 0:
-                msg += (f'avg={nonzero.mean()} std={nonzero.std()} '
-                        f'min={nonzero.min()} max={nonzero.max()} ')
-            self._log.info(msg)
-            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
-
-            self._log.info(f'exp={np.round(self.get_action_values(), prec)} '
-                           f'probs={np.round(self.get_action_probs(), prec)}')

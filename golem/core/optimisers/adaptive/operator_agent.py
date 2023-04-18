@@ -46,7 +46,6 @@ class ExperienceBuffer:
             return
         self._next_pop.add(result.uid)
         obs = result.graph
-        # TODO: store this action in correct format in ParentOperators.operators
         action = result.parent_operator.operators[0]
         prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
         # we're minimising the fitness, that's why less is better
@@ -58,16 +57,20 @@ class ExperienceBuffer:
         self._actions.append(action)
         self._rewards.append(reward)
 
-    def retrieve_experience(self) -> Tuple[List[ActType], List[float]]:
+    def retrieve_experience(self) -> Tuple[List[ObsType], List[ActType], List[float]]:
         """Get all collected experience and clear the experience buffer."""
-        actions, rewards = self._actions, self._rewards
+        observations, actions, rewards = self._observations, self._actions, self._rewards
         next_pop = self._next_pop
         self.reset()
         self._prev_pop = next_pop
-        return actions, rewards
+        return observations, actions, rewards
 
 
 class OperatorAgent(ABC):
+    def __init__(self, enable_logging: bool = True):
+        self._enable_logging = enable_logging
+        self._log = default_log(self)
+
     @abstractmethod
     def partial_fit(self, experience: ExperienceBuffer):
         raise NotImplementedError()
@@ -88,6 +91,27 @@ class OperatorAgent(ABC):
     def get_action_values(self, obs: Optional[ObsType]) -> Sequence[float]:
         raise NotImplementedError()
 
+    def _dbg_log(self, obs, actions, rewards):
+        if self._enable_logging:
+            prec = 4
+            rr = np.array(rewards).round(prec)
+            nonzero = rr[rr.nonzero()]
+            msg = f'len={len(rr)} nonzero={len(nonzero)} '
+            if len(nonzero) > 0:
+                msg += (f'avg={nonzero.mean()} std={nonzero.std()} '
+                        f'min={nonzero.min()} max={nonzero.max()} ')
+
+            self._log.info(msg)
+            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
+
+            action_values = list(map(self.get_action_values, obs))
+            action_probs = list(map(self.get_action_probs, obs))
+            action_values = np.round(np.mean(action_values, axis=0), prec)
+            action_probs = np.round(np.mean(action_probs, axis=0), prec)
+
+            self._log.info(f'exp={action_values} '
+                           f'probs={action_probs}')
+
 
 class RandomAgent(OperatorAgent):
     def __init__(self,
@@ -95,9 +119,8 @@ class RandomAgent(OperatorAgent):
                  probs: Optional[Sequence[float]] = None,
                  enable_logging: bool = True):
         self.actions = list(actions)
-        self._probs = [1. / len(actions)] * len(actions)
-        self._enable_logging = enable_logging
-        self._log = default_log(self)
+        self._probs = probs or [1. / len(actions)] * len(actions)
+        super().__init__(enable_logging)
 
     def choose_action(self, obs: ObsType) -> ActType:
         action = np.random.choice(self.actions, p=self.get_action_probs(obs))
@@ -108,22 +131,11 @@ class RandomAgent(OperatorAgent):
         return subject_nodes[0] if num_nodes == 1 else subject_nodes
 
     def partial_fit(self, experience: ExperienceBuffer):
-        actions, rewards = experience.retrieve_experience()
-        self._dbg_log(actions, rewards)
+        obs, actions, rewards = experience.retrieve_experience()
+        self._dbg_log(obs, actions, rewards)
 
     def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         return self._probs
 
     def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         return self._probs
-
-    def _dbg_log(self, actions, rewards):
-        if self._enable_logging:
-            rr = np.array(rewards).round(4)
-            nonzero = rr[rr.nonzero()]
-            msg = f'len={len(rr)} nonzero={len(nonzero)} '
-            if len(nonzero) > 0:
-                msg += (f'avg={nonzero.mean()} std={nonzero.std()} '
-                        f'min={nonzero.min()} max={nonzero.max()} ')
-            self._log.info(msg)
-            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
