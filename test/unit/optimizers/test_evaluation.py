@@ -8,6 +8,7 @@ from golem.core.dag.graph import Graph
 from golem.core.optimisers.fitness import Fitness, null_fitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher, \
     ObjectiveEvaluationDispatcher
+from golem.core.optimisers.meta.surrogate_evaluator import SurrogateDispatcher
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.timer import OptimisationTimer
@@ -65,6 +66,7 @@ def test_dispatchers_with_faulty_objectives(objective, dispatcher):
 @pytest.mark.parametrize('dispatcher', [
     MultiprocessingDispatcher(DirectAdapter()),
     SequentialDispatcher(DirectAdapter()),
+    SurrogateDispatcher(DirectAdapter()),
 ])
 def test_dispatcher_with_timeout(dispatcher: ObjectiveEvaluationDispatcher):
     adapter, population = set_up_tests()
@@ -76,7 +78,8 @@ def test_dispatcher_with_timeout(dispatcher: ObjectiveEvaluationDispatcher):
     fitness = [x.fitness for x in evaluated_population]
     assert all(x.valid for x in fitness), "At least one fitness value is invalid"
     assert len(evaluated_population) >= 1, "At least one graphs is evaluated"
-    assert len(evaluated_population) < len(population), "Not all graphs should be evaluated (not enough time)"
+    if type(dispatcher) != SurrogateDispatcher:
+        assert len(evaluated_population) < len(population), "Not all graphs should be evaluated (not enough time)"
 
     timeout = datetime.timedelta(minutes=5)
     with OptimisationTimer(timeout=timeout) as t:
