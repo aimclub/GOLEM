@@ -126,15 +126,14 @@ class DirectAdapter(BaseOptimizationAdapter[DomainStructureType]):
     """Naive optimization adapter for arbitrary class that just overwrites __class__."""
 
     def __init__(self,
-                 base_graph_class: Type[DomainStructureType] = Graph,
+                 base_graph_class: Type[DomainStructureType] = OptGraph,
                  base_node_class: Type = OptNode):
         super().__init__(base_graph_class)
-        self._base_node_class = base_node_class
+        self.domain_node_class = base_node_class
 
     def _adapt(self, adaptee: DomainStructureType) -> Graph:
         opt_graph = deepcopy(adaptee)
-        opt_graph.__class__ = Graph
-
+        opt_graph.__class__ = self.opt_graph_class
         for node in opt_graph.nodes:
             node.__class__ = OptNode
         return opt_graph
@@ -143,7 +142,7 @@ class DirectAdapter(BaseOptimizationAdapter[DomainStructureType]):
         obj = deepcopy(opt_graph)
         obj.__class__ = self.domain_graph_class
         for node in obj.nodes:
-            node.__class__ = self._base_node_class
+            node.__class__ = self.domain_node_class
         return obj
 
 
