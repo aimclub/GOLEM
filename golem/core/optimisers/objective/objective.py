@@ -1,11 +1,11 @@
 import itertools
 from dataclasses import dataclass
 from numbers import Real
-from typing import Any, Optional, Iterable, Callable, Sequence, TypeVar, Dict, Tuple, Union
+from typing import Any, Optional, Callable, Sequence, TypeVar, Dict, Tuple, Union
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.fitness import *
+from golem.core.optimisers.fitness import Fitness, SingleObjFitness, null_fitness, MultiObjFitness
 
 G = TypeVar('G', bound=Graph, covariant=True)
 R = TypeVar('R', contravariant=True)

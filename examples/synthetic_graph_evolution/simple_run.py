@@ -60,7 +60,7 @@ def run_graph_search(size=16, timeout=8, visualize=True):
 
 if __name__ == '__main__':
     """
-    In this example Optimizer is expected to find the target graph 
+    In this example Optimizer is expected to find the target graph
     using Tree Edit Distance metric and a random tree (nx.random_tree) as target.
     The convergence can be seen from achieved metrics and visually from graph plots.
     """
