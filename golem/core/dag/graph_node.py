@@ -113,7 +113,6 @@ def descriptive_id_recursive_nodes(current_node: GraphNode, visited_nodes=None) 
         previous_items = []
         for parent_node in current_node.nodes_from:
             previous_items.extend(descriptive_id_recursive_nodes(parent_node, copy(visited_nodes)))
-
         full_path_items.extend(previous_items)
     full_path_items.append(current_node)
     return full_path_items

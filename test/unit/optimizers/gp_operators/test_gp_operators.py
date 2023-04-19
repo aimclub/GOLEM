@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import pytest
+
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph_utils import nodes_from_layer
 from golem.core.optimisers.archive import ParetoFront
@@ -56,33 +58,25 @@ def test_replace_subtree():
     assert graph_2.depth <= max_depth
 
 
-def test_graphs_equivalent_subtree():
-    c_first = graph_first()
-    c_second = graph_second()
-    c_third = graph_third()
+@pytest.mark.parametrize('graphs_to_search_in, subgraphs_counts',
+                         [([graph_first(), graph_second()], [4, 24]),
+                          ([graph_first(), graph_third()], [0, 12]),
+                          ([graph_second(), graph_third()], [0, 15]),
+                          ([graph_third(), graph_third()], [1, 10])])
+def test_graphs_equivalent_subtree(graphs_to_search_in, subgraphs_counts):
 
-    graphs_to_search_in = [[c_first, c_second],
-                           [c_first, c_third],
-                           [c_second, c_third],
-                           [c_third, c_third]]
-    subgraphs_counts = [[4, 24],
-                        [0, 12],
-                        [0, 15],
-                        [1, 10]]
+    graph_1, graph_2 = graphs_to_search_in
+    answer_primary, answer_non_primary = subgraphs_counts
 
-    for graphs, answers in zip(graphs_to_search_in, subgraphs_counts):
-        graph_1, graph_2 = graphs
-        answer_primary, answer_non_primary = answers
+    # get all common subgraphs. primary nodes are considered too.
+    similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
+                                                        with_primary_nodes=False)
+    assert len(similar_nodes_first_and_second) == answer_primary
 
-        # get all common subgraphs. primary nodes are considered too.
-        similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
-                                                            with_primary_nodes=False)
-        assert len(similar_nodes_first_and_second) == answer_primary
-
-        # get all common subgraphs. primary nodes are considered too.
-        similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
-                                                            with_primary_nodes=True)
-        assert len(similar_nodes_first_and_second) == answer_non_primary
+    # get all common subgraphs. primary nodes are considered too.
+    similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
+                                                        with_primary_nodes=True)
+    assert len(similar_nodes_first_and_second) == answer_non_primary
 
 
 def test_graphs_with_multi_root_equivalent_subtree():
