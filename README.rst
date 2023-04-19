@@ -77,6 +77,45 @@ GOLEM можно установить с помощью ``pip``:
   $ pip install thegolem
 
 
+Быстрый старт
+=============
+
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `examples/synthetic_graph_evolution/simple_run.py`, `graph_search.py` и `tree_search.py` (в той же директории).
+
+.. code-block::
+
+    def run_graph_search(size=16, timeout=8):
+        # Generate target graph sought by optimizer using edit distance objective
+        node_types = ('a', 'b')  # Available node types that can appear in graphs
+        target_graph = generate_labeled_graph('tree', size, node_types)
+        objective = Objective(partial(tree_edit_dist, target_graph))
+        initial_population = [generate_labeled_graph('tree', 5, node_types) for _ in range(10)]
+
+        # Setup optimization parameters
+        requirements = GraphRequirements(timeout=timedelta(minutes=timeout))
+        algo_params = GPAlgorithmParameters(
+            mutation_types=[MutationTypesEnum.single_add,
+                            MutationTypesEnum.single_drop,
+                            MutationTypesEnum.single_change],
+            crossover_types=[CrossoverTypesEnum.subtree]
+        )
+        gen_params = GraphGenerationParams(
+            adapter=BaseNetworkxAdapter(),  # Example works with NetworkX graphs
+            available_node_types=node_types,
+        )
+
+        # Build and run the optimizer
+        optimiser = EvoGraphOptimizer(objective, initial_population,
+                                      requirements, gen_params, algo_params)
+        found_graphs = optimiser.optimise(objective)
+
+        # Visualize results
+        found_graph = gen_params.adapter.restore(found_graphs[0])  # Transform back to NetworkX graph
+        draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        optimiser.history.show.fitness_line()
+        return found_graph
+
+
 Структура проекта
 =================
 
