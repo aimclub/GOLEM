@@ -72,12 +72,14 @@ def surrogate_graph_search_setup(target_graph: nx.DiGraph,
 
 
 if __name__ == '__main__':
-    results_log = run_experiments(optimizer_setup=partial(surrogate_graph_search_setup),
-                                  optimizer_cls=SurrogateEachNgenOptimizer,
-                                  graph_names=['2ring', 'gnp'],
-                                  graph_sizes=[30, 100],
-                                  num_trials=1,
-                                  trial_timeout=5,
-                                  trial_iterations=2000,
-                                  visualize=True)
+    results_log = run_experiments(
+        optimizer_setup=partial(surrogate_graph_search_setup,
+                                surrogate_model=RandomValuesSurrogateModel()),
+        optimizer_cls=SurrogateEachNgenOptimizer,
+        graph_names=['2ring', 'gnp'],
+        graph_sizes=[30, 100],
+        num_trials=1,
+        trial_timeout=5,
+        trial_iterations=2000,
+        visualize=True)
     print(results_log)
