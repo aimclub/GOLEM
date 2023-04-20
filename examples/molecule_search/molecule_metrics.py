@@ -121,12 +121,3 @@ def _extract_shingles(molecule: RWMol, radius: int = 3, rooted: bool = True):
             qry_shingles.add(new_shingle)
 
     return qry_shingles
-
-
-if __name__ == '__main__':
-    graph = MolGraph.from_smiles("CC(C)CC1=CC=C(C=C1)C(C)C(=O)O")
-    print('QED', qed_score(graph))
-    print('SA score', sa_score(graph))
-    print('penalized LogP', penalised_logp(graph))
-    print('normalized SA score', normalized_sa_score(graph))
-    print('CLScore', cl_score(graph))

@@ -1,13 +1,8 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Tuple
 
-import networkx as nx
-import numpy as np
-from rdkit.Chem.rdchem import Atom, GetPeriodicTable, Bond
-
-from examples.molecule_search.constants import SULFUR_DEFAULT_VALENCE
-from examples.molecule_search.mol_advisor import MolChangeAdvisor
+from examples.molecule_search.mol_advisor import MolChangeAdvisor, get_atom_ids_to_connect_to, get_free_electrons_num, \
+    get_atoms_to_remove, get_atom_pairs_to_connect, get_atom_pairs_to_disconnect
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -35,27 +30,6 @@ def add_atom(mol_graph: MolGraph,
         return mol_graph
 
 
-def get_atom_ids_to_connect_to(mol_graph: MolGraph) -> Sequence[int]:
-    molecule = mol_graph.get_rw_molecule()
-    atoms = np.array(molecule.GetAtoms())
-    free_electrons_vector = np.array([get_free_electrons_num(atom) for atom in atoms])
-    formal_charge_vector = np.array([atom.GetFormalCharge() for atom in atoms])
-    atom_ids = np.arange(mol_graph.heavy_atoms_number)
-    return atom_ids[(formal_charge_vector == 0) & (free_electrons_vector > 0)]
-
-
-def get_free_electrons_num(atom: Atom) -> int:
-    atom.UpdatePropertyCache()
-    atom_type = atom.GetSymbol()
-    if atom_type == "S":
-        default_valence = SULFUR_DEFAULT_VALENCE
-    else:
-        default_valence = GetPeriodicTable().GetDefaultValence(atom_type)
-    explicit_valence = atom.GetExplicitValence()
-    free_electrons = default_valence - explicit_valence
-    return free_electrons
-
-
 def delete_atom(mol_graph: MolGraph,
                 requirements: GraphRequirements,
                 graph_gen_params: GraphGenerationParams = None,
@@ -67,18 +41,15 @@ def delete_atom(mol_graph: MolGraph,
     return mol_graph
 
 
-def get_atoms_to_remove(mol_graph: MolGraph) -> Sequence[int]:
-    nx_graph = mol_graph.get_nx_graph()
-    art_points_ids = nx.articulation_points(nx_graph)
-    all_atoms_ids = np.arange(mol_graph.heavy_atoms_number)
-    return list(set(all_atoms_ids) - set(art_points_ids))
-
-
 def replace_atom(mol_graph: MolGraph,
-                 requirements: GraphRequirements,
-                 graph_gen_params: GraphGenerationParams,
-                 parameters: AlgorithmParameters):
-    pass
+                 requirements: MolGraphRequirements,
+                 graph_gen_params: GraphGenerationParams = None,
+                 parameters: AlgorithmParameters = None):
+    atom_to_replace = choice(mol_graph.get_rw_molecule().GetAtoms())
+    possible_substitutions = MolChangeAdvisor.propose_change(atom_to_replace, requirements.available_operations)
+    new_atom_type = choice(possible_substitutions)
+    mol_graph.replace_atom(atom_to_replace.GetIdx(), new_atom_type)
+    return mol_graph
 
 
 def replace_bond(mol_graph: MolGraph,
@@ -96,7 +67,7 @@ def replace_bond(mol_graph: MolGraph,
         pair_free_electrons = min(get_free_electrons_num(from_atom), get_free_electrons_num(to_atom))
         current_bond = molecule.GetBondBetweenAtoms(*pair_to_connect)
         if current_bond:
-            current_bond_degree = int(Bond.GetBondType(current_bond))
+            current_bond_degree = current_bond.GetBondTypeAsDouble()
         else:
             current_bond_degree = 0
         max_bond_degree = current_bond_degree + pair_free_electrons
@@ -108,18 +79,6 @@ def replace_bond(mol_graph: MolGraph,
     return mol_graph
 
 
-def get_atom_pairs_to_connect(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
-    molecule = mol_graph.get_rw_molecule()
-    atoms = np.array(molecule.GetAtoms())
-    atom_pairs_to_connect = []
-    for from_atom_id, from_atom in enumerate(atoms):
-        for to_atom_id, to_atom in enumerate(atoms[from_atom_id + 1:]):
-            can_be_connected = to_atom.GetFormalCharge() == 0 and from_atom.GetFormalCharge() == 0
-            if can_be_connected:
-                atom_pairs_to_connect.append((from_atom_id, to_atom_id))
-    return atom_pairs_to_connect
-
-
 def delete_bond(mol_graph: MolGraph,
                 requirements: GraphRequirements,
                 graph_gen_params: GraphGenerationParams = None,
@@ -127,25 +86,6 @@ def delete_bond(mol_graph: MolGraph,
     mol_graph = deepcopy(mol_graph)
     atom_pairs_to_disconnect = get_atom_pairs_to_disconnect(mol_graph)
     if atom_pairs_to_disconnect:
-        pair_to_disonnect = choice(atom_pairs_to_disconnect)
-        mol_graph.delete_bond(*pair_to_disonnect)
+        pair_to_disconnect = choice(atom_pairs_to_disconnect)
+        mol_graph.delete_bond(*pair_to_disconnect)
     return mol_graph
-
-
-def get_atom_pairs_to_disconnect(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
-    molecule = mol_graph.get_rw_molecule()
-    atoms = np.array(molecule.GetAtoms())
-    atom_pairs_to_connect = []
-    for from_atom_id, from_atom in enumerate(atoms):
-        for to_atom_id, to_atom in enumerate(atoms[from_atom_id + 1:]):
-            can_be_disconnected = to_atom.GetFormalCharge() == 0 and from_atom.GetFormalCharge() == 0
-            if can_be_disconnected:
-                atom_pairs_to_connect.append((from_atom_id, to_atom_id))
-    raise NotImplementedError
-
-
-if __name__ == '__main__':
-    graph = deepcopy(MolGraph.from_smiles("CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"))
-    graph.show()
-    new_graph = replace_bond(graph, MolGraphRequirements())
-    new_graph.show()

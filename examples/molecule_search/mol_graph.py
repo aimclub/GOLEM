@@ -3,9 +3,9 @@ import io
 import networkx as nx
 from PIL import Image
 from rdkit import Chem
-from rdkit.Chem import MolFromSmiles, MolToSmiles, SanitizeMol
+from rdkit.Chem import MolFromSmiles, MolToSmiles, SanitizeMol, Kekulize
 from rdkit.Chem.Draw import rdMolDraw2D
-from rdkit.Chem.rdchem import Atom, BondType, RWMol
+from rdkit.Chem.rdchem import Atom, BondType, RWMol, GetPeriodicTable
 
 
 class MolGraph:
@@ -80,6 +80,24 @@ class MolGraph:
 
     def update_representation(self):
         SanitizeMol(self._rw_molecule)
+        Kekulize(self._rw_molecule)
+        # Setting all atoms to non aromatics
+        for i in range(self._rw_molecule.GetNumAtoms()):
+            self._rw_molecule.GetAtomWithIdx(i).SetIsAromatic(False)
+
+        # Setting all bonds to non aromatics
+        for i in range(self._rw_molecule.GetNumAtoms()):
+            for j in range(self._rw_molecule.GetNumAtoms()):
+                bond = self._rw_molecule.GetBondBetweenAtoms(i, j)
+                if bond is not None:
+                    bond.SetIsAromatic(False)
+
+        # Updating the property cache of atoms
+        for i in range(self._rw_molecule.GetNumAtoms()):
+            self._rw_molecule.GetAtomWithIdx(i).UpdatePropertyCache()
+
+        # Updating RDKit representation
+        self._rw_molecule.UpdatePropertyCache()
 
     def add_atom(self, atom_type: str):
         atom = Atom(atom_type)
@@ -100,6 +118,18 @@ class MolGraph:
 
     def remove_atom(self, atom_id: int):
         self._rw_molecule.RemoveAtom(atom_id)
+        self.update_representation()
+
+    def replace_atom(self, atom_to_replace, atom_type):
+        new_atomic_number = GetPeriodicTable().GetAtomicNumber(atom_type)
+
+        # Changing atomic number
+        self._rw_molecule.GetAtomWithIdx(atom_to_replace).SetAtomicNum(new_atomic_number)
+
+        # Setting formal charge to 0
+        self._rw_molecule.GetAtomWithIdx(atom_to_replace).SetFormalCharge(0)
+
+        # Updating the internal representation
         self.update_representation()
 
     def show(self):

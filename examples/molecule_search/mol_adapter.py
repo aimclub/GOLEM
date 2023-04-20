@@ -51,13 +51,3 @@ def restore_edges_params_from_nodes(graph: nx.DiGraph) -> nx.DiGraph:
             all_edges_params.update({(predecessor, node): edge_params})
     nx.set_edge_attributes(graph, all_edges_params)
     return graph
-
-
-if __name__ == '__main__':
-    graph = MolGraph.from_smiles("CC(C)CC1=CC=C(C=C1)C(C)C(=O)O")
-    adapter = MolAdapter()
-    adapted = adapter.adapt(graph)
-    restored = adapter.restore(graph)
-    graph.show()
-    adapted.show()
-    restored.show()
