@@ -19,7 +19,7 @@ def add_atom(mol_graph: MolGraph,
         connect_to_atom_id = int(choice(atoms_to_connect))
         connect_to_atom = mol_graph.get_rw_molecule().GetAtomWithIdx(connect_to_atom_id)
 
-        atom_type_to_add = MolChangeAdvisor.propose_atom_type(connect_to_atom, requirements.available_operations)
+        atom_type_to_add = MolChangeAdvisor.propose_atom_type(connect_to_atom, requirements.available_atom_types)
 
         mol_graph.add_atom(atom_type_to_add)
 
@@ -46,7 +46,7 @@ def replace_atom(mol_graph: MolGraph,
                  graph_gen_params: GraphGenerationParams = None,
                  parameters: AlgorithmParameters = None):
     atom_to_replace = choice(mol_graph.get_rw_molecule().GetAtoms())
-    possible_substitutions = MolChangeAdvisor.propose_change(atom_to_replace, requirements.available_operations)
+    possible_substitutions = MolChangeAdvisor.propose_change(atom_to_replace, requirements.available_atom_types)
     new_atom_type = choice(possible_substitutions)
     mol_graph.replace_atom(atom_to_replace.GetIdx(), new_atom_type)
     return mol_graph
