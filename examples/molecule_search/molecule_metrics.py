@@ -6,6 +6,7 @@ from rdkit import RDConfig, Chem
 from rdkit.Chem import Descriptors, AllChem
 from rdkit.Chem.QED import qed
 from rdkit.Chem.rdchem import RWMol
+from typing import Dict
 
 from examples.molecule_search.mol_graph import MolGraph
 from golem.core.paths import project_root
@@ -23,31 +24,34 @@ def qed_score(mol_graph: MolGraph):
     It is a numerical value ranging from 0 to 1, with a higher score indicating a greater likelihood
     of the molecule having favorable drug-like properties.
     """
+
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     score = qed(molecule)
     return -score
 
 
-def sa_score(mol_graph: MolGraph):
+def sa_score(mol_graph: MolGraph) -> float:
     """Synthetic Accessibility score is a metric used to evaluate the ease of synthesizing a molecule.
     The SA score takes into account a variety of factors such as the number of synthetic steps,
     the availability of starting materials, and the feasibility of the reaction conditions required for each step.
 
     It is ranged between 1 and 10, 1 is the best possible score.
     """
+
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     score = sascorer.calculateScore(molecule)
     return score
 
 
-def penalised_logp(mol_graph: MolGraph):
+def penalised_logp(mol_graph: MolGraph) -> float:
     """LogP (Octanol-Water Partition Coefficient) is a measure of the lipophilicity,
     or ability to dissolve in lipids, of a molecule. It is commonly used to predict the bioavailability
     and pharmacokinetic properties of drugs.
 
     This version is penalized by SA score and the length of the largest cycle.
     """
-    def largest_ring_size(rw_molecule: RWMol):
+
+    def largest_ring_size(rw_molecule: RWMol) -> int:
         largest_cycle_len = 0
         cycle_list = rw_molecule.GetRingInfo().AtomRings()
         if cycle_list:
@@ -63,19 +67,34 @@ def penalised_logp(mol_graph: MolGraph):
     return -score
 
 
-def normalized_sa_score(mol_graph: MolGraph):
+def normalized_sa_score(mol_graph: MolGraph) -> float:
     """SA score normalized to be ranged from 0 to 1, where 1 is preferable."""
+
     score = sa_score(mol_graph)
     normalized_score = 1 - (score - 1) / 9
     return -normalized_score
 
 
-def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted: bool = True):
+def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted: bool = True) -> float:
     """ChEMBL-likeness score (CLscore) is defined by considering which substructures in a molecule
     also occur in molecules from the public database ChEMBL, using a subset of molecules with
     reported high confidence datapoint of activity on single protein targets.
 
-    Original code: https://github.com/reymond-group/GDBChEMBL"""
+    Original code: https://github.com/reymond-group/GDBChEMBL
+
+    Args:
+        mol_graph: MolGraph to evaluate
+        weighted: If True calculate score by summing up log10 of frequency of occurence inside the reference database.
+            When set to False, score will add 1 for every shingle inside the reference database,
+            irrespective of how often it occurs. It is recommended to use the actual CLscore with weighted shingles.
+        radius: Maximum radius of circular substructures around the rooting atom.
+            Note that when using the ChEMBL shingle library, maximum radius will be 3 (default).
+            For larger radii, the reference database would have to be read out accordingly.
+        rooted: Use rooted shingles. This means reference shingles are canonical but always starting at the central
+            atom of a circular substructure. False means shingles in the database are canonicalized but not rooted.
+            It is recommended to use rooted shingles.
+    """
+
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     db_shingles = load_shingles(rooted)
     qry_shingles = _extract_shingles(molecule, radius, rooted)
@@ -98,7 +117,7 @@ def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted
     return -avg_score
 
 
-def load_shingles(rooted: bool = True):
+def load_shingles(rooted: bool = True) -> Dict:
     if rooted:
         with open(os.path.join(project_root(),
                                "examples/molecule_search/data/shingles",
@@ -112,7 +131,7 @@ def load_shingles(rooted: bool = True):
     return db_shingles
 
 
-def _extract_shingles(molecule: RWMol, radius: int = 3, rooted: bool = True):
+def _extract_shingles(molecule: RWMol, radius: int = 3, rooted: bool = True) -> set:
     qry_shingles = set()
 
     radius_constr = radius + 1

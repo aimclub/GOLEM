@@ -11,7 +11,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmPara
 
 def add_atom(mol_graph: MolGraph,
              requirements: MolGraphRequirements,
-             graph_gen_params: GraphGenerationParams = None,
+             graph_gen_params: GraphGenerationParams,
              parameters: AlgorithmParameters = None):
     mol_graph = deepcopy(mol_graph)
     atoms_to_connect = get_atom_ids_to_connect_to(mol_graph)
@@ -19,19 +19,21 @@ def add_atom(mol_graph: MolGraph,
         connect_to_atom_id = int(choice(atoms_to_connect))
         connect_to_atom = mol_graph.get_rw_molecule().GetAtomWithIdx(connect_to_atom_id)
 
-        atom_type_to_add = MolChangeAdvisor.propose_atom_type(connect_to_atom, requirements.available_atom_types)
+        atom_types_to_add = graph_gen_params.advisor.propose_parent(connect_to_atom, requirements.available_atom_types)
 
-        mol_graph.add_atom(atom_type_to_add)
+        if atom_types_to_add:
+            atom_type_to_add = choice(atom_types_to_add)
+            mol_graph.add_atom(atom_type_to_add)
 
-        new_atom_id = mol_graph.heavy_atoms_number - 1
-        mol_graph.set_bond(connect_to_atom_id, new_atom_id)
-        return mol_graph
+            new_atom_id = mol_graph.heavy_atoms_number - 1
+            mol_graph.set_bond(connect_to_atom_id, new_atom_id)
+            return mol_graph
     else:
         return mol_graph
 
 
 def delete_atom(mol_graph: MolGraph,
-                requirements: GraphRequirements,
+                requirements: GraphRequirements = None,
                 graph_gen_params: GraphGenerationParams = None,
                 parameters: AlgorithmParameters = None):
     mol_graph = deepcopy(mol_graph)
@@ -44,10 +46,10 @@ def delete_atom(mol_graph: MolGraph,
 
 def replace_atom(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
-                 graph_gen_params: GraphGenerationParams = None,
+                 graph_gen_params: GraphGenerationParams,
                  parameters: AlgorithmParameters = None):
     atom_to_replace = choice(mol_graph.get_rw_molecule().GetAtoms())
-    possible_substitutions = MolChangeAdvisor.propose_change(atom_to_replace, requirements.available_atom_types)
+    possible_substitutions = graph_gen_params.advisor.propose_change(atom_to_replace, requirements.available_atom_types)
     if possible_substitutions:
         new_atom_type = choice(possible_substitutions)
         mol_graph.replace_atom(atom_to_replace.GetIdx(), new_atom_type)

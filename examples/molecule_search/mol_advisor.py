@@ -4,23 +4,22 @@ import networkx as nx
 import numpy as np
 from rdkit.Chem import GetPeriodicTable
 from rdkit.Chem.rdchem import Atom
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Any
 
 from examples.molecule_search.constants import SULFUR_DEFAULT_VALENCE
 from examples.molecule_search.mol_graph import MolGraph
+from golem.core.optimisers.advisor import DefaultChangeAdvisor
 
 
-class MolChangeAdvisor:
-    @staticmethod
-    def propose_atom_type(atom: Atom, available_types: List[str]):
-        atom_types = list(set(available_types) - set(atom.GetSymbol()))
-        return choice(atom_types)
+class MolChangeAdvisor(DefaultChangeAdvisor):
+    def propose_parent(self, node: Atom, possible_operations: List[str]):
+        atom_types = list(set(possible_operations) - set(node.GetSymbol()))
+        return atom_types
 
-    @staticmethod
-    def propose_change(atom: Atom, available_types: List[str]):
-        atom_types = list(set(available_types) - set(atom.GetSymbol()))
+    def propose_change(self, node: Atom, possible_operations: List[Any]):
+        atom_types = list(set(possible_operations) - set(node.GetSymbol()))
         atom_types_to_replace = [atom_type for atom_type in atom_types
-                                 if get_default_valence(atom_type) > atom.GetExplicitValence()]
+                                 if get_default_valence(atom_type) > node.GetExplicitValence()]
         return atom_types_to_replace
 
 

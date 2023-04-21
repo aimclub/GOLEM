@@ -1,18 +1,18 @@
 import os.path
 import random
 from datetime import timedelta
-from typing import Type, Optional, Sequence
+from typing import Type, Optional, Sequence, List
 
 from rdkit.Chem import Draw
 from rdkit.Chem.rdchem import BondType
 
 from examples.molecule_search.mol_adapter import MolAdapter
+from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import add_atom, delete_atom, replace_atom, replace_bond, delete_bond
 from examples.molecule_search.molecule_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
-from golem.core.log import Log
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
@@ -24,7 +24,7 @@ from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
 
-def load_init_population(path="\\data\\shingles\\guacamol_v1_all.smiles", objective=None):
+def load_init_population(path=".\\data\\shingles\\guacamol_v1_all.smiles", objective=None):
     with open(path, "r") as f:
         smiles_list = random.sample(f.readlines(), 100)
         print(smiles_list)
@@ -34,13 +34,13 @@ def load_init_population(path="\\data\\shingles\\guacamol_v1_all.smiles", object
 
 def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
                           max_heavy_atoms: int = 50,
-                          atom_types: Sequence[str] = ('C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'),
+                          atom_types: Optional[List[str]] = None,
                           bond_types: Sequence[BondType] = (BondType.SINGLE, BondType.DOUBLE, BondType.TRIPLE),
                           timeout: Optional[timedelta] = None,
                           num_iterations: Optional[int] = None):
     requirements = MolGraphRequirements(
         max_heavy_atoms=max_heavy_atoms,
-        available_atom_types=atom_types,
+        available_atom_types=atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'],
         bond_types=bond_types,
         early_stopping_timeout=50,
         early_stopping_iterations=1000,
@@ -61,15 +61,15 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
     graph_gen_params = GraphGenerationParams(
         adapter=MolAdapter(),
         rules_for_constraint=[has_no_self_cycled_nodes],
-        available_node_types=atom_types,
+        advisor=MolChangeAdvisor(),
     )
 
     objective = Objective(
         quality_metrics={
-            'norm_sa_score': normalized_sa_score,
+            'qed_score': qed_score,
             'cl_score': cl_score,
+            'norm_sa_score': normalized_sa_score,
             'penalised_logp': penalised_logp,
-            'qed_score': qed_score
         },
         is_multi_objective=True
     )
@@ -99,9 +99,8 @@ def visualize(molecules: Sequence[MolGraph], history: OptHistory, metric_names: 
 
 
 if __name__ == '__main__':
-    Log().reset_logging_level(20)
     optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=20))
     found_graphs = optimizer.optimise(objective)
-    molecules = MolAdapter().restore(found_graphs)
+    molecules = [MolAdapter().restore(graph) for graph in found_graphs]
 
     visualize(molecules, optimizer.history, metric_names=objective.metric_names[:2])
