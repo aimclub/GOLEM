@@ -122,25 +122,26 @@ def graph_sixth():
     #    a
     #  /
     # b ––– c
-    
-    node_a = LinkedGraphNode('a')     
+
+    node_a = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b', nodes_from=[node_a])
     node_c = LinkedGraphNode('c', nodes_from=[node_b])
-    
+
     graph = GraphDelegate(node_c)
     return graph
+
 
 def graph_seventh():
     #  b    c
     #   \  /
     #    a
-    
-    node_a = LinkedGraphNode('a')  
-    node_b = LinkedGraphNode('b', nodes_from=[node_a])     
+
+    node_a = LinkedGraphNode('a')
+    node_b = LinkedGraphNode('b', nodes_from=[node_a])
     node_c = LinkedGraphNode('c', nodes_from=[node_a])
-    
-    graph = GraphDelegate() 
-    graph.add_node(node_b) 
+
+    graph = GraphDelegate()
+    graph.add_node(node_b)
     graph.add_node(node_c)
     return graph
 
@@ -149,27 +150,60 @@ def graph_eighth():
     #    a
     #      \
     # b ––– c
-    
-    node_a = LinkedGraphNode('a')     
+
+    node_a = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b')
     node_c = LinkedGraphNode('c', nodes_from=[node_a, node_b])
-    
+
     graph = GraphDelegate(node_c)
-    return graph    
+    return graph
 
 
 def graph_ninth():
     #    a
     #  /
     # b     c
-    
-    node_a = LinkedGraphNode('a')     
+
+    node_a = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b', nodes_from=[node_a])
     node_c = LinkedGraphNode('c')
-    
+
     graph = GraphDelegate()
     graph.add_node(node_b)
     graph.add_node(node_c)
+    return graph
+
+
+def graph_with_multi_roots_first():
+    #   17   16
+    #   |  /    \
+    #   15       14
+    #     \      |  \
+    #      13    12  11
+
+    node1 = LinkedGraphNode('11')
+    node2 = LinkedGraphNode('12')
+    node3 = LinkedGraphNode('13')
+    node4 = LinkedGraphNode('14', nodes_from=[node1, node2])
+    node5 = LinkedGraphNode('15', nodes_from=[node3])
+    node6 = LinkedGraphNode('16', nodes_from=[node4, node5])
+    node7 = LinkedGraphNode('17', nodes_from=[node5])
+
+    graph = GraphDelegate([node6, node7])
+    return graph
+
+
+def graph_with_multi_roots_second():
+    #   24   23
+    #   |  /    \
+    #   22       21
+
+    node21 = LinkedGraphNode('21')
+    node22 = LinkedGraphNode('22')
+    node23 = LinkedGraphNode('23', nodes_from=[node21, node22])
+    node24 = LinkedGraphNode('24', nodes_from=[node22])
+
+    graph = GraphDelegate([node23, node24])
     return graph
 
 
