@@ -11,6 +11,7 @@ from rdkit.Chem.rdchem import Atom, BondType, RWMol, GetPeriodicTable
 class MolGraph:
     def __init__(self, rw_molecule: RWMol):
         self._rw_molecule = rw_molecule
+        self.update_representation()
 
     @staticmethod
     def from_smiles(smiles: str):
@@ -48,7 +49,7 @@ class MolGraph:
             mol.AddBond(ifirst, isecond, bond_type)
 
         SanitizeMol(mol)
-        return mol
+        return MolGraph(mol)
 
     @property
     def heavy_atoms_number(self) -> int:
@@ -73,28 +74,29 @@ class MolGraph:
         return graph
 
     def get_smiles(self, aromatic: bool = False) -> str:
-        return MolToSmiles(self._rw_molecule)
+        return MolToSmiles(self.get_rw_molecule(aromatic))
 
     def get_rw_molecule(self, aromatic: bool = False) -> RWMol:
-        return self._rw_molecule
+        if aromatic:
+            return MolFromSmiles(self.get_smiles())
+        else:
+            return self._rw_molecule
 
     def update_representation(self):
         SanitizeMol(self._rw_molecule)
         Kekulize(self._rw_molecule)
-        # Setting all atoms to non aromatics
-        for i in range(self._rw_molecule.GetNumAtoms()):
-            self._rw_molecule.GetAtomWithIdx(i).SetIsAromatic(False)
 
-        # Setting all bonds to non aromatics
-        for i in range(self._rw_molecule.GetNumAtoms()):
-            for j in range(self._rw_molecule.GetNumAtoms()):
-                bond = self._rw_molecule.GetBondBetweenAtoms(i, j)
+        # Setting all bonds and atoms to non aromatics
+        for atom_from in self._rw_molecule.GetAtoms():
+            atom_from.SetIsAromatic(False)
+            for atom_to in self._rw_molecule.GetAtoms():
+                bond = self._rw_molecule.GetBondBetweenAtoms(atom_from.GetIdx(), atom_to.GetIdx())
                 if bond is not None:
                     bond.SetIsAromatic(False)
 
         # Updating the property cache of atoms
-        for i in range(self._rw_molecule.GetNumAtoms()):
-            self._rw_molecule.GetAtomWithIdx(i).UpdatePropertyCache()
+        for atom in self._rw_molecule.GetAtoms():
+            atom.UpdatePropertyCache()
 
         # Updating RDKit representation
         self._rw_molecule.UpdatePropertyCache()
@@ -104,7 +106,7 @@ class MolGraph:
         atom.SetBoolProp("mutability", True)
         self._rw_molecule.AddAtom(atom)
 
-    def set_bond(self, from_atom, to_atom, bond_type: BondType = BondType.SINGLE):
+    def set_bond(self, from_atom: int, to_atom: int, bond_type: BondType = BondType.SINGLE):
         current_bond = self._rw_molecule.GetBondBetweenAtoms(from_atom, to_atom)
         if current_bond is None:
             self._rw_molecule.AddBond(from_atom, to_atom, bond_type)
@@ -112,7 +114,7 @@ class MolGraph:
             current_bond.SetBondType(bond_type)
         self.update_representation()
 
-    def delete_bond(self, from_atom, to_atom):
+    def delete_bond(self, from_atom: int, to_atom: int):
         self._rw_molecule.RemoveBond(from_atom, to_atom)
         self.update_representation()
 
@@ -120,7 +122,7 @@ class MolGraph:
         self._rw_molecule.RemoveAtom(atom_id)
         self.update_representation()
 
-    def replace_atom(self, atom_to_replace, atom_type):
+    def replace_atom(self, atom_to_replace: int, atom_type: str):
         new_atomic_number = GetPeriodicTable().GetAtomicNumber(atom_type)
 
         # Changing atomic number

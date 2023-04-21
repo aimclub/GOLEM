@@ -36,8 +36,9 @@ def delete_atom(mol_graph: MolGraph,
                 parameters: AlgorithmParameters = None):
     mol_graph = deepcopy(mol_graph)
     atoms_to_delete = get_atoms_to_remove(mol_graph)
-    atom_to_delete_id = int(choice(atoms_to_delete))
-    mol_graph.remove_atom(atom_to_delete_id)
+    if atoms_to_delete:
+        atom_to_delete_id = int(choice(atoms_to_delete))
+        mol_graph.remove_atom(atom_to_delete_id)
     return mol_graph
 
 
@@ -47,8 +48,9 @@ def replace_atom(mol_graph: MolGraph,
                  parameters: AlgorithmParameters = None):
     atom_to_replace = choice(mol_graph.get_rw_molecule().GetAtoms())
     possible_substitutions = MolChangeAdvisor.propose_change(atom_to_replace, requirements.available_atom_types)
-    new_atom_type = choice(possible_substitutions)
-    mol_graph.replace_atom(atom_to_replace.GetIdx(), new_atom_type)
+    if possible_substitutions:
+        new_atom_type = choice(possible_substitutions)
+        mol_graph.replace_atom(atom_to_replace.GetIdx(), new_atom_type)
     return mol_graph
 
 
