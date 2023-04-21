@@ -1,14 +1,16 @@
+import os.path
 import random
 from datetime import timedelta
 from typing import Type, Optional, Sequence
 
+from rdkit.Chem import Draw
 from rdkit.Chem.rdchem import BondType
 
 from examples.molecule_search.mol_adapter import MolAdapter
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import add_atom, delete_atom, replace_atom, replace_bond, delete_bond
-from examples.molecule_search.molecule_metrics import normalized_sa_score, cl_score
+from examples.molecule_search.molecule_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.log import Log
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -16,13 +18,13 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.visualisation.opt_history.fitness_box import FitnessBox
-from golem.visualisation.opt_history.fitness_line import FitnessLine
+from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
 
-def load_init_population(path = 'C:\\Users\\admin\\PycharmProjects\GOLEM\examples\molecule_search\data\shingles\guacamol_v1_all.smiles', objective=None):
+def load_init_population(path="\\data\\shingles\\guacamol_v1_all.smiles", objective=None):
     with open(path, "r") as f:
         smiles_list = random.sample(f.readlines(), 100)
         print(smiles_list)
@@ -40,7 +42,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         max_heavy_atoms=max_heavy_atoms,
         available_atom_types=atom_types,
         bond_types=bond_types,
-        early_stopping_timeout=5,
+        early_stopping_timeout=50,
         early_stopping_iterations=1000,
         keep_n_best=4,
         timeout=timeout,
@@ -65,12 +67,13 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
     objective = Objective(
         quality_metrics={
             'norm_sa_score': normalized_sa_score,
-            'cl_score': cl_score
+            'cl_score': cl_score,
+            'penalised_logp': penalised_logp,
+            'qed_score': qed_score
         },
         is_multi_objective=True
     )
 
-    # Generate simple initial population with line graphs
     initial_graphs = load_init_population()
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
@@ -79,11 +82,26 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
     return optimiser, objective
 
 
+def visualize(molecules: Sequence[MolGraph], history: OptHistory, metric_names: Sequence[str]):
+    save_path = os.path.join(os.path.curdir, 'visualisations')
+
+    visualise_pareto(history.archive_history[-1], objectives_names=metric_names, folder=save_path)
+
+    for plot_type in [PlotTypesEnum.fitness_line, PlotTypesEnum.fitness_box]:
+        visualizer = OptHistoryVisualizer(history)
+        visualization = plot_type.value(visualizer.history, visualizer.visuals_params)
+        visualization.visualize(dpi=100, save_path=os.path.join(save_path, f'{plot_type.name}.png'))
+
+    rw_molecules = set(mol.get_rw_molecule() for mol in molecules)
+    image = Draw.MolsToGridImage(rw_molecules, molsPerRow=min(4, len(rw_molecules)), subImgSize=(1000, 1000))
+    image.show()
+    image.save(os.path.join(save_path, 'best_molecules.png'))
+
+
 if __name__ == '__main__':
     Log().reset_logging_level(20)
-    optimizer, objective = molecule_search_setup(num_iterations=200)
+    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=20))
     found_graphs = optimizer.optimise(objective)
-    molecules = [MolAdapter().restore(graph) for graph in found_graphs]
-    visualise_pareto(optimizer.best_individuals, objectives_names=objective.metric_names)
-    FitnessLine(optimizer.history).visualize()
-    FitnessBox(optimizer.history).visualize()
+    molecules = MolAdapter().restore(found_graphs)
+
+    visualize(molecules, optimizer.history, metric_names=objective.metric_names[:2])

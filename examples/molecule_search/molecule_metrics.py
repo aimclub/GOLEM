@@ -15,18 +15,38 @@ import sascorer
 
 
 def qed_score(mol_graph: MolGraph):
+    """Quantitative estimation of drug-likeness. QED measure reflects the underlying distribution of molecular
+    properties including molecular weight, logP, topological polar surface area, number of hydrogen bond donors and
+    acceptors, the number of aromatic rings and rotatable bonds, and the presence of unwanted chemical
+    functionalities.
+
+    It is a numerical value ranging from 0 to 1, with a higher score indicating a greater likelihood
+    of the molecule having favorable drug-like properties.
+    """
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     score = qed(molecule)
     return -score
 
 
 def sa_score(mol_graph: MolGraph):
+    """Synthetic Accessibility score is a metric used to evaluate the ease of synthesizing a molecule.
+    The SA score takes into account a variety of factors such as the number of synthetic steps,
+    the availability of starting materials, and the feasibility of the reaction conditions required for each step.
+
+    It is ranged between 1 and 10, 1 is the best possible score.
+    """
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     score = sascorer.calculateScore(molecule)
     return score
 
 
 def penalised_logp(mol_graph: MolGraph):
+    """LogP (Octanol-Water Partition Coefficient) is a measure of the lipophilicity,
+    or ability to dissolve in lipids, of a molecule. It is commonly used to predict the bioavailability
+    and pharmacokinetic properties of drugs.
+
+    This version is penalized by SA score and the length of the largest cycle.
+    """
     def largest_ring_size(rw_molecule: RWMol):
         largest_cycle_len = 0
         cycle_list = rw_molecule.GetRingInfo().AtomRings()
@@ -36,21 +56,26 @@ def penalised_logp(mol_graph: MolGraph):
 
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     log_p = Descriptors.MolLogP(molecule)
-    sas_score = sascorer.calculateScore(molecule)
+    sa_score = sascorer.calculateScore(molecule)
     largest_ring_size = largest_ring_size(molecule)
     cycle_score = max(largest_ring_size - 6, 0)
-    score = log_p - sas_score - cycle_score
+    score = log_p - sa_score - cycle_score
     return -score
 
 
 def normalized_sa_score(mol_graph: MolGraph):
+    """SA score normalized to be ranged from 0 to 1, where 1 is preferable."""
     score = sa_score(mol_graph)
     normalized_score = 1 - (score - 1) / 9
     return -normalized_score
 
 
 def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted: bool = True):
-    """Original code: https://github.com/reymond-group/GDBChEMBL """
+    """ChEMBL-likeness score (CLscore) is defined by considering which substructures in a molecule
+    also occur in molecules from the public database ChEMBL, using a subset of molecules with
+    reported high confidence datapoint of activity on single protein targets.
+
+    Original code: https://github.com/reymond-group/GDBChEMBL"""
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     db_shingles = load_shingles(rooted)
     qry_shingles = _extract_shingles(molecule, radius, rooted)
