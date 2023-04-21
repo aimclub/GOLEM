@@ -17,6 +17,7 @@ from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result impo
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult
 from golem.structural_analysis.graph_sa.results.replace_sa_approach_result import \
     ReplaceSAApproachResult
+from golem.structural_analysis.graph_sa.results.utils import EntityTypesEnum
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements, \
     ReplacementAnalysisMetaParams
 
@@ -59,7 +60,7 @@ class EdgeAnalysis:
 
         results = ObjectSAResult(entity_idx=
                                  f'{graph.nodes.index(edge.parent_node)}_{graph.nodes.index(edge.child_node)}',
-                                 entity_type='edge')
+                                 entity_type=EntityTypesEnum.edge)
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
@@ -113,19 +114,14 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
         :return: the ratio of modified graph score to origin score
         """
         results = DeletionSAApproachResult()
-        if edge.child_node is self._graph.root_node and len(self._graph.root_node.nodes_from) == 1:
-            self.log.warning('if remove this edge then get a graph of length one')
-            results.add_results(metrics_values=[-1.0] * len(self._objective.metrics))
-            return results
+        shortened_graph = self.sample(edge)
+        if shortened_graph:
+            losses = self._compare_with_origin_by_metrics(shortened_graph)
+            self.log.message(f'loss: {losses}')
+            del shortened_graph
         else:
-            shortened_graph = self.sample(edge)
-            if shortened_graph:
-                losses = self._compare_with_origin_by_metrics(shortened_graph)
-                self.log.message(f'loss: {losses}')
-                del shortened_graph
-            else:
-                self.log.warning('if remove this edge then get an invalid graph')
-                losses = [-1.0] * len(self._objective.metrics)
+            self.log.warning('if remove this edge then get an invalid graph')
+            losses = [-1.0] * len(self._objective.metrics)
 
         results.add_results(metrics_values=losses)
         return results

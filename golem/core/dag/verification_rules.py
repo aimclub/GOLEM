@@ -4,6 +4,7 @@ from networkx import isolates, simple_cycles
 from golem.core.adapter import register_native
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph import Graph
+from golem.core.dag.graph_node import GraphNode
 
 ERROR_PREFIX = 'Invalid graph configuration:'
 
@@ -11,6 +12,12 @@ ERROR_PREFIX = 'Invalid graph configuration:'
 @register_native
 def has_root(graph: Graph):
     if graph.root_node:
+        return True
+
+
+@register_native
+def has_one_root(graph: Graph):
+    if isinstance(graph.root_node, GraphNode):
         return True
 
 

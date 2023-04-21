@@ -205,7 +205,8 @@ class Graph(ABC):
     def show(self, save_path: Optional[Union[PathLike, str]] = None, engine: Optional[str] = None,
              node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
              node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
-             edge_curvature_scale: Optional[float] = None):
+             edge_curvature_scale: Optional[float] = None,
+             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         """Visualizes graph or saves its picture to the specified ``path``
 
         Args:
@@ -216,9 +217,14 @@ class Graph(ABC):
             font_size_scale: use to make font size bigger or lesser. Supported only for the engine 'matplotlib'.
             edge_curvature_scale: use to make edges more or less curved. Supported only for the engine 'matplotlib'.
             dpi: DPI of the output image. Not supported for the engine 'pyvis'.
+            nodes_labels: labels to display near nodes
+            edges_labels: labels to display near edges
         """
-        GraphVisualizer(self).visualise(save_path, engine, node_color, dpi, node_size_scale, font_size_scale,
-                                        edge_curvature_scale)
+        GraphVisualizer(graph=self)\
+            .visualise(save_path=save_path, engine=engine, node_color=node_color, dpi=dpi,
+                       node_size_scale=node_size_scale, font_size_scale=font_size_scale,
+                       edge_curvature_scale=edge_curvature_scale,
+                       nodes_labels=nodes_labels, edges_labels=edges_labels)
 
     @property
     def graph_description(self) -> Dict:

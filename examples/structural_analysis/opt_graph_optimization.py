@@ -11,7 +11,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
 from golem.core.paths import project_root
-from golem.metrics.graph_metrics import degree_distance, size_diff
+from golem.metrics.graph_metrics import size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
 
@@ -53,11 +53,8 @@ if __name__ == "__main__":
     objective = Objective(
         quality_metrics={
             'quality_custom_1': quality_custom_metric_1,
-            'quality_custom_2': quality_custom_metric_2,
         },
         complexity_metrics={
-            'degree': partial(complexity_metric,
-                              adapter=adapter, metric=partial(degree_distance, adapter.restore(opt_graph))),
             'graph_size': partial(complexity_metric,
                                   adapter=adapter, metric=partial(size_diff, adapter.restore(opt_graph))),
         },
@@ -68,14 +65,22 @@ if __name__ == "__main__":
 
     requirements = StructuralAnalysisRequirements(graph_verifier=GraphVerifier(DEFAULT_DAG_RULES),
                                                   main_metric_idx=0,
-                                                  seed=1)
+                                                  seed=1, replacement_number_of_random_operations_nodes=2,
+                                                  replacement_number_of_random_operations_edges=2)
 
+    path_to_save = os.path.join(project_root(), 'sa')
     # structural analysis will optimize given graph if at least one of the metrics was increased.
     sa = GraphStructuralAnalysis(objective=objective, node_factory=node_factory,
-                                 requirements=requirements)
+                                 requirements=requirements,
+                                 path_to_save=path_to_save,
+                                 is_visualize_per_iteration=False)
 
-    graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=2)
+    graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=3)
+
+    # to show SA results on each iteration
+    optimized_graph = GraphStructuralAnalysis.visualize_on_graph(graph=get_opt_graph(), analysis_result=results,
+                                                                 metric_idx_to_optimize_by=0,
+                                                                 mode="by_iteration",
+                                                                 font_size_scale=0.6)
+
     graph.show()
-
-    path_to_save = os.path.join(project_root(), 'sa_results.json')
-    results.save(path=path_to_save, datetime_in_path=False)

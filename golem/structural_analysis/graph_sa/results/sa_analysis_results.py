@@ -11,6 +11,7 @@ from golem.serializers import Serializer
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult, \
     StructuralAnalysisResultsRepository
+from golem.structural_analysis.graph_sa.results.utils import EntityTypesEnum
 
 
 class SAAnalysisResults(Serializable):
@@ -23,33 +24,31 @@ class SAAnalysisResults(Serializable):
 
     def _add_empty_iteration_results(self):
         last_iter_num = int(list(self.results_per_iteration.keys())[-1]) if self.results_per_iteration.keys() else -1
-        self.results_per_iteration.update({str(last_iter_num + 1): self._init_iteration_result()})
+        self.results_per_iteration.update({(last_iter_num + 1): self._init_iteration_result()})
 
     @staticmethod
-    def _init_iteration_result():
-        return {'nodes': [], 'edges': []}
+    def _init_iteration_result() -> dict:
+        return {EntityTypesEnum.node.value: [], EntityTypesEnum.edge.value: []}
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """ Bool value indicating is there any calculated results. """
-        if self.results_per_iteration['0'] is None and \
-                self.results_per_iteration['0'] is None:
+        if self.results_per_iteration[0] is None and \
+                self.results_per_iteration[0] is None:
             return True
         return False
 
-    def get_info_about_worst_result(self, metric_idx_to_optimize_by: int, iter: Optional[int] = None):
+    def get_info_about_worst_result(self, metric_idx_to_optimize_by: int, iter: Optional[int] = None) -> dict:
         """ Returns info about the worst result.
         :param metric_idx_to_optimize_by: metric idx to optimize by
         :param iter: iteration on which to search for. """
         worst_value = None
         worst_result = None
-        if not iter:
+        if iter is None:
             iter = list(self.results_per_iteration.keys())[-1]
-        if str(iter) not in self.results_per_iteration.keys():
-            raise IndexError("No such iteration found.")
 
-        nodes_results = self.results_per_iteration[str(iter)]['nodes']
-        edges_results = self.results_per_iteration[str(iter)]['edges']
+        nodes_results = self.results_per_iteration[iter][EntityTypesEnum.node.value]
+        edges_results = self.results_per_iteration[iter][EntityTypesEnum.edge.value]
 
         for i, res in enumerate(nodes_results + edges_results):
             cur_res = res.get_worst_result_with_names(
@@ -62,15 +61,12 @@ class SAAnalysisResults(Serializable):
     def add_results(self, results: List[ObjectSAResult]):
         if not results:
             return
-        if results[0].entity_type == 'edges':
-            key = 'edges'
-        else:
-            key = 'nodes'
+        key = results[0].entity_type.value
         iter_num = self._get_last_empty_iter(key=key)
         for result in results:
-            self.results_per_iteration[str(iter_num)][key].append(result)
+            self.results_per_iteration[iter_num][key].append(result)
 
-    def _get_last_empty_iter(self, key: str):
+    def _get_last_empty_iter(self, key: str) -> int:
         """ Returns number of last iteration with empty key field. """
         for i, result in enumerate(self.results_per_iteration.values()):
             if not result[key]:
@@ -93,11 +89,11 @@ class SAAnalysisResults(Serializable):
         json_data = json.dumps(dict_results, cls=Serializer)
 
         if not path:
-            path = os.path.join(project_root(), 'sa_results.json')
+            path = os.path.join(project_root(), 'sa', 'sa_results.json')
         if datetime_in_path:
             file_name = os.path.basename(path).split('.')[0]
             file_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{file_name}.json"
-            path = os.path.join(os.path.dirname(path), file_name)
+            path = os.path.join(os.path.dirname(path), 'sa', file_name)
 
         with open(path, 'w', encoding='utf-8') as f:
             f.write(json_data)
@@ -106,7 +102,7 @@ class SAAnalysisResults(Serializable):
         return dict_results
 
     @staticmethod
-    def load(source: Union[str, dict], graph: Optional[Graph] = None):
+    def load(source: Union[str, dict], graph: Optional[Graph] = None) -> 'SAAnalysisResults':
         """ Loads SA results from json format. """
         if isinstance(source, str):
             source = json.load(open(source))
@@ -119,7 +115,7 @@ class SAAnalysisResults(Serializable):
                 type_list = []
                 for entity_idx in source[iter][entity_type]:
                     cur_result = ObjectSAResult(entity_idx=entity_idx,
-                                                entity_type=entity_type)
+                                                entity_type=EntityTypesEnum(entity_type))
                     dict_results = source[iter][entity_type][entity_idx]
                     for approach in dict_results:
                         app = results_repo.get_class_by_str(approach)()
