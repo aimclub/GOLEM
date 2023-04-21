@@ -93,7 +93,10 @@ class SAAnalysisResults(Serializable):
         if datetime_in_path:
             file_name = os.path.basename(path).split('.')[0]
             file_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{file_name}.json"
-            path = os.path.join(os.path.dirname(path), 'sa', file_name)
+            path = os.path.join(os.path.dirname(path), 'sa')
+            if not os.path.exists(path):
+                os.makedirs(path)
+            path = os.path.join(path, file_name)
 
         with open(path, 'w', encoding='utf-8') as f:
             f.write(json_data)
