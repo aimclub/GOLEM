@@ -30,9 +30,9 @@ class MutationTypesEnum(Enum):
     local_growth = 'local_growth'
     tree_growth = 'tree_growth'
     reduce = 'reduce'
-    single_add = 'single_add',
-    single_change = 'single_change',
-    single_drop = 'single_drop',
+    single_add = 'single_add'
+    single_change = 'single_change'
+    single_drop = 'single_drop'
     single_edge = 'single_edge'
 
     none = 'none'
