@@ -63,7 +63,7 @@ GOLEM потенциально применим к любой структуре
 - `Поиск архитектуры нейронных сетей <https://github.com/ITMO-NSS-team/nas-fedot>`_
 
 Поскольку GOLEM - это фреймворк общего назначения, легко представить его потенциальное применение, например,
-поиск конечных автоматов для управления в робототехнике или изучение молекулярных графов для разработки лекарств и
+поиск конечных автоматов для алгоритмов контроля в робототехнике или оптимизация молекулярных графов для разработки лекарств и
 многое другое.
 
 
@@ -80,7 +80,7 @@ GOLEM можно установить с помощью ``pip``:
 Быстрый старт
 =============
 
-Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `examples/synthetic_graph_evolution/simple_run.py`, `graph_search.py` и `tree_search.py` (в той же директории).
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simpple_run>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
 
 .. code-block::
 

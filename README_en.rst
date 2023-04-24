@@ -78,7 +78,7 @@ GOLEM can be installed with ``pip``:
 Quick Start Example
 ===================
 
-Following example demonstrates graph search using reference graph & edit distance metric. Optimizer is setup with a minimal set of parameters and simple single-point mutations. For more details see example `examples/synthetic_graph_evolution/simple_run.py` and scripts `graph_search.py`, `tree_search.py` (in the same directory).
+Following example demonstrates graph search using reference graph & edit distance metric. Optimizer is set up with a minimal set of parameters and simple single-point mutations. For more details see examples `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simpple_run>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ and `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ in directory `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
 
 .. code-block::
 
