@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional, Sequence
+from typing import Type, Optional
 
 from examples.synthetic_graph_evolution.experiment import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
@@ -64,10 +64,8 @@ def graph_search_setup(target_graph: nx.DiGraph,
     )
 
     # Generate simple initial population with line graphs
-    initial_graphs = [generate_labeled_graph('line', k+3)
+    initial_graphs = [generate_labeled_graph('line', k+3, node_types)
                       for k in range(gp_params.pop_size)]
-    initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
-
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective

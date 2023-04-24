@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence, Union
 
 from golem.core.adapter import BaseOptimizationAdapter, IdentityAdapter
 from golem.core.dag.graph import Graph
@@ -103,13 +103,14 @@ class GraphOptimizer:
 
     def __init__(self,
                  objective: Objective,
-                 initial_graphs: Optional[Sequence[Graph]] = None,
+                 initial_graphs: Optional[Sequence[Union[Graph, Any]]] = None,
+                 # TODO: rename params to avoid confusion
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
                  graph_optimizer_params: Optional[AlgorithmParameters] = None):
         self.log = default_log(self)
-        self.initial_graphs = initial_graphs
         self._objective = objective
+        self.initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
         self.requirements = requirements or OptimizationParameters()
         self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()

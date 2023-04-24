@@ -25,7 +25,7 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
     def restore_func(self, fun: Callable) -> Callable:
         """Wraps native function so that it could accept domain graphs as arguments.
 
-        Behavior: ``restore( f(OptGraph)->OptGraph ) => f'(DomainGraph)->DomainGraph``
+        Behavior: ``restore( f(Graph)->Graph ) => f'(DomainGraph)->DomainGraph``
 
         Implementation details.
         The method wraps callable into a function that transforms its args & return value.
@@ -45,7 +45,7 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
         as arguments. If the function was registered as native, it is returned as-is.
         ``AdaptRegistry`` is responsible for function registration.
 
-        Behavior: ``adapt( f(DomainGraph)->DomainGraph ) => f'(OptGraph)->OptGraph``
+        Behavior: ``adapt( f(DomainGraph)->DomainGraph ) => f'(Graph)->Graph``
 
         Implementation details.
         The method wraps callable into a function that transforms its args & return value.
@@ -64,7 +64,7 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
         return _transform(fun, f_args=self.restore, f_ret=self.adapt)
 
     def adapt(self, item: Union[DomainStructureType, Sequence[DomainStructureType]]) \
-            -> Union[OptGraph, Sequence[OptGraph]]:
+            -> Union[Graph, Sequence[Graph]]:
         """Maps domain graphs to internal graph representation used by optimizer.
         Performs mapping only if argument has a type of domain graph.
 
@@ -72,7 +72,7 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
             item: a domain graph or sequence of them
 
         Returns:
-            OptGraph | Sequence: mapped internal graph or sequence of them
+            Graph | Sequence: mapped internal graph or sequence of them
         """
         if type(item) is self.domain_graph_class:
             return self._adapt(item)
@@ -81,7 +81,7 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
         else:
             return item
 
-    def restore(self, item: Union[OptGraph, Individual, PopulationT]) \
+    def restore(self, item: Union[Graph, Individual, PopulationT]) \
             -> Union[DomainStructureType, Sequence[DomainStructureType]]:
         """Maps graphs from internal representation to domain graphs.
         Performs mapping only if argument has a type of internal representation.
@@ -90,7 +90,7 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
             item: an internal graph representation or sequence of them
 
         Returns:
-            OptGraph | Sequence: mapped domain graph or sequence of them
+            Graph | Sequence: mapped domain graph or sequence of them
         """
         if type(item) is self.opt_graph_class:
             return self._restore(item)
@@ -102,12 +102,12 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
             return item
 
     @abstractmethod
-    def _adapt(self, adaptee: DomainStructureType) -> OptGraph:
+    def _adapt(self, adaptee: DomainStructureType) -> Graph:
         """Implementation of ``adapt`` for single graph."""
         raise NotImplementedError()
 
     @abstractmethod
-    def _restore(self, opt_graph: OptGraph, metadata: Optional[Dict[str, Any]] = None) -> DomainStructureType:
+    def _restore(self, opt_graph: Graph, metadata: Optional[Dict[str, Any]] = None) -> DomainStructureType:
         """Implementation of ``restore`` for single graph."""
         raise NotImplementedError()
 
@@ -115,10 +115,10 @@ class BaseOptimizationAdapter(Generic[DomainStructureType]):
 class IdentityAdapter(BaseOptimizationAdapter[DomainStructureType]):
     """Identity adapter that performs no transformation, returning same graphs."""
 
-    def _adapt(self, adaptee: DomainStructureType) -> OptGraph:
+    def _adapt(self, adaptee: DomainStructureType) -> Graph:
         return adaptee
 
-    def _restore(self, opt_graph: OptGraph, metadata: Optional[Dict[str, Any]] = None) -> DomainStructureType:
+    def _restore(self, opt_graph: Graph, metadata: Optional[Dict[str, Any]] = None) -> DomainStructureType:
         return opt_graph
 
 
@@ -129,21 +129,20 @@ class DirectAdapter(BaseOptimizationAdapter[DomainStructureType]):
                  base_graph_class: Type[DomainStructureType] = OptGraph,
                  base_node_class: Type = OptNode):
         super().__init__(base_graph_class)
-        self._base_node_class = base_node_class
+        self.domain_node_class = base_node_class
 
-    def _adapt(self, adaptee: DomainStructureType) -> OptGraph:
+    def _adapt(self, adaptee: DomainStructureType) -> Graph:
         opt_graph = deepcopy(adaptee)
-        opt_graph.__class__ = OptGraph
-
+        opt_graph.__class__ = self.opt_graph_class
         for node in opt_graph.nodes:
             node.__class__ = OptNode
         return opt_graph
 
-    def _restore(self, opt_graph: OptGraph, metadata: Optional[Dict[str, Any]] = None) -> DomainStructureType:
+    def _restore(self, opt_graph: Graph, metadata: Optional[Dict[str, Any]] = None) -> DomainStructureType:
         obj = deepcopy(opt_graph)
         obj.__class__ = self.domain_graph_class
         for node in obj.nodes:
-            node.__class__ = self._base_node_class
+            node.__class__ = self.domain_node_class
         return obj
 
 
