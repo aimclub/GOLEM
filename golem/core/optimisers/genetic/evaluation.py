@@ -5,8 +5,7 @@ import timeit
 from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import partial
-from random import choice
-from typing import Dict, List, Optional, Sequence, Tuple, TypeVar
+from typing import List, Optional, Sequence, Tuple, TypeVar, Dict
 
 from joblib import Parallel, cpu_count, delayed
 
@@ -33,6 +32,7 @@ G = TypeVar('G', bound=Serializable)
 
 class DelegateEvaluator:
     """Interface for delegate evaluator of graphs."""
+
     @property
     @abstractmethod
     def is_enabled(self) -> bool:
@@ -127,6 +127,7 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         self.logger = default_log(self)
         self._n_jobs = n_jobs
         self.evaluation_cache = None
+        self._reset_eval_cache()
 
     def dispatch(self, objective: ObjectiveFunction, timer: Optional[Timer] = None) -> EvaluationOperator:
         """Return handler to this object that hides all details
@@ -154,8 +155,11 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
     def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
         raise NotImplementedError()
 
-    def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True, cache_key: Optional[str] = None,
+    def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
+                        cache_key: Optional[str] = None,
                         logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> OptionalEvalResult:
+
+        graph = self.evaluation_cache.get(cache_key, graph)
 
         if with_time_limit and self.timer.is_time_limit_reached():
             return None
@@ -188,6 +192,24 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
 
         return fitness, domain_graph
 
+    def evaluate_with_cache(self, population: PopulationT) -> Optional[PopulationT]:
+        reversed_population = list(reversed(population))
+        self._remote_compute_cache(reversed_population)
+        evaluated_population = self.evaluate_population(reversed_population)
+        self._reset_eval_cache()
+        return evaluated_population
+
+    def _reset_eval_cache(self):
+        self.evaluation_cache: Dict[str, Graph] = {}
+
+    def _remote_compute_cache(self, population: PopulationT):
+        self._reset_eval_cache()
+        if self._delegate_evaluator and self._delegate_evaluator.is_enabled:
+            self.logger.info('Remote fit used')
+            restored_graphs = self._adapter.restore(population)
+            computed_graphs = self._delegate_evaluator.compute_graphs(restored_graphs)
+            self.evaluation_cache = {ind.uid: graph for ind, graph in zip(population, computed_graphs)}
+
 
 class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
     """Evaluates objective function on population using multiprocessing pool
@@ -210,20 +232,11 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
 
         super().__init__(adapter, n_jobs, graph_cleanup_fn, delegate_evaluator)
 
-        self._reset_eval_cache()
-
     def dispatch(self, objective: ObjectiveFunction, timer: Optional[Timer] = None) -> EvaluationOperator:
         """Return handler to this object that hides all details
         and allows only to evaluate population with provided objective."""
         super().dispatch(objective, timer)
         return self.evaluate_with_cache
-
-    def evaluate_with_cache(self, population: PopulationT) -> Optional[PopulationT]:
-        reversed_population = list(reversed(population))
-        self._remote_compute_cache(reversed_population)
-        evaluated_population = self.evaluate_population(reversed_population)
-        self._reset_eval_cache()
-        return evaluated_population
 
     def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
@@ -249,25 +262,6 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
                             additional_info='parallel evaluation of population',
                             logging_level=logging.INFO)
         return successful_evals
-
-    def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
-                        cache_key: Optional[str] = None,
-                        logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> OptionalEvalResult:
-
-        graph = self.evaluation_cache.get(cache_key, graph)
-        eval_res = super().evaluate_single(graph, uid_of_individual, with_time_limit, cache_key, logs_initializer)
-        return eval_res
-
-    def _reset_eval_cache(self):
-        self.evaluation_cache: Dict[str, Graph] = {}
-
-    def _remote_compute_cache(self, population: PopulationT):
-        self._reset_eval_cache()
-        if self._delegate_evaluator and self._delegate_evaluator.is_enabled:
-            self.logger.info('Remote fit used')
-            restored_graphs = self._adapter.restore(population)
-            computed_graphs = self._delegate_evaluator.compute_graphs(restored_graphs)
-            self.evaluation_cache = {ind.uid: graph for ind, graph in zip(population, computed_graphs)}
 
 
 class SequentialDispatcher(BaseGraphEvaluationDispatcher):
