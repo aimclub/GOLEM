@@ -1,6 +1,5 @@
-from datetime import datetime
-from itertools import chain, product
-from typing import Tuple, Optional, Sequence, Iterable
+from itertools import chain
+from typing import Tuple, Optional, Sequence
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -79,8 +78,24 @@ def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
 
 def draw_graphs_subplots(*graphs: nx.Graph,
                          titles: Optional[Sequence[str]] = None,
-                         draw_fn=nx.draw_kamada_kawai,
-                         size=10):
+                         color_degrees: bool = False,
+                         with_labels: bool = False,
+                         draw_fn=nx.draw,
+                         size: int = 10,
+                         show: bool = True):
+    """Draw 1 or several NetworkX graphs
+    with coloring of roots, sources and node degrees.
+
+    Args:
+        graphs: 1 or many instances of nx.Graph
+        titles: optional sequence of titles for graph subplots
+        color_degrees: flag specifying if graph nodes must be colored relative to their degree
+        with_labels: flag specifying if graph nodes must be drawn with labels
+        draw_fn: nx.draw_* primitive for drawing graph subplots
+        size: figure size, passed to plt.subplots(figsize=...)
+        show: if plt.show() is necessary
+    """
+
     graphs = ensure_wrapped_in_sequence(graphs)
     titles = [f'Graph #{i+1}' for i in range(len(graphs))] if not titles else titles
     # Setup subplots
@@ -92,15 +107,18 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     axs = np.atleast_2d(axs)
     # Draw graphs
     for title, ax, graph in zip(titles, chain(*axs), graphs):
-        colors, labeldict, legend_handles = _get_node_colors_and_labels(graph)
+        colors, labeldict, legend_handles = _get_node_colors_and_labels(graph, color_degrees)
         draw_fn(graph, ax=ax, arrows=True,
-                node_color=colors, with_labels=True, labels=labeldict)
+                node_color=colors, with_labels=with_labels, labels=labeldict)
         ax.set_title(title)
     fig.legend(handles=legend_handles)
-    plt.show()
+    if show:
+        plt.show()
 
 
-def _get_node_colors_and_labels(graph: nx.Graph, cmap_name='viridis'):
+def _get_node_colors_and_labels(graph: nx.Graph,
+                                color_degrees: bool = True,
+                                cmap_name='viridis'):
     degrees = dict(graph.degree())
     if isinstance(graph, nx.DiGraph):
         roots = {n for n, d in graph.out_degree() if d == 0}
@@ -109,8 +127,9 @@ def _get_node_colors_and_labels(graph: nx.Graph, cmap_name='viridis'):
         roots = {max(*graph.nodes(), key=lambda n: graph.degree[n])}
         sources = {min(*graph.nodes(), key=lambda n: graph.degree[n])}
 
-    max_degree = max(degrees.values())
+    max_degree = max(2, max(degrees.values()))
     root_cm = max_degree
+    node_cm = max_degree // 2
     src_cm = 0
     colormap = cm.get_cmap(cmap_name, max_degree + 1)
     colors = []
@@ -126,7 +145,8 @@ def _get_node_colors_and_labels(graph: nx.Graph, cmap_name='viridis'):
         elif node in sources:
             color = colormap(src_cm)
         else:
-            color = colormap(graph.degree(node))
+            clr_id = graph.degree(node) if color_degrees else node_cm
+            color = colormap(clr_id)
         colors.append(color)
 
         # Get node label
@@ -135,8 +155,9 @@ def _get_node_colors_and_labels(graph: nx.Graph, cmap_name='viridis'):
 
     # Construct legend handles
     root_legend = mpatches.Patch(color=colormap(root_cm), label='Root')
-    degree_legend = mpatches.Patch(color=colormap(max_degree // 2 + 1), label='Node Degree')
+    default_legend = mpatches.Patch(color=colormap(node_cm),
+                                    label='Node Degree' if color_degrees else 'Intermediate')
     source_legend = mpatches.Patch(color=colormap(src_cm), label='Source')
-    handles = [root_legend, degree_legend, source_legend]
+    handles = [root_legend, default_legend, source_legend]
 
     return colors, labels, handles

@@ -21,7 +21,6 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
 
-
 EVALUATION_ATTEMPTS_NUMBER = 5
 
 
@@ -121,16 +120,23 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
 
-    def _spawn_evaluated_population(self, selected_individuals: PopulationT, evaluator: Callable) -> PopulationT:
-        """ Reproduce and evaluate new population. If at least one of received individuals can not be evaluated then
-        mutate and evaluate selected individuals until a new population is obtained
-        or the number of attempts is exceeded """
+    def _spawn_evaluated_population(self, selected_individuals: PopulationT,
+                                    evaluator: EvaluationOperator) -> PopulationT:
+        """Reproduce and evaluate new population. If at least one of received individuals
+        can not be evaluated then mutate and evaluate selected individuals until a new
+        population is obtained or the number of attempts is exceeded."""
+        experience = self.mutation.agent_experience
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             new_population = self.crossover(selected_individuals)
             new_population = self.mutation(new_population)
             new_population = evaluator(new_population)
             if new_population:
+                # Perform adaptive learning
+                experience.collect_results(new_population)
+                self.mutation.agent.partial_fit(experience)
                 return new_population
+            else:
+                experience.reset()
         else:
             # Could not generate valid population; raise an error
             raise EvaluationAttemptsError()

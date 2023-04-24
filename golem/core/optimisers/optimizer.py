@@ -8,7 +8,6 @@ from golem.core.dag.graph_verifier import GraphVerifier, VerifierRuleType
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.log import default_log
 from golem.core.optimisers.advisor import DefaultChangeAdvisor
-from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.genetic.evaluation import DelegateEvaluator
 from golem.core.optimisers.genetic.operators.operator import PopulationT
@@ -17,8 +16,6 @@ from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveF
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
-
-OptimisationCallback = Callable[[PopulationT, GenerationKeeper], Any]
 
 
 def do_nothing_callback(*args, **kwargs):
@@ -114,7 +111,7 @@ class GraphOptimizer:
         self.requirements = requirements or OptimizationParameters()
         self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()
-        self._optimisation_callback: OptimisationCallback = do_nothing_callback
+        self._iteration_callback: IterationCallback = do_nothing_callback
         self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
 
@@ -137,12 +134,16 @@ class GraphOptimizer:
         """
         pass
 
-    def set_optimisation_callback(self, callback: Optional[OptimisationCallback]):
-        """Set optimisation callback that must run on each iteration.
-        Reset the callback if None is passed."""
-        self._optimisation_callback = callback or do_nothing_callback
+    def set_iteration_callback(self, callback: Optional[Callable]):
+        """Set optimisation callback that is called at the end of
+        each iteration, with the next generation passed as argument.
+        Resets the callback if None is passed."""
+        self._iteration_callback = callback or do_nothing_callback
 
     def set_evaluation_callback(self, callback: Optional[GraphFunction]):
         """Set or reset (with None) post-evaluation callback
         that's called on each graph after its evaluation."""
         pass
+
+
+IterationCallback = Callable[[PopulationT, GraphOptimizer], Any]
