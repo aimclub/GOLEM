@@ -71,29 +71,24 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
         self._default_metric_value = np.inf
 
     def Calculate(self, point: Point, functionValue: FunctionValue) -> FunctionValue:
-        new_parameters = GolemProblem.get_parameters_dict_from_iopt_point(point,
-                                                                          self.floatVariableNames,
-                                                                          self.discreteVariableNames)
+        new_parameters = self.get_parameters_dict_from_iopt_point(point)
         BaseTuner.set_arg_graph(self.graph, new_parameters)
         graph_fitness = self.objective_evaluate(self.graph)
         metric_value = graph_fitness.value if graph_fitness.valid else self._default_metric_value
         functionValue.value = metric_value
         return functionValue
 
-    @staticmethod
-    def get_parameters_dict_from_iopt_point(point: Point,
-                                            float_parameters_names: List[str],
-                                            discrete_parameters_names: List[str]) -> Dict[str, Any]:
+    def get_parameters_dict_from_iopt_point(self, point: Point) -> Dict[str, Any]:
         """Constructs a dict with all hyperparameters """
-        float_parameters = dict(zip(float_parameters_names, point.floatVariables)) \
+        float_parameters = dict(zip(self.floatVariableNames, point.floatVariables)) \
             if point.floatVariables is not None else {}
-        discrete_parameters = dict(zip(discrete_parameters_names, point.discreteVariables)) \
+        discrete_parameters = dict(zip(self.discreteVariableNames, point.discreteVariables)) \
             if point.discreteVariables is not None else {}
 
         # TODO: Remove workaround - for now IOpt handles only float variables, so discrete parameters
         #  are optimized as continuous and we need to round them
         for parameter_name in float_parameters:
-            if parameter_name in discrete_parameters_names:
+            if parameter_name in self.discreteVariableNames:
                 float_parameters[parameter_name] = round(float_parameters[parameter_name])
 
         parameters_dict = {**float_parameters, **discrete_parameters}
@@ -171,10 +166,7 @@ class IOptTuner(BaseTuner):
 
             solution = solver.Solve()
             best_point = solution.bestTrials[0].point
-            best_parameters = GolemProblem.get_parameters_dict_from_iopt_point(
-                best_point,
-                problem_parameters.float_parameters_names,
-                problem_parameters.discrete_parameters_names)
+            best_parameters = problem.get_parameters_dict_from_iopt_point(best_point)
             tuned_graph = self.set_arg_graph(graph, best_parameters)
 
             # Validation is the optimization do well

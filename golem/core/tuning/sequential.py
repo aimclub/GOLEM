@@ -8,7 +8,8 @@ from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace
-from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune, get_node_parameters_for_hyperopt
+from golem.core.tuning.tuner_interface import DomainGraphForTune
+from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 
 
 class SequentialTuner(HyperoptTuner):
