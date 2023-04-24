@@ -4,7 +4,7 @@ from typing import Type, Optional, Sequence
 
 import networkx as nx
 
-from examples.synthetic_graph_evolution.experiment import run_experiments
+from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
