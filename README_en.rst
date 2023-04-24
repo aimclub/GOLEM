@@ -91,20 +91,11 @@ Following example demonstrates graph search using reference graph & edit distanc
 
         # Setup optimization parameters
         requirements = GraphRequirements(timeout=timedelta(minutes=timeout))
-        algo_params = GPAlgorithmParameters(
-            mutation_types=[MutationTypesEnum.single_add,
-                            MutationTypesEnum.single_drop,
-                            MutationTypesEnum.single_change],
-            crossover_types=[CrossoverTypesEnum.subtree]
-        )
-        gen_params = GraphGenerationParams(
-            adapter=BaseNetworkxAdapter(),  # Example works with NetworkX graphs
-            available_node_types=node_types,
-        )
+        gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter(), available_node_types=node_types)
+        algo_params = GPAlgorithmParameters(pop_size=30)
 
         # Build and run the optimizer
-        optimiser = EvoGraphOptimizer(objective, initial_population,
-                                      requirements, gen_params, algo_params)
+        optimiser = EvoGraphOptimizer(objective, initial_population, requirements, gen_params, algo_params)
         found_graphs = optimiser.optimise(objective)
 
         # Visualize results
