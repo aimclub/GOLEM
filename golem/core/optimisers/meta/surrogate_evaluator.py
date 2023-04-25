@@ -5,8 +5,7 @@ from typing import Optional, Tuple
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.log import Log
-from golem.core.optimisers.genetic.evaluation import OptionalEvalResult, DelegateEvaluator, \
-    MultiprocessingDispatcher, SequentialDispatcher
+from golem.core.optimisers.genetic.evaluation import OptionalEvalResult, DelegateEvaluator, SequentialDispatcher
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.meta.surrogate_model import SurrogateModel, RandomValuesSurrogateModel
 from golem.core.optimisers.objective.objective import to_fitness, GraphFunction
@@ -32,7 +31,6 @@ class SurrogateDispatcher(SequentialDispatcher):
     def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
                         cache_key: Optional[str] = None,
                         logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> OptionalEvalResult:
-
         graph = self.evaluation_cache.get(cache_key, graph)
         if logs_initializer is not None:
             # in case of multiprocessing run

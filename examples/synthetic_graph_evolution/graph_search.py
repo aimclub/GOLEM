@@ -3,9 +3,6 @@ from functools import partial
 from typing import Type, Optional, Sequence
 
 import networkx as nx
-
-import networkx as nx
-
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
@@ -16,11 +13,8 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.meta.surrogate_model import RandomValuesSurrogateModel
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.metrics.graph_metrics import spectral_dist, degree_distance, size_diff
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
 
