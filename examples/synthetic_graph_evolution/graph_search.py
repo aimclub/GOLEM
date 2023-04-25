@@ -53,7 +53,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
         max_arity=max_graph_size,
         max_depth=max_graph_size,
         early_stopping_timeout=10,
-        early_stopping_iterations=num_iterations // 3,
+        early_stopping_iterations=num_iterations // 3 if num_iterations else None,
         keep_n_best=4,
         timeout=timeout,
         num_of_generations=num_iterations,
@@ -80,8 +80,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     )
 
     # Generate simple initial population with line graphs
-    initial_graphs = [generate_labeled_graph('line', k+3, node_types)
-                      for k in range(gp_params.pop_size)]
+    initial_graphs = [generate_labeled_graph('gnp', 7, node_types)
+                      for _ in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective

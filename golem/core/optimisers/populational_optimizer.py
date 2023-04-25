@@ -63,7 +63,8 @@ class PopulationalOptimizer(GraphOptimizer):
                          self.current_generation_num >= requirements.num_of_generations + 1),
                 'Optimisation stopped: Max number of generations reached'
             ).add_condition(
-                lambda: self.generations.stagnation_iter_count >= max_stagnation_length,
+                lambda: (max_stagnation_length is not None and
+                         self.generations.stagnation_iter_count >= max_stagnation_length),
                 'Optimisation finished: Early stopping iterations criteria was satisfied'
             ).add_condition(
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
