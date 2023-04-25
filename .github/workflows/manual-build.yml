@@ -2,7 +2,7 @@ name: Manual build
 
 on:
   push:
-    branches: [ release ]
+    branches: [ stable, release ]
   workflow_dispatch:
 
 jobs:
