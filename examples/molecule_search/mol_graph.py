@@ -3,7 +3,7 @@ import io
 import networkx as nx
 from PIL import Image
 from rdkit import Chem
-from rdkit.Chem import MolFromSmiles, MolToSmiles, SanitizeMol, Kekulize
+from rdkit.Chem import MolFromSmiles, MolToSmiles, SanitizeMol, Kekulize, MolToInchi
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.rdchem import Atom, BondType, RWMol, GetPeriodicTable
 
@@ -98,12 +98,10 @@ class MolGraph:
         for atom in self._rw_molecule.GetAtoms():
             atom.UpdatePropertyCache()
 
-        # Updating RDKit representation
         self._rw_molecule.UpdatePropertyCache()
 
     def add_atom(self, atom_type: str):
         atom = Atom(atom_type)
-        atom.SetBoolProp("mutability", True)
         self._rw_molecule.AddAtom(atom)
 
     def set_bond(self, from_atom: int, to_atom: int, bond_type: BondType = BondType.SINGLE):
@@ -114,7 +112,7 @@ class MolGraph:
             current_bond.SetBondType(bond_type)
         self.update_representation()
 
-    def delete_bond(self, from_atom: int, to_atom: int):
+    def remove_bond(self, from_atom: int, to_atom: int):
         self._rw_molecule.RemoveBond(from_atom, to_atom)
         self.update_representation()
 
@@ -125,13 +123,10 @@ class MolGraph:
     def replace_atom(self, atom_to_replace: int, atom_type: str):
         new_atomic_number = GetPeriodicTable().GetAtomicNumber(atom_type)
 
-        # Changing atomic number
         self._rw_molecule.GetAtomWithIdx(atom_to_replace).SetAtomicNum(new_atomic_number)
 
-        # Setting formal charge to 0
         self._rw_molecule.GetAtomWithIdx(atom_to_replace).SetFormalCharge(0)
 
-        # Updating the internal representation
         self.update_representation()
 
     def show(self):
@@ -142,3 +137,9 @@ class MolGraph:
         bytes_images = drawer.GetDrawingText()
         image = Image.open(io.BytesIO(bytes_images))
         image.show()
+
+    def __eq__(self, other_mol: 'MolGraph'):
+        return MolToInchi(self.get_rw_molecule(aromatic=True)) == MolToInchi(other_mol.get_rw_molecule(aromatic=True))
+
+    def __hash__(self):
+        return hash(MolToInchi(self.get_rw_molecule(aromatic=True)))

@@ -29,7 +29,7 @@ def get_atom_ids_to_connect_to(mol_graph: MolGraph) -> Sequence[int]:
     free_electrons_vector = np.array([get_free_electrons_num(atom) for atom in atoms])
     formal_charge_vector = np.array([atom.GetFormalCharge() for atom in atoms])
     atom_ids = np.arange(mol_graph.heavy_atoms_number)
-    return atom_ids[(formal_charge_vector == 0) & (free_electrons_vector > 0)]
+    return list(atom_ids[(formal_charge_vector == 0) & (free_electrons_vector > 0)])
 
 
 def get_default_valence(atom_type: str) -> int:

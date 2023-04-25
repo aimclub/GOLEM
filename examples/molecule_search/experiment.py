@@ -1,7 +1,7 @@
 import os.path
 import random
 from datetime import timedelta
-from typing import Type, Optional, Sequence, List
+from typing import Type, Optional, Sequence, List, Iterable
 
 from rdkit.Chem import Draw
 from rdkit.Chem.rdchem import BondType
@@ -82,7 +82,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
     return optimiser, objective
 
 
-def visualize(molecules: Sequence[MolGraph], history: OptHistory, metric_names: Sequence[str]):
+def visualize(molecules: Iterable[MolGraph], history: OptHistory, metric_names: Sequence[str]):
     save_path = os.path.join(os.path.curdir, 'visualisations')
 
     visualise_pareto(history.archive_history[-1], objectives_names=metric_names, folder=save_path)
@@ -92,15 +92,14 @@ def visualize(molecules: Sequence[MolGraph], history: OptHistory, metric_names: 
         visualization = plot_type.value(visualizer.history, visualizer.visuals_params)
         visualization.visualize(dpi=100, save_path=os.path.join(save_path, f'{plot_type.name}.png'))
 
-    rw_molecules = set(mol.get_rw_molecule() for mol in molecules)
+    rw_molecules = [mol.get_rw_molecule() for mol in set(molecules)]
     image = Draw.MolsToGridImage(rw_molecules, molsPerRow=min(4, len(rw_molecules)), subImgSize=(1000, 1000))
     image.show()
     image.save(os.path.join(save_path, 'best_molecules.png'))
 
 
 if __name__ == '__main__':
-    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=20))
+    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=4))
     found_graphs = optimizer.optimise(objective)
     molecules = [MolAdapter().restore(graph) for graph in found_graphs]
-
     visualize(molecules, optimizer.history, metric_names=objective.metric_names[:2])

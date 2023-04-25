@@ -1,5 +1,6 @@
 from copy import deepcopy
 from random import choice
+from typing import Optional
 
 from examples.molecule_search.mol_advisor import MolChangeAdvisor, get_atom_ids_to_connect_to, get_free_electrons_num, \
     get_atoms_to_remove, get_atom_pairs_to_connect, get_atom_pairs_to_disconnect
@@ -12,10 +13,9 @@ from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmPara
 def add_atom(mol_graph: MolGraph,
              requirements: MolGraphRequirements,
              graph_gen_params: GraphGenerationParams,
-             parameters: AlgorithmParameters = None):
-    mol_graph = deepcopy(mol_graph)
+             parameters: Optional[AlgorithmParameters] = None):
     atoms_to_connect = get_atom_ids_to_connect_to(mol_graph)
-    if len(atoms_to_connect) != 0 or mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
+    if atoms_to_connect and mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
         connect_to_atom_id = int(choice(atoms_to_connect))
         connect_to_atom = mol_graph.get_rw_molecule().GetAtomWithIdx(connect_to_atom_id)
 
@@ -33,10 +33,9 @@ def add_atom(mol_graph: MolGraph,
 
 
 def delete_atom(mol_graph: MolGraph,
-                requirements: GraphRequirements = None,
-                graph_gen_params: GraphGenerationParams = None,
-                parameters: AlgorithmParameters = None):
-    mol_graph = deepcopy(mol_graph)
+                requirements: Optional[GraphRequirements] = None,
+                graph_gen_params: Optional[GraphGenerationParams] = None,
+                parameters: Optional[AlgorithmParameters] = None):
     atoms_to_delete = get_atoms_to_remove(mol_graph)
     if atoms_to_delete:
         atom_to_delete_id = int(choice(atoms_to_delete))
@@ -47,7 +46,7 @@ def delete_atom(mol_graph: MolGraph,
 def replace_atom(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
                  graph_gen_params: GraphGenerationParams,
-                 parameters: AlgorithmParameters = None):
+                 parameters: Optional[AlgorithmParameters] = None):
     atom_to_replace = choice(mol_graph.get_rw_molecule().GetAtoms())
     possible_substitutions = graph_gen_params.advisor.propose_change(atom_to_replace, requirements.available_atom_types)
     if possible_substitutions:
@@ -58,22 +57,21 @@ def replace_atom(mol_graph: MolGraph,
 
 def replace_bond(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
-                 graph_gen_params: GraphGenerationParams = None,
-                 parameters: AlgorithmParameters = None):
-    mol_graph = deepcopy(mol_graph)
+                 graph_gen_params: Optional[GraphGenerationParams] = None,
+                 parameters: Optional[AlgorithmParameters] = None):
     molecule = mol_graph.get_rw_molecule()
     atom_pairs_to_connect = get_atom_pairs_to_connect(mol_graph)
-    pair_to_connect = choice(atom_pairs_to_connect)
 
-    if pair_to_connect:
+    if atom_pairs_to_connect:
+        pair_to_connect = choice(atom_pairs_to_connect)
         from_atom = molecule.GetAtomWithIdx(pair_to_connect[0])
         to_atom = molecule.GetAtomWithIdx(pair_to_connect[1])
+
         pair_free_electrons = min(get_free_electrons_num(from_atom), get_free_electrons_num(to_atom))
+
         current_bond = molecule.GetBondBetweenAtoms(*pair_to_connect)
-        if current_bond:
-            current_bond_degree = current_bond.GetBondTypeAsDouble()
-        else:
-            current_bond_degree = 0
+        current_bond_degree = current_bond.GetBondTypeAsDouble() if current_bond else 0
+
         max_bond_degree = current_bond_degree + pair_free_electrons
         possible_bonds = [bond for bond in requirements.bond_types if int(bond) <= max_bond_degree]
         if possible_bonds:
@@ -84,12 +82,12 @@ def replace_bond(mol_graph: MolGraph,
 
 
 def delete_bond(mol_graph: MolGraph,
-                requirements: GraphRequirements,
-                graph_gen_params: GraphGenerationParams = None,
-                parameters: AlgorithmParameters = None):
+                requirements: Optional[GraphRequirements] = None,
+                graph_gen_params: Optional[GraphGenerationParams] = None,
+                parameters: Optional[AlgorithmParameters] = None):
     mol_graph = deepcopy(mol_graph)
     atom_pairs_to_disconnect = get_atom_pairs_to_disconnect(mol_graph)
     if atom_pairs_to_disconnect:
         pair_to_disconnect = choice(atom_pairs_to_disconnect)
-        mol_graph.delete_bond(*pair_to_disconnect)
+        mol_graph.remove_bond(*pair_to_disconnect)
     return mol_graph
