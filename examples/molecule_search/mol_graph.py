@@ -104,13 +104,14 @@ class MolGraph:
         atom = Atom(atom_type)
         self._rw_molecule.AddAtom(atom)
 
-    def set_bond(self, from_atom: int, to_atom: int, bond_type: BondType = BondType.SINGLE):
+    def set_bond(self, from_atom: int, to_atom: int, bond_type: BondType = BondType.SINGLE, update_representation=True):
         current_bond = self._rw_molecule.GetBondBetweenAtoms(from_atom, to_atom)
         if current_bond is None:
             self._rw_molecule.AddBond(from_atom, to_atom, bond_type)
         else:
             current_bond.SetBondType(bond_type)
-        self.update_representation()
+        if update_representation:
+            self.update_representation()
 
     def remove_bond(self, from_atom: int, to_atom: int):
         self._rw_molecule.RemoveBond(from_atom, to_atom)

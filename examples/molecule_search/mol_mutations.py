@@ -3,7 +3,7 @@ from random import choice
 from typing import Optional
 
 from examples.molecule_search.mol_advisor import MolChangeAdvisor, get_atom_ids_to_connect_to, get_free_electrons_num, \
-    get_atoms_to_remove, get_atom_pairs_to_connect, get_atom_pairs_to_disconnect
+    get_atoms_to_remove, get_atom_pairs_to_connect, get_atom_pairs_to_disconnect, get_atoms_to_cut
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -85,9 +85,24 @@ def delete_bond(mol_graph: MolGraph,
                 requirements: Optional[GraphRequirements] = None,
                 graph_gen_params: Optional[GraphGenerationParams] = None,
                 parameters: Optional[AlgorithmParameters] = None):
-    mol_graph = deepcopy(mol_graph)
     atom_pairs_to_disconnect = get_atom_pairs_to_disconnect(mol_graph)
     if atom_pairs_to_disconnect:
         pair_to_disconnect = choice(atom_pairs_to_disconnect)
         mol_graph.remove_bond(*pair_to_disconnect)
+    return mol_graph
+
+
+def cut_atom(mol_graph: MolGraph,
+             requirements: Optional[GraphRequirements] = None,
+             graph_gen_params: Optional[GraphGenerationParams] = None,
+             parameters: Optional[AlgorithmParameters] = None):
+    atoms_to_cut = get_atoms_to_cut(mol_graph)
+    molecule = mol_graph.get_rw_molecule()
+    if atoms_to_cut:
+        atom_to_cut = choice(atoms_to_cut)
+        neighbors_id = [neighbor.GetIdx() for neighbor in molecule.GetAtomWithIdx(atom_to_cut).GetNeighbors()]
+        mol_graph.remove_bond(neighbors_id[0], atom_to_cut)
+        mol_graph.remove_bond(neighbors_id[1], atom_to_cut)
+        mol_graph.set_bond(*neighbors_id, update_representation=False)
+        mol_graph.remove_atom(atom_to_cut)
     return mol_graph

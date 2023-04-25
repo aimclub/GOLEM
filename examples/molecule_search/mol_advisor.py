@@ -56,6 +56,12 @@ def get_atoms_to_remove(mol_graph: MolGraph) -> Sequence[int]:
     return list(set(all_atoms_ids) - set(art_points_ids))
 
 
+def get_atoms_to_cut(mol_graph: MolGraph) -> Sequence[int]:
+    atoms_to_cut = [atom.GetIdx() for atom in mol_graph.get_rw_molecule().GetAtoms()
+                    if len(atom.GetNeighbors()) == 2]
+    return atoms_to_cut
+
+
 def get_atom_pairs_to_connect(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
     molecule = mol_graph.get_rw_molecule()
     atoms = np.array(molecule.GetAtoms())
