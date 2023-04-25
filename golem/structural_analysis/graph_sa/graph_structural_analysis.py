@@ -1,11 +1,12 @@
 import os
+import pandas as pd
 from copy import deepcopy
 from typing import List, Optional, Tuple
 import multiprocessing
 
 from golem.core.log import default_log
 from golem.core.dag.graph import Graph, GraphNode
-from golem.core.optimisers.objective import Objective
+from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.structural_analysis.graph_sa.edge_sa_approaches import EdgeAnalyzeApproach, EdgeDeletionAnalyze, \
@@ -37,13 +38,13 @@ class GraphStructuralAnalysis:
     Default: False
     """
 
-    def __init__(self, objective: Objective,
+    def __init__(self, objective: ObjectiveFunction,
                  node_factory: OptNodeFactory,
                  is_preproc: bool = True,
                  approaches: List = None,
                  requirements: StructuralAnalysisRequirements = StructuralAnalysisRequirements(),
                  path_to_save: str = None,
-                 is_visualize_per_iteration: bool = False):
+                 is_visualize_per_iteration: bool = True):
 
         self.is_preproc = is_preproc
         self._log = default_log(self)
@@ -113,7 +114,7 @@ class GraphStructuralAnalysis:
 
         return result
 
-    def optimize(self, graph: Graph,
+    def optimize(self, graph_: Graph,
                  n_jobs: int = 1, timer: OptimisationTimer = None,
                  max_iter: int = 10) -> Tuple[Graph, SAAnalysisResults]:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
@@ -130,49 +131,57 @@ class GraphStructuralAnalysis:
 
         # what actions were applied on the graph and how many
         actions_applied = dict.fromkeys(approaches_names, 0)
-
+        graph = deepcopy(graph_)
         result = SAAnalysisResults()
+        with timer:
+            analysis_result = self.analyze(graph=graph, result=result, timer=timer, n_jobs=n_jobs)
+            converged = False
+            iter = 0
 
-        analysis_result = self.analyze(graph=graph, result=result, timer=timer, n_jobs=n_jobs)
-        converged = False
-        iter = 0
+            if analysis_result.is_empty:
+                self._log.message(f'{iter} actions were taken during SA')
+                return graph, analysis_result
 
-        if analysis_result.is_empty:
-            self._log.message(f'{iter} actions were taken during SA')
-            return graph, analysis_result
+            while not converged:
+                iter += 1
+                worst_result = analysis_result.get_info_about_worst_result(
+                    metric_idx_to_optimize_by=self.main_metric_idx)
+                if self.is_visualize_per_iteration:
+                    base_name = os.path.basename(os.path.normpath(self.path_to_save))
+                    if '.png' not in base_name:
+                        path_to_save = os.path.join(self.path_to_save, f'{base_name}.png')
+                    self.visualize_on_graph(graph=deepcopy(graph), analysis_result=analysis_result,
+                                            metric_idx_to_optimize_by=self.main_metric_idx,
+                                            mode='final',
+                                            font_size_scale=0.6,
+                                            save_path=path_to_save)
+                if worst_result['value'] > 1:
+                    # apply the worst approach
+                    postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])
+                    graph = postproc_method(graph=graph, worst_result=worst_result)
+                    actions_applied[f'{worst_result["approach_name"]}'] += 1
 
-        while not converged:
-            iter += 1
-            worst_result = analysis_result.get_info_about_worst_result(
-                metric_idx_to_optimize_by=self.main_metric_idx)
-            if self.is_visualize_per_iteration:
-                self.visualize_on_graph(graph=deepcopy(graph), analysis_result=analysis_result,
-                                        metric_idx_to_optimize_by=self.main_metric_idx,
-                                        mode='final',
-                                        font_size_scale=0.6)
-            if worst_result['value'] > 1:
-                # apply the worst approach
-                postproc_method = approaches_repo.postproc_method_by_name(worst_result['approach_name'])
-                graph = postproc_method(graph=graph, worst_result=worst_result)
-                actions_applied[f'{worst_result["approach_name"]}'] += 1
+                    if timer is not None and timer.is_time_limit_reached():
+                        break
 
-                if timer is not None and timer.is_time_limit_reached():
-                    break
+                    if max_iter and iter >= max_iter:
+                        break
 
-                if max_iter and iter >= max_iter:
-                    break
-
-                analysis_result = self.analyze(graph=graph,
-                                               result=result,
-                                               n_jobs=n_jobs,
-                                               timer=timer)
-            else:
-                converged = True
+                    analysis_result = self.analyze(graph=graph,
+                                                   result=result,
+                                                   n_jobs=n_jobs,
+                                                   timer=timer)
+                else:
+                    converged = True
 
         self._log.message(f'{iter} iterations passed during SA')
         self._log.message(f'The following actions were applied during SA: {actions_applied}')
 
         if self.path_to_save:
+            # to save actions applied
+            for key in actions_applied.keys():
+                actions_applied[key] = [actions_applied[key]]
+            pd.DataFrame(actions_applied).to_csv(os.path.join(self.path_to_save, 'actions_applied.csv'))
             if not os.path.exists(self.path_to_save):
                 os.makedirs(self.path_to_save)
             analysis_result.save(path=self.path_to_save)

@@ -10,7 +10,7 @@ from golem.core.dag.graph import Graph
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.base_sa_approaches import BaseAnalyzeApproach
+from golem.structural_analysis.graph_sa.base_sa_approaches import BaseAnalyzeApproach
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult

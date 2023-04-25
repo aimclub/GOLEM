@@ -53,7 +53,7 @@ class SAAnalysisResults(Serializable):
         for i, res in enumerate(nodes_results + edges_results):
             cur_res = res.get_worst_result_with_names(
                 metric_idx_to_optimize_by=metric_idx_to_optimize_by)
-            if not worst_value or cur_res['value'] > worst_value:
+            if not worst_value or cur_res and cur_res['value'] > worst_value:
                 worst_value = cur_res['value']
                 worst_result = cur_res
         return worst_result
@@ -74,7 +74,7 @@ class SAAnalysisResults(Serializable):
         self._add_empty_iteration_results()
         return list(self.results_per_iteration.keys())[-1]
 
-    def save(self, path: str = None, datetime_in_path: bool = True) -> dict:
+    def save(self, path: str = None, datetime_in_path: bool = False) -> dict:
         """ Saves SA results in json format. """
         dict_results = dict()
         for iter in self.results_per_iteration.keys():
@@ -87,15 +87,19 @@ class SAAnalysisResults(Serializable):
                     dict_results[iter][entity_type].update(entity.get_dict_results())
 
         json_data = json.dumps(dict_results, cls=Serializer)
-
+        if path:
+            base_name = os.path.basename(os.path.normpath(path))
+            if '.json' not in base_name:
+                path = os.path.join(path, f'{base_name}_sa_results.json')
         if not path:
-            path = os.path.join(project_root(), 'sa', 'sa_results.json')
+            path = os.path.join(project_root(), 'sa_results', 'sa_results.json')
         if datetime_in_path:
             file_name = os.path.basename(path).split('.')[0]
             file_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{file_name}.json"
-            path = os.path.join(os.path.dirname(path), 'sa')
+            path = os.path.join(os.path.dirname(path), 'sa_results')
             if not os.path.exists(path):
                 os.makedirs(path)
+
             path = os.path.join(path, file_name)
 
         with open(path, 'w', encoding='utf-8') as f:
