@@ -120,3 +120,16 @@ def insert_carbon(mol_graph: MolGraph,
             mol_graph.set_bond(bond_to_split[0], carbon_id, update_representation=False)
             mol_graph.set_bond(bond_to_split[1], carbon_id)
     return mol_graph
+
+
+def remove_group(mol_graph: MolGraph,
+                        requirements: MolGraphRequirements,
+                        graph_gen_params: GraphGenerationParams,
+                        parameters: Optional[AlgorithmParameters] = None):
+    groups_to_remove = graph_gen_params.advisor.propose_group_removal(mol_graph)
+    if groups_to_remove:
+        group = choice(groups_to_remove)
+        for atom_id in sorted(group, reverse=True):
+            mol_graph.remove_atom(atom_id, update_representation=False)
+            mol_graph.update_representation()
+    return mol_graph

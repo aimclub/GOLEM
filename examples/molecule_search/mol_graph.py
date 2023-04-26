@@ -118,9 +118,10 @@ class MolGraph:
         if update_representation:
             self.update_representation()
 
-    def remove_atom(self, atom_id: int):
+    def remove_atom(self, atom_id: int, update_representation=True):
         self._rw_molecule.RemoveAtom(atom_id)
-        self.update_representation()
+        if update_representation:
+            self.update_representation()
 
     def replace_atom(self, atom_to_replace: int, atom_type: str):
         new_atomic_number = GetPeriodicTable().GetAtomicNumber(atom_type)

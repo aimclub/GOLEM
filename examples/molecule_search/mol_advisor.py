@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List, Sequence, Tuple
 
 import networkx as nx
@@ -113,6 +114,29 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
             if from_atom.GetFormalCharge() == 0 and to_atom.GetFormalCharge() == 0:
                 bonds_to_split.append((from_atom.GetIdx(), to_atom.GetIdx()))
         return bonds_to_split
+
+    @staticmethod
+    def propose_group_removal(mol_graph: MolGraph) -> List[List[int]]:
+        """
+        Proposes groups that can be removed. Group is a connected subgraph that is connected to the rest of the graph
+        by only one bond.
+        """
+        molecule = mol_graph.get_rw_molecule()
+        nx_graph = mol_graph.get_nx_graph()
+        bridges = set(nx.bridges(nx_graph))
+        groups_to_remove = []
+        for bridge in bridges:
+            from_atom = molecule.GetAtomWithIdx(bridge[0])
+            to_atom = molecule.GetAtomWithIdx(bridge[1])
+            can_be_disconnected = to_atom.GetFormalCharge() == 0 and from_atom.GetFormalCharge() == 0
+            if can_be_disconnected:
+                disconnected_graph = deepcopy(nx_graph)
+                disconnected_graph.remove_edge(*bridge)
+                first_group = list(nx.node_connected_component(disconnected_graph, bridge[0]))
+                second_group = list(nx.node_connected_component(disconnected_graph, bridge[1]))
+                groups_to_remove.extend([first_group, second_group])
+        return groups_to_remove
+
 
 
 def get_default_valence(atom_type: str) -> int:
