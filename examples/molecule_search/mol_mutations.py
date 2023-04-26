@@ -104,3 +104,19 @@ def cut_atom(mol_graph: MolGraph,
         mol_graph.set_bond(*neighbors_id, update_representation=False)
         mol_graph.remove_atom(atom_to_cut)
     return mol_graph
+
+
+def insert_carbon(mol_graph: MolGraph,
+                  requirements: MolGraphRequirements,
+                  graph_gen_params: GraphGenerationParams,
+                  parameters: Optional[AlgorithmParameters] = None):
+    if mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
+        bonds_to_split = graph_gen_params.advisor.propose_bond_to_split(mol_graph)
+        if bonds_to_split:
+            bond_to_split = choice(bonds_to_split)
+            mol_graph.remove_bond(*bond_to_split, update_representation=False)
+            mol_graph.add_atom('C')
+            carbon_id = mol_graph.heavy_atoms_number - 1
+            mol_graph.set_bond(bond_to_split[0], carbon_id, update_representation=False)
+            mol_graph.set_bond(bond_to_split[1], carbon_id)
+    return mol_graph

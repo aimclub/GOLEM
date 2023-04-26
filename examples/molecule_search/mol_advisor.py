@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple, Any
+from typing import List, Sequence, Tuple
 
 import networkx as nx
 import numpy as np
@@ -11,18 +11,29 @@ from golem.core.optimisers.advisor import DefaultChangeAdvisor
 
 
 class MolChangeAdvisor(DefaultChangeAdvisor):
-    def propose_parent(self, node: Atom, possible_operations: List[str]):
+    def propose_parent(self, node: Atom, possible_operations: List[str]) -> List[str]:
+        """
+        Proposes types of atoms that can be connected to the current atom -
+        any type other than the type of the current atom.
+        """
         atom_types = list(set(possible_operations) - set(node.GetSymbol()))
         return atom_types
 
-    def propose_change(self, node: Atom, possible_operations: List[Any]):
+    def propose_change(self, node: Atom, possible_operations: List[str]) -> List[str]:
+        """
+        Proposes types of atoms to replace current atom type - any type other than the type of the current atom
+        such that it has enough valence number (valence must be greater or equal to current atom explicit valence).
+        """
         atom_types = list(set(possible_operations) - set(node.GetSymbol()))
         atom_types_to_replace = [atom_type for atom_type in atom_types
-                                 if get_default_valence(atom_type) > node.GetExplicitValence()]
+                                 if get_default_valence(atom_type) >= node.GetExplicitValence()]
         return atom_types_to_replace
 
     @staticmethod
     def propose_connection_point(mol_graph: MolGraph) -> Sequence[int]:
+        """
+        Proposes atoms new atom can connect to - atoms must have zero formal charge and free electrons.
+        """
         molecule = mol_graph.get_rw_molecule()
         atoms = molecule.GetAtoms()
         free_electrons_vector = np.array([get_free_electrons_num(atom) for atom in atoms])
@@ -32,6 +43,10 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
 
     @staticmethod
     def propose_atom_removal(mol_graph: MolGraph) -> Sequence[int]:
+        """
+        Proposes atoms that can be removed - any atom, which deletion will not increase the number of connected
+        components of the molecule.
+        """
         nx_graph = mol_graph.get_nx_graph()
         art_points_ids = nx.articulation_points(nx_graph)
         atom_ids = np.arange(mol_graph.heavy_atoms_number)
@@ -39,6 +54,9 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
 
     @staticmethod
     def propose_connection(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
+        """
+        Proposes pairs of atoms that can be connected - both atoms must have zero formal charge.
+        """
         molecule = mol_graph.get_rw_molecule()
         atoms = np.array(molecule.GetAtoms())
         atom_pairs_to_connect = []
@@ -51,24 +69,50 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
 
     @staticmethod
     def propose_disconnection(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
-        molecule = mol_graph.get_rw_molecule()
-        atoms = np.array(molecule.GetAtoms())
+        """
+        Proposes pairs of atoms that can be disconnected - both atoms must have zero formal charge and deletion
+        of the bond must not increase the number of connected components of the molecule.
+        """
         bridges = set(nx.bridges(mol_graph.get_nx_graph()))
         atom_pairs_to_disconnect = []
-        for from_atom in atoms:
-            for to_atom in atoms[from_atom.GetIdx() + 1:]:
-                if molecule.GetBondBetweenAtoms(from_atom.GetIdx(), to_atom.GetIdx()):
-                    can_be_disconnected = to_atom.GetFormalCharge() == 0 and from_atom.GetFormalCharge() == 0
-                    if can_be_disconnected:
-                        atom_pairs_to_disconnect.append((from_atom.GetIdx(), to_atom.GetIdx()))
+        for bond in mol_graph.get_rw_molecule().GetBonds():
+            from_atom = bond.GetBeginAtom()
+            to_atom = bond.GetEndAtom()
+            can_be_disconnected = to_atom.GetFormalCharge() == 0 and from_atom.GetFormalCharge() == 0
+            if can_be_disconnected:
+                atom_pairs_to_disconnect.append((from_atom.GetIdx(), to_atom.GetIdx()))
         atom_pairs_to_disconnect = set(atom_pairs_to_disconnect) - bridges
         return list(atom_pairs_to_disconnect)
 
     @staticmethod
     def propose_cut(mol_graph: MolGraph) -> Sequence[int]:
-        atoms_to_cut = [atom.GetIdx() for atom in mol_graph.get_rw_molecule().GetAtoms()
-                        if len(atom.GetNeighbors()) == 2]
+        """
+        Proposes atoms that can be cut - any atom that has only two neighbors, the neighbors are disconnected,
+        and they have zero formal charge.
+        """
+        molecule = mol_graph.get_rw_molecule()
+        atoms_to_cut = []
+        for atom in molecule.GetAtoms():
+            neighbors = atom.GetNeighbors()
+            if len(neighbors) == 2:
+                if (not molecule.GetBondBetweenAtoms(neighbors[0].GetIdx(), neighbors[1].GetIdx())
+                        and neighbors[0].GetFormalCharge() == 0
+                        and neighbors[1].GetFormalCharge() == 0):
+                    atoms_to_cut.append(atom.GetIdx())
         return atoms_to_cut
+
+    @staticmethod
+    def propose_bond_to_split(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
+        """
+        Proposes bonds which can be split by new atom - bond endpoints have no formal charge.
+        """
+        bonds_to_split = []
+        for bond in mol_graph.get_rw_molecule().GetBonds():
+            from_atom = bond.GetBeginAtom()
+            to_atom = bond.GetEndAtom()
+            if from_atom.GetFormalCharge() == 0 and to_atom.GetFormalCharge() == 0:
+                bonds_to_split.append((from_atom.GetIdx(), to_atom.GetIdx()))
+        return bonds_to_split
 
 
 def get_default_valence(atom_type: str) -> int:
