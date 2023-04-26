@@ -1,9 +1,7 @@
-from copy import deepcopy
 from random import choice
 from typing import Optional
 
-from examples.molecule_search.mol_advisor import MolChangeAdvisor, get_atom_ids_to_connect_to, get_free_electrons_num, \
-    get_atoms_to_remove, get_atom_pairs_to_connect, get_atom_pairs_to_disconnect, get_atoms_to_cut
+from examples.molecule_search.mol_advisor import get_free_electrons_num
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -14,7 +12,7 @@ def add_atom(mol_graph: MolGraph,
              requirements: MolGraphRequirements,
              graph_gen_params: GraphGenerationParams,
              parameters: Optional[AlgorithmParameters] = None):
-    atoms_to_connect = get_atom_ids_to_connect_to(mol_graph)
+    atoms_to_connect = graph_gen_params.advisor.propose_connection_point(mol_graph)
     if atoms_to_connect and mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
         connect_to_atom_id = int(choice(atoms_to_connect))
         connect_to_atom = mol_graph.get_rw_molecule().GetAtomWithIdx(connect_to_atom_id)
@@ -33,10 +31,10 @@ def add_atom(mol_graph: MolGraph,
 
 
 def delete_atom(mol_graph: MolGraph,
-                requirements: Optional[GraphRequirements] = None,
-                graph_gen_params: Optional[GraphGenerationParams] = None,
+                requirements: GraphRequirements,
+                graph_gen_params: GraphGenerationParams,
                 parameters: Optional[AlgorithmParameters] = None):
-    atoms_to_delete = get_atoms_to_remove(mol_graph)
+    atoms_to_delete = graph_gen_params.advisor.propose_atom_removal(mol_graph)
     if atoms_to_delete:
         atom_to_delete_id = int(choice(atoms_to_delete))
         mol_graph.remove_atom(atom_to_delete_id)
@@ -57,10 +55,10 @@ def replace_atom(mol_graph: MolGraph,
 
 def replace_bond(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
-                 graph_gen_params: Optional[GraphGenerationParams] = None,
+                 graph_gen_params: GraphGenerationParams,
                  parameters: Optional[AlgorithmParameters] = None):
     molecule = mol_graph.get_rw_molecule()
-    atom_pairs_to_connect = get_atom_pairs_to_connect(mol_graph)
+    atom_pairs_to_connect = graph_gen_params.advisor.propose_connection(mol_graph)
 
     if atom_pairs_to_connect:
         pair_to_connect = choice(atom_pairs_to_connect)
@@ -82,10 +80,10 @@ def replace_bond(mol_graph: MolGraph,
 
 
 def delete_bond(mol_graph: MolGraph,
-                requirements: Optional[GraphRequirements] = None,
-                graph_gen_params: Optional[GraphGenerationParams] = None,
+                requirements: GraphRequirements,
+                graph_gen_params: GraphGenerationParams,
                 parameters: Optional[AlgorithmParameters] = None):
-    atom_pairs_to_disconnect = get_atom_pairs_to_disconnect(mol_graph)
+    atom_pairs_to_disconnect = graph_gen_params.advisor.propose_disconnection(mol_graph)
     if atom_pairs_to_disconnect:
         pair_to_disconnect = choice(atom_pairs_to_disconnect)
         mol_graph.remove_bond(*pair_to_disconnect)
@@ -93,16 +91,16 @@ def delete_bond(mol_graph: MolGraph,
 
 
 def cut_atom(mol_graph: MolGraph,
-             requirements: Optional[GraphRequirements] = None,
-             graph_gen_params: Optional[GraphGenerationParams] = None,
+             requirements: GraphRequirements,
+             graph_gen_params: GraphGenerationParams,
              parameters: Optional[AlgorithmParameters] = None):
-    atoms_to_cut = get_atoms_to_cut(mol_graph)
+    atoms_to_cut = graph_gen_params.advisor.propose_cut(mol_graph)
     molecule = mol_graph.get_rw_molecule()
     if atoms_to_cut:
         atom_to_cut = choice(atoms_to_cut)
         neighbors_id = [neighbor.GetIdx() for neighbor in molecule.GetAtomWithIdx(atom_to_cut).GetNeighbors()]
-        mol_graph.remove_bond(neighbors_id[0], atom_to_cut)
-        mol_graph.remove_bond(neighbors_id[1], atom_to_cut)
+        mol_graph.remove_bond(neighbors_id[0], atom_to_cut, update_representation=False)
+        mol_graph.remove_bond(neighbors_id[1], atom_to_cut, update_representation=False)
         mol_graph.set_bond(*neighbors_id, update_representation=False)
         mol_graph.remove_atom(atom_to_cut)
     return mol_graph

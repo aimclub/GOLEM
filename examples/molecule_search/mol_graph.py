@@ -113,9 +113,10 @@ class MolGraph:
         if update_representation:
             self.update_representation()
 
-    def remove_bond(self, from_atom: int, to_atom: int):
+    def remove_bond(self, from_atom: int, to_atom: int, update_representation=True):
         self._rw_molecule.RemoveBond(from_atom, to_atom)
-        self.update_representation()
+        if update_representation:
+            self.update_representation()
 
     def remove_atom(self, atom_id: int):
         self._rw_molecule.RemoveAtom(atom_id)

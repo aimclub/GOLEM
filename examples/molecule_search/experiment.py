@@ -59,7 +59,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
             add_atom, delete_atom, replace_atom, replace_bond, delete_bond, cut_atom
         ],
         crossover_types=[CrossoverTypesEnum.none],
-        adaptive_mutation_type = MutationAgentTypeEnum.bandit
+        adaptive_mutation_type=MutationAgentTypeEnum.bandit
     )
     graph_gen_params = GraphGenerationParams(
         adapter=MolAdapter(),
@@ -69,8 +69,8 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
 
     objective = Objective(
         quality_metrics={
-            # 'qed_score': qed_score,
-            # 'cl_score': cl_score,
+            'qed_score': qed_score,
+            'cl_score': cl_score,
             'norm_sa_score': normalized_sa_score,
             'penalised_logp': penalised_logp,
         },
@@ -102,7 +102,7 @@ def visualize(molecules: Iterable[MolGraph], history: OptHistory, metric_names: 
 
 
 if __name__ == '__main__':
-    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=4))
+    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=10))
     found_graphs = optimizer.optimise(objective)
     molecules = [MolAdapter().restore(graph) for graph in found_graphs]
     visualize(molecules, optimizer.history, metric_names=objective.metric_names[:2])
