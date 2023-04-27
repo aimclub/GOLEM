@@ -12,7 +12,7 @@ from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import add_atom, delete_atom, replace_atom, replace_bond, delete_bond, \
     cut_atom, insert_carbon, remove_group, move_group
-from examples.molecule_search.molecule_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score
+from examples.molecule_search.mol_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer

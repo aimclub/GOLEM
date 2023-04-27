@@ -1,12 +1,11 @@
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Optional
 
 import networkx as nx
 import numpy as np
-from rdkit.Chem import GetPeriodicTable
-from rdkit.Chem.rdchem import Atom, BondType
+from rdkit.Chem.rdchem import Atom, Bond
 
-from examples.molecule_search.constants import SULFUR_DEFAULT_VALENCE
 from examples.molecule_search.mol_graph import MolGraph
+from examples.molecule_search.utils import get_default_valence, get_free_electrons_num
 from golem.core.optimisers.advisor import DefaultChangeAdvisor
 
 
@@ -30,17 +29,19 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
         return atom_types_to_replace
 
     @staticmethod
-    def propose_connection_point(mol_graph: MolGraph, bond_type: BondType = BondType.SINGLE) -> Sequence[int]:
+    def propose_connection_point(mol_graph: MolGraph, bond: Optional[Bond] = None) -> Sequence[int]:
         """
-        Proposes atoms new atom or function group can connect to - atoms must have zero formal charge and free electrons.
+        Proposes atoms new atom or functional group can connect to -
+        atoms must have zero formal charge and free electrons.
         """
         molecule = mol_graph.get_rw_molecule()
         atoms = molecule.GetAtoms()
         free_electrons_vector = np.array([get_free_electrons_num(atom) for atom in atoms])
         formal_charge_vector = np.array([atom.GetFormalCharge() for atom in atoms])
         atom_ids = np.arange(mol_graph.heavy_atoms_number)
-        return list(atom_ids[(formal_charge_vector == 0)
-                             & (free_electrons_vector >= int(bond_type.GetBondTypeAsDouble()))])
+
+        bond_degree = bond.GetBondTypeAsDouble() if bond else 1  # BondType.SINGLE is used by default
+        return list(atom_ids[(formal_charge_vector == 0) & (free_electrons_vector >= int(bond_degree))])
 
     @staticmethod
     def propose_atom_removal(mol_graph: MolGraph) -> Sequence[int]:
@@ -135,20 +136,3 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
             if can_be_disconnected:
                 groups.extend([bridge, bridge[::-1]])
         return groups
-
-
-def get_default_valence(atom_type: str) -> int:
-    if atom_type == "S":
-        default_valence = SULFUR_DEFAULT_VALENCE
-    else:
-        default_valence = GetPeriodicTable().GetDefaultValence(atom_type)
-    return default_valence
-
-
-def get_free_electrons_num(atom: Atom) -> int:
-    atom.UpdatePropertyCache()
-    atom_type = atom.GetSymbol()
-    default_valence = get_default_valence(atom_type)
-    explicit_valence = atom.GetExplicitValence()
-    free_electrons = default_valence - explicit_valence
-    return free_electrons

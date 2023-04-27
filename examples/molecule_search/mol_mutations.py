@@ -1,12 +1,9 @@
-from copy import deepcopy
 from random import choice
 from typing import Optional
 
-import networkx as nx
-
-from examples.molecule_search.mol_advisor import get_free_electrons_num
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
+from examples.molecule_search.utils import get_free_electrons_num, get_functional_group
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
 
@@ -129,13 +126,10 @@ def remove_group(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
                  graph_gen_params: GraphGenerationParams,
                  parameters: Optional[AlgorithmParameters] = None):
-    nx_graph = mol_graph.get_nx_graph()
     bridges_to_remove = graph_gen_params.advisor.propose_group(mol_graph)
     if bridges_to_remove:
         bridge = choice(bridges_to_remove)
-        disconnected_graph = deepcopy(nx_graph)
-        disconnected_graph.remove_edge(*bridge)
-        group = list(nx.node_connected_component(disconnected_graph, bridge[1]))
+        group = get_functional_group(mol_graph, bridge)
         for atom_id in sorted(group, reverse=True):
             mol_graph.remove_atom(atom_id, update_representation=False)
         mol_graph.update_representation()
@@ -151,10 +145,7 @@ def move_group(mol_graph: MolGraph,
     if bridges_to_move:
         bridge = choice(bridges_to_move)
         current_bond = molecule.GetBondBetweenAtoms(*bridge)
-
-        disconnected_graph = deepcopy(mol_graph.get_nx_graph())
-        disconnected_graph.remove_edge(*bridge)
-        group = set(nx.node_connected_component(disconnected_graph, bridge[1]))
+        group = get_functional_group(mol_graph, bridge)
 
         atoms_to_reconnect_to = graph_gen_params.advisor.propose_connection_point(mol_graph, current_bond)
         atoms_to_reconnect_to = [atom_idx for atom_idx in atoms_to_reconnect_to if atom_idx not in group.union(bridge)]
