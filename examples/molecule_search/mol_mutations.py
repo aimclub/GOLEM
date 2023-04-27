@@ -12,19 +12,19 @@ def add_atom(mol_graph: MolGraph,
              requirements: MolGraphRequirements,
              graph_gen_params: GraphGenerationParams,
              parameters: Optional[AlgorithmParameters] = None):
+    """ Adds new atom to a molecule. """
     atoms_to_connect = graph_gen_params.advisor.propose_connection_point(mol_graph)
     if atoms_to_connect and mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
         connect_to_atom_id = int(choice(atoms_to_connect))
         connect_to_atom = mol_graph.get_rw_molecule().GetAtomWithIdx(connect_to_atom_id)
 
         atom_types_to_add = graph_gen_params.advisor.propose_parent(connect_to_atom, requirements.available_atom_types)
-
         if atom_types_to_add:
-            atom_type_to_add = choice(atom_types_to_add)
-            mol_graph.add_atom(atom_type_to_add)
+            new_atom = choice(atom_types_to_add)
+            mol_graph.add_atom(new_atom)
 
             new_atom_id = mol_graph.heavy_atoms_number - 1
-            mol_graph.set_bond(connect_to_atom_id, new_atom_id)
+            mol_graph.set_bond(new_atom_id, connect_to_atom_id)
             return mol_graph
     else:
         return mol_graph
@@ -34,6 +34,7 @@ def delete_atom(mol_graph: MolGraph,
                 requirements: GraphRequirements,
                 graph_gen_params: GraphGenerationParams,
                 parameters: Optional[AlgorithmParameters] = None):
+    """ Removes atom from a molecule """
     atoms_to_delete = graph_gen_params.advisor.propose_atom_removal(mol_graph)
     if atoms_to_delete:
         atom_to_delete_id = int(choice(atoms_to_delete))
@@ -45,6 +46,7 @@ def replace_atom(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
                  graph_gen_params: GraphGenerationParams,
                  parameters: Optional[AlgorithmParameters] = None):
+    """ Replaces one atom with another """
     atom_to_replace = choice(mol_graph.get_rw_molecule().GetAtoms())
     possible_substitutions = graph_gen_params.advisor.propose_change(atom_to_replace, requirements.available_atom_types)
     if possible_substitutions:
@@ -57,6 +59,7 @@ def replace_bond(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
                  graph_gen_params: GraphGenerationParams,
                  parameters: Optional[AlgorithmParameters] = None):
+    """ Changes degree of a bond """
     molecule = mol_graph.get_rw_molecule()
     atom_pairs_to_connect = graph_gen_params.advisor.propose_connection(mol_graph)
 
@@ -83,6 +86,7 @@ def delete_bond(mol_graph: MolGraph,
                 requirements: GraphRequirements,
                 graph_gen_params: GraphGenerationParams,
                 parameters: Optional[AlgorithmParameters] = None):
+    """ Deletes a bond """
     atom_pairs_to_disconnect = graph_gen_params.advisor.propose_disconnection(mol_graph)
     if atom_pairs_to_disconnect:
         pair_to_disconnect = choice(atom_pairs_to_disconnect)
@@ -94,13 +98,14 @@ def cut_atom(mol_graph: MolGraph,
              requirements: GraphRequirements,
              graph_gen_params: GraphGenerationParams,
              parameters: Optional[AlgorithmParameters] = None):
+    """ Removes an atom if it has only two neighbors and the neighbors are disconnected.
+    Neighbors are connected after the atom removal. """
     atoms_to_cut = graph_gen_params.advisor.propose_cut(mol_graph)
     molecule = mol_graph.get_rw_molecule()
     if atoms_to_cut:
         atom_to_cut = choice(atoms_to_cut)
+        print(atom_to_cut)
         neighbors_id = [neighbor.GetIdx() for neighbor in molecule.GetAtomWithIdx(atom_to_cut).GetNeighbors()]
-        mol_graph.remove_bond(neighbors_id[0], atom_to_cut, update_representation=False)
-        mol_graph.remove_bond(neighbors_id[1], atom_to_cut, update_representation=False)
         mol_graph.set_bond(*neighbors_id, update_representation=False)
         mol_graph.remove_atom(atom_to_cut)
     return mol_graph
@@ -110,15 +115,15 @@ def insert_carbon(mol_graph: MolGraph,
                   requirements: MolGraphRequirements,
                   graph_gen_params: GraphGenerationParams,
                   parameters: Optional[AlgorithmParameters] = None):
-    if mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
-        bonds_to_split = graph_gen_params.advisor.propose_bond_to_split(mol_graph)
-        if bonds_to_split:
-            bond_to_split = choice(bonds_to_split)
-            mol_graph.remove_bond(*bond_to_split, update_representation=False)
-            mol_graph.add_atom('C')
-            carbon_id = mol_graph.heavy_atoms_number - 1
-            mol_graph.set_bond(bond_to_split[0], carbon_id, update_representation=False)
-            mol_graph.set_bond(bond_to_split[1], carbon_id)
+    """ Inserts carbon between two connected atoms splitting the bond between them. """
+    bonds_to_split = graph_gen_params.advisor.propose_bond_to_split(mol_graph)
+    if bonds_to_split and mol_graph.heavy_atoms_number < requirements.max_heavy_atoms:
+        bond_to_split = choice(bonds_to_split)
+        mol_graph.remove_bond(*bond_to_split, update_representation=False)
+        mol_graph.add_atom('C')
+        carbon_id = mol_graph.heavy_atoms_number - 1
+        mol_graph.set_bond(bond_to_split[0], carbon_id, update_representation=False)
+        mol_graph.set_bond(bond_to_split[1], carbon_id)
     return mol_graph
 
 
@@ -126,6 +131,7 @@ def remove_group(mol_graph: MolGraph,
                  requirements: MolGraphRequirements,
                  graph_gen_params: GraphGenerationParams,
                  parameters: Optional[AlgorithmParameters] = None):
+    """ Removes a functional group. """
     bridges_to_remove = graph_gen_params.advisor.propose_group(mol_graph)
     if bridges_to_remove:
         bridge = choice(bridges_to_remove)
@@ -140,6 +146,7 @@ def move_group(mol_graph: MolGraph,
                requirements: MolGraphRequirements,
                graph_gen_params: GraphGenerationParams,
                parameters: Optional[AlgorithmParameters] = None):
+    """ Moves a functional group to another atom. """
     molecule = mol_graph.get_rw_molecule()
     bridges_to_move = graph_gen_params.advisor.propose_group(mol_graph)
     if bridges_to_move:

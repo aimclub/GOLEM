@@ -245,8 +245,7 @@ def single_drop_mutation(graph: OptGraph,
         graph.delete_node(node_to_del)
         nodes_to_delete = \
             [n for n in graph.nodes
-             if n.descriptive_id.count('data_source') == 1
-             and node_name in n.descriptive_id]
+             if n.descriptive_id.count('data_source') == 1 and node_name in n.descriptive_id]
         for child_node in nodes_to_delete:
             graph.delete_node(child_node, reconnect=ReconnectType.all)
     elif removal_type == RemoveType.with_parents:

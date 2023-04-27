@@ -32,7 +32,7 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
     def propose_connection_point(mol_graph: MolGraph, bond: Optional[Bond] = None) -> Sequence[int]:
         """
         Proposes atoms new atom or functional group can connect to -
-        atoms must have zero formal charge and free electrons.
+        atoms must have zero formal charge and enough free electrons.
         """
         molecule = mol_graph.get_rw_molecule()
         atoms = molecule.GetAtoms()
@@ -41,7 +41,7 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
         atom_ids = np.arange(mol_graph.heavy_atoms_number)
 
         bond_degree = bond.GetBondTypeAsDouble() if bond else 1  # BondType.SINGLE is used by default
-        return list(atom_ids[(formal_charge_vector == 0) & (free_electrons_vector >= int(bond_degree))])
+        return list(atom_ids[(formal_charge_vector == 0) & (free_electrons_vector >= bond_degree)])
 
     @staticmethod
     def propose_atom_removal(mol_graph: MolGraph) -> Sequence[int]:
@@ -97,9 +97,9 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
         for atom in molecule.GetAtoms():
             neighbors = atom.GetNeighbors()
             if len(neighbors) == 2:
-                if (not molecule.GetBondBetweenAtoms(neighbors[0].GetIdx(), neighbors[1].GetIdx())
-                        and neighbors[0].GetFormalCharge() == 0
-                        and neighbors[1].GetFormalCharge() == 0):
+                if (not molecule.GetBondBetweenAtoms(neighbors[0].GetIdx(), neighbors[1].GetIdx()) and
+                        neighbors[0].GetFormalCharge() == 0 and
+                        neighbors[1].GetFormalCharge() == 0):
                     atoms_to_cut.append(atom.GetIdx())
         return atoms_to_cut
 
@@ -119,8 +119,8 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
     @staticmethod
     def propose_group(mol_graph: MolGraph) -> List[Tuple[int, int]]:
         """
-        Proposes functional groups that can be operated. Group is a connected subgraph that is connected to the rest of the graph
-        by only one bond.
+        Proposes functional groups that can be operated. Group is a connected subgraph that is connected
+        to the rest of the graph by only one bond.
 
         Returns:
             List of indices pairs which are endpoints of bridges. This bridges connect functional group to the molecule.
