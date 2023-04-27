@@ -3,7 +3,6 @@ from functools import partial
 from typing import Type, Optional, Sequence
 
 import networkx as nx
-
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
@@ -68,7 +67,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
         mutation_types=[
             MutationTypesEnum.single_add,
             MutationTypesEnum.single_edge,
-            MutationTypesEnum.single_drop,
+            MutationTypesEnum.single_drop
         ],
         crossover_types=[CrossoverTypesEnum.none]
     )
