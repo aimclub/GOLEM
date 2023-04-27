@@ -28,8 +28,7 @@ from golem.visualisation.opt_viz_extra import visualise_pareto
 
 def load_init_population(path=".\\data\\shingles\\guacamol_v1_all.smiles", objective=None):
     with open(path, "r") as f:
-        smiles_list = random.sample(f.readlines(), 100)
-        print(smiles_list)
+        smiles_list = random.sample(f.readlines(), 2000)
     init_pop = [MolGraph.from_smiles(smile) for smile in smiles_list]
     return init_pop
 
@@ -53,6 +52,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         n_jobs=-1
     )
     gp_params = GPAlgorithmParameters(
+        pop_size=2000,
         multi_objective=True,
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         mutation_types=[
@@ -110,7 +110,7 @@ def visualize(molecules: Iterable[MolGraph], history: OptHistory, metric_names: 
 
 
 if __name__ == '__main__':
-    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=5))
+    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=20))
     found_graphs = optimizer.optimise(objective)
     molecules = [MolAdapter().restore(graph) for graph in found_graphs]
     visualize(molecules, optimizer.history, metric_names=objective.metric_names[:2])

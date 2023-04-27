@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import networkx as nx
 from rdkit.Chem import GetPeriodicTable
-from rdkit.Chem.rdchem import Atom
+from rdkit.Chem.rdchem import Atom, RWMol
 from typing import Tuple, Set
 
 from examples.molecule_search.constants import SULFUR_DEFAULT_VALENCE
@@ -31,3 +31,11 @@ def get_functional_group(mol_graph: MolGraph, bridge: Tuple[int, int]) -> Set[in
     disconnected_graph.remove_edge(*bridge)
     group = nx.node_connected_component(disconnected_graph, bridge[1])
     return group
+
+
+def largest_ring_size(rw_molecule: RWMol) -> int:
+    largest_cycle_len = 0
+    cycle_list = rw_molecule.GetRingInfo().AtomRings()
+    if cycle_list:
+        largest_cycle_len = max(list(map(len, cycle_list)))
+    return largest_cycle_len

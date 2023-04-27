@@ -8,7 +8,10 @@ from rdkit.Chem.QED import qed
 from rdkit.Chem.rdchem import RWMol
 from typing import Dict
 
+from examples.molecule_search.constants import ZINC_LOGP_MEAN, ZINC_LOGP_STD, ZINC_SA_MEAN, ZINC_SA_STD, \
+    ZINC_CYCLE_MEAN, ZINC_CYCLE_STD
 from examples.molecule_search.mol_graph import MolGraph
+from examples.molecule_search.utils import largest_ring_size
 from golem.core.paths import project_root
 
 sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
@@ -44,27 +47,43 @@ def sa_score(mol_graph: MolGraph) -> float:
 
 
 def penalised_logp(mol_graph: MolGraph) -> float:
-    """LogP (Octanol-Water Partition Coefficient) is a measure of the lipophilicity,
+    """ LogP penalized by SA and length of long cycles, as described in (Kusner et al. 2017).
+    LogP (Octanol-Water Partition Coefficient) is a measure of the lipophilicity,
     or ability to dissolve in lipids, of a molecule. It is commonly used to predict the bioavailability
     and pharmacokinetic properties of drugs.
 
     This version is penalized by SA score and the length of the largest cycle.
     """
 
-    def largest_ring_size(rw_molecule: RWMol) -> int:
-        largest_cycle_len = 0
-        cycle_list = rw_molecule.GetRingInfo().AtomRings()
-        if cycle_list:
-            largest_cycle_len = max(list(map(len, cycle_list)))
-        return largest_cycle_len
-
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     log_p = Descriptors.MolLogP(molecule)
     sa_score = sascorer.calculateScore(molecule)
-    largest_ring_size = largest_ring_size(molecule)
-    cycle_score = max(largest_ring_size - 6, 0)
+    largest_ring = largest_ring_size(molecule)
+    cycle_score = max(largest_ring - 6, 0)
     score = log_p - sa_score - cycle_score
     return -score
+
+
+def normalized_logp(mol_graph: MolGraph) -> float:
+    """Normalized LogP based on the statistics of 250k_rndm_zinc_drugs_clean.smi dataset.
+
+    Original code: https://github.com/bowenliu16/rl_graph_generation/blob/master/gym-molecule/gym_molecule/envs/molecule.py
+    """
+    molecule = mol_graph.get_rw_molecule(aromatic=True)
+
+    logp = Descriptors.MolLogP(molecule)
+    sa = -sascorer.calculateScore(molecule)
+
+    largest_ring = largest_ring_size(molecule)
+    cycle_score = max(largest_ring - 6, 0)
+
+    norm_logp = (logp - ZINC_LOGP_MEAN) / ZINC_LOGP_STD
+    normalized_sa = (sa - ZINC_SA_MEAN) / ZINC_SA_STD
+    normalized_cycle = (cycle_score - ZINC_CYCLE_MEAN) / ZINC_CYCLE_STD
+
+    score = norm_logp + normalized_sa + normalized_cycle
+
+    return score
 
 
 def normalized_sa_score(mol_graph: MolGraph) -> float:
@@ -97,7 +116,7 @@ def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted
 
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     db_shingles = load_shingles(rooted)
-    qry_shingles = _extract_shingles(molecule, radius, rooted)
+    qry_shingles = extract_shingles(molecule, radius, rooted)
 
     # calculate shingle count averaged score
     avg_score = 0
@@ -131,7 +150,7 @@ def load_shingles(rooted: bool = True) -> Dict:
     return db_shingles
 
 
-def _extract_shingles(molecule: RWMol, radius: int = 3, rooted: bool = True) -> set:
+def extract_shingles(molecule: RWMol, radius: int = 3, rooted: bool = True) -> set:
     qry_shingles = set()
 
     radius_constr = radius + 1
