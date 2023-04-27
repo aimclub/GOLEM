@@ -11,7 +11,7 @@ from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import add_atom, delete_atom, replace_atom, replace_bond, delete_bond, \
-    cut_atom, insert_carbon, remove_group
+    cut_atom, insert_carbon, remove_group, move_group
 from examples.molecule_search.molecule_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
@@ -63,7 +63,8 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
             delete_bond,
             cut_atom,
             insert_carbon,
-            remove_group
+            remove_group,
+            move_group
         ],
         crossover_types=[CrossoverTypesEnum.none],
         adaptive_mutation_type=MutationAgentTypeEnum.bandit
@@ -109,7 +110,7 @@ def visualize(molecules: Iterable[MolGraph], history: OptHistory, metric_names: 
 
 
 if __name__ == '__main__':
-    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=10))
+    optimizer, objective = molecule_search_setup(timeout=timedelta(minutes=5))
     found_graphs = optimizer.optimise(objective)
     molecules = [MolAdapter().restore(graph) for graph in found_graphs]
     visualize(molecules, optimizer.history, metric_names=objective.metric_names[:2])

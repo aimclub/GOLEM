@@ -1,10 +1,9 @@
-from copy import deepcopy
 from typing import List, Sequence, Tuple
 
 import networkx as nx
 import numpy as np
 from rdkit.Chem import GetPeriodicTable
-from rdkit.Chem.rdchem import Atom
+from rdkit.Chem.rdchem import Atom, BondType
 
 from examples.molecule_search.constants import SULFUR_DEFAULT_VALENCE
 from examples.molecule_search.mol_graph import MolGraph
@@ -31,16 +30,17 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
         return atom_types_to_replace
 
     @staticmethod
-    def propose_connection_point(mol_graph: MolGraph) -> Sequence[int]:
+    def propose_connection_point(mol_graph: MolGraph, bond_type: BondType = BondType.SINGLE) -> Sequence[int]:
         """
-        Proposes atoms new atom can connect to - atoms must have zero formal charge and free electrons.
+        Proposes atoms new atom or function group can connect to - atoms must have zero formal charge and free electrons.
         """
         molecule = mol_graph.get_rw_molecule()
         atoms = molecule.GetAtoms()
         free_electrons_vector = np.array([get_free_electrons_num(atom) for atom in atoms])
         formal_charge_vector = np.array([atom.GetFormalCharge() for atom in atoms])
         atom_ids = np.arange(mol_graph.heavy_atoms_number)
-        return list(atom_ids[(formal_charge_vector == 0) & (free_electrons_vector > 0)])
+        return list(atom_ids[(formal_charge_vector == 0)
+                             & (free_electrons_vector >= int(bond_type.GetBondTypeAsDouble()))])
 
     @staticmethod
     def propose_atom_removal(mol_graph: MolGraph) -> Sequence[int]:
@@ -116,27 +116,25 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
         return bonds_to_split
 
     @staticmethod
-    def propose_group_removal(mol_graph: MolGraph) -> List[List[int]]:
+    def propose_group(mol_graph: MolGraph) -> List[Tuple[int, int]]:
         """
-        Proposes groups that can be removed. Group is a connected subgraph that is connected to the rest of the graph
+        Proposes functional groups that can be operated. Group is a connected subgraph that is connected to the rest of the graph
         by only one bond.
+
+        Returns:
+            List of indices pairs which are endpoints of bridges. This bridges connect functional group to the molecule.
+            The second index of each pair belongs to the functional group.
         """
         molecule = mol_graph.get_rw_molecule()
         nx_graph = mol_graph.get_nx_graph()
-        bridges = set(nx.bridges(nx_graph))
-        groups_to_remove = []
-        for bridge in bridges:
+        groups = []
+        for bridge in nx.bridges(nx_graph):
             from_atom = molecule.GetAtomWithIdx(bridge[0])
             to_atom = molecule.GetAtomWithIdx(bridge[1])
             can_be_disconnected = to_atom.GetFormalCharge() == 0 and from_atom.GetFormalCharge() == 0
             if can_be_disconnected:
-                disconnected_graph = deepcopy(nx_graph)
-                disconnected_graph.remove_edge(*bridge)
-                first_group = list(nx.node_connected_component(disconnected_graph, bridge[0]))
-                second_group = list(nx.node_connected_component(disconnected_graph, bridge[1]))
-                groups_to_remove.extend([first_group, second_group])
-        return groups_to_remove
-
+                groups.extend([bridge, bridge[::-1]])
+        return groups
 
 
 def get_default_valence(atom_type: str) -> int:
