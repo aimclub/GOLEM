@@ -34,7 +34,7 @@ class GraphStructuralAnalysis:
     :param approaches: methods applied to graph. Default: None
     :param requirements: extra requirements to define specific details for different approaches.\
     See StructuralAnalysisRequirements class documentation.
-    :param path_to_save: path to save results to. Default: ~home/Fedot/structural/
+    :param path_to_save: path to save results to. Default: ~home/Golem/structural/
     Default: False
     """
 
@@ -115,11 +115,11 @@ class GraphStructuralAnalysis:
         return result
 
     def optimize(self, graph_: Graph,
-                 n_jobs: int = 1, timer: OptimisationTimer = None,
+                 n_jobs: int = 1, timer: OptimisationTimer = (),
                  max_iter: int = 10) -> Tuple[Graph, SAAnalysisResults]:
         """ Optimizes graph by applying 'analyze' method and deleting/replacing parts
         of graph iteratively
-        :param graph: graph object to analyze.
+        :param graph_: graph object to analyze.
         :param n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's).
         Tip: if specified graph isn't huge (as NN, for example) than set n_jobs to default value.
         :param timer: timer with timeout left for optimization.

@@ -24,9 +24,14 @@ from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysi
 
 class NodeAnalysis:
     """
+    Class designated for Structural Analysis on one node level.
+
+    :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeTuneAnalyze, NodeReplaceOperationAnalyze]
-    :param path_to_save: path to save results to. Default: ~home/Fedot/structural
+    :param approaches_requirements: extra requirements to define specific details for different approaches.\
+    See StructuralAnalysisRequirements class documentation.
+    :param path_to_save: path to save results to. Default: ~home/Golem/structural
     """
 
     def __init__(self, node_factory: Any,
@@ -64,6 +69,10 @@ class NodeAnalysis:
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
+                # to fill uncalculated approaches with default results
+                approaches_left = self.approaches[self.approaches.index(approach):]
+                for approach_left in approaches_left:
+                    results.add_result(approach_left.get_default_results(len_obj=len(objective.metrics)))
                 break
 
             results.add_result(approach(graph=graph,
@@ -155,6 +164,13 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
             return None
 
         return graph_sample
+
+    @staticmethod
+    def get_default_results(len_obj: int):
+        res = DeletionSAApproachResult()
+        res.add_results(metrics_values=len_obj*[-2.0])
+        return res
+
 
 
 class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
@@ -259,6 +275,12 @@ class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
 
         return random_nodes
 
+    @staticmethod
+    def get_default_results(len_obj: int):
+        res = ReplaceSAApproachResult()
+        res.add_results(entity_to_replace_to='none', metrics_values=len_obj*[-2.0])
+        return res
+
 
 class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
     """
@@ -324,3 +346,9 @@ class SubtreeDeletionAnalyze(NodeAnalyzeApproach):
             return None
 
         return graph_sample
+
+    @staticmethod
+    def get_default_results(len_obj: int):
+        res = DeletionSAApproachResult()
+        res.add_results(metrics_values=len_obj*[-2.0])
+        return res

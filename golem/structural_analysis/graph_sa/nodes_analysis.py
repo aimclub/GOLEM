@@ -15,16 +15,15 @@ from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysi
 
 class NodesAnalysis:
     """
-    This class is for nodes structural analysis within a Graph .
-    It takes nodes and approaches to be applied to chosen nodes.
-    To define which nodes to analyze pass them to nodes_to_analyze filed
-    or all nodes will be analyzed.
+    This class is for nodes structural analysis within a Graph. It takes nodes and
+    approaches to be applied to chosen nodes.
+    To define which nodes to analyze pass them to nodes_to_analyze filed or all nodes will be analyzed.
 
     :param objective: objective functions for computing metric values
     :param node_factory: node factory to advise changes from available operations and models
     :param approaches: methods applied to nodes to modify the graph or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
-    :param path_to_save: path to save results to. Default: ~home/Fedot/structural
+    :param path_to_save: path to save results to. Default: ~home/Golem/structural
     """
 
     def __init__(self, objective: Objective,
