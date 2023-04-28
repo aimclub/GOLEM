@@ -1,7 +1,8 @@
-from typing import Union, Callable
+from typing import Union, Callable, Sequence, Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
 from numpy._typing import ArrayLike
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT
@@ -16,6 +17,58 @@ def compute_fitness_diversity(population: PopulationT) -> np.ndarray:
     # compute std along each axis while ignoring nan-s
     diversity = np.nanstd(fitness_values, axis=0)
     return diversity
+
+
+def plot_diversity_dynamic_gif(history: OptHistory,
+                               filename: Optional[str] = None,
+                               nbins: int = 8) -> FuncAnimation:
+    metric_names = history.objective.metric_names
+    # dtype=float removes None, puts np.nan
+    # indexed by [population, individual, metric]
+    fitness_values = np.array([[ind.fitness.values for ind in pop]
+                               for pop in history.individuals], dtype=float)
+    # indexed by [population, metric, individual]
+    fitness_distrib = fitness_values.swapaxes(1, 2)
+
+    # Setup the plot
+    fig, axs = plt.subplots(ncols=len(metric_names))
+    fig.suptitle('Population diversity by metric')
+    np.ravel(axs)
+    for ax, metric_name in zip(axs, metric_names):
+        ax: plt.Axes
+        ax.set_title(metric_name)
+        ax.set_xlabel('Metric value')
+        ax.set_ylabel('Individuals')
+        ax.grid()
+        ax.legend()
+
+    # Create artists for each axis
+    artists = []
+    initial_pop = fitness_distrib[0]
+    for ax, pop_metrics in zip(axs, initial_pop):
+        _, _, bar_container = ax.hist(pop_metrics, bins=nbins, linewidth=0.5, edgecolor="white")
+        artists.append(bar_container)
+
+    # Set update function for updating data on artists of the axes
+    def update_axes(iframe: int):
+        next_pop_metrics = fitness_distrib[iframe]
+        for artist, metric_distrib in zip(artists, next_pop_metrics):
+            n, _ = np.histogram(metric_distrib, nbins)
+            for count, rect in zip(n, artist.patches):
+                rect.set_height(count)
+
+    # Run this function in FuncAnimation
+    num_frames = len(fitness_distrib)
+    animate = FuncAnimation(
+        fig=fig,
+        func=update_axes,
+        save_count=num_frames,
+        interval=40,
+    )
+    # Save the GIF from animation
+    if filename:
+        animate.save(filename, fps=10, dpi=100)
+    return animate
 
 
 def plot_diversity_dynamic(history: OptHistory, show=True):
