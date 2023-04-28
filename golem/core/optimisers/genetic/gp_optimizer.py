@@ -81,14 +81,14 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
             if len(initial_individuals) == self.graph_optimizer_params.pop_size:
                 break
-            new_ind = self.mutation(choice(self.initial_individuals))
+            new_ind = self.mutation(choice(initial_individuals))
             new_graph = new_ind.graph
-            if new_graph not in initial_graphs and self.graph_generation_params.verifier(new_graph):
+            if new_graph not in initial_graphs:
                 initial_individuals.append(new_ind)
                 initial_graphs.append(new_graph)
         else:
             self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
-                             f'Current size {len(self.initial_individuals)} '
+                             f'Current size {len(initial_individuals)} '
                              f'instead of {self.graph_optimizer_params.pop_size} graphs.')
 
         self.mutation.update_requirements(requirements=self.requirements)

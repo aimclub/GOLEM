@@ -38,7 +38,7 @@ def load_init_population(path=".\\data\\shingles\\guacamol_v1_all.smiles", pop_s
 
 def get_methane():
     methane = 'C'
-    return [MolGraph.from_smiles(methane)]
+    return MolGraph.from_smiles(methane)
 
 
 def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
@@ -64,7 +64,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         pop_size=pop_size,
         max_pop_size=pop_size,
         multi_objective=True,
-        genetic_scheme_type=GeneticSchemeTypesEnum.generational,
+        genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
         mutation_types=[
             add_atom,
             delete_atom,
@@ -77,7 +77,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
             move_group
         ],
         crossover_types=[CrossoverTypesEnum.none],
-        adaptive_mutation_type=MutationAgentTypeEnum.bandit
+        adaptive_mutation_type=MutationAgentTypeEnum.default
     )
     graph_gen_params = GraphGenerationParams(
         adapter=MolAdapter(),
@@ -97,7 +97,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
     )
 
     # initial_graphs = load_init_population(pop_size=gp_params.pop_size)
-    initial_graphs = get_methane()
+    initial_graphs = [get_methane()]
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Build the optimizer
@@ -130,7 +130,7 @@ def visualize(molecules: Iterable[MolGraph], objective: Objective, history: OptH
 if __name__ == '__main__':
     optimizer, objective = molecule_search_setup(max_heavy_atoms=38,
                                                  num_iterations=1500,
-                                                 pop_size=1000)
+                                                 pop_size=10)
     found_graphs = optimizer.optimise(objective)
     molecules = [MolAdapter().restore(graph) for graph in found_graphs]
     visualize(set(molecules), objective, optimizer.history)

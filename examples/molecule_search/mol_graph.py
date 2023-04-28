@@ -146,3 +146,6 @@ class MolGraph:
 
     def __hash__(self):
         return hash(MolToInchi(self.get_rw_molecule(aromatic=True)))
+
+    def __str__(self):
+        return self.get_smiles()
