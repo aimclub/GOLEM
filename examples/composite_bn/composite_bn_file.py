@@ -14,7 +14,7 @@ from copy import deepcopy
 import pandas as pd
 from random import choice, sample
 from sklearn import preprocessing
-import bamt.Preprocessors as pp
+import bamt.preprocessors as pp
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
 from golem.core.adapter import DirectAdapter
@@ -30,7 +30,9 @@ from pgmpy.estimators import K2Score
 from math import ceil
 from composite_model import CompositeModel
 from composite_node import CompositeNode
-import bamt.Networks as Nets
+from bamt.networks.hybrid_bn import HybridBN
+from bamt.networks.discrete_bn import DiscreteBN
+from bamt.networks.continuous_bn import ContinuousBN
 from scipy.stats import norm
 from numpy import std, mean, log
 from sklearn.metrics import mean_squared_error
@@ -459,11 +461,11 @@ def run_example():
 
         bn = []
         if 'cont' in p.info['types'].values() and ('disc' in p.info['types'].values() or 'disc_num' in p.info['types'].values()):
-            bn = Nets.HybridBN(has_logit=False, use_mixture=False)
+            bn = HybridBN(has_logit=False, use_mixture=False)
         elif 'disc' in p.info['types'].values() or 'disc_num' in p.info['types'].values():
-            bn = Nets.DiscreteBN()
+            bn = DiscreteBN()
         elif 'cont' in p.info['types'].values():
-            bn = Nets.ContinuousBN(use_mixture=False)  
+            bn = ContinuousBN(use_mixture=False)  
 
         bn.add_nodes(p.info)
         bn.set_structure(edges=structure)
@@ -551,13 +553,13 @@ def run_example():
         
         types=list(p.info['types'].values())
         if 'cont' in types and ('disc' in types or 'disc_num' in types):
-            bn = Nets.HybridBN(has_logit=False, use_mixture=False)
+            bn = HybridBN(has_logit=False, use_mixture=False)
             rules = [has_no_self_cycled_nodes, has_no_cycle, _has_no_duplicates]
         elif 'disc' in types or 'disc_num' in types:
-            bn = Nets.DiscreteBN()
+            bn = DiscreteBN()
             rules = [has_no_self_cycled_nodes, has_no_cycle, _has_no_duplicates]
         elif 'cont' in types:
-            bn = Nets.ContinuousBN(use_mixture=False)
+            bn = ContinuousBN(use_mixture=False)
             rules = [has_no_self_cycled_nodes, has_no_cycle, _has_no_duplicates]
 
         bn.add_nodes(p.info)

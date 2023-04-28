@@ -1,11 +1,13 @@
-from bn_model import BNModel
+from composite_model import CompositeModel
 from copy import deepcopy
 from math import ceil
-from random import choice, sample, randint
+from random import choice, sample
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from itertools import chain
+from ML import ML_models
 
-def custom_crossover_exchange_edges(graph_first: BNModel, graph_second: BNModel, max_depth):
+
+def custom_crossover_exchange_edges(graph_first: CompositeModel, graph_second: CompositeModel, max_depth):
 
     num_cros = 100
     try:
@@ -50,7 +52,7 @@ def custom_crossover_exchange_edges(graph_first: BNModel, graph_second: BNModel,
         print(ex)
     return new_graph_first, new_graph_second
 
-def custom_crossover_exchange_parents_both(graph_first: BNModel, graph_second: BNModel, max_depth):
+def custom_crossover_exchange_parents_both(graph_first: CompositeModel, graph_second: CompositeModel, max_depth):
 
     
     num_cros = 100
@@ -110,52 +112,39 @@ def custom_crossover_exchange_parents_both(graph_first: BNModel, graph_second: B
         print(ex)    
     return new_graph_first, new_graph_second
 
+def custom_crossover_all_model(graph_first: CompositeModel, graph_second: CompositeModel, max_depth):
 
-def custom_crossover_exchange_parents_one(graph_first, graph_second, max_depth):
-    
-
+        
     num_cros = 100
     try:
         for _ in range(num_cros):
+            selected_node1=choice(graph_first.nodes)
+            if selected_node1.nodes_from == None or selected_node1.nodes_from == []:
+                continue
+            
+            selected_node2=graph_second.get_nodes_by_name(str(selected_node1))[0]           
+            if selected_node2.nodes_from == None or selected_node2.nodes_from == []:
+                continue            
 
-            old_edges1 = []
-            new_graph_first=deepcopy(graph_first)
+            model1 = selected_node1.content['parent_model']
+            model2 = selected_node2.content['parent_model']
 
-            edges = graph_second.operator.get_edges()
-            flatten_edges = list(chain(*edges))
-            nodes_with_parent_or_child=list(set(flatten_edges))
-            if nodes_with_parent_or_child!=[]:
-                
-                selected_node=choice(nodes_with_parent_or_child)
-                parents=selected_node.nodes_from
-                
-                node_from_first_graph=new_graph_first.get_nodes_by_name(str(selected_node))[0]
-                
-                node_from_first_graph.nodes_from=[]
-                old_edges1 = new_graph_first.operator.get_edges()
-                
-                if parents!=[] and parents!=None:
-                    parents_in_first_graph=[new_graph_first.get_nodes_by_name(str(i))[0] for i in parents]
-                    for parent in parents_in_first_graph:
-                        if [parent, node_from_first_graph] not in old_edges1:
-                            new_graph_first.operator.connect_nodes(parent, node_from_first_graph)
+            selected_node1.content['parent_model'] = model2
+            selected_node2.content['parent_model'] = model1
 
-            if old_edges1 != new_graph_first.operator.get_edges():
-                break    
-        
-        if old_edges1 == new_graph_first.operator.get_edges() and parents!=[] and parents!=None:
-            new_graph_first = deepcopy(graph_first)                
+            break
 
     except Exception as ex:
         print(ex)
+    return graph_first, graph_second
 
-    return new_graph_first, graph_second
 
-
-def custom_mutation_add_structure(graph: BNModel, **kwargs):
-    count = 100
+# Структурные мутации
+# задаем три варианта мутации: добавление узла, удаление узла, разворот узла
+def custom_mutation_add_structure(graph: CompositeModel, **kwargs):
+    num_mut = 100
     try:
-        for _ in range(count):
+        for _ in range(num_mut):
             rid = choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
             other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
@@ -165,6 +154,8 @@ def custom_mutation_add_structure(graph: BNModel, **kwargs):
                                  [n.descriptive_id for n in ordered_subnodes_hierarchy(random_node)])
             if nodes_not_cycling:
                 other_random_node.nodes_from.append(random_node)
+                ml_models = ML_models()
+                other_random_node.content['parent_model'] = ml_models.get_model_by_children_type(other_random_node)                
                 break
 
     except Exception as ex:
@@ -172,52 +163,67 @@ def custom_mutation_add_structure(graph: BNModel, **kwargs):
     return graph
  
 
-def custom_mutation_delete_structure(graph: BNModel, **kwargs):
-    count = 100
+def custom_mutation_delete_structure(graph: CompositeModel, **kwargs):
+    num_mut = 100
     try:
-        for _ in range(count):
+        for _ in range(num_mut):
             rid = choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
             other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
             if random_node.nodes_from is not None and other_random_node in random_node.nodes_from:
                 random_node.nodes_from.remove(other_random_node)
+                if not random_node.nodes_from:
+                    random_node.content['parent_model'] = None                
                 break
     except Exception as ex:
         print(ex) 
     return graph
 
 
-def custom_mutation_reverse_structure(graph: BNModel, **kwargs):
-    count = 100
+def custom_mutation_reverse_structure(graph: CompositeModel, **kwargs):
+    num_mut = 100
     try:
-        for _ in range(count):
+        for _ in range(num_mut):
             rid = choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
             other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
             if random_node.nodes_from is not None and other_random_node in random_node.nodes_from:
                 random_node.nodes_from.remove(other_random_node)
+                if not random_node.nodes_from:
+                    random_node.content['parent_model'] = None                  
                 other_random_node.nodes_from.append(random_node)
+                ml_models = ML_models()
+                other_random_node.content['parent_model'] = ml_models.get_model_by_children_type(other_random_node)                
                 break         
     except Exception as ex:
         print(ex)  
     return graph
 
 
-def custom_mutation_change_node(graph: BNModel, **kwargs):
-
-    count = 100
+def custom_mutation_add_model(graph: CompositeModel, **kwargs):
     try:
-        for _ in range(count):
-            rid = choice(range(len(graph.nodes)))
-            random_node = graph.nodes[rid]
-            other_random_node = graph.nodes[choice(range(len(graph.nodes)))]
-            random_node_parents = [n for n in random_node.nodes_from]
-            other_random_node_parents = [n for n in other_random_node.nodes_from]
-            random_node.nodes_from = other_random_node_parents
-            other_random_node.nodes_from = random_node_parents
-            break
-
-
+        all_nodes = graph.nodes
+        nodes_with_parents = [node for node in all_nodes if (node.nodes_from!=[] and node.nodes_from!=None)]
+        if nodes_with_parents == []:
+            return graph
+        node = choice(nodes_with_parents)
+        ml_models = ML_models()
+        node.content['parent_model'] = ml_models.get_model_by_children_type(node)
     except Exception as ex:
-        graph.log.warn(f'Incorrect connection: {ex}')
+        print(ex)  
     return graph
+
+def mutation_set1(graph: CompositeModel, **kwargs):
+    return custom_mutation_add_model(custom_mutation_add_structure(graph, **kwargs))
+
+def mutation_set2(graph: CompositeModel, **kwargs): 
+    return custom_mutation_add_model(custom_mutation_delete_structure(graph, **kwargs))
+        
+def mutation_set3(graph: CompositeModel, **kwargs):
+    return custom_mutation_add_model(custom_mutation_reverse_structure(graph, **kwargs))
+
+def cross_set(graph_first: CompositeModel, graph_second: CompositeModel, max_depth):
+    g11, g12 = custom_crossover_exchange_parents_both(graph_first, graph_second, max_depth)
+    g21, g22 = custom_crossover_exchange_edges(g11, g12, max_depth)
+    g31, g32 = custom_crossover_all_model(g21, g22, max_depth)
+    return g31, g32

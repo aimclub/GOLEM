@@ -17,23 +17,15 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
+from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.objective.objective_eval import ObjectiveEvaluate
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from pgmpy.estimators import K2Score, BicScore
+from pgmpy.estimators import K2Score
 from bn_model import  BNModel
 from bn_node import BNNode
 from pgmpy.models import BayesianNetwork
-import seaborn as sns
-import matplotlib.pyplot as plt
-import bamt.networks as Nets
-from golem.core.dag.linked_graph import LinkedGraph
-from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
-from sklearn.linear_model import (LinearRegression as SklearnLinReg, LogisticRegression as SklearnLogReg)
 from bn_genetic_operators import (
-    custom_crossover_exchange_edges, 
-    custom_crossover_exchange_parents_both, 
-    custom_crossover_exchange_parents_one,
     custom_mutation_add_structure, 
     custom_mutation_delete_structure, 
     custom_mutation_reverse_structure)
@@ -57,43 +49,6 @@ def custom_metric(graph: BNModel, data: pd.DataFrame):
     return -score
 
 
-def connect_nodes(self, parent: BNNode, child: BNNode):
-    if child.descriptive_id not in [p.descriptive_id for p in ordered_subnodes_hierarchy(parent)]:
-        try:
-            if child.nodes_from==None or child.nodes_from==[]:
-                child.nodes_from = []
-                child.nodes_from.append(parent)               
-            else:                      
-                child.nodes_from.append(parent)
-        except Exception as ex:
-            print(ex)
-
-def disconnect_nodes(self, node_parent: BNNode, node_child: BNNode,
-                    clean_up_leftovers: bool = True):
-    if not node_child.nodes_from or node_parent not in node_child.nodes_from:
-        return
-    elif node_parent not in self._nodes or node_child not in self._nodes:
-        return
-    elif len(node_child.nodes_from) == 1:
-        node_child.nodes_from = None
-    else:
-        node_child.nodes_from.remove(node_parent)
-
-    if clean_up_leftovers:
-        self._clean_up_leftovers(node_parent)
-
-    self._postprocess_nodes(self, self._nodes)
-
-
-def reverse_edge(self, node_parent: BNNode, node_child: BNNode):
-    self.disconnect_nodes(node_parent, node_child, False)
-    self.connect_nodes(node_child, node_parent)
-
-LinkedGraph.reverse_edge = reverse_edge
-LinkedGraph.connect_nodes = connect_nodes
-LinkedGraph.disconnect_nodes = disconnect_nodes
-
-
 # задаем правила на запрет дублирующих узлов
 def _has_no_duplicates(graph):
     _, labels = graph_structure_as_nx_graph(graph)
@@ -104,35 +59,20 @@ def _has_no_duplicates(graph):
 
 def run_example():
     
-    data = pd.read_csv('C:/Users/anaxa/Documents/Projects/CompositeBayesianNetworks/FEDOT/examples/data/'+file+'.csv') 
+    data = pd.read_csv('examples/data/csv/'+file+'.csv') 
     data.drop(['Unnamed: 0'], axis=1, inplace=True)
     data.reset_index(inplace=True, drop=True)
 
     global vertices
     vertices = list(data.columns)
-    # global dir_of_vertices
-    # dir_of_vertices={vertices[i]:i for i in range(len(vertices))}    
-    # global dir_of_vertices_rev
-    # dir_of_vertices_rev={i:vertices[i] for i in range(len(vertices))}  
 
     encoder = preprocessing.LabelEncoder()
     discretizer = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile')
     p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
     discretized_data, est = p.apply(data)
     
-    # global unique_values
-    # unique_values = {vertices[i]:len(pd.unique(discretized_data[vertices[i]])) for i in range(len(vertices))}
-    # global node_type
-    # node_type = p.info['types'] 
-    # global types
-    # types=list(node_type.values())
-
-    # правила для байесовских сетей: нет петель, нет циклов, нет повторяющихся узлов
-    rules = [has_no_self_cycled_nodes, has_no_cycle, _has_no_duplicates
-     ]
+    rules = [has_no_self_cycled_nodes, has_no_cycle, _has_no_duplicates]
     
-
-    # задаем для оптимизатора fitness-функцию
     objective = Objective({'custom': custom_metric})
     objective_eval = ObjectiveEvaluate(objective, data = discretized_data)    
 
@@ -145,11 +85,13 @@ def run_example():
         max_depth=100, 
         num_of_generations=n_generation,
         timeout=timedelta(minutes=time_m),
-        history_dir = None
+        history_dir = None,
+        n_jobs=-1
         )
 
     optimiser_parameters = GPAlgorithmParameters(
         pop_size=pop_size,
+        max_pop_size = pop_size,
         crossover_prob=crossover_probability, 
         mutation_prob=mutation_probability,
         genetic_scheme_type = GeneticSchemeTypesEnum.steady_state,
@@ -161,9 +103,9 @@ def run_example():
         ],
 
         crossover_types = [
-            custom_crossover_exchange_edges,
-            custom_crossover_exchange_parents_both,
-            custom_crossover_exchange_parents_one
+            CrossoverTypesEnum.exchange_edges,
+            CrossoverTypesEnum.exchange_parents_one,
+            CrossoverTypesEnum.exchange_parents_both
             ]
     )
 
@@ -177,10 +119,8 @@ def run_example():
         requirements=requirements,
         initial_graphs=initial,
         objective=objective)
-    optimiser.number = number
 
     
-    # запуск оптимизатора
     optimized_graph = optimiser.optimise(objective_eval)[0]
     print(optimized_graph.operator.get_edges())
 
@@ -188,23 +128,13 @@ def run_example():
 
 
 if __name__ == '__main__':
-    # файл с исходными данными (должен лежать в 'examples/data/')
     file = 'asia'
-    # размер популяции 
     pop_size = 20
-    # количество поколений
     n_generation = 1000
-    # вероятность кроссовера
     crossover_probability = 0.8
-    # вероятность мутации
     mutation_probability = 0.9
     time_m = 1000
-    # число запусков
-    n = 1
-    number = 1
-    while number <= n:
-        run_example() 
-        number += 1 
+    run_example()
 
 
 
