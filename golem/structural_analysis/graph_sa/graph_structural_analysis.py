@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from copy import deepcopy
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 import multiprocessing
 
 from golem.core.log import default_log
@@ -235,7 +235,7 @@ class GraphStructuralAnalysis:
         """
 
         def get_nodes_and_edges_labels(analysis_result: SAAnalysisResults, iter: int) \
-                -> tuple[dict[int, str], dict[int, str]]:
+                -> Tuple[Dict[int, str], Dict[int, str]]:
             """ Get nodes and edges labels in dictionary form. """
 
             def get_str_labels(result: ObjectSAResult) -> str:

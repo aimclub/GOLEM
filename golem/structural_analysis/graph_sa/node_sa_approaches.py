@@ -172,7 +172,6 @@ class NodeDeletionAnalyze(NodeAnalyzeApproach):
         return res
 
 
-
 class NodeReplaceOperationAnalyze(NodeAnalyzeApproach):
     """
     Replace node with operations available for the current task
