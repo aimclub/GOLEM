@@ -1,24 +1,29 @@
 from copy import deepcopy
-from random import choice, random
-from typing import Callable, List, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
+from random import random
+from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
 import numpy as np
 
 from golem.core.dag.graph import Graph
-from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo, MutationTypesEnum
+from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
+from golem.core.optimisers.adaptive.operator_agent import \
+    OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
+from golem.core.optimisers.genetic.operators.base_mutations import \
+    base_mutations_repo, MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
-from golem.core.optimisers.optimization_parameters import GraphRequirements
+from golem.core.optimisers.optimization_parameters import GraphRequirements, OptimizationParameters
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
+from golem.core.utilities.data_structures import unzip
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
-
 MutationFunc = Callable[[Graph, GraphRequirements, GraphGenerationParams, AlgorithmParameters], Graph]
-MutationRepo = Mapping[Hashable, MutationFunc]
+MutationIdType = Hashable
+MutationRepo = Mapping[MutationIdType, MutationFunc]
 
 
 class Mutation(Operator):
@@ -26,58 +31,84 @@ class Mutation(Operator):
                  parameters: 'GPAlgorithmParameters',
                  requirements: GraphRequirements,
                  graph_gen_params: GraphGenerationParams,
-                 mutations_repo: Optional[MutationRepo] = None
+                 mutations_repo: Optional[MutationRepo] = None,
                  ):
         super().__init__(parameters, requirements)
         self.graph_generation_params = graph_gen_params
         self.parameters = parameters
         self._mutations_repo = mutations_repo or base_mutations_repo
+        self._operator_agent = self._init_operator_agent(parameters, requirements)
+        self.agent_experience = ExperienceBuffer()
+
+    @staticmethod
+    def _init_operator_agent(parameters: 'GPAlgorithmParameters',
+                             requirements: OptimizationParameters):
+        kind = parameters.adaptive_mutation_type
+        if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
+            agent = RandomAgent(actions=parameters.mutation_types)
+        elif kind == MutationAgentTypeEnum.bandit:
+            agent = MultiArmedBanditAgent(parameters.mutation_types, n_jobs=requirements.n_jobs)
+        elif kind == MutationAgentTypeEnum.contextual_bandit:
+            raise NotImplementedError()
+        else:
+            raise TypeError(f'Unknown parameter {kind}')
+        return agent
+
+    @property
+    def agent(self) -> OperatorAgent:
+        return self._operator_agent
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
-            return self._mutation(population)
-        return list(map(self._mutation, population))
+            return self._mutation(population)[0]
+        mutated_population, mutations_applied = unzip(map(self._mutation, population))
+        return mutated_population
 
-    def _mutation(self, individual: Individual) -> Individual:
+    def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
         """ Function applies mutation operator to graph """
-
+        mutation_applied = None
         for _ in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
-            num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
 
-            new_graph, mutation_names = self._apply_mutations(new_graph, num_mut)
-
+            new_graph, mutation_applied = self._apply_mutations(new_graph)
+            if mutation_applied is None:
+                continue
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
-                parent_operator = ParentOperator(type_='mutation', operators=tuple(mutation_names),
+                parent_operator = ParentOperator(type_='mutation',
+                                                 operators=mutation_applied,
                                                  parent_individuals=individual)
-                return Individual(new_graph, parent_operator,
-                                  metadata=self.requirements.static_individual_metadata)
+                individual = Individual(new_graph, parent_operator,
+                                        metadata=self.requirements.static_individual_metadata)
+                break
+            else:
+                # Collect invalid actions
+                self.agent_experience.collect_experience(individual.graph, mutation_applied, reward=-1.0)
+        else:
+            self.log.debug('Number of mutation attempts exceeded. '
+                           'Please check optimization parameters for correctness.')
+        return individual, mutation_applied
 
-        self.log.debug('Number of mutation attempts exceeded. '
-                       'Please check optimization parameters for correctness.')
+    def _sample_num_of_mutations(self) -> int:
+        # most of the time returns 1 or rarely several mutations
+        if self.parameters.variable_mutation_num:
+            num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
+        else:
+            num_mut = 1
+        return num_mut
 
-        return individual
-
-    def _apply_mutations(self, new_graph: OptGraph, num_mut: int) -> Tuple[OptGraph, List[str]]:
-        """Apply a number of mutations iteratively"""
-        mutation_types = self.parameters.mutation_types
-        is_static_mutation_type = random() < self.parameters.static_mutation_prob
-        mutation_type = choice(mutation_types)
-        mutation_names = []
-        for _ in range(num_mut):
-            # determine mutation type
-            if not is_static_mutation_type:
-                mutation_type = choice(mutation_types)
-            is_custom_mutation = isinstance(mutation_type, Callable)
-
+    def _apply_mutations(self, new_graph: OptGraph) -> Tuple[OptGraph, Optional[MutationIdType]]:
+        """Apply mutation 1 or few times iteratively"""
+        mutation_type = self._operator_agent.choose_action(new_graph)
+        mutation_applied = None
+        for _ in range(self._sample_num_of_mutations()):
             new_graph, applied = self._adapt_and_apply_mutation(new_graph, mutation_type)
-
             if applied:
-                mutation_names.append(str(mutation_type))  # log mutation
+                mutation_applied = mutation_type
+                is_custom_mutation = isinstance(mutation_type, Callable)
                 if is_custom_mutation:  # custom mutation occurs once
                     break
-        return new_graph, mutation_names
+        return new_graph, mutation_applied
 
     def _adapt_and_apply_mutation(self, new_graph: OptGraph, mutation_type) -> Tuple[OptGraph, bool]:
         applied = self._will_mutation_be_applied(mutation_type)
@@ -88,7 +119,6 @@ class Mutation(Operator):
                                       graph_gen_params=self.graph_generation_params,
                                       parameters=self.parameters)
         return new_graph, applied
-
 
     def _will_mutation_be_applied(self, mutation_type: Union[MutationTypesEnum, Callable]) -> bool:
         return random() <= self.parameters.mutation_prob and mutation_type is not MutationTypesEnum.none

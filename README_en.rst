@@ -5,7 +5,9 @@
 
 .. class:: center
 
-    |python| |pypi| |build| |docs| |license| |tg| |rus|
+    |sai| |itmo|
+
+    |python| |pypi| |build| |docs| |license| |tg| |rus| |mirror|
 
 
 Graph Optimization and Learning by Evolutionary Methods
@@ -73,6 +75,36 @@ GOLEM can be installed with ``pip``:
   $ pip install thegolem
 
 
+Quick Start Example
+===================
+
+Following example demonstrates graph search using reference graph & edit distance metric. Optimizer is set up with a minimal set of parameters and simple single-point mutations. For more details see examples `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ and `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ in directory `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+
+.. code-block::
+
+    def run_graph_search(size=16, timeout=8):
+        # Generate target graph sought by optimizer using edit distance objective
+        node_types = ('a', 'b')  # Available node types that can appear in graphs
+        target_graph = generate_labeled_graph('tree', size, node_types)
+        objective = Objective(partial(tree_edit_dist, target_graph))
+        initial_population = [generate_labeled_graph('tree', 5, node_types) for _ in range(10)]
+
+        # Setup optimization parameters
+        requirements = GraphRequirements(timeout=timedelta(minutes=timeout))
+        gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter(), available_node_types=node_types)
+        algo_params = GPAlgorithmParameters(pop_size=30)
+
+        # Build and run the optimizer
+        optimiser = EvoGraphOptimizer(objective, initial_population, requirements, gen_params, algo_params)
+        found_graphs = optimiser.optimise(objective)
+
+        # Visualize results
+        found_graph = gen_params.adapter.restore(found_graphs[0])  # Transform back to NetworkX graph
+        draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        optimiser.history.show.fitness_line()
+        return found_graph
+
+
 Project Structure
 =================
 
@@ -110,12 +142,11 @@ workshops for their valuable advice and suggestions.
 Supported by
 ============
 
-.. image:: /docs/source/img/AIM-Strong_Sign_Norm-01_Colors.svg
-    :width: 400px
-    :align: center
-    :alt: Strong AI in industry logo
-
-The study is supported by the Research Center `Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`__ of `ITMO University <https://en.itmo.ru/>`__.
+The study is supported by the Research `Center Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`_
+of `ITMO University <https://itmo.ru/>`_ as part of the plan of the center's program: 
+Development and testing of an experimental prototype of the library of strong AI algorithms 
+in terms of basic algorithms of automatic ML for structural training of composite AI models, 
+including automation of feature selection
 
 Contacts
 ========
@@ -189,3 +220,15 @@ There are various cases solved with GOLEM's algorithms:
 
 .. |rus| image:: https://img.shields.io/badge/lang-ru-yellow.svg
             :target: /README.rst
+
+.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
+   :alt: Acknowledgement to ITMO
+   :target: https://en.itmo.ru/en/
+
+.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+   :alt: Acknowledgement to SAI
+   :target: https://sai.itmo.ru/
+
+.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+   :alt: GitLab mirror for this repository
+   :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

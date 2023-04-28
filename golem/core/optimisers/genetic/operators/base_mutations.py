@@ -4,6 +4,7 @@ from random import choice, randint, random, sample
 from typing import TYPE_CHECKING
 
 from golem.core.adapter import register_native
+from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
 from golem.core.optimisers.advisor import RemoveType
@@ -29,9 +30,9 @@ class MutationTypesEnum(Enum):
     local_growth = 'local_growth'
     tree_growth = 'tree_growth'
     reduce = 'reduce'
-    single_add = 'single_add',
-    single_change = 'single_change',
-    single_drop = 'single_drop',
+    single_add = 'single_add'
+    single_change = 'single_change'
+    single_drop = 'single_drop'
     single_edge = 'single_edge'
 
     none = 'none'
@@ -171,7 +172,8 @@ def add_as_child(graph: OptGraph,
     graph.connect_nodes(node_parent=node_to_mutate, node_child=new_node)
     if new_node_child:
         graph.connect_nodes(node_parent=new_node, node_child=new_node_child)
-        graph.disconnect_nodes(node_parent=node_to_mutate, node_child=new_node_child)
+        graph.disconnect_nodes(node_parent=node_to_mutate, node_child=new_node_child,
+                               clean_up_leftovers=True)
 
     return graph
 
@@ -240,24 +242,23 @@ def single_drop_mutation(graph: OptGraph,
     removal_type = graph_gen_params.advisor.can_be_removed(node_to_del)
     if removal_type == RemoveType.with_direct_children:
         # TODO refactor workaround with data_source
+        graph.delete_node(node_to_del)
         nodes_to_delete = \
             [n for n in graph.nodes
              if n.descriptive_id.count('data_source') == 1
              and node_name in n.descriptive_id]
         for child_node in nodes_to_delete:
-            graph.delete_node(child_node)
-        graph.delete_node(node_to_del)
+            graph.delete_node(child_node, reconnect=ReconnectType.all)
     elif removal_type == RemoveType.with_parents:
         graph.delete_subtree(node_to_del)
-    elif removal_type != RemoveType.forbidden:
-        graph.delete_node(node_to_del)
-        if node_to_del.nodes_from:
-            children = graph.node_children(node_to_del)
-            for child in children:
-                if child.nodes_from:
-                    child.nodes_from.extend(node_to_del.nodes_from)
-                else:
-                    child.nodes_from = node_to_del.nodes_from
+    elif removal_type == RemoveType.node_rewire:
+        graph.delete_node(node_to_del, reconnect=ReconnectType.all)
+    elif removal_type == RemoveType.node_only:
+        graph.delete_node(node_to_del, reconnect=ReconnectType.none)
+    elif removal_type == RemoveType.forbidden:
+        pass
+    else:
+        raise ValueError("Unknown advice (RemoveType) returned by Advisor ")
     return graph
 
 

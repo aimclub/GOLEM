@@ -5,7 +5,9 @@
 
 .. class:: center
 
-    |python| |pypi| |build| |docs| |license| |tg| |eng|
+    |sai| |itmo|
+
+    |python| |pypi| |build| |docs| |license| |tg| |eng| |mirror|
 
 
 Оптимизация и обучение графовых моделей эволюционными методами
@@ -61,7 +63,7 @@ GOLEM потенциально применим к любой структуре
 - `Поиск архитектуры нейронных сетей <https://github.com/ITMO-NSS-team/nas-fedot>`_
 
 Поскольку GOLEM - это фреймворк общего назначения, легко представить его потенциальное применение, например,
-поиск конечных автоматов для управления в робототехнике или изучение молекулярных графов для разработки лекарств и
+поиск конечных автоматов для алгоритмов контроля в робототехнике или оптимизация молекулярных графов для разработки лекарств и
 многое другое.
 
 
@@ -73,6 +75,36 @@ GOLEM можно установить с помощью ``pip``:
 .. code-block::
 
   $ pip install thegolem
+
+
+Быстрый старт
+=============
+
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+
+.. code-block::
+
+    def run_graph_search(size=16, timeout=8):
+        # Генерируем целевой граф и целевую функцию в виде edit distance
+        node_types = ('a', 'b')  # Available node types that can appear in graphs
+        target_graph = generate_labeled_graph('tree', size, node_types)
+        objective = Objective(partial(tree_edit_dist, target_graph))
+        initial_population = [generate_labeled_graph('tree', 5, node_types) for _ in range(10)]
+
+        # Укажем параметры оптимизации
+        requirements = GraphRequirements(timeout=timedelta(minutes=timeout))
+        gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter(), available_node_types=node_types)
+        algo_params = GPAlgorithmParameters(pop_size=30)
+
+        # Инициализируем оптимизатор и запустим оптимизацию
+        optimiser = EvoGraphOptimizer(objective, initial_population, requirements, gen_params, algo_params)
+        found_graphs = optimiser.optimise(objective)
+
+        # Визуализируем итоговый граф и график сходимости
+        found_graph = gen_params.adapter.restore(found_graphs[0])  # Transform back to NetworkX graph
+        draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        optimiser.history.show.fitness_line()
+        return found_graph
 
 
 Структура проекта
@@ -109,15 +141,13 @@ GOLEM можно установить с помощью ``pip``:
 Мы благодарны контрибьютерам за их важный вклад, а участникам многочисленных конференций и семинаров -
 за их ценные советы и предложения.
 
-Разработка ведётся при поддержке
-================================
+Поддержка
+=========
 
-.. image:: /docs/source/img/AIM-Strong_Sign_Norm-01_Colors.svg
-    :width: 400px
-    :align: center
-    :alt: Strong AI in industry logo
-
-Разработка поддерживается исследовательским центром `Сильный искусственный интеллект в промышленности <https://sai.itmo.ru/>`__ `Университета ИТМО <https://itmo.ru/>`__.
+Исследование проводится при поддержке `Исследовательского центра сильного искусственного интеллекта в промышленности <https://sai.itmo.ru/>`_
+`Университета ИТМО <https://itmo.ru/>`_ в рамках мероприятия программы центра: Разработка и испытания 
+экспериментального образца библиотеки алгоритмов сильного ИИ в части базовых алгоритмов автоматического МО 
+для структурного обучения композитных моделей ИИ, включая автоматизацию отбора признаков
 
 Контакты
 ========
@@ -191,3 +221,15 @@ GOLEM можно установить с помощью ``pip``:
 
 .. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
             :target: /README_en.rst
+
+.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
+   :alt: Acknowledgement to ITMO
+   :target: https://itmo.ru
+
+.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+   :alt: Acknowledgement to SAI
+   :target: https://sai.itmo.ru/
+
+.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+   :alt: GitLab mirror for this repository
+   :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

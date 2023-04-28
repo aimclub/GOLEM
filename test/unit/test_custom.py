@@ -31,7 +31,7 @@ class CustomModel(GraphDelegate):
 
 class CustomNode(LinkedGraphNode):
     def __str__(self):
-        return f'custom_{str(self.content["name"])}'
+        return f'custom_{str(self.name)}'
 
 
 def custom_metric(custom_model: CustomModel):

@@ -8,7 +8,6 @@ from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
@@ -60,11 +59,12 @@ class PopulationalOptimizer(GraphOptimizer):
                 lambda: self.timer.is_time_limit_reached(self.current_generation_num),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
-                lambda: requirements.num_of_generations is not None and
-                        self.current_generation_num >= requirements.num_of_generations + 1,
+                lambda: (requirements.num_of_generations is not None and
+                         self.current_generation_num >= requirements.num_of_generations + 1),
                 'Optimisation stopped: Max number of generations reached'
             ).add_condition(
-                lambda: self.generations.stagnation_iter_count >= max_stagnation_length,
+                lambda: (max_stagnation_length is not None and
+                         self.generations.stagnation_iter_count >= max_stagnation_length),
                 'Optimisation finished: Early stopping iterations criteria was satisfied'
             ).add_condition(
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
@@ -79,7 +79,7 @@ class PopulationalOptimizer(GraphOptimizer):
         # Redirect callback to evaluation dispatcher
         self.eval_dispatcher.set_graph_evaluation_callback(callback)
 
-    def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
+    def optimise(self, objective: ObjectiveFunction) -> Sequence[Graph]:
 
         # eval_dispatcher defines how to evaluate objective on the whole population
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
@@ -116,8 +116,8 @@ class PopulationalOptimizer(GraphOptimizer):
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
                            metadata: Optional[Dict[str, Any]] = None):
         self.generations.append(next_population)
-        self._optimisation_callback(next_population, self.generations)
         self._log_to_history(next_population, label, metadata)
+        self._iteration_callback(next_population, self)
         self.population = next_population
 
         self.log.info(f'Generation num: {self.current_generation_num} size: {len(next_population)}')

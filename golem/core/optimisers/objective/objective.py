@@ -1,11 +1,11 @@
 import itertools
 from dataclasses import dataclass
 from numbers import Real
-from typing import Any, Optional, Iterable, Callable, Sequence, TypeVar, Dict, Tuple, Union
+from typing import Any, Optional, Callable, Sequence, TypeVar, Dict, Tuple, Union
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.fitness import *
+from golem.core.optimisers.fitness import Fitness, SingleObjFitness, null_fitness, MultiObjFitness
 
 G = TypeVar('G', bound=Graph, covariant=True)
 R = TypeVar('R', contravariant=True)
@@ -24,6 +24,8 @@ class ObjectiveInfo:
         Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""
         values = fitness.values if isinstance(fitness, Fitness) else fitness
         fitness_info_str = [f'{name}={value:.3f}'
+                            if value is not None
+                            else f'{name}=None'
                             for name, value in zip(self.metric_names, values)]
         return f"<{' '.join(fitness_info_str)}>"
 
@@ -33,11 +35,13 @@ class Objective(ObjectiveInfo, ObjectiveFunction):
     on Graphs and keeps information about metrics used."""
 
     def __init__(self,
-                 quality_metrics: Dict[Any, Callable],
+                 quality_metrics: Union[Callable, Dict[Any, Callable]],
                  complexity_metrics: Optional[Dict[Any, Callable]] = None,
                  is_multi_objective: bool = False,
                  ):
         self._log = default_log(self)
+        if isinstance(quality_metrics, Callable):
+            quality_metrics = {'metric': quality_metrics}
         self.quality_metrics = quality_metrics
         self.complexity_metrics = complexity_metrics or {}
         metric_names = [str(metric_id) for metric_id, _ in self.metrics]

@@ -184,7 +184,7 @@ def test_disconnect_nodes_method_first():
     node_e = graph.nodes[4]
     node_e_root = graph.nodes[0]
 
-    graph.disconnect_nodes(node_e, node_e_root)
+    graph.disconnect_nodes(node_e, node_e_root, clean_up_leftovers=True)
 
     assert res_graph == graph
 
@@ -197,7 +197,7 @@ def test_disconnect_nodes_method_second():
     node_b = graph.nodes[5]
     node_e = graph.nodes[4]
 
-    graph.disconnect_nodes(node_b, node_e)
+    graph.disconnect_nodes(node_b, node_e, clean_up_leftovers=True)
 
     assert res_graph == graph
 
@@ -210,7 +210,7 @@ def test_disconnect_nodes_method_third():
     node_d = graph.nodes[1]
     root_node_e = graph.nodes[0]
 
-    graph.disconnect_nodes(node_d, root_node_e)
+    graph.disconnect_nodes(node_d, root_node_e, clean_up_leftovers=True)
 
     assert res_graph == graph
 
@@ -224,7 +224,7 @@ def test_disconnect_nodes_method_fourth():
     node_c = res_graph.nodes[2]
     root_node_e = res_graph.nodes[0]
 
-    res_graph.disconnect_nodes(node_c, root_node_e)
+    res_graph.disconnect_nodes(node_c, root_node_e, clean_up_leftovers=True)
     assert res_graph == graph
 
 
@@ -237,7 +237,7 @@ def test_disconnect_nodes_method_fifth():
     node_k = LinkedGraphNode('k')
     node_m = LinkedGraphNode('m', nodes_from=[node_k])
 
-    res_graph.disconnect_nodes(node_k, node_m)
+    res_graph.disconnect_nodes(node_k, node_m, clean_up_leftovers=True)
     assert res_graph == graph
 
 

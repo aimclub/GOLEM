@@ -3,7 +3,8 @@ import collections.abc
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum
-from typing import Callable, Container, Generic, Iterable, Iterator, List, Optional, Sequence, Sized, TypeVar, Union
+from typing import Callable, Container, Generic, Iterable, Iterator, List, Optional, Sequence, Sized, TypeVar, Union, \
+    Tuple
 
 T = TypeVar('T')
 
@@ -303,3 +304,7 @@ class BidirectionalIterator(Iterator[T]):
         :return: this iterator
         """
         return self
+
+
+def unzip(tuples: Iterable[Tuple]) -> Tuple[Sequence, Sequence]:
+    return tuple(zip(*tuples))

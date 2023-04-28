@@ -49,7 +49,7 @@ class OptimizationParameters:
 
     num_of_generations: Optional[int] = None
     timeout: Optional[datetime.timedelta] = datetime.timedelta(minutes=5)
-    early_stopping_iterations: Optional[int] = 10
+    early_stopping_iterations: Optional[int] = 50
     early_stopping_timeout: Optional[float] = 5
 
     keep_n_best: int = 1
@@ -79,9 +79,9 @@ class GraphRequirements(OptimizationParameters):
     """
 
     start_depth: int = 3
-    max_depth: int = 3
+    max_depth: int = 10
     min_arity: int = 2
-    max_arity: int = 2
+    max_arity: int = 4
 
     def __post_init__(self):
         excluded_fields = ['n_jobs']
