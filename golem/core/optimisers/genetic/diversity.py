@@ -19,26 +19,46 @@ def compute_fitness_diversity(population: PopulationT) -> np.ndarray:
     return diversity
 
 
+class PopulationStatsLogger(IterationCallback):
+    """Stores numpy array of standard deviations of fitness values.
+    Can be used as an ``IterationCallback`` in optimizer."""
+    def __init__(self, stats_fn: Callable[[PopulationT], ArrayLike]):
+        self._stats_fn = stats_fn
+        self._history = []
+
+    def __call__(self, population: PopulationT, optimizer: GraphOptimizer) -> np.ndarray:
+        diversity = self._stats_fn(population)
+        self._history.append(diversity)
+
+    def get_history(self) -> np.ndarray:
+        np_hist = np.array(self._history)
+        return np_hist
+
+
 def plot_diversity_dynamic_gif(history: OptHistory,
                                filename: Optional[str] = None,
                                nbins: int = 8) -> FuncAnimation:
     metric_names = history.objective.metric_names
     # dtype=float removes None, puts np.nan
-    # indexed by [population, individual, metric]
-    fitness_values = np.array([[ind.fitness.values for ind in pop]
-                               for pop in history.individuals], dtype=float)
-    # indexed by [population, metric, individual]
-    fitness_distrib = fitness_values.swapaxes(1, 2)
+    # indexed by [population, metric, individual] after transpose (.T)
+    fitness_distrib = [np.array([ind.fitness.values for ind in pop], dtype=float).T
+                       for pop in history.individuals]
 
     # Setup the plot
+    # TODO: setup figure size even
+    # Define bounds on metrics: find min & max on a flattened view of array
+    maxs = np.max([np.max(pop, axis=1) for pop in fitness_distrib], axis=0)
+    mins = np.min([np.min(pop, axis=1) for pop in fitness_distrib], axis=0)
+
     fig, axs = plt.subplots(ncols=len(metric_names))
     fig.suptitle('Population diversity by metric')
     np.ravel(axs)
-    for ax, metric_name in zip(axs, metric_names):
+    for ax, metric_name, min_lim, max_lim in zip(axs, metric_names, mins, maxs):
         ax: plt.Axes
         ax.set_title(metric_name)
         ax.set_xlabel('Metric value')
         ax.set_ylabel('Individuals')
+        ax.set_xlim(min_lim, max_lim)
         ax.grid()
         ax.legend()
 
@@ -52,7 +72,10 @@ def plot_diversity_dynamic_gif(history: OptHistory,
     # Set update function for updating data on artists of the axes
     def update_axes(iframe: int):
         next_pop_metrics = fitness_distrib[iframe]
-        for artist, metric_distrib in zip(artists, next_pop_metrics):
+        for ax, metric_name, artist, metric_distrib in zip(axs, metric_names, artists, next_pop_metrics):
+            ax.set_title(f'{metric_name}, '
+                         f'mean={np.mean(metric_distrib).round(3)}, '
+                         f'std={np.nanstd(metric_distrib).round(3)}')
             n, _ = np.histogram(metric_distrib, nbins)
             for count, rect in zip(n, artist.patches):
                 rect.set_height(count)
