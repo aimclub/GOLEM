@@ -1,4 +1,5 @@
 SULFUR_DEFAULT_VALENCE = 6
+MIN_LONG_CYCLE_SIZE = 6
 
 # normalization constants, statistics from 250k_rndm_zinc_drugs_clean.smi dataset
 ZINC_LOGP_MEAN = 2.4570953396190123

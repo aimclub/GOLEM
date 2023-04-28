@@ -9,7 +9,7 @@ from rdkit.Chem.rdchem import RWMol
 from typing import Dict
 
 from examples.molecule_search.constants import ZINC_LOGP_MEAN, ZINC_LOGP_STD, ZINC_SA_MEAN, ZINC_SA_STD, \
-    ZINC_CYCLE_MEAN, ZINC_CYCLE_STD
+    ZINC_CYCLE_MEAN, ZINC_CYCLE_STD, MIN_LONG_CYCLE_SIZE
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.utils import largest_ring_size
 from golem.core.paths import project_root
@@ -58,8 +58,8 @@ def penalised_logp(mol_graph: MolGraph) -> float:
     molecule = mol_graph.get_rw_molecule(aromatic=True)
     log_p = Descriptors.MolLogP(molecule)
     sa_score = sascorer.calculateScore(molecule)
-    largest_ring = largest_ring_size(molecule)
-    cycle_score = max(largest_ring - 6, 0)
+    largest_cycle_size = largest_ring_size(molecule)
+    cycle_score = max(largest_cycle_size - MIN_LONG_CYCLE_SIZE, 0)
     score = log_p - sa_score - cycle_score
     return -score
 
@@ -103,7 +103,7 @@ def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted
 
     Args:
         mol_graph: MolGraph to evaluate
-        weighted: If True calculate score by summing up log10 of frequency of occurence inside the reference database.
+        weighted: If True calculate score by summing up log10 of frequency of occurrence inside the reference database.
             When set to False, score will add 1 for every shingle inside the reference database,
             irrespective of how often it occurs. It is recommended to use the actual CLscore with weighted shingles.
         radius: Maximum radius of circular substructures around the rooting atom.

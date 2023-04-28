@@ -104,7 +104,6 @@ def cut_atom(mol_graph: MolGraph,
     molecule = mol_graph.get_rw_molecule()
     if atoms_to_cut:
         atom_to_cut = choice(atoms_to_cut)
-        print(atom_to_cut)
         neighbors_id = [neighbor.GetIdx() for neighbor in molecule.GetAtomWithIdx(atom_to_cut).GetNeighbors()]
         mol_graph.set_bond(*neighbors_id, update_representation=False)
         mol_graph.remove_atom(atom_to_cut)

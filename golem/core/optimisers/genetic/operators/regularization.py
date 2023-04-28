@@ -55,7 +55,7 @@ class Regularization(Operator):
         evaluator(additional_inds)
         additional_inds.extend(population)
         if len(additional_inds) > size:
-            additional_inds = sorted(additional_inds, key=lambda ind: ind.fitness)[:size]
+            additional_inds = sorted(additional_inds, key=lambda ind: ind.fitness, reverse=True)[:size]
 
         return additional_inds
 
