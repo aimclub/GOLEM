@@ -149,6 +149,10 @@ class GraphStructuralAnalysis:
                 if self.is_visualize_per_iteration:
                     base_name = os.path.basename(os.path.normpath(self.path_to_save))
                     if '.png' not in base_name:
+                        i = 0
+                        base_name = f'{base_name}_{i}'
+                        while base_name in os.listdir(self.path_to_save):
+                            base_name = f'{base_name}_{i}'
                         path_to_save = os.path.join(self.path_to_save, f'{base_name}.png')
                     self.visualize_on_graph(graph=deepcopy(graph), analysis_result=analysis_result,
                                             metric_idx_to_optimize_by=self.main_metric_idx,
