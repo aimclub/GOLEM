@@ -23,7 +23,7 @@ class DeletionSAApproachResult(BaseSAApproachResult):
         """ Returns all calculated results. """
         return self.metrics
 
-    def get_rounded_metrics(self, idx: int = 2) -> list:
+    def get_rounded_metrics(self, idx: int = 3) -> list:
         return [round(metric, idx) for metric in self.metrics]
 
     def __str__(self):

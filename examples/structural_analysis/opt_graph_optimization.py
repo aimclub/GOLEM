@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 from functools import partial
@@ -10,6 +11,7 @@ from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
+from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import project_root
 from golem.metrics.graph_metrics import size_diff
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
@@ -75,7 +77,7 @@ if __name__ == "__main__":
                                  path_to_save=path_to_save,
                                  is_visualize_per_iteration=False)
 
-    graph, results = sa.optimize(graph=opt_graph, n_jobs=1, max_iter=3)
+    graph, results = sa.optimize(graph_=opt_graph, n_jobs=1, max_iter=3, timer=timer)
 
     # to show SA results on each iteration
     optimized_graph = GraphStructuralAnalysis.visualize_on_graph(graph=get_opt_graph(), analysis_result=results,
