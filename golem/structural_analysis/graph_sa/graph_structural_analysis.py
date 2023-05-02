@@ -252,7 +252,7 @@ class GraphStructuralAnalysis:
                         short_approach_name = 'D'
                     else:
                         short_approach_name = 'R'
-                    cur_label += f'{short_approach_name}: {approach.get_rounded_metrics(idx=3)}\n'
+                    cur_label += f'{short_approach_name}: {approach.get_rounded_metrics(idx=4)}\n'
                 return cur_label
 
             nodes_labels = {}

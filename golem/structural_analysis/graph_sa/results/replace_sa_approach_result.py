@@ -29,7 +29,7 @@ class ReplaceSAApproachResult(BaseSAApproachResult):
         """ Returns dict representation of results. """
         return self.metrics
 
-    def get_rounded_metrics(self, idx: int = 3) -> dict:
+    def get_rounded_metrics(self, idx: int = 4) -> dict:
         rounded = {}
         for metric in self.metrics:
             rounded[metric] = [round(metric, idx) for metric in self.metrics[metric]]
