@@ -167,7 +167,7 @@ class OptHistory:
     def show(self):
         return OptHistoryVisualizer(self)
 
-    def get_leaderboard(self, top_n: int = 10) -> str:
+    def print_leaderboard(self, top_n: int = 10) -> str:
         """
         Prints ordered description of the best solutions in history
         :param top_n: number of solutions to print

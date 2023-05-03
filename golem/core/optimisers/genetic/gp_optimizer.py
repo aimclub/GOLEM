@@ -87,7 +87,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                 initial_individuals.append(new_ind)
                 initial_graphs.append(new_graph)
         else:
-            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
+            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping. '
                              f'Current size {len(initial_individuals)} '
                              f'instead of {self.graph_optimizer_params.pop_size} graphs.')
 
