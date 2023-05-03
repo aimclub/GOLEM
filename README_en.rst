@@ -75,6 +75,36 @@ GOLEM can be installed with ``pip``:
   $ pip install thegolem
 
 
+Quick Start Example
+===================
+
+Following example demonstrates graph search using reference graph & edit distance metric. Optimizer is set up with a minimal set of parameters and simple single-point mutations. For more details see examples `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ and `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ in directory `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+
+.. code-block::
+
+    def run_graph_search(size=16, timeout=8):
+        # Generate target graph sought by optimizer using edit distance objective
+        node_types = ('a', 'b')  # Available node types that can appear in graphs
+        target_graph = generate_labeled_graph('tree', size, node_types)
+        objective = Objective(partial(tree_edit_dist, target_graph))
+        initial_population = [generate_labeled_graph('tree', 5, node_types) for _ in range(10)]
+
+        # Setup optimization parameters
+        requirements = GraphRequirements(timeout=timedelta(minutes=timeout))
+        gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter(), available_node_types=node_types)
+        algo_params = GPAlgorithmParameters(pop_size=30)
+
+        # Build and run the optimizer
+        optimiser = EvoGraphOptimizer(objective, initial_population, requirements, gen_params, algo_params)
+        found_graphs = optimiser.optimise(objective)
+
+        # Visualize results
+        found_graph = gen_params.adapter.restore(found_graphs[0])  # Transform back to NetworkX graph
+        draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        optimiser.history.show.fitness_line()
+        return found_graph
+
+
 Project Structure
 =================
 

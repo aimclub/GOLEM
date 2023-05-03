@@ -63,7 +63,7 @@ GOLEM потенциально применим к любой структуре
 - `Поиск архитектуры нейронных сетей <https://github.com/ITMO-NSS-team/nas-fedot>`_
 
 Поскольку GOLEM - это фреймворк общего назначения, легко представить его потенциальное применение, например,
-поиск конечных автоматов для управления в робототехнике или изучение молекулярных графов для разработки лекарств и
+поиск конечных автоматов для алгоритмов контроля в робототехнике или оптимизация молекулярных графов для разработки лекарств и
 многое другое.
 
 
@@ -75,6 +75,36 @@ GOLEM можно установить с помощью ``pip``:
 .. code-block::
 
   $ pip install thegolem
+
+
+Быстрый старт
+=============
+
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+
+.. code-block::
+
+    def run_graph_search(size=16, timeout=8):
+        # Генерируем целевой граф и целевую функцию в виде edit distance
+        node_types = ('a', 'b')  # Available node types that can appear in graphs
+        target_graph = generate_labeled_graph('tree', size, node_types)
+        objective = Objective(partial(tree_edit_dist, target_graph))
+        initial_population = [generate_labeled_graph('tree', 5, node_types) for _ in range(10)]
+
+        # Укажем параметры оптимизации
+        requirements = GraphRequirements(timeout=timedelta(minutes=timeout))
+        gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter(), available_node_types=node_types)
+        algo_params = GPAlgorithmParameters(pop_size=30)
+
+        # Инициализируем оптимизатор и запустим оптимизацию
+        optimiser = EvoGraphOptimizer(objective, initial_population, requirements, gen_params, algo_params)
+        found_graphs = optimiser.optimise(objective)
+
+        # Визуализируем итоговый граф и график сходимости
+        found_graph = gen_params.adapter.restore(found_graphs[0])  # Transform back to NetworkX graph
+        draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        optimiser.history.show.fitness_line()
+        return found_graph
 
 
 Структура проекта

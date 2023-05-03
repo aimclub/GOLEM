@@ -3,20 +3,20 @@ from math import ceil
 
 import pytest
 
-from examples.synthetic_graph_evolution import experiment
+from examples.synthetic_graph_evolution.experiment_setup import run_trial
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.metrics.edit_distance import tree_edit_dist
 
 
-@pytest.mark.parametrize('size', [8,  16])
+@pytest.mark.parametrize('size', [8, 16])
 def test_simple_targets_are_found(size):
     target_graph = generate_labeled_graph('tree', size, node_labels=['x'])
     # running the example
-    found_graph, history = experiment.run_trial(target_graph=target_graph,
-                                                optimizer_setup=tree_search_setup,
-                                                timeout=timedelta(minutes=1))
+    found_graph, history = run_trial(target_graph=target_graph,
+                                     optimizer_setup=tree_search_setup,
+                                     timeout=timedelta(minutes=1))
 
     assert found_graph is not None
 

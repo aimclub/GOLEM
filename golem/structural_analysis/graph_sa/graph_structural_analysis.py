@@ -41,7 +41,7 @@ class GraphStructuralAnalysis:
                  node_factory: OptNodeFactory,
                  is_preproc: bool = True,
                  approaches: List = None,
-                 requirements: StructuralAnalysisRequirements = None,
+                 requirements: StructuralAnalysisRequirements = StructuralAnalysisRequirements(),
                  path_to_save: str = None,
                  is_visualize_per_iteration: bool = False):
 

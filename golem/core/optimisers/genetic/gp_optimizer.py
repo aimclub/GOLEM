@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Callable
+from typing import Sequence, Callable, Union, Any
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -16,12 +16,10 @@ from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDe
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
-
 
 EVALUATION_ATTEMPTS_NUMBER = 5
 
@@ -33,7 +31,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
     def __init__(self,
                  objective: Objective,
-                 initial_graphs: Sequence[OptGraph],
+                 initial_graphs: Sequence[Union[Graph, Any]],
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters):
@@ -61,7 +59,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.requirements.max_depth = self._graph_depth.initial
         self.graph_optimizer_params.pop_size = self._pop_size.initial
         self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
-                                    for graph in initial_graphs]
+                                    for graph in self.initial_graphs]
 
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
@@ -122,16 +120,23 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
 
-    def _spawn_evaluated_population(self, selected_individuals: PopulationT, evaluator: Callable) -> PopulationT:
-        """ Reproduce and evaluate new population. If at least one of received individuals can not be evaluated then
-        mutate and evaluate selected individuals until a new population is obtained
-        or the number of attempts is exceeded """
+    def _spawn_evaluated_population(self, selected_individuals: PopulationT,
+                                    evaluator: EvaluationOperator) -> PopulationT:
+        """Reproduce and evaluate new population. If at least one of received individuals
+        can not be evaluated then mutate and evaluate selected individuals until a new
+        population is obtained or the number of attempts is exceeded."""
+        experience = self.mutation.agent_experience
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             new_population = self.crossover(selected_individuals)
             new_population = self.mutation(new_population)
             new_population = evaluator(new_population)
             if new_population:
+                # Perform adaptive learning
+                experience.collect_results(new_population)
+                self.mutation.agent.partial_fit(experience)
                 return new_population
+            else:
+                experience.reset()
         else:
             # Could not generate valid population; raise an error
             raise EvaluationAttemptsError()
