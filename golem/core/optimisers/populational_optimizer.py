@@ -131,7 +131,7 @@ class PopulationalOptimizer(GraphOptimizer):
         self.history.add_to_history(population, label, metadata)
         self.history.add_to_archive_history(self.generations.best_individuals)
         if self.requirements.history_dir:
-            self.history.save_current_results()
+            self.history.save_current_results(self.requirements.history_dir)
 
     @property
     def _progressbar(self):
