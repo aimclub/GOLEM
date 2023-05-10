@@ -67,7 +67,8 @@ def penalised_logp(mol_graph: MolGraph) -> float:
 def normalized_logp(mol_graph: MolGraph) -> float:
     """Normalized LogP based on the statistics of 250k_rndm_zinc_drugs_clean.smi dataset.
 
-    Original code: https://github.com/bowenliu16/rl_graph_generation/blob/master/gym-molecule/gym_molecule/envs/molecule.py
+    Original code:
+    https://github.com/bowenliu16/rl_graph_generation/blob/master/gym-molecule/gym_molecule/envs/molecule.py
     """
     molecule = mol_graph.get_rw_molecule(aromatic=True)
 

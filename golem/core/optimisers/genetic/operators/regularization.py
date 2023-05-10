@@ -45,8 +45,8 @@ class Regularization(Operator):
             subtree_inds = [Individual(OptGraph(deepcopy(ordered_subnodes_hierarchy(node))), parent_operator,
                                        metadata=self.requirements.static_individual_metadata)
                             for node in ind.graph.nodes
-                            if Regularization._is_fitted_subtree(self.graph_generation_params.adapter.restore(node))
-                            and node.descriptive_id not in prev_nodes_ids]
+                            if Regularization._is_fitted_subtree(self.graph_generation_params.adapter.restore(node)) and
+                            node.descriptive_id not in prev_nodes_ids]
 
             additional_inds.extend(subtree_inds)
             prev_nodes_ids.update(subtree.graph.root_node.descriptive_id for subtree in subtree_inds)

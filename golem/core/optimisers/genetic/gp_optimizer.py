@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Callable, Union, Any
+from typing import Sequence, Union, Any
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -15,9 +15,9 @@ from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
 
