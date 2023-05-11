@@ -4,7 +4,7 @@ from copy import deepcopy
 from datetime import datetime
 from glob import glob
 from os import remove
-from typing import Any, List, Sequence, Tuple
+from typing import Any, List, Sequence, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -30,12 +30,13 @@ except ModuleNotFoundError:
 class OptHistoryExtraVisualizer:
     """ Implements legacy history visualizations that are not available via `history.show()` """
 
-    def __init__(self):
-        data_dir = default_data_dir()
+    def __init__(self, history: OptHistory, folder: Optional[str] = None):
+        data_dir = folder or default_data_dir()
 
         self.temp_path = os.path.join(data_dir, 'composing_history')
         if 'composing_history' not in os.listdir(data_dir):
             os.mkdir(self.temp_path)
+        self.history = history
         self.log = default_log(self)
         self.graphs_imgs = []
         self.convergence_imgs = []
@@ -43,10 +44,12 @@ class OptHistoryExtraVisualizer:
         self.merged_imgs = []
         self.graph_visualizer = GraphVisualizer()
 
-    def pareto_gif_create(self, pareto_fronts: List[List[Any]], individuals: List[List[Any]] = None,
-                          objectives_numbers: Tuple[int] = (1, 0),
-                          objectives_names: Tuple[str] = ('Complexity', 'ROC-AUC')):
+    def pareto_gif_create(self,
+                          objectives_numbers: Tuple[int, int] = (0, 1),
+                          objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
         files = []
+        pareto_fronts = self.history.archive_history
+        individuals = self.history.individuals
         array_for_analysis = individuals if individuals else pareto_fronts
         all_objectives = extract_objectives(array_for_analysis, objectives_numbers)
         min_x, max_x = min(all_objectives[0]) - 0.01, max(all_objectives[0]) + 0.01
@@ -71,7 +74,7 @@ class OptHistoryExtraVisualizer:
         prev_fit = fitnesses[0]
         fig = plt.figure(figsize=(10, 10))
         for ch_id, graph in enumerate(graphs):
-            self.graph_visualizer.draw_nx_dag(graph)
+            self.graph_visualizer(graph).draw_nx_dag()
             fig.canvas.draw()
             img = figure_to_array(fig)
             self.graphs_imgs.append(img)
@@ -82,7 +85,7 @@ class OptHistoryExtraVisualizer:
                 last_best_graph = graph
             prev_fit = fitnesses[ch_id]
             plt.clf()
-            self.graph_visualizer.draw_nx_dag(last_best_graph)
+            self.graph_visualizer(last_best_graph).draw_nx_dag()
             fig.canvas.draw()
             img = figure_to_array(fig)
             self.best_graphs_imgs.append(img)
@@ -115,12 +118,12 @@ class OptHistoryExtraVisualizer:
             plt.clf()
         plt.close('all')
 
-    def visualise_history(self, history: OptHistory, metric_index: int = 0):
+    def visualise_history(self, metric_index: int = 0):
         try:
             self._clean(with_gif=True)
-            all_historical_fitness = history.all_historical_quality(metric_index)
+            all_historical_fitness = self.history.all_historical_quality(metric_index)
             historical_graphs = [ind.graph
-                                 for ind in list(itertools.chain(*history.generations))]
+                                 for ind in list(itertools.chain(*self.history.generations))]
             self._visualise_graphs(historical_graphs, all_historical_fitness)
             self._visualise_convergence(all_historical_fitness)
             self._merge_images()
@@ -173,14 +176,13 @@ class OptHistoryExtraVisualizer:
         path = f'{folder}/{file_name}'
         plt.savefig(path, bbox_inches='tight')
 
-    def boxplots_gif_create(self, individuals: List[List[Any]],
-                            objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity'),
-                            folder: str = None):
+    def boxplots_gif_create(self, objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
+        individuals = self.history.individuals
         objectives = extract_objectives(individuals)
         objectives = list(itertools.chain(*objectives))
         min_y, max_y = min(objectives), max(objectives)
         files = []
-        folder = f'{self.temp_path}' if folder is None else folder
+        folder = f'{self.temp_path}'
         for generation_num, individuals_in_genaration in enumerate(individuals):
             file_name = f'{generation_num}.png'
             self._create_boxplot(individuals_in_genaration, generation_num, objectives_names,
@@ -254,15 +256,15 @@ def visualise_pareto(front: Sequence[Individual],
 
 
 def create_gif_using_images(gif_path: str, files: List[str]):
-    from imageio import get_writer, imread
+    from imageio import get_writer, v2
 
     with get_writer(gif_path, mode='I', duration=0.5) as writer:
         for filename in files:
-            image = imread(filename)
+            image = v2.imread(filename)
             writer.append_data(image)
 
 
-def extract_objectives(individuals: List[List[Any]], objectives_numbers: Tuple[int] = None,
+def extract_objectives(individuals: List[List[Any]], objectives_numbers: Tuple[int, ...] = None,
                        transform_from_minimization=True):
     if not objectives_numbers:
         objectives_numbers = [i for i in range(len(individuals[0][0].fitness.values))]
