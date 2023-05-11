@@ -11,7 +11,7 @@ import numpy as np
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
-from golem.core.optimisers.genetic.diversity import plot_diversity_dynamic
+from golem.core.optimisers.genetic.diversity import plot_diversity_dynamic, plot_diversity_dynamic_gif
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.metrics.edit_distance import get_edit_dist_metric, matrix_edit_dist
@@ -76,6 +76,8 @@ def run_experiments(optimizer_setup: Callable,
             if visualize:
                 draw_graphs_subplots(target_graph, found_nx_graph,
                                      titles=['Target Graph', 'Found Graph'], show=False)
+                diversity_filename = (f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif')
+                plot_diversity_dynamic_gif(history, filename=diversity_filename)
                 plot_diversity_dynamic(history, show=False)
                 history.show.fitness_line()
             history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
