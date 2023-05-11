@@ -37,23 +37,33 @@ class PopulationStatsLogger(IterationCallback):
 
 def plot_diversity_dynamic_gif(history: OptHistory,
                                filename: Optional[str] = None,
-                               nbins: int = 8) -> FuncAnimation:
+                               nbins: Optional[int] = None,
+                               fig_size: int = 5,
+                               fps: int = 4,
+                               ) -> FuncAnimation:
     metric_names = history.objective.metric_names
     # dtype=float removes None, puts np.nan
     # indexed by [population, metric, individual] after transpose (.T)
+    pops = history.individuals[1:-1]  # ignore initial pop and final choices
     fitness_distrib = [np.array([ind.fitness.values for ind in pop], dtype=float).T
-                       for pop in history.individuals]
+                       for pop in pops]
+    # Determine sensible number of bins based on population size
+    nbins = nbins or int(np.mean([len(pop) for pop in pops]) / 2)
+
+    # Define bounds on metrics: find min & max on a flattened view of array
+    q = 0.05
+    maxs = np.max([np.quantile(pop, 1 - q, axis=1) for pop in fitness_distrib], axis=0)
+    mins = np.min([np.quantile(pop, q, axis=1) for pop in fitness_distrib], axis=0)
 
     # Setup the plot
-    # TODO: setup figure size even
-    # Define bounds on metrics: find min & max on a flattened view of array
-    maxs = np.max([np.max(pop, axis=1) for pop in fitness_distrib], axis=0)
-    mins = np.min([np.min(pop, axis=1) for pop in fitness_distrib], axis=0)
-
     fig, axs = plt.subplots(ncols=len(metric_names))
+    metric_bins = []
     fig.suptitle('Population diversity by metric')
+    fig.set_size_inches(fig_size * len(metric_names), fig_size)
     np.ravel(axs)
     for ax, metric_name, min_lim, max_lim in zip(axs, metric_names, mins, maxs):
+        bins = np.linspace(min_lim, max_lim, nbins)
+        metric_bins.append(bins)
         ax: plt.Axes
         ax.set_title(metric_name)
         ax.set_xlabel('Metric value')
@@ -65,18 +75,19 @@ def plot_diversity_dynamic_gif(history: OptHistory,
     # Create artists for each axis
     artists = []
     initial_pop = fitness_distrib[0]
-    for ax, pop_metrics in zip(axs, initial_pop):
-        _, _, bar_container = ax.hist(pop_metrics, bins=nbins, linewidth=0.5, edgecolor="white")
+    for ax, pop_metrics, bins in zip(axs, initial_pop, metric_bins):
+        _, _, bar_container = ax.hist(pop_metrics, bins=bins, edgecolor="white")
         artists.append(bar_container)
 
     # Set update function for updating data on artists of the axes
     def update_axes(iframe: int):
         next_pop_metrics = fitness_distrib[iframe]
         for ax, metric_name, artist, metric_distrib in zip(axs, metric_names, artists, next_pop_metrics):
-            ax.set_title(f'{metric_name}, '
+            ax.set_title(f'{metric_name} ({iframe}), '
                          f'mean={np.mean(metric_distrib).round(3)}, '
                          f'std={np.nanstd(metric_distrib).round(3)}')
             n, _ = np.histogram(metric_distrib, nbins)
+            # Set height of the histogram bars
             for count, rect in zip(n, artist.patches):
                 rect.set_height(count)
 
@@ -86,11 +97,11 @@ def plot_diversity_dynamic_gif(history: OptHistory,
         fig=fig,
         func=update_axes,
         save_count=num_frames,
-        interval=40,
+        interval=200,
     )
     # Save the GIF from animation
     if filename:
-        animate.save(filename, fps=10, dpi=100)
+        animate.save(filename, fps=fps, dpi=100)
     return animate
 
 
@@ -98,8 +109,8 @@ def plot_diversity_dynamic(history: OptHistory, show=True):
     np_history = np.array([compute_fitness_diversity(pop)
                            for pop in history.individuals])
     labels = history.objective.metric_names
-    xs = np.arange(len(np_history))
-    ys = {label: np_history[:, i] for i, label in enumerate(labels)}
+    xs = np.arange(len(np_history) - 2)  # don't consider first pop and final choices
+    ys = {label: np_history[1:-1, i] for i, label in enumerate(labels)}
 
     fig, ax = plt.subplots()
     for label, metric_std in ys.items():
