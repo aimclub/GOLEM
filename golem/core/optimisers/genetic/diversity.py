@@ -41,6 +41,7 @@ def plot_diversity_dynamic_gif(history: OptHistory,
                                fig_size: int = 5,
                                fps: int = 4,
                                ) -> FuncAnimation:
+    # TODO: make violin plot instead of histogram?
     metric_names = history.objective.metric_names
     # dtype=float removes None, puts np.nan
     # indexed by [population, metric, individual] after transpose (.T)
