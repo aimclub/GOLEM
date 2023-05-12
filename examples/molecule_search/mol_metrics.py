@@ -95,15 +95,15 @@ def normalized_sa_score(mol_graph: MolGraph) -> float:
     return -normalized_score
 
 
-def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted: bool = True) -> float:
-    """ChEMBL-likeness score (CLscore) is defined by considering which substructures in a molecule
+class CLScorer:
+    """
+    ChEMBL-likeness score (CLscore) is defined by considering which substructures in a molecule
     also occur in molecules from the public database ChEMBL, using a subset of molecules with
     reported high confidence datapoint of activity on single protein targets.
 
     Original code: https://github.com/reymond-group/GDBChEMBL
 
     Args:
-        mol_graph: MolGraph to evaluate
         weighted: If True calculate score by summing up log10 of frequency of occurrence inside the reference database.
             When set to False, score will add 1 for every shingle inside the reference database,
             irrespective of how often it occurs. It is recommended to use the actual CLscore with weighted shingles.
@@ -114,74 +114,81 @@ def cl_score(mol_graph: MolGraph, weighted: bool = True, radius: int = 3, rooted
             atom of a circular substructure. False means shingles in the database are canonicalized but not rooted.
             It is recommended to use rooted shingles.
     """
+    def __init__(self, weighted: bool = True, radius: int = 3, rooted: bool = True):
+        self.rooted = rooted
+        self.weighted = weighted
+        self.radius = radius
+        self.db_shingles = self.load_shingles()
 
-    molecule = mol_graph.get_rw_molecule(aromatic=True)
-    db_shingles = load_shingles(rooted)
-    qry_shingles = extract_shingles(molecule, radius, rooted)
+    def __call__(self, mol_graph: MolGraph) -> float:
+        """
+        Args:
+            mol_graph: MolGraph to evaluate
+        """
+        molecule = mol_graph.get_rw_molecule(aromatic=True)
+        qry_shingles = self.extract_shingles(molecule)
 
-    # calculate shingle count averaged score
-    avg_score = 0
-    if qry_shingles:
-        sum_scores = 0
-        # using log10 of shingle frequency
-        if weighted:
-            for shingle in qry_shingles:
-                sum_scores += db_shingles.get(shingle, 0)
-        # working binary (i.e. if present -> count++ )
-        else:
-            for shingle in qry_shingles:
-                if shingle in db_shingles:
-                    sum_scores += 1
-        avg_score = sum_scores / len(qry_shingles)
-
-    return -avg_score
-
-
-def load_shingles(rooted: bool = True) -> Dict:
-    if rooted:
-        with open(os.path.join(project_root(),
-                               "examples/molecule_search/data/shingles",
-                               "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl"), "rb") as pyc:
-            db_shingles = pickle.load(pyc)
-    else:
-        with open(os.path.join(project_root(),
-                               "examples/molecule_search/data/shingles",
-                               "chembl_24_1_shingle_scores_log10_nrooted_nchir.pkl"), "rb") as pyc:
-            db_shingles = pickle.load(pyc)
-    return db_shingles
-
-
-def extract_shingles(molecule: RWMol, radius: int = 3, rooted: bool = True) -> set:
-    qry_shingles = set()
-
-    radius_constr = radius + 1
-
-    for atm_idx in range(molecule.GetNumAtoms()):
-        for N in range(1, radius_constr):
-            bonds = AllChem.FindAtomEnvironmentOfRadiusN(molecule, N, atm_idx)
-
-            if not bonds:
-                break
-
-            atoms = set()
-            for bond_id in bonds:
-                bond = molecule.GetBondWithIdx(bond_id)
-                atoms.add(bond.GetBeginAtomIdx())
-                atoms.add(bond.GetEndAtomIdx())
-
-            if rooted:
-                new_shingle = Chem.MolFragmentToSmiles(molecule,
-                                                       atomsToUse=list(atoms),
-                                                       bondsToUse=bonds,
-                                                       isomericSmiles=False,
-                                                       rootedAtAtom=atm_idx)
+        # calculate shingle count averaged score
+        avg_score = 0
+        if qry_shingles:
+            sum_scores = 0
+            # using log10 of shingle frequency
+            if self.weighted:
+                for shingle in qry_shingles:
+                    sum_scores += self.db_shingles.get(shingle, 0)
+            # working binary (i.e. if present -> count++ )
             else:
-                new_shingle = Chem.MolFragmentToSmiles(molecule,
-                                                       atomsToUse=list(atoms),
-                                                       bondsToUse=bonds,
-                                                       isomericSmiles=False,
-                                                       rootedAtAtom=-1)
+                for shingle in qry_shingles:
+                    if shingle in self.db_shingles:
+                        sum_scores += 1
+            avg_score = sum_scores / len(qry_shingles)
 
-            qry_shingles.add(new_shingle)
+        return -avg_score
 
-    return qry_shingles
+    def load_shingles(self) -> Dict:
+        if self.rooted:
+            with open(os.path.join(project_root(),
+                                   "examples/molecule_search/data/shingles",
+                                   "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl"), "rb") as pyc:
+                db_shingles = pickle.load(pyc)
+        else:
+            with open(os.path.join(project_root(),
+                                   "examples/molecule_search/data/shingles",
+                                   "chembl_24_1_shingle_scores_log10_nrooted_nchir.pkl"), "rb") as pyc:
+                db_shingles = pickle.load(pyc)
+        return db_shingles
+
+    def extract_shingles(self, molecule: RWMol) -> set:
+        qry_shingles = set()
+
+        radius_constr = self.radius + 1
+
+        for atm_idx in range(molecule.GetNumAtoms()):
+            for N in range(1, radius_constr):
+                bonds = AllChem.FindAtomEnvironmentOfRadiusN(molecule, N, atm_idx)
+
+                if not bonds:
+                    break
+
+                atoms = set()
+                for bond_id in bonds:
+                    bond = molecule.GetBondWithIdx(bond_id)
+                    atoms.add(bond.GetBeginAtomIdx())
+                    atoms.add(bond.GetEndAtomIdx())
+
+                if self.rooted:
+                    new_shingle = Chem.MolFragmentToSmiles(molecule,
+                                                           atomsToUse=list(atoms),
+                                                           bondsToUse=bonds,
+                                                           isomericSmiles=False,
+                                                           rootedAtAtom=atm_idx)
+                else:
+                    new_shingle = Chem.MolFragmentToSmiles(molecule,
+                                                           atomsToUse=list(atoms),
+                                                           bondsToUse=bonds,
+                                                           isomericSmiles=False,
+                                                           rootedAtAtom=-1)
+
+                qry_shingles.add(new_shingle)
+
+        return qry_shingles

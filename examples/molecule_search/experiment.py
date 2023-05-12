@@ -2,7 +2,7 @@ import os.path
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Type, Optional, Sequence, List, Iterable, Callable
+from typing import Type, Optional, Sequence, List, Iterable, Callable, Dict
 
 import numpy as np
 from rdkit.Chem import Draw
@@ -13,8 +13,8 @@ from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import CHEMICAL_MUTATIONS
-from examples.molecule_search.mol_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score, \
-    normalized_logp
+from examples.molecule_search.mol_metrics import normalized_sa_score, penalised_logp, qed_score, \
+    normalized_logp, CLScorer
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
     has_no_isolated_nodes
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
@@ -35,9 +35,9 @@ def get_methane():
     return MolGraph.from_smiles(methane)
 
 
-def get_all_mol_metrics():
+def get_all_mol_metrics() -> Dict[str, Callable]:
     metrics = {'qed_score': qed_score,
-               'cl_score': cl_score,
+               'cl_score': CLScorer(),
                'norm_sa_score': normalized_sa_score,
                'penalised_logp': penalised_logp,
                'norm_log_p': normalized_logp}
@@ -177,6 +177,6 @@ if __name__ == '__main__':
                    max_heavy_atoms=38,
                    trial_iterations=100,
                    pop_size=100,
-                   metrics=['penalised_logp'],
+                   metrics=['cl_score'],
                    visualize=True,
                    num_trials=10)
