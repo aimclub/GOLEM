@@ -17,18 +17,8 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.paths import default_data_dir
 from golem.visualisation.graph_viz import GraphVisualizer
-from golem.utilities.requirements_notificator import warn_requirement
-
-try:
-    import PIL
-    from PIL import Image
-except ModuleNotFoundError:
-    warn_requirement('Pillow', 'golem[extra_viz]', should_raise=True)
-
-try:
-    from imageio import get_writer, v2
-except ModuleNotFoundError:
-    warn_requirement('imageio', 'golem[extra_viz]', should_raise=True)
+from PIL import Image
+from imageio import get_writer, v2
 
 
 class OptHistoryExtraVisualizer:
