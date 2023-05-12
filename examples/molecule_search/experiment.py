@@ -12,8 +12,7 @@ from examples.molecule_search.mol_adapter import MolAdapter
 from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
-from examples.molecule_search.mol_mutations import add_atom, delete_atom, replace_atom, replace_bond, delete_bond, \
-    cut_atom, insert_carbon, remove_group, move_group
+from examples.molecule_search.mol_mutations import CHEMICAL_MUTATIONS
 from examples.molecule_search.mol_metrics import normalized_sa_score, cl_score, penalised_logp, qed_score, \
     normalized_logp
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
@@ -72,17 +71,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         multi_objective=True,
         genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
         elitism_type=ElitismTypesEnum.replace_worst,
-        mutation_types=[
-            add_atom,
-            delete_atom,
-            replace_atom,
-            replace_bond,
-            delete_bond,
-            cut_atom,
-            insert_carbon,
-            remove_group,
-            move_group
-        ],
+        mutation_types=CHEMICAL_MUTATIONS,
         crossover_types=[CrossoverTypesEnum.none],
         adaptive_mutation_type=MutationAgentTypeEnum.bandit
     )

@@ -160,3 +160,14 @@ def move_group(mol_graph: MolGraph,
             mol_graph.remove_bond(*bridge, update_representation=False)
             mol_graph.set_bond(new_endpoint, bridge[1], bond_type=current_bond.GetBondType())
     return mol_graph
+
+
+CHEMICAL_MUTATIONS = [add_atom,
+                      delete_atom,
+                      replace_atom,
+                      replace_bond,
+                      delete_bond,
+                      cut_atom,
+                      insert_carbon,
+                      remove_group,
+                      move_group]

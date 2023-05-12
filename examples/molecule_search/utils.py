@@ -37,5 +37,5 @@ def largest_ring_size(rw_molecule: RWMol) -> int:
     largest_cycle_len = 0
     cycle_list = rw_molecule.GetRingInfo().AtomRings()
     if cycle_list:
-        largest_cycle_len = max(list(map(len, cycle_list)))
+        largest_cycle_len = max(map(len, cycle_list))
     return largest_cycle_len
