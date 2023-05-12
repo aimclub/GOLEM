@@ -5,14 +5,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from golem.core.optimisers.fitness.fitness import SingleObjFitness
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
 from golem.core.optimisers.genetic.operators.mutation import Mutation
-from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.opt_history_objects.individual import Individual

@@ -1,0 +1,2 @@
+imageio>=2.23.0
+Pillow >= 9.3
