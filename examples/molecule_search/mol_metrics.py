@@ -2,6 +2,7 @@ import os
 import pickle
 import sys
 
+import requests
 from rdkit import RDConfig, Chem
 from rdkit.Chem import Descriptors, AllChem
 from rdkit.Chem.QED import qed
@@ -12,7 +13,7 @@ from examples.molecule_search.constants import ZINC_LOGP_MEAN, ZINC_LOGP_STD, ZI
     ZINC_CYCLE_MEAN, ZINC_CYCLE_STD, MIN_LONG_CYCLE_SIZE
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.utils import largest_ring_size
-from golem.core.paths import project_root
+from golem.core.paths import project_root, create_folder
 
 sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
 import sascorer
@@ -114,10 +115,23 @@ class CLScorer:
             atom of a circular substructure. False means shingles in the database are canonicalized but not rooted.
             It is recommended to use rooted shingles.
     """
+    ROOTED_FILE_PATH = "examples/molecule_search/data/shingles/" \
+                       "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl"
+    NOT_ROOTED_FILE_PATH = "examples/molecule_search/data/shingles/chembl_24_1_shingle_scores_log10_nrooted_nchir.pkl"
+
+    ROOTED_GITHUB_URL = "https://github.com/aimclub/GOLEM/raw/molecule-search/examples/molecule_search/data/shingles/" \
+                        "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl"
+    NOT_ROOTED_GITHUB_URL = "https://github.com/aimclub/GOLEM/raw/molecule-search/examples/molecule_search/data/" \
+                            "shingles/chembl_24_1_shingle_scores_log10_nrooted_nchir.pkl"
+
     def __init__(self, weighted: bool = True, radius: int = 3, rooted: bool = True):
         self.rooted = rooted
         self.weighted = weighted
         self.radius = radius
+
+        file_path = CLScorer.ROOTED_FILE_PATH if self.rooted else CLScorer.NOT_ROOTED_FILE_PATH
+        self.file_path = os.path.join(project_root(), file_path)
+        self.github_url = CLScorer.ROOTED_GITHUB_URL if self.rooted else CLScorer.NOT_ROOTED_GITHUB_URL
         self.db_shingles = self.load_shingles()
 
     def __call__(self, mol_graph: MolGraph) -> float:
@@ -146,16 +160,16 @@ class CLScorer:
         return -avg_score
 
     def load_shingles(self) -> Dict:
-        if self.rooted:
-            with open(os.path.join(project_root(),
-                                   "examples/molecule_search/data/shingles",
-                                   "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl"), "rb") as pyc:
-                db_shingles = pickle.load(pyc)
-        else:
-            with open(os.path.join(project_root(),
-                                   "examples/molecule_search/data/shingles",
-                                   "chembl_24_1_shingle_scores_log10_nrooted_nchir.pkl"), "rb") as pyc:
-                db_shingles = pickle.load(pyc)
+        save_dir = os.path.dirname(self.file_path)
+        create_folder(save_dir)
+
+        if not os.path.exists(self.file_path):
+            response = requests.get(self.github_url)
+            with open(self.file_path, "wb") as new_file:
+                new_file.write(response.content)
+
+        with open(self.file_path, "rb") as pyc:
+            db_shingles = pickle.load(pyc)
         return db_shingles
 
     def extract_shingles(self, molecule: RWMol) -> set:

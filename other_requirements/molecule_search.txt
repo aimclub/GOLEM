@@ -1,3 +1,4 @@
 rdkit>=2018.09.1.0
 guacamol>=0.5.4
 joblib>=0.12.5
+requests>=2.30.0
