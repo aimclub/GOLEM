@@ -107,21 +107,29 @@ def plot_diversity_dynamic_gif(history: OptHistory,
 
 
 def plot_diversity_dynamic(history: OptHistory, show=True):
-    np_history = np.array([compute_fitness_diversity(pop)
-                           for pop in history.individuals])
     labels = history.objective.metric_names
-    xs = np.arange(len(np_history) - 2)  # don't consider first pop and final choices
-    ys = {label: np_history[1:-1, i] for i, label in enumerate(labels)}
+    h = history.individuals[:-1]  # don't consider final choices
+    xs = np.arange(len(h))
+
+    # Compute diversity by metrics
+    np_history = np.array([compute_fitness_diversity(pop) for pop in h])
+    ys = {label: np_history[:, i] for i, label in enumerate(labels)}
+    # Compute number of unique individuals, plot
+    ratio_unique = [len(set(ind.graph.descriptive_id for ind in pop)) / len(pop) for pop in h]
 
     fig, ax = plt.subplots()
     for label, metric_std in ys.items():
         ax.plot(xs, metric_std, label=label)
 
+    ax2 = ax.twinx()
+    ax2.set_ylabel('Num unique')
+    ax2.plot(xs, ratio_unique, label='Num unique', color='tab:gray')
+
+    fig.suptitle('Population diversity')
     ax.set_xlabel('Generation')
     ax.set_ylabel('Std')
     ax.grid()
-    ax.legend()
-    fig.suptitle('Population diversity (Fitness std)')
+    ax.legend(loc='upper left')
 
     if show:
         plt.show()
