@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Sequence, Union, Any
 
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
+from golem.core.optimisers.adaptive.neural_contextual_mab_agent import ContextAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import MutationStrengthEnum, MutationTypesEnum, \
     simple_mutation_set
 from golem.core.optimisers.optimizer import AlgorithmParameters
@@ -33,6 +34,9 @@ class GPAlgorithmParameters(AlgorithmParameters):
     so that fitness changes depend only on agent's actions (chosen mutations).
     MutationAgentTypeEnum.bandit uses Multi-Armed Bandit (MAB) learning algorithm.
     MutationAgentTypeEnum.contextual bandit uses contextual MAB learning algorithm.
+
+    :param context_agent_type: specifies how the context of graph/node will be obtained.
+    Should be specified with ContextAgentTypeEnum.
 
     :param selection_types: Sequence of selection operators types
     :param crossover_types: Sequence of crossover operators types
@@ -68,6 +72,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     min_pop_size_with_elitism: int = 5
 
     adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
+    context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.graph2vec
 
     selection_types: Sequence[SelectionTypesEnum] = \
         (SelectionTypesEnum.tournament,)

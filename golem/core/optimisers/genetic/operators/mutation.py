@@ -5,6 +5,7 @@ from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Opt
 import numpy as np
 
 from golem.core.dag.graph import Graph
+from golem.core.optimisers.adaptive.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
 from golem.core.optimisers.adaptive.operator_agent import \
     OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
@@ -47,9 +48,12 @@ class Mutation(Operator):
         if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
             agent = RandomAgent(actions=parameters.mutation_types)
         elif kind == MutationAgentTypeEnum.bandit:
-            agent = MultiArmedBanditAgent(parameters.mutation_types, n_jobs=requirements.n_jobs)
+            agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
+                                          n_jobs=requirements.n_jobs)
         elif kind == MutationAgentTypeEnum.contextual_bandit:
-            raise NotImplementedError()
+            agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
+                                                          context_agent=parameters.context_agent_type,
+                                                          n_jobs=requirements.n_jobs)
         else:
             raise TypeError(f'Unknown parameter {kind}')
         return agent
