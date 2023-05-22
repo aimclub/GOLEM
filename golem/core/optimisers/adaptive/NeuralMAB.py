@@ -49,8 +49,8 @@ class NeuralMAB:
         self.W = copy.deepcopy(self.W0)
         self.summ = 0
 
-    def partial_fit(self, contexts: List[List[Any]], rewards: List[List[float]]):
-        for context, reward in zip(contexts, rewards):
+    def partial_fit(self, decisions: List[Any], contexts: List[List[Any]], rewards: List[float]):
+        for decision, context, reward in zip(decisions, contexts, rewards):
             # first, calculate estimated value for different actions
             ucb = []
             bphi = []
@@ -60,16 +60,9 @@ class NeuralMAB:
                 feat = self._feature_extractor(temp, self.W)
                 ucb.append(torch.mm(self.theta.view(1, -1), feat) + self._beta * self._UCB(self.LAMBDA, feat))
 
-            # second, choose an action
-            # use round-robin, #initial_pull = 3
-            if self.iter < 3 * len(self.arms):
-                a_choose = self.iter % len(self.arms)
-            else:
-                a_choose = ucb.index(max(ucb))
+            a_choose = decision
 
-            # third, get reward
-            chosen_reward = reward[a_choose]
-            self.summ += (max(reward) - chosen_reward)
+            self.summ += (max(ucb) - reward)
             self.result_neuralucb.append(self.summ)
 
             # finally update W by doing TRAIN_SE

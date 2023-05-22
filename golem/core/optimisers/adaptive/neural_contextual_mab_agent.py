@@ -1,42 +1,36 @@
 import random
-from enum import Enum
 from typing import Sequence, Union, Optional, List, Any
 
-from mabwiser.mab import LearningPolicy, MAB, NeighborhoodPolicy
 from scipy.special import softmax
 
-from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.NeuralMAB import NeuralMAB
+from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum, ContextAgentsRepository
 from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
 from golem.core.optimisers.adaptive.operator_agent import ActType, ExperienceBuffer, ObsType
-
-
-class ContextAgentTypeEnum(Enum):
-    graph2vec = 'graph2vec'
 
 
 class NeuralContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     def __init__(self,
                  actions: Sequence[ActType],
                  n_jobs: int = 1,
-                 context_agent: ContextAgentTypeEnum = ContextAgentTypeEnum.graph2vec,
+                 context_agent: ContextAgentTypeEnum = ContextAgentTypeEnum.feather_graph,
                  enable_logging: bool = True):
         super().__init__(actions=actions, enable_logging=enable_logging)
-
-        self._agent = NeuralMAB()
+        self._agent = NeuralMAB(arms=self._indices,
+                                n_jobs=n_jobs)
         self._context_agent = context_agent
 
     def choose_action(self, obs: ObsType) -> ActType:
         obs_emb = self._get_obs_embedding(obs=[obs])
-        arm = self._agent.predict(contexts=obs_emb)
+        arm = self._agent.predict(context=obs_emb)
         action = self.actions[arm]
         return action
 
     def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         obs_emb = self._get_obs_embedding(obs=[obs])
-        prob_dict = self._agent.predict_expectations(contexts=obs_emb)
+        prob_dict = self._agent.predict_expectations(context=obs_emb)
         prob_list = [prob_dict[i] for i in range(len(prob_dict))]
         return prob_list
 
@@ -55,6 +49,9 @@ class NeuralContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         obs_embs = self._get_obs_embedding(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=rewards, contexts=obs_embs)
 
-    @staticmethod
-    def _get_obs_embedding(obs: List[ObsType]) -> List[Any]:
-        pass
+    def _get_obs_embedding(self, obs: List[ObsType]) -> List[Any]:
+        context_agent = ContextAgentsRepository.agent_class_by_id(self._context_agent)
+        obs_contexts = []
+        for ob in obs:
+            obs_contexts.append(context_agent(ob))
+        return obs_contexts
