@@ -1,3 +1,4 @@
+import math
 from copy import deepcopy
 from random import choice
 from typing import Sequence, Union, Any
@@ -99,9 +100,37 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self._update_requirements()
 
         individuals_to_select = self.regularization(self.population, evaluator)
-        selected_individuals = self.selection(individuals_to_select)
-        new_population = self._spawn_evaluated_population(selected_individuals, evaluator)
+
+        # Population size controller is aimed
+        # to keep population size as specified in optimizer settings (make ref).
+        # It is a simple proportional controller
+        # that compensates for invalid results each generation
+        # by computing average ratio of valid results.
+
+        total_target_size = len(individuals_to_select)
+        moving_window_size = 10  # TODO: implement
+        next_population = []
+        required_valid_ratio = 0.9
+        mean_success_rate = 1.0  # TODO: it's just first init in Optimizer init
+        min_pop_size = 2
+        while len(next_population) / total_target_size < required_valid_ratio:
+            # Estimate how many individual we need to complete new population
+            #  based on average success rate of valid results
+            residual_size = max(min_pop_size, int(total_target_size - len(next_population) / mean_success_rate))
+            selected_individuals = self.selection(individuals_to_select, residual_size)
+
+            # TODO: this function is just transformation
+            #  with corner case of zero-th; handled either there or here
+            new_population = self._spawn_evaluated_population(selected_individuals, evaluator)
+            next_population.extend(new_population)
+
+            # TODO: implement running average if there's a good estimate
+            if len(new_population) > 10:
+                valid_ratio = len(new_population) / residual_size
+                mean_success_rate = (valid_ratio + mean_success_rate) / 2
+
         new_population = self.inheritance(self.population, new_population)
+        # TODO: logically put into inheritance?
         new_population = self.elitism(self.generations.best_individuals, new_population)
 
         return new_population
@@ -126,6 +155,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         can not be evaluated then mutate and evaluate selected individuals until a new
         population is obtained or the number of attempts is exceeded."""
         experience = self.mutation.agent_experience
+
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             new_population = self.crossover(selected_individuals)
             new_population = self.mutation(new_population)
