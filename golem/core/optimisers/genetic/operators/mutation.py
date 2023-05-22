@@ -50,7 +50,7 @@ class Mutation(Operator):
         elif kind == MutationAgentTypeEnum.bandit:
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs)
-        elif kind == MutationAgentTypeEnum.contextual_bandit:
+        elif kind == MutationAgentTypeEnum.neural_bandit:
             agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
                                                           context_agent=parameters.context_agent_type,
                                                           n_jobs=requirements.n_jobs)

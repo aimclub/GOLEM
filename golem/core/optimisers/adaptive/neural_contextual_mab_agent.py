@@ -5,7 +5,7 @@ from scipy.special import softmax
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
-from golem.core.optimisers.adaptive.NeuralMAB import NeuralMAB
+from golem.core.optimisers.adaptive.neural_mab import NeuralMAB
 from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum, ContextAgentsRepository
 from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
 from golem.core.optimisers.adaptive.operator_agent import ActType, ExperienceBuffer, ObsType

@@ -37,9 +37,9 @@ def generate_trees(graph_sizes: Sequence[int], node_types: Sequence[str] = ('x',
     return trees
 
 
-def get_graph_gp_params(objective: Objective):
+def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAgentTypeEnum):
     return GPAlgorithmParameters(
-        adaptive_mutation_type=MutationAgentTypeEnum.bandit,
+        adaptive_mutation_type=adaptive_mutation_type,
         pop_size=21,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
@@ -52,7 +52,8 @@ def get_graph_gp_params(objective: Objective):
     )
 
 
-def run_experiment_node_num(target_sizes: Sequence[int] = (100, 400),
+def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
+                            target_sizes: Sequence[int] = (100, 400),
                             trial_timeout: int = 15):
     for target_size in target_sizes:
         # Setup simple objective that searches for required graph size (number of nodes)
@@ -63,14 +64,16 @@ def run_experiment_node_num(target_sizes: Sequence[int] = (100, 400),
         optimizer, _ = graph_search_setup(
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
-            algorithm_parameters=get_graph_gp_params(objective),
+            algorithm_parameters=get_graph_gp_params(objective=objective,
+                                                     adaptive_mutation_type=adaptive_mutation_type),
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3,
         )
         run_adaptive_mutations(optimizer, objective, visualize=True)
 
 
-def run_experiment_edge_num(target_sizes: Sequence[int] = (100, 400),
+def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
+                            target_sizes: Sequence[int] = (100, 400),
                             trial_timeout: int = 15):
     for target_size in target_sizes:
         # Setup simple objective that searches for required graph size (number of nodes)
@@ -81,14 +84,17 @@ def run_experiment_edge_num(target_sizes: Sequence[int] = (100, 400),
         optimizer, _ = graph_search_setup(
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
-            algorithm_parameters=get_graph_gp_params(objective),
+            algorithm_parameters=get_graph_gp_params(objective=objective,
+                                                     adaptive_mutation_type=adaptive_mutation_type),
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3,
         )
         run_adaptive_mutations(optimizer, objective, visualize=True)
 
 
-def run_experiment_graphs_ratio_edges_nodes(trial_timeout: int = 15, trial_iterations: Optional[int] = 500):
+def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgentTypeEnum,
+                                            trial_timeout: int = 15,
+                                            trial_iterations: Optional[int] = 500):
     """In this experiment setup we generate different graphs with different ratios of #Edges/#Nodes.
     Respectively, probabilities of adding edges and adding nodes must be different for different targets."""
 
@@ -111,7 +117,8 @@ def run_experiment_graphs_ratio_edges_nodes(trial_timeout: int = 15, trial_itera
         optimizer, _ = graph_search_setup(
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
-            algorithm_parameters=get_graph_gp_params(objective),
+            algorithm_parameters=get_graph_gp_params(objective=objective,
+                                                     adaptive_mutation_type=adaptive_mutation_type),
             node_types=node_types,
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=trial_iterations,
@@ -120,7 +127,9 @@ def run_experiment_graphs_ratio_edges_nodes(trial_timeout: int = 15, trial_itera
         run_adaptive_mutations(optimizer, objective, target, visualize=True)
 
 
-def run_experiment_trees(trial_timeout: int = 15, trial_iterations: Optional[int] = 500):
+def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
+                         trial_timeout: int = 15,
+                         trial_iterations: Optional[int] = 500):
     node_types = ['x']
     for target in generate_trees(graph_sizes=[20, 30, 50], node_types=node_types):
         # Setup objective that measures some graph-theoretic similarity measure
@@ -137,7 +146,7 @@ def run_experiment_trees(trial_timeout: int = 15, trial_iterations: Optional[int
                 MutationTypesEnum.single_drop,
             ],
             crossover_types=[CrossoverTypesEnum.none],
-            adaptive_mutation_type=MutationAgentTypeEnum.bandit,
+            adaptive_mutation_type=adaptive_mutation_type,
         )
 
         # Build the optimizer
@@ -156,8 +165,10 @@ def run_experiment_trees(trial_timeout: int = 15, trial_iterations: Optional[int
 if __name__ == '__main__':
     """Run adaptive optimizer on different targets to see how adaptive agent converges
     to different probabilities of actions (i.e. mutations) for different targets."""
+    adaptive_mutation_type = MutationAgentTypeEnum.bandit
 
-    run_experiment_node_num(trial_timeout=2)
-    run_experiment_edge_num(trial_timeout=2)
-    run_experiment_trees(trial_timeout=10, trial_iterations=2000)
-    run_experiment_graphs_ratio_edges_nodes(trial_timeout=10, trial_iterations=2000)
+    run_experiment_node_num(trial_timeout=2, adaptive_mutation_type=adaptive_mutation_type)
+    run_experiment_edge_num(trial_timeout=2, adaptive_mutation_type=adaptive_mutation_type)
+    run_experiment_trees(trial_timeout=10, trial_iterations=2000, adaptive_mutation_type=adaptive_mutation_type)
+    run_experiment_graphs_ratio_edges_nodes(trial_timeout=10, trial_iterations=2000,
+                                            adaptive_mutation_type=adaptive_mutation_type)
