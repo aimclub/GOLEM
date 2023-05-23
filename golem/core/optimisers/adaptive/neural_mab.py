@@ -9,6 +9,9 @@ from mabwiser.utils import Arm, Constants
 
 from golem.core.log import default_log
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 class NeuralMAB:
     def __init__(self, arms: List[Arm],
@@ -20,7 +23,7 @@ class NeuralMAB:
         self.log = default_log('NeuralMAB')
         # to track when GNN needs to be updated
         self.iter = 0
-        self._initial_fit(context_size=100)
+        self._initial_fit(context_size=500)
 
     def _initial_fit(self, context_size: int):
 
@@ -74,7 +77,8 @@ class NeuralMAB:
                 REWARD_action = torch.cat((self.REWARD_action, torch.tensor([reward], dtype=torch.double)), 0)
 
             # update LAMBDA and bb
-            self.LAMBDA += torch.mm(self._feature_extractor(bphi[a_choose], self.W), self._feature_extractor(bphi[a_choose], self.W).self.iter())
+            self.LAMBDA += torch.mm(self._feature_extractor(bphi[a_choose], self.W),
+                                    self._feature_extractor(bphi[a_choose], self.W).t())
             self.bb += reward * self._feature_extractor(bphi[a_choose], self.W)
             theta, LU = torch.solve(self.bb, self.LAMBDA)
 
@@ -85,11 +89,9 @@ class NeuralMAB:
 
             if np.mod(self.iter, self._H_q) == self._H_q - 1:
                 self.log.info(f'Current regret: {self.summ}')
-                self.W = self._train_with_shallow_exploration(CONTEXT_action, REWARD_action, self.W0, self._interT, self._lr, THETA_action, self._H_q)
+                self.W = self._train_with_shallow_exploration(CONTEXT_action, REWARD_action, self.W0,
+                                                              self._interT, self._lr, THETA_action, self._H_q)
         self.iter += 1
-
-    def fit(self):
-        pass
 
     def predict(self, context: Any) -> int:
         """ Predicts which arm to pull to get maximum reward. """

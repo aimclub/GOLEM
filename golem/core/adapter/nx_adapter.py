@@ -85,3 +85,24 @@ class DumbNetworkxAdapter(BaseNetworkxAdapter):
 
     def _node_adapt(self, data: Dict) -> OptNode:
         return data[_NX_NODE_KEY]
+
+
+class BanditNetworkxAdapter(BaseNetworkxAdapter):
+    def _restore(self, opt_graph: OptGraph, metadata: Optional[Dict[str, Any]] = None) -> nx.DiGraph:
+        nx_graph = nx.DiGraph()
+        nx_node_data = {}
+
+        # add nodes
+        for node in opt_graph.nodes:
+            nx_node_data[node.uid] = self._node_restore(node)
+            nx_graph.add_node(opt_graph.nodes.index(node))
+
+        # add edges
+        for node in opt_graph.nodes:
+            for parent in node.nodes_from:
+                nx_graph.add_edge(opt_graph.nodes.index(parent), opt_graph.nodes.index(node))
+
+        # add nodes ad labels
+        nx.set_node_attributes(nx_graph, nx_node_data)
+
+        return nx_graph

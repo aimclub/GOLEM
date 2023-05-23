@@ -23,7 +23,7 @@ def run_adaptive_mutations(
     stats_action_value_log: List[List[float]] = []
 
     def log_action_values(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
-        values = optimizer.mutation.agent.get_action_values(obs=None)
+        values = optimizer.mutation.agent.get_action_values(obs=next_pop[0])
         stats_action_value_log.append(list(values))
 
     # Setup the logger and run the optimizer
