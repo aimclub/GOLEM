@@ -8,7 +8,7 @@ HERE = Path(__file__).parent.resolve()
 
 # The text of the README file
 NAME = 'thegolem'
-VERSION = '0.2.0'
+VERSION = '0.3.1'
 AUTHOR = 'NSS Lab'
 SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutionary Methods'
 
@@ -54,7 +54,7 @@ setuptools.setup(
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
 )
