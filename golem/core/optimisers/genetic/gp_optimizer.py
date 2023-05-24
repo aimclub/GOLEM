@@ -99,19 +99,23 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """
+
+        # Defines adaptive changes to algorithm parameters
+        #  like pop_size and operator probabilities
         self._update_requirements()
 
+        # Regularize previous population
         individuals_to_select = self.regularization(self.population, evaluator)
-
-        # TODO: move experience somewhere?
-        experience = self.mutation.agent_experience
-
+        # Reproduce from previous pop to get next population
         new_population = self.reproducer.reproduce(individuals_to_select, evaluator)
 
         # Adaptive agent experience collection & learning
+        # Must be called after reproduction (that collects the new experience)
+        experience = self.mutation.agent_experience
         experience.collect_results(new_population)
         self.mutation.agent.partial_fit(experience)
 
+        # Use some part of previous pop in the next pop
         new_population = self.inheritance(self.population, new_population)
         new_population = self.elitism(self.generations.best_individuals, new_population)
 
