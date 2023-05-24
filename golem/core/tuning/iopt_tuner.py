@@ -128,13 +128,13 @@ class IOptTuner(BaseTuner):
                  evolvent_density: int = 10,
                  eps_r: float = 0.001,
                  refine_solution: bool = False,
-                 deviation: float = 0.05):
+                 deviation: float = 0.05, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
                          iterations=iterations,
                          n_jobs=n_jobs,
-                         deviation=deviation)
+                         deviation=deviation, **kwargs)
         self.solver_parameters = SolverParameters(r=np.double(r),
                                                   eps=np.double(eps),
                                                   itersLimit=iterations,
