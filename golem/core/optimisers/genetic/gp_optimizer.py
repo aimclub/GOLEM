@@ -1,7 +1,7 @@
 import math
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Union, Any
+from typing import Sequence, Union, Any, Optional
 
 import numpy as np
 
@@ -135,30 +135,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
 
-    def _spawn_evaluated_population(self, selected_individuals: PopulationT,
-                                    evaluator: EvaluationOperator) -> PopulationT:
-        """Reproduce and evaluate new population. If at least one of received individuals
-        can not be evaluated then mutate and evaluate selected individuals until a new
-        population is obtained or the number of attempts is exceeded."""
-
-        for i in range(EVALUATION_ATTEMPTS_NUMBER):
-            new_population = self.crossover(selected_individuals)
-            new_population = self.mutation(new_population)
-            new_population = evaluator(new_population)
-            if new_population:
-                # Perform adaptive learning
-                # experience.collect_results(new_population)
-                # self.mutation.agent.partial_fit(experience)
-                return new_population
-            else:
-                # TODO: this is problematic:
-                #  mutation collects negative experience... is that ok?
-                # experience.reset()
-                pass
-        else:
-            # Could not generate valid population; raise an error
-            raise EvaluationAttemptsError()
-
 
 class ReproductionController:
     """
@@ -194,8 +170,8 @@ class ReproductionController:
 
     def reproduce_uncontrolled(self,
                                population: PopulationT,
-                               pop_size: int,
                                evaluator: EvaluationOperator,
+                               pop_size: Optional[int] = None,
                                ) -> PopulationT:
         """Reproduces and evaluates population (select, crossover, mutate).
         Doesn't implement any additional checks on population.
@@ -206,7 +182,10 @@ class ReproductionController:
         new_population = evaluator(new_population)
         return new_population
 
-    def reproduce(self, population: PopulationT, evaluator: EvaluationOperator):
+    def reproduce(self,
+                  population: PopulationT,
+                  evaluator: EvaluationOperator
+                  ) -> PopulationT:
         """Reproduces and evaluates population (select, crossover, mutate).
         Implements additional checks on population to ensure that population size
         follows required population size.
@@ -222,7 +201,7 @@ class ReproductionController:
                                 int(residual_size / self.mean_success_rate))
 
             # Reproduce the required number of individuals
-            new_population = self.reproduce_uncontrolled(population, residual_size, evaluator)
+            new_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
             next_population.extend(new_population)
 
             # Keep running average of transform success rate (if sample is big enough)
