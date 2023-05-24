@@ -36,9 +36,6 @@ class Selection(Operator):
         else:
             raise ValueError(f'Required selection not found: {selection_type}')
 
-    def individuals_selection(self, individuals: PopulationT) -> PopulationT:
-        return self.__call__(individuals)
-
 
 def default_selection_behaviour(selection_func: Optional[Callable] = None, *, ensure_unique: bool = True,
                                 populate_by_single: bool = True):
