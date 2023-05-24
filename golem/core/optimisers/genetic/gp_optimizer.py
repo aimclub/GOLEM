@@ -47,10 +47,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,
                           self.mutation, self.inheritance, self.elitism]
-        self.reproducer = ReproductionController(self.selection,
-                                                 self.mutation,
-                                                 self.crossover,
-                                                 graph_optimizer_params)
+        self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
 
         # Define adaptive parameters
         self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
@@ -116,7 +113,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.mutation.agent.partial_fit(experience)
 
         new_population = self.inheritance(self.population, new_population)
-        # TODO: logically put elitism into inheritance?
         new_population = self.elitism(self.generations.best_individuals, new_population)
 
         return new_population
@@ -147,18 +143,17 @@ class ReproductionController:
     """
 
     def __init__(self,
+                 parameters: GPAlgorithmParameters,
                  selection: Selection,
                  mutation: Mutation,
                  crossover: Crossover,
-                 parameters: GPAlgorithmParameters,
-                 required_valid_ratio: float = 0.9,  # TODO: to parameters
                  ):
+        self.parameters = parameters
         self.selection = selection
         self.mutation = mutation
         self.crossover = crossover
 
-        self._required_valid_ratio = required_valid_ratio
-        self._minimum_valid_ratio = required_valid_ratio * 0.5
+        self._minimum_valid_ratio = parameters.required_valid_ratio * 0.5
         self._window_size = max(MIN_POP_SIZE, parameters.max_pop_size // 10)
         self._success_rate_window = np.full(self._window_size, 1.0)
 
@@ -190,8 +185,7 @@ class ReproductionController:
         Implements additional checks on population to ensure that population size
         follows required population size.
         """
-        # TODO: ensure next pop size is determined in Inheritance; not here?
-        required_size = len(population)
+        required_size = self.parameters.pop_size  # next population size
         next_population = []
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             # Estimate how many individuals we need to complete new population
@@ -211,7 +205,7 @@ class ReproductionController:
                 self._success_rate_window[0] = valid_ratio
 
             # Successful return: got enough individuals
-            if len(next_population) >= required_size * self._required_valid_ratio:
+            if len(next_population) >= required_size * self.parameters.required_valid_ratio:
                 return next_population
         else:
             # If number of evaluation attempts is exceeded return a warning or raise exception
