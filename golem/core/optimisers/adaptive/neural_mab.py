@@ -26,7 +26,11 @@ class NeuralMAB:
         self._initial_fit(context_size=500)
 
     def _initial_fit(self, context_size: int):
-
+        """
+        beta -- parameter for UCB exploration
+        H_q -- how many time steps to update NN
+        interT -- internal steps for GD
+        """
         # params for GNN
         self._beta = 0.02
         self._lambd = 1
@@ -52,34 +56,30 @@ class NeuralMAB:
         self.W = copy.deepcopy(self.W0)
         self.summ = 0
 
-    def partial_fit(self, decisions: List[Any], contexts: List[List[Any]], rewards: List[float]):
+    def partial_fit(self, decisions: List[Any], contexts: List[Any], rewards: List[float]):
         for decision, context, reward in zip(decisions, contexts, rewards):
             # first, calculate estimated value for different actions
-            ucb = []
-            bphi = []
-            for a in range(0, len(self.arms)):
-                temp = self._transfer(context, a, len(self.arms))
-                bphi.append(temp)
-                feat = self._feature_extractor(temp, self.W)
-                ucb.append(torch.mm(self.theta.view(1, -1), feat) + self._beta * self._UCB(self.LAMBDA, feat))
+            # context = context[:, :8]
 
-            a_choose = decision
+            temp = self._transfer(context, decision, len(self.arms))
+            feat = self._feature_extractor(temp, self.W)
+            expected_reward = torch.mm(self.theta.view(1, -1), feat) + self._beta * self._UCB(self.LAMBDA, feat)
 
-            self.summ += (max(ucb) - reward)
+            self.summ += (expected_reward - reward)
             self.result_neuralucb.append(self.summ)
 
             # finally update W by doing TRAIN_SE
             if np.mod(self.iter, self._H_q) == 0:
-                CONTEXT_action = bphi[a_choose]
+                CONTEXT_action = temp
                 REWARD_action = torch.tensor([reward], dtype=torch.double)
             else:
-                CONTEXT_action = torch.cat((self.CONTEXT_action, bphi[a_choose]), 1)
+                CONTEXT_action = torch.cat((self.CONTEXT_action, temp), 1)
                 REWARD_action = torch.cat((self.REWARD_action, torch.tensor([reward], dtype=torch.double)), 0)
 
             # update LAMBDA and bb
-            self.LAMBDA += torch.mm(self._feature_extractor(bphi[a_choose], self.W),
-                                    self._feature_extractor(bphi[a_choose], self.W).t())
-            self.bb += reward * self._feature_extractor(bphi[a_choose], self.W)
+            self.LAMBDA += torch.mm(self._feature_extractor(temp, self.W),
+                                    self._feature_extractor(temp, self.W).t())
+            self.bb += reward * self._feature_extractor(temp, self.W)
             theta, LU = torch.solve(self.bb, self.LAMBDA)
 
             if np.mod(self.iter, self._H_q) == 0:
@@ -91,12 +91,13 @@ class NeuralMAB:
                 self.log.info(f'Current regret: {self.summ}')
                 self.W = self._train_with_shallow_exploration(CONTEXT_action, REWARD_action, self.W0,
                                                               self._interT, self._lr, THETA_action, self._H_q)
-        self.iter += 1
+            self.iter += 1
 
     def predict(self, context: Any) -> int:
         """ Predicts which arm to pull to get maximum reward. """
         ucb = []
         bphi = []
+        # context = context[0][:, :8]
         for a in range(0, len(self.arms)):
             temp = self._transfer(context, a, len(self.arms))
             bphi.append(temp)
@@ -113,6 +114,7 @@ class NeuralMAB:
         """ Returns expected reward for each arm. """
         ucb = []
         bphi = []
+        # context = context[0][:, :8]
         for a in range(0, len(self.arms)):
             temp = self._transfer(context, a, len(self.arms))
             bphi.append(temp)
@@ -156,7 +158,7 @@ class NeuralMAB:
         return output
 
     def _gradient_loss(self, X, Y, W, THETA):
-        """ Return a list of grad, satisfying that W[i] = W[i] - grad[i] ##for single context x. """
+        """ Return a list of grad, satisfying that W[i] = W[i] - grad[i] for single context x. """
         depth = len(W)
         num_sample = Y.shape[0]
         loss = []
@@ -175,12 +177,12 @@ class NeuralMAB:
         output = torch.bmm(THETA_t, output_t).squeeze().view(1, -1)
 
         loss.append(output)
-        ####
+
         feat = self._feature_extractor(X, W)
         feat_t = torch.transpose(feat, 0, 1).view(num_sample, -1, 1)
         output_t = torch.bmm(THETA_t, feat_t).squeeze().view(1, -1)
 
-        #### backward gradient propagation
+        # backward gradient propagation
         back = output_t - Y
         back = back.double()
         grad_t = torch.mm(back, loss[depth - 1].t())
@@ -191,7 +193,7 @@ class NeuralMAB:
             back[relu[depth - i - 1] < 0] = 0
             grad_t = torch.mm(back, loss[depth - i - 1].t())
             grad.append(grad_t)
-        ####
+
         grad1 = []
         for i in range(0, depth):
             grad1.append(grad[depth - 1 - i] * math.sqrt(W[depth - 1].size()[1]) / len(X[0, :]))
@@ -202,7 +204,7 @@ class NeuralMAB:
         return grad1
 
     def _loss(self, X, Y, W, THETA):
-        #### total loss
+        # total loss
         num_sample = len(X[0, :])
         output = self._feature_extractor(X, W)
         THETA_t = torch.transpose(THETA, 0, 1).view(num_sample, 1, -1)
@@ -216,7 +218,6 @@ class NeuralMAB:
         """ Gd-based model training with shallow exploration
         Dataset X, label Y. """
         W = copy.deepcopy(W_start)
-        num_sample = H
         X = X[:, -H:]
         Y = Y[-H:]
         THETA = THETA[:, -H:]

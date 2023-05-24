@@ -9,14 +9,14 @@ from golem.core.dag.graph import Graph
 
 
 def feather_graph(graph: Graph) -> List[float]:
-    """ Returns embedding based  on an implementation of `"FEATHER-G" <https://arxiv.org/abs/2005.07959>`_.
+    """ Returns embedding based on an implementation of `"FEATHER-G" <https://arxiv.org/abs/2005.07959>`_.
     The procedure uses characteristic functions of node features with random walk weights to describe
     node neighborhoods. These node level features are pooled by mean pooling to
     create graph level statistics. """
     descriptor = FeatherGraph()
     nx_graph = BanditNetworkxAdapter().restore(graph)
     descriptor.fit([nx_graph])
-    return descriptor.get_embedding()
+    return descriptor.get_embedding()[:20]
 
 
 class ContextAgentTypeEnum(Enum):
