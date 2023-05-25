@@ -150,10 +150,10 @@ class FitnessLine(HistoryVisualization):
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         if per_time:
             xlabel = 'Time, s'
-            plot_fitness_line_per_time(ax, self.history.individuals)
+            plot_fitness_line_per_time(ax, self.history.generations)
         else:
             xlabel = 'Generation'
-            plot_fitness_line_per_generations(ax, self.history.individuals)
+            plot_fitness_line_per_generations(ax, self.history.generations)
         setup_fitness_plot(ax, xlabel)
         show_or_save_figure(fig, save_path, dpi)
 
@@ -191,7 +191,7 @@ class FitnessLineInteractive(HistoryVisualization):
             x_template = 'generation {}'
             plot_func = plot_fitness_line_per_generations
 
-        best_individuals = plot_func(ax_fitness, self.history.individuals)
+        best_individuals = plot_func(ax_fitness, self.history.generations)
         setup_fitness_plot(ax_fitness, x_label)
 
         ax_graph.axis('off')

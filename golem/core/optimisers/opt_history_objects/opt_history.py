@@ -35,7 +35,7 @@ class OptHistory:
                  objective: Optional[ObjectiveInfo] = None,
                  default_save_dir: Optional[os.PathLike] = None):
         self._objective = objective or ObjectiveInfo()
-        self.individuals: List[Generation] = []
+        self._generations: List[Generation] = []
         self.archive_history: List[List[Individual]] = []
         self._tuning_result: Optional[Graph] = None
 
@@ -54,12 +54,12 @@ class OptHistory:
         return self._objective
 
     def is_empty(self) -> bool:
-        return not self.individuals
+        return not self.generations
 
     def add_to_history(self, individuals: Sequence[Individual], generation_label: Optional[str] = None,
                        generation_metadata: Optional[Dict[str, Any]] = None):
         generation = Generation(individuals, self.generations_count, generation_label, generation_metadata)
-        self.individuals.append(generation)
+        self.generations.append(generation)
 
     def add_to_archive_history(self, individuals: Sequence[Individual]):
         self.archive_history.append(list(individuals))
@@ -81,7 +81,7 @@ class OptHistory:
 
             # Write history rows
             idx = 0
-            for gen_num, gen_inds in enumerate(self.individuals):
+            for gen_num, gen_inds in enumerate(self.generations):
                 for ind_num, ind in enumerate(gen_inds):
                     row = [idx, gen_num, ind.fitness.values, ind.graph.length, ind.graph.depth, ind.metadata]
                     writer.writerow(row)
@@ -96,7 +96,7 @@ class OptHistory:
 
         try:
             last_gen_id = self.generations_count - 1
-            last_gen = self.individuals[last_gen_id]
+            last_gen = self.generations[last_gen_id]
             for individual in last_gen:
                 ind_path = Path(save_dir, str(last_gen_id), str(individual.uid))
                 if not os.path.isdir(ind_path):
@@ -124,15 +124,15 @@ class OptHistory:
         """Return sequence of histories of generations per each metric"""
         if self.objective.is_multi_objective:
             historical_fitness = []
-            num_metrics = len(self.individuals[0][0].fitness.values)
+            num_metrics = len(self.generations[0][0].fitness.values)
             for objective_num in range(num_metrics):
                 # history of specific objective for each generation
                 objective_history = [[ind.fitness.values[objective_num] for ind in generation]
-                                     for generation in self.individuals]
+                                     for generation in self.generations]
                 historical_fitness.append(objective_history)
         else:
             historical_fitness = [[ind.fitness.value for ind in pop]
-                                  for pop in self.individuals]
+                                  for pop in self.generations]
         return historical_fitness
 
     @property
@@ -175,7 +175,7 @@ class OptHistory:
         # Take only the first graph's appearance in history
         individuals_with_positions \
             = list({ind.graph.descriptive_id: (ind, gen_num, ind_num)
-                    for gen_num, gen in enumerate(self.individuals)
+                    for gen_num, gen in enumerate(self.generations)
                     for ind_num, ind in reversed(list(enumerate(gen)))}.values())
 
         top_individuals = sorted(individuals_with_positions,
@@ -194,7 +194,7 @@ class OptHistory:
                                   f'{individual.graph.descriptive_id}']), file=output)
 
         # add info about initial assumptions (stored as zero generation)
-        for i, individual in enumerate(self.individuals[0]):
+        for i, individual in enumerate(self.generations[0]):
             ind = f'I{i}'
             positional_id = '-'
             print(separator.join([f'{ind:>3}'
@@ -205,23 +205,23 @@ class OptHistory:
 
     @property
     def initial_assumptions(self) -> Optional[Generation]:
-        if not self.individuals:
+        if not self.generations:
             return None
-        for gen in self.individuals:
+        for gen in self.generations:
             if gen.label == 'initial_assumptions':
                 return gen
 
     @property
     def final_choices(self) -> Optional[Generation]:
-        if not self.individuals:
+        if not self.generations:
             return None
-        for gen in reversed(self.individuals):
+        for gen in reversed(self.generations):
             if gen.label == 'final_choices':
                 return gen
 
     @property
     def generations_count(self) -> int:
-        return len(self.individuals)
+        return len(self.generations)
 
     @property
     def tuning_result(self):
@@ -233,6 +233,21 @@ class OptHistory:
     @tuning_result.setter
     def tuning_result(self, val):
         self._tuning_result = val
+
+    @property
+    def generations(self):
+        return self._generations
+
+    @generations.setter
+    def generations(self, value):
+        self._generations = value
+
+    @property
+    def individuals(self):
+        self._log.warning(
+            '"OptHistory.individuals" is deprecated and will be removed later. '
+            'Please, use "OptHistory.generations" to access generations.')
+        return self.generations
 
     @property
     def _log(self):

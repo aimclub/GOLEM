@@ -120,7 +120,7 @@ class OptHistoryExtraVisualizer:
             self._clean(with_gif=True)
             all_historical_fitness = history.all_historical_quality(metric_index)
             historical_graphs = [ind.graph
-                                 for ind in list(itertools.chain(*history.individuals))]
+                                 for ind in list(itertools.chain(*history.generations))]
             self._visualise_graphs(historical_graphs, all_historical_fitness)
             self._visualise_convergence(all_historical_fitness)
             self._merge_images()

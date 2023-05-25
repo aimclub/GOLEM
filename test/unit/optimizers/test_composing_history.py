@@ -64,7 +64,7 @@ def generate_history(request) -> OptHistory:
 def _test_individuals_in_history(history: OptHistory):
     uids = set()
     ids = set()
-    for ind in itertools.chain(*history.individuals):
+    for ind in itertools.chain(*history.generations):
         # All individuals in `history.individuals` must have a native generation.
         assert ind.has_native_generation
         assert ind.fitness
@@ -95,9 +95,9 @@ def test_history_adding(generate_history):
     pop_size = 10
     history = generate_history
 
-    assert len(history.individuals) == generations_quantity
+    assert len(history.generations) == generations_quantity
     for gen in range(generations_quantity):
-        assert len(history.individuals[gen]) == pop_size
+        assert len(history.generations[gen]) == pop_size
 
 
 @pytest.mark.parametrize('generate_history', [[2, 10, create_individual]], indirect=True)
@@ -107,7 +107,7 @@ def test_individual_graph_type_is_optgraph(generate_history):
     history = generate_history
     for gen in range(generations_quantity):
         for ind in range(pop_size):
-            assert type(history.individuals[gen][ind].graph) == OptGraph
+            assert type(history.generations[gen][ind].graph) == OptGraph
 
 
 def test_ancestor_for_crossover():
@@ -187,7 +187,7 @@ def test_history_save_custom_nodedata():
 
     saved = history.save()
     reloaded = OptHistory.load(saved)
-    reloaded_inds = list(itertools.chain(*reloaded.individuals))
+    reloaded_inds = list(itertools.chain(*reloaded.generations))
 
     for i, ind in enumerate(reloaded_inds):
         ind_content = ind.graph.root_node.content
@@ -218,7 +218,7 @@ def test_all_historical_quality(generate_history):
     history = generate_history
     eval_fitness = [[0.9, 0.8], [0.8, 0.6], [0.2, 0.4], [0.9, 0.9]]
     weights = (-1, 1)
-    for pop_num, population in enumerate(history.individuals):
+    for pop_num, population in enumerate(history.generations):
         if pop_num != 0:
             eval_fitness = [[fit[0] + 0.5, fit[1]] for fit in eval_fitness]
         for ind_num, individual in enumerate(population):
@@ -242,7 +242,7 @@ def test_newly_generated_history(n_jobs: int):
     history = opt.history
 
     assert history is not None
-    assert len(history.individuals) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
+    assert len(history.generations) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
     assert len(history.archive_history) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
     assert len(history.initial_assumptions) == 5
     assert len(history.final_choices) == 1
@@ -280,7 +280,7 @@ def test_history_correct_serialization():
     dumped_history_json = history.save()
     reloaded_history = OptHistory.load(dumped_history_json)
 
-    assert history.individuals == reloaded_history.individuals
+    assert history.generations == reloaded_history.generations
     assert dumped_history_json == reloaded_history.save(), 'The history is not equal to itself after reloading!'
     _test_individuals_in_history(reloaded_history)
 
