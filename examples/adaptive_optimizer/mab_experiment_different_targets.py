@@ -44,9 +44,9 @@ def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAg
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
-            MutationTypesEnum.single_add,
-            MutationTypesEnum.single_edge,
             MutationTypesEnum.single_drop,
+            MutationTypesEnum.single_edge,
+            MutationTypesEnum.single_add
         ],
         crossover_types=[CrossoverTypesEnum.none]
     )
