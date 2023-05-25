@@ -38,7 +38,6 @@ class OptHistory:
         self.individuals: List[Generation] = []
         self.archive_history: List[List[Individual]] = []
         self._tuning_result: Optional[Graph] = None
-        self._log = default_log(self)
 
         # init default save directory
         if default_save_dir:
@@ -234,3 +233,7 @@ class OptHistory:
     @tuning_result.setter
     def tuning_result(self, val):
         self._tuning_result = val
+
+    @property
+    def _log(self):
+        return default_log(self)
