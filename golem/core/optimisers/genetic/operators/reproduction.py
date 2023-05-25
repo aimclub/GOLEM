@@ -27,6 +27,7 @@ class ReproductionController:
                  selection: Selection,
                  mutation: Mutation,
                  crossover: Crossover,
+                 window_size: int = 10,
                  ):
         self.parameters = parameters
         self.selection = selection
@@ -34,7 +35,7 @@ class ReproductionController:
         self.crossover = crossover
 
         self._minimum_valid_ratio = parameters.required_valid_ratio * 0.5
-        self._window_size = max(MIN_POP_SIZE, parameters.max_pop_size // 10)
+        self._window_size = window_size
         self._success_rate_window = np.full(self._window_size, 1.0)
 
         self._log = default_log(self)
@@ -51,6 +52,8 @@ class ReproductionController:
         """Reproduces and evaluates population (select, crossover, mutate).
         Doesn't implement any additional checks on population.
         """
+        # TODO: it can't choose more than len(population)!
+        #  It can be faster if it could.
         selected_individuals = self.selection(population, pop_size)
         new_population = self.crossover(selected_individuals)
         new_population = self.mutation(new_population)
@@ -73,6 +76,7 @@ class ReproductionController:
             residual_size = required_size - len(next_population)
             residual_size = max(MIN_POP_SIZE,
                                 int(residual_size / self.mean_success_rate))
+            residual_size = min(len(population), residual_size)
 
             # Reproduce the required number of individuals
             new_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
