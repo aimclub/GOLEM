@@ -1,13 +1,15 @@
 Tuning of graph parameters
 ==========================
 
-``SimultaneousTuner`` and ``SequentialTuner`` work with internal graph representation (also called `optimization graph`, see `Adaptation of Graphs`_).
+``SimultaneousTuner``, ``IOptTuner`` and ``SequentialTuner`` work with internal graph representation (also called `optimization graph`, see `Adaptation of Graphs`_).
 To optimise custom domain graph pass ``adapter``. If your graph class is inherited from ``OptGraph`` no adapter is needed.
 Tuners optimise parameters stored in ``OptNode.parameters``.
 
 To specify parameters search space use ``SearchSpace`` class.
 Initialize ``SearchSpace`` with dictionary of the form
-``{'operation_name': {'param_name': (hyperopt distribution function, [sampling scope]), ...}, ...}``.
+``{'operation_name': {'param_name': { 'hyperopt-dist': <hyperopt distribution function>,
+'sampling-scope': [sampling scope], 'type': <type of parameter>}, ...}, ...}``.
+Three type of parameters are available: `continuous`, `discrete` and `categorical`.
 
 .. code::
 
@@ -18,12 +20,24 @@ Initialize ``SearchSpace`` with dictionary of the form
 
     params_per_operation = {
         'operation_name_1': {
-            'parameter_name_1': (hp.uniformint, [2, 7]),
-            'parameter_name_2': (hp.loguniform, [np.log(1e-3), np.log(1)])
+            'parameter_name_1': {
+                'hyperopt-dist': hp.uniformint,
+                'sampling-scope': [2, 21],
+                'type': 'discrete'},
+            'parameter_name_2': {
+                'hyperopt-dist': hp.loguniform,
+                'sampling-scope': [1e-3, 1],
+                'type': 'continuous'}
         },
         'operation_name_2': {
-            'parameter_name_1': (hp.choice, [["first", "second", "third"]]),
-            'parameter_name_2': (hp.uniform, [0.05, 1.0])
+            'parameter_name_1': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [["first", "second", "third"]],
+                'type': 'categorical'},
+            'parameter_name_2':
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'}
         }}
 
     search_space = SearchSpace(params_per_operation)
@@ -47,7 +61,7 @@ You can tune all parameters of graph nodes simultaneously using ``SimultaneousTu
 .. automodule:: golem.core.tuning.simultaneous
    :members:
 
-.. automodule:: golem.core.tuning.iopt_tuner
+.. autoclass:: golem.core.tuning.iopt_tuner.IOptTuner
    :members:
 
 Sequential
