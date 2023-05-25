@@ -9,7 +9,7 @@ To specify parameters search space use ``SearchSpace`` class.
 Initialize ``SearchSpace`` with dictionary of the form
 ``{'operation_name': {'param_name': { 'hyperopt-dist': <hyperopt distribution function>,
 'sampling-scope': [sampling scope], 'type': <type of parameter>}, ...}, ...}``.
-Three type of parameters are available: `continuous`, `discrete` and `categorical`.
+Three types of parameters are available: `continuous`, `discrete` and `categorical`.
 
 .. code::
 
@@ -55,7 +55,7 @@ You can tune all parameters of graph nodes simultaneously using ``SimultaneousTu
    Also ``IOptTuner`` can optimise only `continuous` and `discrete` parameters but not `categorical` ones.
    `Categorical` parameters will be ignored while tuning.
 
-   ``IOptTuner`` is implemented using `IOpt library`_. See the `documentation`_ (in russian) to learn more about
+   ``IOptTuner`` is implemented using `IOpt library`_. See the `documentation`_ (in Russian) to learn more about
    the optimisation algorithm.
 
 .. automodule:: golem.core.tuning.simultaneous
