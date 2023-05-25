@@ -1,11 +1,12 @@
 import copy
 import math
-from typing import List, Any
+from typing import List, Any, Union, Dict
 import sys
 
 import torch
 import numpy as np
-from mabwiser.utils import Arm, Constants
+from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
+from mabwiser.utils import Arm, Constants, Num
 
 from golem.core.log import default_log
 
@@ -13,10 +14,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-class NeuralMAB:
+class NeuralMAB(MAB):
     def __init__(self, arms: List[Arm],
+                 learning_policy: Any = LearningPolicy.UCB1(alpha=1.25),
+                 neighborhood_policy: Any = NeighborhoodPolicy.KNearest(k=2),
                  seed: int = Constants.default_seed,
                  n_jobs: int = 1):
+
+        super().__init__(arms, learning_policy, neighborhood_policy, seed, n_jobs)
         self.arms = arms
         self.seed = seed
         self.n_jobs = n_jobs
@@ -24,6 +29,11 @@ class NeuralMAB:
         # to track when GNN needs to be updated
         self.iter = 0
         self._initial_fit(context_size=500)
+        self._indices = list(range(len(arms)))
+        self._mab = MAB(arms=self._indices,
+                        learning_policy=learning_policy,
+                        neighborhood_policy=neighborhood_policy,
+                        n_jobs=n_jobs)
 
     def _initial_fit(self, context_size: int):
         """
@@ -34,8 +44,8 @@ class NeuralMAB:
         # params for GNN
         self._beta = 0.02
         self._lambd = 1
-        self._lr = 0.0001
-        self._H_q = 10
+        self._lr = 0.001
+        self._H_q = 5
         self._interT = 1000
         self._hidden_dim = [1000, 1000]
         hid_dim_lst = self._hidden_dim
@@ -55,20 +65,32 @@ class NeuralMAB:
         self.result_neuralucb = []
         self.W = copy.deepcopy(self.W0)
         self.summ = 0
+        self.is_fitted = False
 
-    def partial_fit(self, decisions: List[Any], contexts: List[Any], rewards: List[float]):
+    def _initial_fit_mab(self, context: Any):
+        # initial fit for mab
+        n = len(self.arms)
+        uniform_rewards = [1. / n] * n
+        deep_context = self._get_deep_context(context=context)
+        self._mab.fit(decisions=self._indices, rewards=uniform_rewards, contexts=n * [deep_context])
+        self.is_fitted = True
+
+    def partial_fit(self, decisions: List[Any], rewards: List[float], contexts: List[Any] = None):
+        deep_contexts = []
+
+        # update NN and calculate regret
         for decision, context, reward in zip(decisions, contexts, rewards):
-            # first, calculate estimated value for different actions
-            # context = context[:, :8]
 
+            # calculate regret
             temp = self._transfer(context, decision, len(self.arms))
             feat = self._feature_extractor(temp, self.W)
+            deep_contexts.append(list(feat.numpy().squeeze()))
             expected_reward = torch.mm(self.theta.view(1, -1), feat) + self._beta * self._UCB(self.LAMBDA, feat)
 
             self.summ += (expected_reward - reward)
             self.result_neuralucb.append(self.summ)
 
-            # finally update W by doing TRAIN_SE
+            # update W by doing TRAIN_SE
             if np.mod(self.iter, self._H_q) == 0:
                 CONTEXT_action = temp
                 REWARD_action = torch.tensor([reward], dtype=torch.double)
@@ -80,7 +102,7 @@ class NeuralMAB:
             self.LAMBDA += torch.mm(self._feature_extractor(temp, self.W),
                                     self._feature_extractor(temp, self.W).t())
             self.bb += reward * self._feature_extractor(temp, self.W)
-            theta, LU = torch.solve(self.bb, self.LAMBDA)
+            theta, _ = torch.solve(self.bb, self.LAMBDA)
 
             if np.mod(self.iter, self._H_q) == 0:
                 THETA_action = theta.view(-1, 1)
@@ -91,36 +113,26 @@ class NeuralMAB:
                 self.log.info(f'Current regret: {self.summ}')
                 self.W = self._train_with_shallow_exploration(CONTEXT_action, REWARD_action, self.W0,
                                                               self._interT, self._lr, THETA_action, self._H_q)
-            self.iter += 1
+        self.iter += 1
 
-    def predict(self, context: Any) -> int:
+        # update contextual mab with deep contexts
+        deep_contexts = [self._get_deep_context(context=contexts[0])] * len(decisions)
+        self._mab.partial_fit(decisions=decisions, contexts=deep_contexts, rewards=rewards)
+
+    def predict(self, context: Any = None) -> Union[Arm, List[Arm]]:
         """ Predicts which arm to pull to get maximum reward. """
-        ucb = []
-        bphi = []
-        # context = context[0][:, :8]
-        for a in range(0, len(self.arms)):
-            temp = self._transfer(context, a, len(self.arms))
-            bphi.append(temp)
-            feat = self._feature_extractor(temp, self.W)
-            ucb.append(torch.mm(self.theta.view(1, -1), feat) + self._beta * self._UCB(self.LAMBDA, feat))
-
-        if self.iter < 3 * len(self.arms):
-            a_choose = self.iter % len(self.arms)
-        else:
-            a_choose = ucb.index(max(ucb))
+        if not self.is_fitted:
+            self._initial_fit_mab(context=context)
+        deep_context = self._get_deep_context(context=context)
+        a_choose = self._mab.predict(contexts=[deep_context])
         return a_choose
 
-    def predict_expectations(self, context: Any) -> List[float]:
+    def predict_expectations(self, context: Any = None) -> Union[Dict[Arm, Num], List[Dict[Arm, Num]]]:
         """ Returns expected reward for each arm. """
-        ucb = []
-        bphi = []
-        # context = context[0][:, :8]
-        for a in range(0, len(self.arms)):
-            temp = self._transfer(context, a, len(self.arms))
-            bphi.append(temp)
-            feat = self._feature_extractor(temp, self.W)
-            ucb.append(torch.mm(self.theta.view(1, -1), feat) + self._beta * self._UCB(self.LAMBDA, feat))
-        return ucb
+        if not self.is_fitted:
+            self._initial_fit_mab(context=context)
+        deep_context = self._get_deep_context(context=context)
+        return self._mab.predict_expectations(contexts=[deep_context])
 
     @staticmethod
     def _initialization(dim):
@@ -143,6 +155,12 @@ class NeuralMAB:
                 total_dim += dim[i + 1] * dim[i] * 2
 
         return w, total_dim
+
+    def _get_deep_context(self, context: Any) -> List[Any]:
+        """ Returns deep representation of context. """
+        temp = self._transfer(context, 0, len(self.arms))
+        feat = self._feature_extractor(temp, self.W).numpy().squeeze()
+        return list(feat)
 
     @staticmethod
     def _feature_extractor(x, W):
@@ -250,7 +268,7 @@ class NeuralMAB:
     def _UCB(A, phi):
         """ Ucb term. """
         try:
-            tmp, LU = torch.solve(phi, A)
+            tmp, _ = torch.solve(phi, A)
         except:
             tmp = torch.Tensor(np.linalg.solve(A, phi))
 

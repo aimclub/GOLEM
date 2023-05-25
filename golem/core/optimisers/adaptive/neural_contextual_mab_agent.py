@@ -33,7 +33,7 @@ class NeuralContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
             obs = [obs]
         obs_emb = self._get_obs_embedding(obs=obs)
         prob_dict = self._agent.predict_expectations(context=obs_emb)
-        prob_list = [prob_dict[i].item() for i in range(len(prob_dict))]
+        prob_list = [prob_dict[i] for i in range(len(prob_dict))]
         return prob_list
 
     def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:
