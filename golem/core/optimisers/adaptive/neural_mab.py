@@ -21,8 +21,8 @@ class NeuralMAB(MAB):
     Deep representation is formed with NN and Contextual Multi-Armed Bandit is integrated to choose arm.
     """
     def __init__(self, arms: List[Arm],
-                 learning_policy: Any = LearningPolicy.UCB1(alpha=1.25),
-                 neighborhood_policy: Any = NeighborhoodPolicy.KNearest(k=2),
+                 learning_policy: Any = LearningPolicy.UCB1(alpha=0.5),
+                 neighborhood_policy: Any = NeighborhoodPolicy.TreeBandit(),
                  seed: int = Constants.default_seed,
                  n_jobs: int = 1):
 
