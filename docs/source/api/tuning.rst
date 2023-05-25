@@ -31,9 +31,23 @@ Initialize ``SearchSpace`` with dictionary of the form
 Simultaneous
 ~~~~~~~~~~~~
 
-You can tune all parameters of graph nodes simultaneously using ``SimultaneousTuner``.
+You can tune all parameters of graph nodes simultaneously using ``SimultaneousTuner`` or ``IOptTuner``.
+
+.. note::
+   ``IOptTuner`` implements deterministic algorithm.
+
+   For now ``IOptTuner`` can not be constrained by time, so constrain execution by number of iterations.
+
+   Also ``IOptTuner`` can optimise only `continuous` and `discrete` parameters but not `categorical` ones.
+   `Categorical` parameters will be ignored while tuning.
+
+   ``IOptTuner`` is implemented using `IOpt library`_. See the `documentation`_ (in russian) to learn more about
+   the optimisation algorithm.
 
 .. automodule:: golem.core.tuning.simultaneous
+   :members:
+
+.. automodule:: golem.core.tuning.iopt_tuner
    :members:
 
 Sequential
@@ -45,3 +59,5 @@ Sequential
    :members:
 
 .. _Adaptation of Graphs: https://thegolem.readthedocs.io/en/latest/advanced/adaptation.html
+.. _IOpt library: https://github.com/aimclub/iOpt
+.. _documentation: https://iopt.readthedocs.io/ru/latest/introduction.html
