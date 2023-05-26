@@ -162,7 +162,7 @@ class FitnessLineInteractive(HistoryVisualization):
 
     @with_alternate_matplotlib_backend
     def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None,
-                  per_time: Optional[bool] = None,  graph_show_kwargs: Optional[Dict[str, Any]] = None):
+                  per_time: Optional[bool] = None, graph_show_kwargs: Optional[Dict[str, Any]] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
         Additionally, shows the structure of the best individuals and the moment of their discovering.
         :param save_path: path to save the visualization. If set, then the image will be saved, and if not,
