@@ -146,13 +146,13 @@ class IOptTuner(BaseTuner):
         graph = self.adapter.adapt(graph)
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
 
-        self.init_check(graph)
-
         no_parameters_to_optimize = (not problem_parameters.discrete_parameters_names and
                                      not problem_parameters.float_parameters_names)
         if no_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
         else:
+            self.init_check(graph)
+
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
                 self.solver_parameters.startPoint = initial_point

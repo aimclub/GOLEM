@@ -30,17 +30,15 @@ class SimultaneousTuner(HyperoptTuner):
         graph = self.adapter.adapt(graph)
         parameters_dict, init_parameters = self._get_parameters_for_tune(graph)
 
+        if not parameters_dict:
+            self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+
         with Timer() as global_tuner_timer:
             self.init_check(graph)
-
             self._update_remaining_time(global_tuner_timer)
 
             if self.max_seconds <= MIN_TIME_FOR_TUNING_IN_SEC:
                 self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
-
-            elif not parameters_dict:
-                self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
-
             else:
 
                 trials = Trials()
