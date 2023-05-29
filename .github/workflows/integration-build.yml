@@ -1,7 +1,11 @@
-name: Manual build
+name: Integration
 
 on:
+  schedule:
+    - cron: '0 24 * * *'
   push:
+    branches: [ stable, release ]
+  pull_request:
     branches: [ stable, release ]
   workflow_dispatch:
 
