@@ -52,7 +52,7 @@ class Mutation(Operator):
                                           n_jobs=requirements.n_jobs)
         elif kind == MutationAgentTypeEnum.neural_bandit:
             agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
-                                                          context_agent=parameters.context_agent_type,
+                                                          context_agent_type=parameters.context_agent_type,
                                                           n_jobs=requirements.n_jobs)
         else:
             raise TypeError(f'Unknown parameter {kind}')

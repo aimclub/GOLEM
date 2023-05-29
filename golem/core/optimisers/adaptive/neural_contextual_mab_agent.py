@@ -15,12 +15,12 @@ class NeuralContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     def __init__(self,
                  actions: Sequence[ActType],
                  n_jobs: int = 1,
-                 context_agent: ContextAgentTypeEnum = ContextAgentTypeEnum.feather_graph,
+                 context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.feather_graph,
                  enable_logging: bool = True):
         super().__init__(actions=actions, enable_logging=enable_logging)
         self._agent = NeuralMAB(arms=self._indices,
                                 n_jobs=n_jobs)
-        self._context_agent = context_agent
+        self._context_agent = ContextAgentsRepository.agent_class_by_id(context_agent_type)
 
     def choose_action(self, obs: ObsType) -> ActType:
         obs_emb = self._get_obs_embedding(obs=[obs])
@@ -52,8 +52,8 @@ class NeuralContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         self._agent.partial_fit(decisions=arms, rewards=rewards, contexts=obs_embs)
 
     def _get_obs_embedding(self, obs: List[ObsType]) -> List[Any]:
-        context_agent = ContextAgentsRepository.agent_class_by_id(self._context_agent)
+        """Get embedding based on specified context agent."""
         obs_contexts = []
         for ob in obs:
-            obs_contexts.append(context_agent(ob))
+            obs_contexts.append(self._context_agent(ob))
         return obs_contexts

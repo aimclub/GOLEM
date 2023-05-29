@@ -4,7 +4,7 @@ from typing import List, Callable
 
 from karateclub import FeatherGraph
 
-from golem.core.adapter.nx_adapter import BanditNetworkxAdapter
+from golem.core.adapter.nx_adapter import BanditNetworkxAdapter, BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
 
 
@@ -14,7 +14,7 @@ def feather_graph(graph: Graph) -> List[float]:
     node neighborhoods. These node level features are pooled by mean pooling to
     create graph level statistics. """
     descriptor = FeatherGraph()
-    nx_graph = BanditNetworkxAdapter().restore(graph)
+    nx_graph = BaseNetworkxAdapter().restore(graph)
     descriptor.fit([nx_graph])
     return descriptor.get_embedding()[:20]
 

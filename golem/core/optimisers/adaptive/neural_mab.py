@@ -54,9 +54,10 @@ class NeuralMAB(MAB):
 
     def partial_fit(self, decisions: List[Any], rewards: List[float], contexts: List[Any] = None):
 
-        # update NN and calculate regret
+        # get deep contexts, calculate regret and update weights for NN (once in _H_q iters)
         deep_contexts = self.nn_with_se.partial_fit(iter=self.iter, decisions=decisions,
                                                     rewards=rewards, contexts=contexts)
+        self.iter += 1
 
         # update contextual mab with deep contexts
         self._mab.partial_fit(decisions=decisions, contexts=deep_contexts, rewards=rewards)
@@ -152,6 +153,7 @@ class NNWithShallowExploration:
             else:
                 theta_action = torch.cat((self.THETA_action, theta.view(-1, 1)), 1)
 
+            # update weight of NN
             if np.mod(iter, self._H_q) == self._H_q - 1:
                 self.log.info(f'Current regret: {self.summ}')
                 self.W = self.train_with_shallow_exploration(context_action, reward_action, self.W0,
