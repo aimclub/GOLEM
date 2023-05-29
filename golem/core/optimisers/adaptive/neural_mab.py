@@ -122,10 +122,10 @@ class NNWithShallowExploration:
                     decisions: List[Any], rewards: List[float], contexts: List[Any] = None):
         deep_contexts = []
 
-        # update NN and calculate regret
+        # update NN and calculate reward
         for decision, context, reward in zip(decisions, contexts, rewards):
 
-            # calculate regret
+            # calculate reward
             temp = self.transfer(context, decision, self.arms_count)
             feat = self.feature_extractor(temp, self.W)
             deep_contexts.append(list(feat.numpy().squeeze()))
@@ -134,7 +134,7 @@ class NNWithShallowExploration:
             self.summ += (expected_reward - reward)
             self.result_neuralucb.append(self.summ)
 
-            # update W by doing TRAIN_SE
+            # gather dataset for next NN training (context_action and reward_action)
             if np.mod(iter, self._H_q) == 0:
                 context_action = temp
                 reward_action = torch.tensor([reward], dtype=torch.double)

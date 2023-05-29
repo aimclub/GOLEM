@@ -88,6 +88,10 @@ class DumbNetworkxAdapter(BaseNetworkxAdapter):
 
 
 class BanditNetworkxAdapter(BaseNetworkxAdapter):
+    """ Classic networkx adapter with nodes indexes in names instead of uids.
+    It is needed since some frameworks (e.g. karateclub) have asserts in which node
+    names should consist only of its indexes.
+    """
     def _restore(self, opt_graph: OptGraph, metadata: Optional[Dict[str, Any]] = None) -> nx.DiGraph:
         nx_graph = nx.DiGraph()
         nx_node_data = {}
