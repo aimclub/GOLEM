@@ -7,7 +7,7 @@
 
     |sai| |itmo|
 
-    |python| |pypi| |build| |docs| |license| |tg| |eng| |mirror|
+    |python| |pypi| |build| |integration| |docs| |license| |tg| |eng| |mirror|
 
 
 Оптимизация и обучение графовых моделей эволюционными методами
@@ -191,6 +191,10 @@ GOLEM можно установить с помощью ``pip``:
 .. |build| image:: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=main
    :alt: Build Status
    :target: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml
+
+.. |integration| image:: https://github.com/aimclub/GOLEM/workflows/integration-build.yml/badge.svg?branch=main
+   :alt: Integration Build Status
+   :target: https://github.com/aimclub/GOLEM/actions/workflows/integration-build.yml
 
 .. |coverage| image:: https://codecov.io/gh/aimclub/GOLEM/branch/main/graph/badge.svg
    :alt: Coverage Status
