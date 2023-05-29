@@ -167,10 +167,7 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.depth)
     @property
     def depth(self) -> int:
-        try:
-            return 0 if not self._nodes else max(map(node_depth, self.root_nodes()))
-        except ValueError:
-            print('a')
+        return 0 if not self._nodes else max(map(node_depth, self.root_nodes()))
 
     @copy_doc(Graph.get_edges)
     def get_edges(self) -> Sequence[Tuple[GraphNode, GraphNode]]:
