@@ -140,8 +140,8 @@ class OptHistoryExtraVisualizer:
             self.merged_imgs.append(Image.fromarray(np.uint8(merged)))
 
     def _combine_gifs(self):
-        date_time = datetime.now().strftime('%B-%d-%Y,%H-%M-%S,%p')
-        save_path = f'{self.save_path}\\final_{date_time}.gif'
+        date_time = datetime.now().strftime('%B-%d-%Y_%H-%M-%S_%p')
+        save_path = f'{self.save_path}\\history_visualisation_{date_time}.gif'
         imgs = self.merged_imgs[1:]
         self.merged_imgs[0].save(save_path, save_all=True, append_images=imgs,
                                  optimize=False, duration=0.5, loop=0)
