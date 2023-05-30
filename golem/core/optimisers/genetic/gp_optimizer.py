@@ -67,32 +67,35 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
 
         if len(self.initial_individuals) < self.graph_optimizer_params.pop_size:
-            self.initial_individuals = self._extend_population(self.initial_individuals)
+            self.initial_individuals = self._extend_population(self.initial_individuals, self.graph_optimizer_params.pop_size)
             # Adding of extended population to history
             self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
 
-    def _extend_population(self, initial_individuals: PopulationT) -> PopulationT:
-        initial_individuals = list(initial_individuals)
-        initial_graphs = [ind.graph for ind in initial_individuals]
+    def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
+        verifier = self.graph_generation_params.verifier
+        extended_pop = list(pop)
+        pop_graphs = [ind.graph for ind in extended_pop]
+
+        # Set mutation probabilities to 1.0
         initial_req = deepcopy(self.requirements)
-        initial_req.mutation_prob = 1
+        initial_req.mutation_prob = 1.0
         self.mutation.update_requirements(requirements=initial_req)
 
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
-            if len(initial_individuals) == self.graph_optimizer_params.pop_size:
+            if len(extended_pop) == target_pop_size:
                 break
-            new_ind = self.mutation(choice(initial_individuals))
+            new_ind = self.mutation(choice(pop))
             new_graph = new_ind.graph
-            if new_graph not in initial_graphs:
-                initial_individuals.append(new_ind)
-                initial_graphs.append(new_graph)
+            if new_graph not in pop_graphs and verifier(new_graph):
+                extended_pop.append(new_ind)
+                pop_graphs.append(new_graph)
         else:
-            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping. '
-                             f'Current size {len(initial_individuals)} '
-                             f'instead of {self.graph_optimizer_params.pop_size} graphs.')
+            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
+                             f'Current size {len(pop)}, required {target_pop_size} graphs.')
 
+        # Reset mutation probabilities to default
         self.mutation.update_requirements(requirements=self.requirements)
-        return initial_individuals
+        return extended_pop
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """
