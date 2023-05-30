@@ -37,60 +37,43 @@ class PopulationStatsLogger(IterationCallback):
 
 def plot_diversity_dynamic_gif(history: OptHistory,
                                filename: Optional[str] = None,
-                               nbins: Optional[int] = None,
                                fig_size: int = 5,
                                fps: int = 4,
                                ) -> FuncAnimation:
-    # TODO: make violin plot instead of histogram?
     metric_names = history.objective.metric_names
     # dtype=float removes None, puts np.nan
     # indexed by [population, metric, individual] after transpose (.T)
     pops = history.individuals[1:-1]  # ignore initial pop and final choices
     fitness_distrib = [np.array([ind.fitness.values for ind in pop], dtype=float).T
                        for pop in pops]
-    # Determine sensible number of bins based on population size
-    nbins = nbins or int(np.mean([len(pop) for pop in pops]) / 2)
 
     # Define bounds on metrics: find min & max on a flattened view of array
-    q = 0.05
-    maxs = np.max([np.quantile(pop, 1 - q, axis=1) for pop in fitness_distrib], axis=0)
-    mins = np.min([np.quantile(pop, q, axis=1) for pop in fitness_distrib], axis=0)
+    q = 0.025
+    lims_max = np.max([np.quantile(pop, 1 - q, axis=1) for pop in fitness_distrib], axis=0)
+    lims_min = np.min([np.quantile(pop, q, axis=1) for pop in fitness_distrib], axis=0)
 
     # Setup the plot
     fig, axs = plt.subplots(ncols=len(metric_names))
-    metric_bins = []
-    fig.suptitle('Population diversity by metric')
     fig.set_size_inches(fig_size * len(metric_names), fig_size)
     np.ravel(axs)
-    for ax, metric_name, min_lim, max_lim in zip(axs, metric_names, mins, maxs):
-        bins = np.linspace(min_lim, max_lim, nbins)
-        metric_bins.append(bins)
-        ax: plt.Axes
-        ax.set_title(metric_name)
-        ax.set_xlabel('Metric value')
-        ax.set_ylabel('Individuals')
-        ax.set_xlim(min_lim, max_lim)
-        ax.grid()
-        ax.legend()
 
-    # Create artists for each axis
-    artists = []
-    initial_pop = fitness_distrib[0]
-    for ax, pop_metrics, bins in zip(axs, initial_pop, metric_bins):
-        _, _, bar_container = ax.hist(pop_metrics, bins=bins, edgecolor="white")
-        artists.append(bar_container)
-
-    # Set update function for updating data on artists of the axes
+    # Set update function for updating data on the axes
     def update_axes(iframe: int):
-        next_pop_metrics = fitness_distrib[iframe]
-        for ax, metric_name, artist, metric_distrib in zip(axs, metric_names, artists, next_pop_metrics):
-            ax.set_title(f'{metric_name} ({iframe}), '
+        for i, (ax, metric_distrib) in enumerate(zip(axs, fitness_distrib[iframe])):
+            # Clear & Prepare axes
+            ax: plt.Axes
+            ax.clear()
+            ax.set_xlim(0.5, 1.5)
+            ax.set_ylim(lims_min[i], lims_max[i])
+            ax.set_ylabel('Metric value')
+            ax.grid()
+            # Plot information
+            fig.suptitle(f'Population {iframe+1} diversity by metric')
+            ax.set_title(f'{metric_names[i]}, '
                          f'mean={np.mean(metric_distrib).round(3)}, '
                          f'std={np.nanstd(metric_distrib).round(3)}')
-            n, _ = np.histogram(metric_distrib, nbins)
-            # Set height of the histogram bars
-            for count, rect in zip(n, artist.patches):
-                rect.set_height(count)
+            ax.violinplot(metric_distrib,
+                          quantiles=[0.25, 0.5, 0.75])
 
     # Run this function in FuncAnimation
     num_frames = len(fitness_distrib)
@@ -102,7 +85,7 @@ def plot_diversity_dynamic_gif(history: OptHistory,
     )
     # Save the GIF from animation
     if filename:
-        animate.save(filename, fps=fps, dpi=100)
+        animate.save(filename, fps=fps, dpi=150)
     return animate
 
 
