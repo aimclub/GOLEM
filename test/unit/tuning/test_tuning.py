@@ -1,10 +1,10 @@
 from copy import deepcopy
 
-import numpy as np
 import pytest
 from hyperopt import hp
 
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
+from golem.core.tuning.iopt_tuner import IOptTuner
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultaneous import SimultaneousTuner
@@ -25,24 +25,52 @@ def not_tunable_mock_graph():
 def search_space():
     params_per_operation = {
         'a': {
-            'a1': (hp.uniformint, [2, 7]),
-            'a2': (hp.loguniform, [np.log(1e-3), np.log(1)])
+            'a1': {
+                'hyperopt-dist': hp.uniformint,
+                'sampling-scope': [2, 7],
+                'type': 'discrete'
+            },
+            'a2': {
+                'hyperopt-dist': hp.loguniform,
+                'sampling-scope': [1e-3, 1],
+                'type': 'continuous'
+            }
         },
         'b': {
-            'b1': (hp.choice, [["first", "second", "third"]]),
-            'b2': (hp.uniform, [0.05, 1.0]),
+            'b1': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [["first", "second", "third"]],
+                'type': 'categorical'
+            },
+            'b2': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            },
         },
         'e': {
-            'e1': (hp.uniform, [0.05, 1.0]),
-            'e2': (hp.uniform, [0.05, 1.0])
+            'e1': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            },
+            'e2': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            }
         },
         'k': {
-            'k': (hp.uniform, [1e-2, 10.0])
+            'k': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [1e-2, 10.0],
+                'type': 'continuous'
+            }
         }}
     return SearchSpace(params_per_operation)
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner])
+@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner, IOptTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
@@ -57,7 +85,7 @@ def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval
     assert init_metric < final_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner])
+@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner, IOptTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(not_tunable_mock_graph(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
@@ -81,4 +109,3 @@ def test_node_tuning(search_space, graph):
         final_metric = obj_eval.evaluate(tuned_graph)
         assert final_metric is not None
         assert init_metric <= final_metric
-
