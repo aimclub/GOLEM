@@ -17,9 +17,18 @@ class ReproductionController:
     Task of the Reproduction Controller is to reproduce population
     while keeping population size as specified in optimizer settings.
 
-    It implements a simple proportional controller
-    that compensates for invalid results each generation
-    by computing average ratio of valid results.
+    It implements a simple proportional controller that compensates for
+    invalid results each generation by computing average ratio of valid results.
+    Invalid results include cases when Operators, Evaluator or GraphVerifier
+    return output population that's smaller than the input population.
+
+    Args:
+        parameters: genetic algorithm parameters.
+        selection: operator used in reproduction.
+        mutation: operator used in reproduction.
+        crossover: operator used in reproduction.
+        window_size: size in iterations of the moving window
+        to compute reproduction success rate.
     """
 
     def __init__(self,
@@ -90,6 +99,8 @@ class ReproductionController:
 
             # Successful return: got enough individuals
             if len(next_population) >= required_size * self.parameters.required_valid_ratio:
+                self._log.info(f'Reproduction achieved pop size {len(next_population)}'
+                               f' using {i+1} attempt(s) with success rate {self.mean_success_rate:.3f}')
                 return next_population
         else:
             # If number of evaluation attempts is exceeded return a warning or raise exception
