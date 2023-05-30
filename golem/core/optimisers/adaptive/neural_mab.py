@@ -2,6 +2,7 @@ import copy
 import math
 from typing import List, Any, Union, Dict
 import sys
+import time
 
 import torch
 import numpy as np
@@ -27,7 +28,7 @@ class NeuralMAB(MAB):
                  n_jobs: int = 1):
 
         super().__init__(arms, learning_policy, neighborhood_policy, seed, n_jobs)
-        self.nn_with_se = NNWithShallowExploration(context_size=500, arms_count=len(arms))
+        self.nn_with_se = NNWithShallowExploration(context_size=1, arms_count=len(arms))
         self.arms = arms
         self.seed = seed
         self.n_jobs = n_jobs
@@ -153,11 +154,11 @@ class NNWithShallowExploration:
             else:
                 theta_action = torch.cat((self.THETA_action, theta.view(-1, 1)), 1)
 
-            # update weight of NN
-            if np.mod(iter, self._H_q) == self._H_q - 1:
-                self.log.info(f'Current regret: {self.summ}')
-                self.W = self.train_with_shallow_exploration(context_action, reward_action, self.W0,
-                                                             self._interT, self._lr, theta_action, self._H_q)
+        # update weight of NN
+        if np.mod(iter, self._H_q) == self._H_q - 1:
+            self.log.info(f'Current regret: {self.summ}')
+            self.W = self.train_with_shallow_exploration(context_action, reward_action, self.W0,
+                                                         self._interT, self._lr, theta_action, self._H_q)
         return deep_contexts
 
     @staticmethod

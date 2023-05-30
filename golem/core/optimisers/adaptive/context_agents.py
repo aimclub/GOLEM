@@ -1,31 +1,40 @@
 from enum import Enum
 
-from typing import List, Callable
+from typing import List, Callable, Any
 
 from karateclub import FeatherGraph
 
 from golem.core.adapter.nx_adapter import BanditNetworkxAdapter
-from golem.core.dag.graph import Graph
+from golem.core.optimisers.opt_history_objects.individual import Individual
 
 
-def feather_graph(graph: Graph) -> List[float]:
+def feather_graph(obs: Any) -> List[float]:
     """ Returns embedding based on an implementation of `"FEATHER-G" <https://arxiv.org/abs/2005.07959>`_.
     The procedure uses characteristic functions of node features with random walk weights to describe
     node neighborhoods. These node level features are pooled by mean pooling to
     create graph level statistics. """
     descriptor = FeatherGraph()
-    nx_graph = BanditNetworkxAdapter().restore(graph)
+    nx_graph = BanditNetworkxAdapter().restore(obs)
     descriptor.fit([nx_graph])
     return descriptor.get_embedding()[:20]
 
 
+def nodes_num(obs: Any) -> List[float]:
+    if isinstance(obs, Individual):
+        return [len(obs.graph.nodes)]
+    else:
+        return [len(obs.nodes)]
+
+
 class ContextAgentTypeEnum(Enum):
     feather_graph = 'feather_graph'
+    nodes_num = 'nodes_num'
 
 
 class ContextAgentsRepository:
     _agents_implementations = {
-        ContextAgentTypeEnum.feather_graph: feather_graph
+        ContextAgentTypeEnum.feather_graph: feather_graph,
+        ContextAgentTypeEnum.nodes_num: nodes_num
     }
 
     @staticmethod

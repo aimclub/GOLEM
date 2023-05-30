@@ -18,6 +18,7 @@ class MutationAgentTypeEnum(Enum):
     default = 'default'
     random = 'random'
     bandit = 'bandit'
+    contextual_bandit = 'contextual_bandit'
     neural_bandit = 'neural_bandit'
 
 

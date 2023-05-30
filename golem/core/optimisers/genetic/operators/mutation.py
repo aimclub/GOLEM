@@ -5,6 +5,7 @@ from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Opt
 import numpy as np
 
 from golem.core.dag.graph import Graph
+from golem.core.optimisers.adaptive.contextual_mab_agent import ContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.mab_agent import MultiArmedBanditAgent
 from golem.core.optimisers.adaptive.operator_agent import \
@@ -50,6 +51,10 @@ class Mutation(Operator):
         elif kind == MutationAgentTypeEnum.bandit:
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs)
+        elif kind == MutationAgentTypeEnum.contextual_bandit:
+            agent = ContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
+                                                    context_agent_type=parameters.context_agent_type,
+                                                    n_jobs=requirements.n_jobs)
         elif kind == MutationAgentTypeEnum.neural_bandit:
             agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
                                                           context_agent_type=parameters.context_agent_type,

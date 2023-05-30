@@ -72,7 +72,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     min_pop_size_with_elitism: int = 5
 
     adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
-    context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.feather_graph
+    context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.nodes_num
 
     selection_types: Sequence[SelectionTypesEnum] = \
         (SelectionTypesEnum.tournament,)
