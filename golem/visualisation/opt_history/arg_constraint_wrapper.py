@@ -12,7 +12,7 @@ ArgConstraintChecker = Callable[..., Dict[str, Any]]
 
 def per_time(visualization: HistoryVisualization, **kwargs) -> Dict[str, Any]:
     value = kwargs.get('per_time')
-    if value and visualization.history.individuals[0][0].metadata.get('evaluation_time_iso') is None:
+    if value and visualization.history.generations[0][0].metadata.get('evaluation_time_iso') is None:
         visualization.log.warning('Evaluation time not found in optimization history. '
                                   'Showing fitness line per generations...')
         kwargs['per_time'] = False

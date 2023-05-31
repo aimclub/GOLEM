@@ -35,7 +35,7 @@ def get_history_dataframe(history: OptHistory, best_fraction: Optional[float] = 
         tags_map = new_map
 
     uid_counts = {}  # Resolving individuals with the same uid
-    for gen_num, gen in enumerate(history.individuals):
+    for gen_num, gen in enumerate(history.generations):
         for ind in gen:
             uid_counts[ind.uid] = uid_counts.get(ind.uid, -1) + 1
             for node in ind.graph.nodes:
