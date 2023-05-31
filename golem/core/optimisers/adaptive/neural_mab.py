@@ -22,8 +22,8 @@ class NeuralMAB(MAB):
     Deep representation is formed with NN and Contextual Multi-Armed Bandit is integrated to choose arm.
     """
     def __init__(self, arms: List[Arm],
-                 learning_policy: Any = LearningPolicy.UCB1(alpha=0.5),
-                 neighborhood_policy: Any = NeighborhoodPolicy.TreeBandit(),
+                 learning_policy: Any = LearningPolicy.UCB1(alpha=1.25),
+                 neighborhood_policy: Any = NeighborhoodPolicy.Clusters(),
                  seed: int = Constants.default_seed,
                  n_jobs: int = 1):
 
@@ -63,20 +63,23 @@ class NeuralMAB(MAB):
         # update contextual mab with deep contexts
         self._mab.partial_fit(decisions=decisions, contexts=deep_contexts, rewards=rewards)
 
-    def predict(self, context: Any = None) -> Union[Arm, List[Arm]]:
+    def predict(self, contexts: Any = None) -> Union[Arm, List[Arm]]:
         """ Predicts which arm to pull to get maximum reward. """
         if not self.is_fitted:
-            self._initial_fit_mab(context=context)
-        deep_context = self._get_deep_context(context=context)
+            self._initial_fit_mab(context=contexts)
+        deep_context = self._get_deep_context(context=contexts)
         a_choose = self._mab.predict(contexts=[deep_context])
         return a_choose
 
-    def predict_expectations(self, context: Any = None) -> Union[Dict[Arm, Num], List[Dict[Arm, Num]]]:
+    def predict_expectations(self, contexts: Any = None) -> Union[Dict[Arm, Num], List[Dict[Arm, Num]]]:
         """ Returns expected reward for each arm. """
         if not self.is_fitted:
-            self._initial_fit_mab(context=context)
-        deep_context = self._get_deep_context(context=context)
-        return self._mab.predict_expectations(contexts=[deep_context])
+            self._initial_fit_mab(context=contexts)
+        deep_context = self._get_deep_context(context=contexts)
+        try:
+            return self._mab.predict_expectations(contexts=[deep_context])
+        except ValueError:
+            print('a')
 
     def _get_deep_context(self, context: Any) -> List[Any]:
         """ Returns deep representation of context. """
@@ -196,8 +199,6 @@ class NNWithShallowExploration:
         prev_loss_1k = 1000000
         for i in range(0, T):
             grad = self._gradient_loss(X, Y, W, THETA)
-            if (grad[0] != grad[0]).any():
-                print('nan found')
             for j in range(0, len(W) - 1):
                 W[j] = W[j] - et * grad[j]
 
@@ -292,9 +293,9 @@ class NNWithShallowExploration:
         for i in range(0, depth):
             grad1.append(grad[depth - 1 - i] * math.sqrt(W[depth - 1].size()[1]) / len(X[0, :]))
 
-        if (grad1[0] != grad1[0]).any():
-            print('nan found')
-            sys.exit('nan found')
+        # if (grad1[0] != grad1[0]).any():
+        #     print('nan found')
+        #     sys.exit('nan found')
         return grad1
 
     def _loss(self, X, Y, W, THETA):

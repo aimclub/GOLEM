@@ -2,6 +2,7 @@ import functools
 import os
 from datetime import datetime
 from pathlib import Path
+from statistics import mean
 from typing import Any, Dict, List, Optional, Union
 
 import matplotlib as mpl
@@ -13,6 +14,7 @@ from golem.core.log import default_log
 from golem.core.optimisers.fitness import null_fitness
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.paths import default_data_dir
+from golem.visualisation.opt_history.arg_constraint_wrapper import ArgConstraintWrapper
 from golem.visualisation.opt_history.history_visualization import HistoryVisualization
 from golem.visualisation.opt_history.utils import show_or_save_figure
 
@@ -44,7 +46,7 @@ def setup_fitness_plot(axis: plt.Axes, xlabel: str, title: Optional[str] = None,
     axis.grid(axis='y')
 
 
-def plot_fitness_line_per_time(axis: plt.Axes, generations: List[List[Individual]], label: Optional[str] = None,
+def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str] = None,
                                with_generation_limits: bool = True) \
         -> Dict[int, Individual]:
     best_fitness = null_fitness()
@@ -247,3 +249,75 @@ class FitnessLineInteractive(HistoryVisualization):
             b_prev.on_clicked(callback.prev)
 
         show_or_save_figure(fig, save_path, dpi)
+
+
+class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
+    """ Class to compare fitness changes during optimization process. """
+    def __init__(self, histories_to_compare: Dict[str, List['OptHistory']], visuals_params: Dict[str, Any] = None):
+        self.histories_to_compare = histories_to_compare
+        self.visuals_params = visuals_params or {}
+        self.log = default_log(self)
+
+    def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None):
+        """ Visualizes the best fitness values during the evolution in the form of line.
+        :param save_path: path to save the visualization. If set, then the image will be saved,
+            and if not, it will be displayed.
+        :param dpi: DPI of the output figure.
+        """
+        save_path = save_path or self.get_predefined_value('save_path')
+        dpi = dpi or self.get_predefined_value('dpi')
+
+        fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
+        xlabel = 'Generation'
+        self.plot_multiple_fitness_lines(ax=ax)
+        setup_fitness_plot(ax, xlabel)
+        plt.legend()
+        show_or_save_figure(fig, save_path, dpi)
+
+    def plot_multiple_fitness_lines(self, ax: plt.axis):
+        for histories, label in zip(list(self.histories_to_compare.values()), list(self.histories_to_compare.keys())):
+            plot_average_fitness_line_per_generations(axis=ax, histories=histories, label=label)
+
+    def get_predefined_value(self, param: str):
+        return self.visuals_params.get(param)
+
+
+def plot_average_fitness_line_per_generations(axis: plt.Axes, histories, label: Optional[str] = None):
+    """ Plots average fitness line. """
+    best_fitness = null_fitness()
+    best_individuals = {}
+
+    fitness_value_per_generation = []
+    for history in histories:
+        generations = history.individuals
+        for gen_num, gen in enumerate(generations):
+            for ind in gen:
+                if ind.native_generation != gen_num:
+                    continue
+                if ind.fitness > best_fitness:
+                    best_individuals[gen_num] = ind
+                    best_fitness = ind.fitness
+
+        best_generations, best_fitnesses = np.transpose(
+            [(gen_num, abs(individual.fitness.value))
+             for gen_num, individual in best_individuals.items()])
+
+        best_generations = list(best_generations)
+        best_fitnesses = list(best_fitnesses)
+
+        if best_generations[-1] != len(generations) - 1:
+            best_fitnesses.append(abs(best_fitness.value))
+            best_generations.append(len(generations) - 1)
+
+        fitness_value_per_generation.append(best_fitnesses)
+
+    # get average fitness value
+    average_fitness_per_gen = []
+    max_len = max(len(i) for i in fitness_value_per_generation)
+    for i in range(max_len):
+        all_fitness_gen = []
+        for fitnesses in fitness_value_per_generation:
+            if i < len(fitnesses):
+                all_fitness_gen.append(fitnesses[i])
+        average_fitness_per_gen.append(mean(all_fitness_gen))
+    axis.plot(range(len(average_fitness_per_gen)), average_fitness_per_gen, label=label)

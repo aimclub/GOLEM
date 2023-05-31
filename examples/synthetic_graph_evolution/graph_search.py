@@ -1,12 +1,13 @@
 from datetime import timedelta
 from functools import partial
-from typing import Type, Optional, Sequence
+from typing import Type, Optional, Sequence, List
 
 import networkx as nx
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
-from golem.core.dag.verification_rules import has_no_self_cycled_nodes
+from golem.core.dag.graph import Graph
+from golem.core.dag.verification_rules import has_no_self_cycled_nodes, DEFAULT_DAG_RULES
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -25,7 +26,9 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
                        algorithm_parameters: Optional[AlgorithmParameters] = None,
                        node_types: Sequence[str] = ('x',),
                        timeout: Optional[timedelta] = None,
-                       num_iterations: Optional[int] = None):
+                       num_iterations: Optional[int] = None,
+                       graph_size: Optional[List[int]] = None,
+                       initial_graphs: List[Graph] = None):
     if target_graph is not None and objective is not None:
         raise ValueError('Please provide either target or objective, not both')
     elif target_graph is not None:
@@ -74,13 +77,16 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     gp_params = algorithm_parameters or default_gp_params
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
-        rules_for_constraint=[has_no_self_cycled_nodes],
+        rules_for_constraint=DEFAULT_DAG_RULES,
         available_node_types=node_types,
     )
 
     # Generate simple initial population with line graphs
-    initial_graphs = [generate_labeled_graph('gnp', 7, node_types)
-                      for _ in range(gp_params.pop_size)]
+    if not initial_graphs:
+        if not graph_size:
+            graph_size = [7] * gp_params.pop_size
+        initial_graphs = [generate_labeled_graph('gnp', graph_size[i], node_types)
+                          for i in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective

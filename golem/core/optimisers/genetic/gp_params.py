@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Sequence, Union, Any
 
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
-from golem.core.optimisers.adaptive.neural_contextual_mab_agent import ContextAgentTypeEnum
+from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import ContextAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import MutationStrengthEnum, MutationTypesEnum, \
     simple_mutation_set
 from golem.core.optimisers.optimizer import AlgorithmParameters
