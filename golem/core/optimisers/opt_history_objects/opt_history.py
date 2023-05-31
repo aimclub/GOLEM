@@ -249,6 +249,10 @@ class OptHistory:
             'Please, use "OptHistory.generations" to access generations.')
         return self.generations
 
+    @individuals.setter
+    def individuals(self, value):
+        self.generations = value
+
     @property
     def _log(self):
         return default_log(self)
