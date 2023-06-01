@@ -17,7 +17,9 @@ def plot_action_values(stats: Sequence[Sequence[float]],
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(size * 2, size))
     ax0, ax1 = ax
 
-    ax0.stackplot(x, y, labels=labels)
+    for ys, label in zip(y, labels):
+        ax0.plot(x, ys, label=label)
+        ax0.grid()
     ax1.stackplot(x, y_prob, labels=labels)
 
     ax0.set_title('Action Expectation Values')
