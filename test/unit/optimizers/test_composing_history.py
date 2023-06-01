@@ -5,14 +5,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from golem.core.optimisers.fitness.fitness import SingleObjFitness
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
 from golem.core.optimisers.genetic.operators.mutation import Mutation
-from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -21,6 +20,7 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
+from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
 from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
@@ -31,7 +31,7 @@ def create_mock_graph_individual():
     node_3 = MockNode(content={'name': 'knn'})
     mock_graph = MockDomainStructure([node_1, node_2, node_3])
     individual = Individual(graph=mock_graph)
-    individual.set_evaluation_result(SingleObjFitness(1))
+    individual.set_evaluation_result(MultiObjFitness([1, 1]))
     return individual
 
 
@@ -43,7 +43,7 @@ def create_individual(evaluated=True):
 
     individual = Individual(graph=OptGraph(final))
     if evaluated:
-        individual.set_evaluation_result(SingleObjFitness(1))
+        individual.set_evaluation_result(MultiObjFitness([1, 1]))
     return individual
 
 
@@ -58,6 +58,7 @@ def generate_history(request) -> OptHistory:
             ind.set_native_generation(gen_num)
             new_pop.append(ind)
         history.add_to_history(new_pop)
+        history.add_to_archive_history(new_pop)
     return history
 
 
@@ -270,6 +271,18 @@ def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_
     visualization.visualize(save_path=str(save_path), best_fraction=0.1, dpi=100)
     if plot_type is not PlotTypesEnum.fitness_line_interactive:
         assert save_path.exists()
+
+
+@pytest.mark.parametrize('generate_history', [[3, 4, create_individual],
+                                              [3, 4, create_mock_graph_individual]],
+                         indirect=True)
+def test_extra_history_visualizer(tmp_path, generate_history):
+    history: OptHistory = generate_history
+    visualizer = OptHistoryExtraVisualizer(history, str(tmp_path))
+    visualizer.visualise_history()
+    visualizer.pareto_gif_create()
+    visualizer.boxplots_gif_create()
+    assert len(os.listdir(os.path.join(str(tmp_path), 'composing_history'))) == 3
 
 
 def test_history_correct_serialization():
