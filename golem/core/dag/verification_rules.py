@@ -60,12 +60,5 @@ def has_no_isolated_components(graph: Graph):
     return True
 
 
-@register_native
-def graph_exists(graph: Graph):
-    if not graph or not graph.nodes:
-        return False
-    return True
-
-
-DEFAULT_DAG_RULES = [graph_exists, has_root, has_no_cycle, has_no_isolated_components,
+DEFAULT_DAG_RULES = [has_root, has_no_cycle, has_no_isolated_components,
                      has_no_self_cycled_nodes, has_no_isolated_nodes]

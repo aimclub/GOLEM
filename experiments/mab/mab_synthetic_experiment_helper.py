@@ -4,8 +4,12 @@ from datetime import timedelta
 from functools import partial
 from pprint import pprint
 
+import pandas as pd
+import seaborn as sns
+
 from typing import List, Callable, Sequence
 
+import networkx as nx
 from matplotlib import pyplot as plt
 
 from examples.adaptive_optimizer.mab_experiment_different_targets import get_graph_gp_params
@@ -14,11 +18,11 @@ from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
+from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.operators.operator import PopulationT
-from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.core.paths import project_root
@@ -26,24 +30,25 @@ from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 
 
 class MABSyntheticExperimentHelper:
+    """ Class to provide synthetic experiments without data to compare MABs. """
     def __init__(self, launch_num: int, timeout: float, bandits_to_compare: List[MutationAgentTypeEnum],
                  path_to_save: str = None, is_visualize: bool = False):
         self.launch_num = launch_num
         self.timeout = timeout
         self.bandits_to_compare = bandits_to_compare
-        self.bandit_metrics = dict.fromkeys(self.bandits_to_compare)
+        self.bandit_metrics = dict.fromkeys(bandit.name for bandit in self.bandits_to_compare)
         self.path_to_save = path_to_save or os.path.join(project_root(), 'mab')
         self.is_visualize = is_visualize
         self.histories = dict.fromkeys([bandit.name for bandit in self.bandits_to_compare])
 
-    def compare(self, setup_parameters: Callable):
+    def compare(self, setup_parameters: Callable, initial_population_func: Callable = None):
         for i in range(self.launch_num):
-            initial_graphs = self._initial_population()
+            initial_graphs = initial_population_func()
             for bandit in self.bandits_to_compare:
                 optimizer, objective = setup_parameters(initial_graphs=initial_graphs, bandit_type=bandit)
-                self.launch_bandit(bandit_type=bandit, optimizer=optimizer, objective=objective)
+                self.launch_bandit(launch_num=i, bandit_type=bandit, optimizer=optimizer, objective=objective)
 
-    def launch_bandit(self, bandit_type: MutationAgentTypeEnum, optimizer: GraphOptimizer, objective: Callable):
+    def launch_bandit(self, launch_num: int, bandit_type: MutationAgentTypeEnum, optimizer: GraphOptimizer, objective: Callable):
 
         stats_action_value_log: List[List[float]] = []
 
@@ -61,9 +66,9 @@ class MABSyntheticExperimentHelper:
         agent = optimizer.mutation.agent
         found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
         final_metrics = objective(found_nx_graph).value
-        if not self.bandit_metrics[bandit_type]:
-            self.bandit_metrics[bandit_type] = []
-        self.bandit_metrics[bandit_type].append(final_metrics)
+        if not self.bandit_metrics[bandit_type.name]:
+            self.bandit_metrics[bandit_type.name] = []
+        self.bandit_metrics[bandit_type.name].append(final_metrics)
 
         print('History of action probabilities:')
         pprint(stats_action_value_log)
@@ -73,16 +78,8 @@ class MABSyntheticExperimentHelper:
             plot_action_values(stats_action_value_log, action_tags=agent.actions)
             plt.show()
 
-    def _initial_population(self) -> List[OptGraph]:
-        graph_size = [random.randint(3, 10) for _ in range(21)]
-        node_types = ('x',)
-        initial_graphs = [generate_labeled_graph('gnp', graph_size[i], node_types) for i in range(21)]
-        return initial_graphs
-
     def show_boxplots(self):
-        plt.boxplot(x=list(self.bandit_metrics.values()))
-        plt.xlabel(i.bandit for i in list(self.bandit_metrics.keys()))
-        plt.xticks(rotation=45)
+        sns.boxplot(data=pd.DataFrame(self.bandit_metrics))
         plt.title(f'Metrics', fontsize=15)
         plt.show()
 
@@ -90,10 +87,12 @@ class MABSyntheticExperimentHelper:
         multiple_fitness_lines = MultipleFitnessLines(histories_to_compare=self.histories)
         multiple_fitness_lines.visualize()
 
+    def show_regret_line(self):
+        pass
 
-def setup_parameters(initial_graphs, bandit_type: MutationAgentTypeEnum):
-    target_size = 100
-    trial_timeout = 0.5
+
+def setup_parameters(initial_graphs: List[Graph], bandit_type: MutationAgentTypeEnum,
+                     target_size: int, trial_timeout: float):
     objective = Objective({'graph_size': lambda graph: abs(target_size -
                                                            graph.number_of_nodes())})
 
@@ -110,12 +109,29 @@ def setup_parameters(initial_graphs, bandit_type: MutationAgentTypeEnum):
     return optimizer, objective
 
 
+def initial_population_func(graph_size: List[int] = None, pop_size: int = None, initial_graphs: List[Graph] = None):
+    if initial_graphs:
+        return initial_graphs
+    initial_graphs = [nx.random_tree(graph_size[i], create_using=nx.DiGraph)
+                      for i in range(pop_size)]
+    return initial_graphs
+
+
 if __name__ == '__main__':
-    timeout = 3
-    launch_num = 5
-    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit, MutationAgentTypeEnum.bandit]
-    setup_parameters_func = setup_parameters
+    timeout = 1
+    launch_num = 3
+    target_size = 100
+
+    bandits_to_compare = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
+    setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
+    # graph_size=[random.randint(5, 10) for _ in range(19)] +
+    #            [random.randint(90, 95) for _ in range(2)]
+    initial_population_func = partial(initial_population_func,
+                                      graph_size=[random.randint(5, 7) for _ in range(21)],
+                                      pop_size=21)
+
     helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare)
-    helper.compare(setup_parameters=setup_parameters_func)
+    helper.compare(initial_population_func=initial_population_func,
+                   setup_parameters=setup_parameters_func)
     helper.show_boxplots()
     helper.show_fitness_lines()

@@ -98,10 +98,7 @@ def node_depth(node: 'GraphNode') -> int:
     if not node.nodes_from:
         return 1
     else:
-        try:
-            return 1 + max(node_depth(next_node) for next_node in node.nodes_from)
-        except RecursionError:
-            print('a')
+        return 1 + max(node_depth(next_node) for next_node in node.nodes_from)
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:

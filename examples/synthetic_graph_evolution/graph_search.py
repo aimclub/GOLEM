@@ -85,7 +85,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     if not initial_graphs:
         if not graph_size:
             graph_size = [7] * gp_params.pop_size
-        initial_graphs = [generate_labeled_graph('gnp', graph_size[i], node_types)
+        initial_graphs = [nx.random_tree(graph_size[i], create_using=nx.DiGraph)
                           for i in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)

@@ -76,10 +76,7 @@ class NeuralMAB(MAB):
         if not self.is_fitted:
             self._initial_fit_mab(context=contexts)
         deep_context = self._get_deep_context(context=contexts)
-        try:
-            return self._mab.predict_expectations(contexts=[deep_context])
-        except ValueError:
-            print('a')
+        return self._mab.predict_expectations(contexts=[deep_context])
 
     def _get_deep_context(self, context: Any) -> List[Any]:
         """ Returns deep representation of context. """
