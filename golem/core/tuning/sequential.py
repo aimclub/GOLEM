@@ -6,9 +6,10 @@ from hyperopt import tpe, fmin, space_eval
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.objective import ObjectiveEvaluate
-from golem.core.tuning.search_space import SearchSpace, convert_params
-from golem.core.tuning.tuner_interface import HyperoptTuner, DomainGraphForTune
+from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.tuning.search_space import SearchSpace
+from golem.core.tuning.tuner_interface import DomainGraphForTune
+from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 
 
 class SequentialTuner(HyperoptTuner):
@@ -16,16 +17,24 @@ class SequentialTuner(HyperoptTuner):
     Class for hyperparameters optimization for all nodes sequentially
     """
 
-    def __init__(self, objective_evaluate: ObjectiveEvaluate,
+    def __init__(self, objective_evaluate: ObjectiveFunction,
                  search_space: SearchSpace,
                  adapter: Optional[BaseOptimizationAdapter] = None,
-                 iterations=100, early_stopping_rounds=None,
+                 iterations: int = 100,
+                 early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
-                 inverse_node_order=False,
+                 n_jobs: int = -1,
+                 deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 n_jobs: int = -1):
-        super().__init__(objective_evaluate, search_space, adapter, iterations, early_stopping_rounds,
-                         timeout, algo, n_jobs)
+                 inverse_node_order: bool = False):
+        super().__init__(objective_evaluate,
+                         search_space,
+                         adapter,
+                         iterations,
+                         early_stopping_rounds, timeout,
+                         n_jobs,
+                         deviation,
+                         algo)
 
         self.inverse_node_order = inverse_node_order
 
@@ -61,10 +70,9 @@ class SequentialTuner(HyperoptTuner):
             operation_name = node.name
 
             # Get node's parameters to optimize
-            node_params = self.search_space.get_node_params(node_id=node_id,
-                                                            operation_name=operation_name)
+            node_params = get_node_parameters_for_hyperopt(self.search_space, node_id, operation_name)
 
-            if node_params is None:
+            if not node_params:
                 self.log.info(f'"{operation_name}" operation has no parameters to optimize')
             else:
                 # Apply tuning for current node
@@ -115,10 +123,11 @@ class SequentialTuner(HyperoptTuner):
         operation_name = node.name
 
         # Get node's parameters to optimize
-        node_params = self.search_space.get_node_params(node_id=node_index,
-                                                        operation_name=operation_name)
+        node_params = get_node_parameters_for_hyperopt(self.search_space,
+                                                       node_id=node_index,
+                                                       operation_name=operation_name)
 
-        if node_params is None:
+        if not node_params:
             self._stop_tuning_with_message(f'"{operation_name}" operation has no parameters to optimize')
         else:
             # Apply tuning for current node
@@ -135,7 +144,10 @@ class SequentialTuner(HyperoptTuner):
         final_graph = self.adapter.restore(final_graph)
         return final_graph
 
-    def _optimize_node(self, graph: OptGraph, node_id: int, node_params: dict, iterations_per_node: int,
+    def _optimize_node(self, graph: OptGraph,
+                       node_id: int,
+                       node_params: dict,
+                       iterations_per_node: int,
                        seconds_per_node: int) -> OptGraph:
         """
         Method for node optimization
@@ -150,23 +162,17 @@ class SequentialTuner(HyperoptTuner):
         Returns:
             updated graph with tuned parameters in particular node
         """
-        best_parameters = fmin(partial(self._objective,
-                                       graph=graph,
-                                       node_id=node_id
-                                       ),
+        best_parameters = fmin(partial(self._objective, graph=graph, node_id=node_id),
                                node_params,
                                algo=self.algo,
                                max_evals=iterations_per_node,
                                early_stop_fn=self.early_stop_fn,
                                timeout=seconds_per_node)
 
-        best_parameters = space_eval(space=node_params,
-                                     hp_assignment=best_parameters)
+        best_parameters = space_eval(space=node_params, hp_assignment=best_parameters)
 
         # Set best params for this node in the graph
-        graph = self.set_arg_node(graph=graph,
-                                  node_id=node_id,
-                                  node_params=best_parameters)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best_parameters)
         return graph
 
     def _objective(self, node_params: dict, graph: OptGraph, node_id: int) -> float:
@@ -182,29 +188,7 @@ class SequentialTuner(HyperoptTuner):
         """
 
         # Set hyperparameters for node
-        graph = self.set_arg_node(graph=graph, node_id=node_id,
-                                  node_params=node_params)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)
 
         metric_value = self.get_metric_value(graph=graph)
         return metric_value
-
-    @staticmethod
-    def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
-
-        Args:
-            graph: graph which contains the node
-            node_id: id of the node to which parameters should be assigned
-            node_params: dictionary with labeled parameters to set
-
-        Returns:
-            graph with new hyperparameters in each node
-        """
-
-        # Remove label prefixes
-        node_params = convert_params(node_params)
-
-        # Update parameters in nodes
-        graph.nodes[node_id].parameters = node_params
-
-        return graph

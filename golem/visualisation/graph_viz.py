@@ -180,7 +180,7 @@ class GraphVisualizer:
         fig, ax = plt.subplots(figsize=(7, 7))
         fig.set_dpi(dpi)
 
-        self.draw_nx_dag(self.graph, ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
+        self.draw_nx_dag(ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
                          graph_to_nx_convert_func, nodes_labels, edges_labels)
         if not save_path:
             plt.show()
@@ -188,7 +188,7 @@ class GraphVisualizer:
             plt.savefig(save_path, dpi=dpi)
             plt.close()
 
-    def draw_nx_dag(self, graph: GraphType, ax: Optional[plt.Axes] = None,
+    def draw_nx_dag(self, ax: Optional[plt.Axes] = None,
                     node_color: Optional[NodeColorType] = None,
                     node_size_scale: float = 1, font_size_scale: float = 1, edge_curvature_scale: float = 1,
                     graph_to_nx_convert_func: Callable = graph_structure_as_nx_graph,
@@ -219,7 +219,7 @@ class GraphVisualizer:
         if ax is None:
             ax = plt.gca()
 
-        nx_graph, nodes = graph_to_nx_convert_func(graph)
+        nx_graph, nodes = graph_to_nx_convert_func(self.graph)
         # Define colors
         if callable(node_color):
             node_color = node_color([str(node) for node in nodes.values()])
