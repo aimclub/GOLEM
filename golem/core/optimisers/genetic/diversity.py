@@ -8,6 +8,7 @@ from numpy._typing import ArrayLike
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphOptimizer, IterationCallback
+from golem.visualisation.opt_history.utils import show_or_save_figure
 
 
 def compute_fitness_diversity(population: PopulationT) -> np.ndarray:
@@ -89,7 +90,8 @@ def plot_diversity_dynamic_gif(history: OptHistory,
     return animate
 
 
-def plot_diversity_dynamic(history: OptHistory, show=True):
+def plot_diversity_dynamic(history: OptHistory,
+                           show=True, save_path: Optional[str] = None, dpi: int = 100):
     labels = history.objective.metric_names
     h = history.individuals[:-1]  # don't consider final choices
     xs = np.arange(len(h))
@@ -114,5 +116,5 @@ def plot_diversity_dynamic(history: OptHistory, show=True):
     ax.grid()
     ax.legend(loc='upper left')
 
-    if show:
-        plt.show()
+    if show or save_path:
+        show_or_save_figure(fig, save_path, dpi)
