@@ -14,6 +14,7 @@ from golem.core.optimisers.adaptive.operator_agent import ActType, ObsType, Expe
 class ContextualMultiArmedBanditAgent(OperatorAgent):
     """ Contextual Multi-Armed bandit. Observations can be encoded with simple context agent without
     using NN to guarantee convergence. """
+
     def __init__(self, actions: Sequence[ActType], n_jobs: int = 1,
                  context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.nodes_num,
                  enable_logging: bool = True):
@@ -36,7 +37,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         n = len(self._indices)
         uniform_rewards = [1. / n] * n
         contexts = self.get_context(obs=obs)
-        self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=contexts*n)
+        self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=contexts * n)
         self._is_fitted = True
 
     def choose_action(self, obs: ObsType) -> ActType:

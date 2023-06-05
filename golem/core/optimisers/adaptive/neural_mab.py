@@ -10,6 +10,7 @@ from mabwiser.utils import Arm, Constants, Num
 from golem.core.log import default_log
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 
@@ -19,6 +20,7 @@ class NeuralMAB(MAB):
     The main concept is explained in the article: https://arxiv.org/abs/2012.01780.
     Deep representation is formed with NN and Contextual Multi-Armed Bandit is integrated to choose arm.
     """
+
     def __init__(self, arms: List[Arm],
                  learning_policy: Any = LearningPolicy.UCB1(alpha=1.25),
                  neighborhood_policy: Any = NeighborhoodPolicy.Clusters(),
@@ -85,6 +87,7 @@ class NeuralMAB(MAB):
 
 class NNWithShallowExploration:
     """ Neural Network with shallow exploration which means that weights are updated every _H_q iterations. """
+
     def __init__(self, context_size: int, arms_count: int):
         """
         Initial fit for NN.
@@ -165,7 +168,7 @@ class NNWithShallowExploration:
         """ Ucb term. """
         try:
             tmp, _ = torch.solve(phi, A)
-        except:
+        except Exception:
             tmp = torch.Tensor(np.linalg.solve(A, phi))
 
         return torch.sqrt(torch.mm(torch.transpose(phi, 0, 1).double(), tmp.double()))

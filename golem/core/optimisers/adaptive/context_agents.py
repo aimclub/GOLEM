@@ -42,4 +42,3 @@ class ContextAgentsRepository:
     @staticmethod
     def agent_class_by_id(agent_id: ContextAgentTypeEnum) -> Callable:
         return ContextAgentsRepository._agents_implementations[agent_id]
-

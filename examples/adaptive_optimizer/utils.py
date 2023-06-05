@@ -26,7 +26,7 @@ def plot_action_values(stats: Sequence[Sequence[float]],
     if cluster_center is not None:
         ax0.set_title(f'Action Expectation Values for cluster with center {cluster_center}')
     else:
-        ax0.set_title(f'Action Expectation Values')
+        ax0.set_title('Action Expectation Values')
     ax0.set_xlabel('Generation')
     ax0.set_ylabel('Reward Expectation')
     ax1.set_title('Action Probabilities')

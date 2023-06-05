@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from statistics import mean
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 import matplotlib as mpl
 import numpy as np
@@ -17,6 +17,9 @@ from golem.core.paths import default_data_dir
 from golem.visualisation.opt_history.arg_constraint_wrapper import ArgConstraintWrapper
 from golem.visualisation.opt_history.history_visualization import HistoryVisualization
 from golem.visualisation.opt_history.utils import show_or_save_figure
+
+if TYPE_CHECKING:
+    from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 
 def with_alternate_matplotlib_backend(func):
@@ -254,6 +257,7 @@ class FitnessLineInteractive(HistoryVisualization):
 class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
     """ Class to compare fitness changes during optimization process.
     :param histories_to_compare: dictionary with labels to display as keys and histories as values. """
+
     def __init__(self, histories_to_compare: Dict[str, List['OptHistory']], visuals_params: Dict[str, Any] = None):
         self.histories_to_compare = histories_to_compare
         self.visuals_params = visuals_params or {}

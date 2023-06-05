@@ -32,6 +32,7 @@ from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 
 class MABSyntheticExperimentHelper:
     """ Class to provide synthetic experiments without data to compare MABs. """
+
     def __init__(self, launch_num: int, timeout: float, bandits_to_compare: List[MutationAgentTypeEnum],
                  path_to_save: str = None, is_visualize: bool = False, n_clusters: Optional[int] = None):
         self.launch_num = launch_num
@@ -114,7 +115,7 @@ class MABSyntheticExperimentHelper:
 
     def show_boxplots(self):
         sns.boxplot(data=pd.DataFrame(self.bandit_metrics))
-        plt.title(f'Metrics', fontsize=15)
+        plt.title('Metrics', fontsize=15)
         plt.show()
 
     def show_fitness_lines(self):
