@@ -18,7 +18,7 @@ from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.paths import default_data_dir
 from golem.visualisation.graph_viz import GraphVisualizer
 from PIL import Image
-from imageio import get_writer, v2
+from imageio.v2 import get_writer, imread
 
 
 class OptHistoryExtraVisualizer:
@@ -254,7 +254,7 @@ def visualise_pareto(front: Sequence[Individual],
 def create_gif_using_images(gif_path: str, files: List[str]):
     with get_writer(gif_path, mode='I', duration=0.5) as writer:
         for filename in files:
-            image = v2.imread(filename)
+            image = imread(filename)
             writer.append_data(image)
 
 
