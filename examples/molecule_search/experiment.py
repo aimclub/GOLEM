@@ -26,7 +26,7 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
+from golem.visualisation.opt_viz import OptHistoryVisualizer
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
 
@@ -100,17 +100,24 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
 def visualize_results(molecules: Iterable[MolGraph],
                       objective: Objective,
                       history: OptHistory,
-                      save_path: Optional[str] = None):
+                      save_path: Optional[str] = None,
+                      show: bool = False):
     save_path = save_path or os.path.join(os.path.curdir, 'visualisations')
     Path(save_path).mkdir(exist_ok=True)
 
+    # Plot diversity
+    plot_diversity_dynamic_gif(history, filename=os.path.join(save_path, 'diversity.gif'))
+    plot_diversity_dynamic(history, save_path=os.path.join(save_path, 'diversity_line.png'))
+
+    # Plot pareto front (if multi-objective)
     if objective.is_multi_objective:
         visualise_pareto(history.archive_history[-1], objectives_names=objective.metric_names[:2], folder=save_path)
 
+    # Plot fitness convergence
     visualizer = OptHistoryVisualizer(history)
-    visualization = PlotTypesEnum.fitness_line.value(visualizer.history, visualizer.visuals_params)
-    visualization.visualize(dpi=100, save_path=os.path.join(save_path, 'fitness_line.png'))
+    visualizer.fitness_line(dpi=100, save_path=os.path.join(save_path, 'fitness_line.png'))
 
+    # Plot found molecules
     rw_molecules = [mol.get_rw_molecule() for mol in set(molecules)]
     objectives = [objective.format_fitness(objective(mol)) for mol in set(molecules)]
     image = Draw.MolsToGridImage(rw_molecules,
@@ -118,8 +125,9 @@ def visualize_results(molecules: Iterable[MolGraph],
                                  molsPerRow=min(4, len(rw_molecules)),
                                  subImgSize=(1000, 1000),
                                  legendFontSize=50)
-    image.show()
     image.save(os.path.join(save_path, 'best_molecules.png'))
+    if show:
+        image.show()
 
 
 def run_experiment(optimizer_setup: Callable,
@@ -133,33 +141,36 @@ def run_experiment(optimizer_setup: Callable,
                    num_trials: int = 1,
                    trial_timeout: Optional[int] = None,
                    trial_iterations: Optional[int] = None,
-                   visualize: bool = False
+                   visualize: bool = False,
+                   save_history: bool = True,
                    ):
     log = StringIO()
     atom_types = atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br']
     metrics = metrics or ['qed_score']
     trial_results = []
     experiment_id = f'Experiment [metrics={", ".join(metrics)} pop_size={pop_size}]\n'
+    trial_timedelta = timedelta(minutes=trial_timeout) if trial_timeout else None
+
     for trial in range(num_trials):
         optimizer, objective = optimizer_setup(optimizer_cls,
                                                max_heavy_atoms,
                                                atom_types,
                                                bond_types,
-                                               trial_timeout,
+                                               trial_timedelta,
                                                trial_iterations,
                                                pop_size,
                                                metrics,
                                                initial_molecules)
         found_graphs = optimizer.optimise(objective)
         history = optimizer.history
+        exp_name = f'trial_{trial}_popsize_{pop_size}_min_{trial_timeout}_{"_".join(metrics)}'
         if visualize:
             molecules = [MolAdapter().restore(graph) for graph in found_graphs]
-            save_path = os.path.join(os.path.curdir,
-                                     'visualisations',
-                                     f'trial_{trial}_pop_size_{pop_size}_{"_".join(metrics)}')
+            save_path = os.path.join(os.path.curdir, 'visualisations', exp_name)
             visualize_results(set(molecules), objective, history, save_path)
-        Path("results").mkdir(exist_ok=True)
-        history.save(f'./results/trial_{trial}_pop_size_{pop_size}_{"_".join(metrics)}.json')
+        if save_history:
+            Path("results").mkdir(exist_ok=True)
+            history.save(f'./results/{exp_name}.json')
         trial_results.extend(history.final_choices)
 
     # Compute mean & std for metrics of trials
@@ -178,8 +189,9 @@ def run_experiment(optimizer_setup: Callable,
 if __name__ == '__main__':
     run_experiment(molecule_search_setup,
                    max_heavy_atoms=38,
-                   trial_iterations=100,
-                   pop_size=100,
-                   metrics=['cl_score'],
+                   trial_timeout=20,
+                   pop_size=50,
+                   metrics=['qed_score', 'cl_score'],
+                   save_history=False,
                    visualize=True,
-                   num_trials=10)
+                   num_trials=5)
