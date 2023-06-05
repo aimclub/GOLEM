@@ -1,8 +1,6 @@
 import copy
 import math
 from typing import List, Any, Union, Dict
-import sys
-import time
 
 import torch
 import numpy as np
@@ -86,6 +84,7 @@ class NeuralMAB(MAB):
 
 
 class NNWithShallowExploration:
+    """ Neural Network with shallow exploration which means that weights are updated every _H_q iterations. """
     def __init__(self, context_size: int, arms_count: int):
         """
         Initial fit for NN.
@@ -290,9 +289,6 @@ class NNWithShallowExploration:
         for i in range(0, depth):
             grad1.append(grad[depth - 1 - i] * math.sqrt(W[depth - 1].size()[1]) / len(X[0, :]))
 
-        # if (grad1[0] != grad1[0]).any():
-        #     print('nan found')
-        #     sys.exit('nan found')
         return grad1
 
     def _loss(self, X, Y, W, THETA):

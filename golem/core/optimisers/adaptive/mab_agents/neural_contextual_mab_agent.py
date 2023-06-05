@@ -7,6 +7,8 @@ from golem.core.optimisers.adaptive.operator_agent import ActType
 
 
 class NeuralContextualMultiArmedBanditAgent(ContextualMultiArmedBanditAgent):
+    """ Neural Contextual Multi-Armed bandit. Observations can be encoded with the use of Neural Networks,
+    but still there are some restrictions to guarantee convergence. """
     def __init__(self,
                  actions: Sequence[ActType],
                  n_jobs: int = 1,

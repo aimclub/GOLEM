@@ -16,7 +16,6 @@ from sklearn.cluster import MiniBatchKMeans
 
 from examples.adaptive_optimizer.mab_experiment_different_targets import get_graph_gp_params
 from examples.adaptive_optimizer.utils import plot_action_values
-from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
@@ -44,7 +43,7 @@ class MABSyntheticExperimentHelper:
         self.histories = dict.fromkeys([bandit.name for bandit in self.bandits_to_compare])
         self.cluster = MiniBatchKMeans(n_clusters=n_clusters)
 
-    def compare(self, setup_parameters: Callable, initial_population_func: Callable = None):
+    def compare_bandits(self, setup_parameters: Callable, initial_population_func: Callable = None):
         for i in range(self.launch_num):
             initial_graphs = initial_population_func()
             for bandit in self.bandits_to_compare:
@@ -154,17 +153,16 @@ if __name__ == '__main__':
     launch_num = 1
     target_size = 50
 
-    bandits_to_compare = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
+    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit]
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
     initial_population_func = partial(initial_population_func,
-                                      # graph_size=[random.randint(5, 7) for _ in range(21)],
-                                      graph_size=[random.randint(5, 10) for _ in range(19)] +
-                                                 [random.randint(90, 95) for _ in range(2)],
+                                      graph_size=[random.randint(5, 10) for _ in range(11)] +
+                                                 [random.randint(90, 95) for _ in range(10)],
                                       pop_size=21)
 
     helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare,
                                           n_clusters=2, is_visualize=True)
-    helper.compare(initial_population_func=initial_population_func,
-                   setup_parameters=setup_parameters_func)
+    helper.compare_bandits(initial_population_func=initial_population_func,
+                           setup_parameters=setup_parameters_func)
     # helper.show_boxplots()
     # helper.show_fitness_lines()

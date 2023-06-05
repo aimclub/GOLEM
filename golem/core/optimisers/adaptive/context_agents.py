@@ -19,11 +19,12 @@ def feather_graph(obs: Any) -> List[float]:
     return descriptor.get_embedding()[:20]
 
 
-def nodes_num(obs: Any) -> List[float]:
+def nodes_num(obs: Any) -> int:
+    """ Returns number of nodes in graph. """
     if isinstance(obs, Individual):
-        return [len(obs.graph.nodes)]
+        return len(obs.graph.nodes)
     else:
-        return [len(obs.nodes)]
+        return len(obs.nodes)
 
 
 class ContextAgentTypeEnum(Enum):
@@ -32,6 +33,7 @@ class ContextAgentTypeEnum(Enum):
 
 
 class ContextAgentsRepository:
+    """ Repository of functions to encode observations. """
     _agents_implementations = {
         ContextAgentTypeEnum.feather_graph: feather_graph,
         ContextAgentTypeEnum.nodes_num: nodes_num

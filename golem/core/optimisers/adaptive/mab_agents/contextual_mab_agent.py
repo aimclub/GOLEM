@@ -1,6 +1,7 @@
 import random
 from typing import Union, Sequence, Optional, List
 
+import numpy as np
 from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
 from scipy.special import softmax
 
@@ -11,6 +12,8 @@ from golem.core.optimisers.adaptive.operator_agent import ActType, ObsType, Expe
 
 
 class ContextualMultiArmedBanditAgent(OperatorAgent):
+    """ Contextual Multi-Armed bandit. Observations can be encoded with simple context agent without
+    using NN to guarantee convergence. """
     def __init__(self, actions: Sequence[ActType], n_jobs: int = 1,
                  context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.nodes_num,
                  enable_logging: bool = True):
@@ -32,14 +35,14 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         # initial fit for mab
         n = len(self._indices)
         uniform_rewards = [1. / n] * n
-        contexts = self.get_context(obs=[obs])
+        contexts = self.get_context(obs=obs)
         self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=contexts*n)
         self._is_fitted = True
 
     def choose_action(self, obs: ObsType) -> ActType:
         if not self._is_fitted:
             self._initial_fit(obs=obs)
-        contexts = self.get_context(obs=[obs])
+        contexts = self.get_context(obs=obs)
         arm = self._agent.predict(contexts=contexts)
         action = self.actions[arm]
         return action
@@ -73,5 +76,8 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         if not isinstance(obs, list):
             obs = [obs]
         for ob in obs:
-            contexts.append(self._context_agent(ob))
+            if isinstance(ob, list) or isinstance(ob, np.ndarray):
+                contexts.append(ob)
+            else:
+                contexts.append([self._context_agent(ob)])
         return contexts

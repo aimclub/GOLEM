@@ -252,7 +252,8 @@ class FitnessLineInteractive(HistoryVisualization):
 
 
 class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
-    """ Class to compare fitness changes during optimization process. """
+    """ Class to compare fitness changes during optimization process.
+    :param histories_to_compare: dictionary with labels to display as keys and histories as values. """
     def __init__(self, histories_to_compare: Dict[str, List['OptHistory']], visuals_params: Dict[str, Any] = None):
         self.histories_to_compare = histories_to_compare
         self.visuals_params = visuals_params or {}
