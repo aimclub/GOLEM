@@ -32,14 +32,14 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         # initial fit for mab
         n = len(self._indices)
         uniform_rewards = [1. / n] * n
-        contexts = self._get_context(obs=[obs])
+        contexts = self.get_context(obs=[obs])
         self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=contexts*n)
         self._is_fitted = True
 
     def choose_action(self, obs: ObsType) -> ActType:
         if not self._is_fitted:
             self._initial_fit(obs=obs)
-        contexts = self._get_context(obs=[obs])
+        contexts = self.get_context(obs=[obs])
         arm = self._agent.predict(contexts=contexts)
         action = self.actions[arm]
         return action
@@ -47,7 +47,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
     def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         if not self._is_fitted:
             self._initial_fit(obs=obs)
-        contexts = self._get_context(obs)
+        contexts = self.get_context(obs)
         prob_dict = self._agent.predict_expectations(contexts=contexts)
         prob_list = [prob_dict[i] for i in range(len(prob_dict))]
         return prob_list
@@ -64,10 +64,10 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         obs, actions, rewards = experience.retrieve_experience()
         self._dbg_log(obs, actions, rewards)
         arms = [self._arm_by_action[action] for action in actions]
-        contexts = self._get_context(obs=obs)
+        contexts = self.get_context(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=rewards, contexts=contexts)
 
-    def _get_context(self, obs: Union[List[ObsType], ObsType]) -> List[List[float]]:
+    def get_context(self, obs: Union[List[ObsType], ObsType]) -> List[List[float]]:
         """ Returns contexts based on specified context agent. """
         contexts = []
         if not isinstance(obs, list):

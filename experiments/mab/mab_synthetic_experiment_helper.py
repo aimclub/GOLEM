@@ -4,13 +4,15 @@ from datetime import timedelta
 from functools import partial
 from pprint import pprint
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from typing import List, Callable, Sequence
+from typing import List, Callable, Sequence, Optional, Dict
 
 import networkx as nx
 from matplotlib import pyplot as plt
+from sklearn.cluster import MiniBatchKMeans
 
 from examples.adaptive_optimizer.mab_experiment_different_targets import get_graph_gp_params
 from examples.adaptive_optimizer.utils import plot_action_values
@@ -32,7 +34,7 @@ from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 class MABSyntheticExperimentHelper:
     """ Class to provide synthetic experiments without data to compare MABs. """
     def __init__(self, launch_num: int, timeout: float, bandits_to_compare: List[MutationAgentTypeEnum],
-                 path_to_save: str = None, is_visualize: bool = False):
+                 path_to_save: str = None, is_visualize: bool = False, n_clusters: Optional[int] = None):
         self.launch_num = launch_num
         self.timeout = timeout
         self.bandits_to_compare = bandits_to_compare
@@ -40,23 +42,41 @@ class MABSyntheticExperimentHelper:
         self.path_to_save = path_to_save or os.path.join(project_root(), 'mab')
         self.is_visualize = is_visualize
         self.histories = dict.fromkeys([bandit.name for bandit in self.bandits_to_compare])
+        self.cluster = MiniBatchKMeans(n_clusters=n_clusters)
 
     def compare(self, setup_parameters: Callable, initial_population_func: Callable = None):
         for i in range(self.launch_num):
             initial_graphs = initial_population_func()
             for bandit in self.bandits_to_compare:
                 optimizer, objective = setup_parameters(initial_graphs=initial_graphs, bandit_type=bandit)
-                self.launch_bandit(launch_num=i, bandit_type=bandit, optimizer=optimizer, objective=objective)
+                self.launch_bandit(bandit_type=bandit, optimizer=optimizer, objective=objective)
 
-    def launch_bandit(self, launch_num: int, bandit_type: MutationAgentTypeEnum, optimizer: GraphOptimizer, objective: Callable):
+    def launch_bandit(self, bandit_type: MutationAgentTypeEnum, optimizer: GraphOptimizer, objective: Callable):
 
-        stats_action_value_log: List[List[float]] = []
+        stats_action_value_log: Dict[int, List[List[float]]] = dict()
 
         def log_action_values(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
             values = optimizer.mutation.agent.get_action_values(obs=next_pop[0])
-            stats_action_value_log.append(list(values))
+            if 0 not in stats_action_value_log.keys():
+                stats_action_value_log[0] = []
+            stats_action_value_log[0].append(list(values))
 
-        optimizer.set_iteration_callback(log_action_values)
+        def log_action_values_with_clusters(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
+            obs_contexts = optimizer.mutation.agent.get_context(next_pop)
+            self.cluster.partial_fit(np.array(obs_contexts).reshape(-1, 1))
+            centers = self.cluster.cluster_centers_
+            for i, center in enumerate(sorted(centers)):
+                values = optimizer.mutation.agent.get_action_values(obs=[center])
+                if i not in stats_action_value_log.keys():
+                    stats_action_value_log[i] = []
+                stats_action_value_log[i].append(list(values))
+
+        # set iteration callback
+        if bandit_type == MutationAgentTypeEnum.bandit:
+            optimizer.set_iteration_callback(log_action_values)
+        else:
+            optimizer.set_iteration_callback(log_action_values_with_clusters)
+
         found_graphs = optimizer.optimise(objective)
         found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
         history = optimizer.history
@@ -73,10 +93,25 @@ class MABSyntheticExperimentHelper:
         print('History of action probabilities:')
         pprint(stats_action_value_log)
         if self.is_visualize:
-            draw_graphs_subplots(found_nx_graph, titles=[f'Found Graph (fitness={final_metrics})'])
-            history.show.fitness_line()
-            plot_action_values(stats_action_value_log, action_tags=agent.actions)
+            self.show_fitness_line(found_nx_graph=found_nx_graph, final_metrics=final_metrics,
+                                   history=history)
+            self.show_action_probabilities(bandit_type=bandit_type, stats_action_value_log=stats_action_value_log,
+                                           agent=agent)
+
+    @staticmethod
+    def show_fitness_line(found_nx_graph, final_metrics, history):
+        draw_graphs_subplots(found_nx_graph, titles=[f'Found Graph (fitness={final_metrics})'])
+        history.show.fitness_line()
+
+    def show_action_probabilities(self, bandit_type: MutationAgentTypeEnum, stats_action_value_log, agent):
+        if bandit_type == MutationAgentTypeEnum.bandit:
+            plot_action_values(stats_action_value_log[0], action_tags=agent.actions)
             plt.show()
+        else:
+            for i in range(self.cluster.n_clusters):
+                plot_action_values(stats_action_value_log[i], action_tags=agent.actions,
+                                   cluster_center=f'{self.cluster.cluster_centers_[i]}')
+                plt.show()
 
     def show_boxplots(self):
         sns.boxplot(data=pd.DataFrame(self.bandit_metrics))
@@ -86,9 +121,6 @@ class MABSyntheticExperimentHelper:
     def show_fitness_lines(self):
         multiple_fitness_lines = MultipleFitnessLines(histories_to_compare=self.histories)
         multiple_fitness_lines.visualize()
-
-    def show_regret_line(self):
-        pass
 
 
 def setup_parameters(initial_graphs: List[Graph], bandit_type: MutationAgentTypeEnum,
@@ -118,20 +150,21 @@ def initial_population_func(graph_size: List[int] = None, pop_size: int = None, 
 
 
 if __name__ == '__main__':
-    timeout = 1
-    launch_num = 3
-    target_size = 100
+    timeout = 0.5
+    launch_num = 1
+    target_size = 50
 
     bandits_to_compare = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
-    # graph_size=[random.randint(5, 10) for _ in range(19)] +
-    #            [random.randint(90, 95) for _ in range(2)]
     initial_population_func = partial(initial_population_func,
-                                      graph_size=[random.randint(5, 7) for _ in range(21)],
+                                      # graph_size=[random.randint(5, 7) for _ in range(21)],
+                                      graph_size=[random.randint(5, 10) for _ in range(19)] +
+                                                 [random.randint(90, 95) for _ in range(2)],
                                       pop_size=21)
 
-    helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare)
+    helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare,
+                                          n_clusters=2, is_visualize=True)
     helper.compare(initial_population_func=initial_population_func,
                    setup_parameters=setup_parameters_func)
-    helper.show_boxplots()
-    helper.show_fitness_lines()
+    # helper.show_boxplots()
+    # helper.show_fitness_lines()

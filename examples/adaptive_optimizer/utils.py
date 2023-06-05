@@ -7,7 +7,8 @@ from scipy.special import softmax
 
 def plot_action_values(stats: Sequence[Sequence[float]],
                        action_tags: Optional[Sequence[Any]] = None,
-                       size: float = 5.):
+                       size: float = 5.,
+                       cluster_center: Optional[str] = None):
     # Plot stackplot of how action expectations and probabilities changed
     x = np.arange(len(stats))
     y = np.array(stats).T
@@ -22,7 +23,10 @@ def plot_action_values(stats: Sequence[Sequence[float]],
         ax0.grid()
     ax1.stackplot(x, y_prob, labels=labels)
 
-    ax0.set_title('Action Expectation Values')
+    if cluster_center is not None:
+        ax0.set_title(f'Action Expectation Values for cluster with center {cluster_center}')
+    else:
+        ax0.set_title(f'Action Expectation Values')
     ax0.set_xlabel('Generation')
     ax0.set_ylabel('Reward Expectation')
     ax1.set_title('Action Probabilities')
