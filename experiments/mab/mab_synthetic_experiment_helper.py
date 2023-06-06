@@ -45,11 +45,18 @@ class MABSyntheticExperimentHelper:
         self.cluster = MiniBatchKMeans(n_clusters=n_clusters)
 
     def compare_bandits(self, setup_parameters: Callable, initial_population_func: Callable = None):
+        results = dict()
         for i in range(self.launch_num):
             initial_graphs = initial_population_func()
             for bandit in self.bandits_to_compare:
                 optimizer, objective = setup_parameters(initial_graphs=initial_graphs, bandit_type=bandit)
-                self.launch_bandit(bandit_type=bandit, optimizer=optimizer, objective=objective)
+                agent = optimizer.mutation.agent
+                result = self.launch_bandit(bandit_type=bandit, optimizer=optimizer, objective=objective)
+                if bandit.name not in results.keys():
+                    results[bandit.name] = []
+                results[bandit.name].append(result)
+        if self.is_visualize:
+            self.show_average_action_probabilities(show_action_probabilities=results, actions=agent.actions)
 
     def launch_bandit(self, bandit_type: MutationAgentTypeEnum, optimizer: GraphOptimizer, objective: Callable):
 
@@ -96,22 +103,52 @@ class MABSyntheticExperimentHelper:
             self.show_fitness_line(found_nx_graph=found_nx_graph, final_metrics=final_metrics,
                                    history=history)
             self.show_action_probabilities(bandit_type=bandit_type, stats_action_value_log=stats_action_value_log,
-                                           agent=agent)
+                                           actions=agent.actions)
+
+        return stats_action_value_log
 
     @staticmethod
     def show_fitness_line(found_nx_graph, final_metrics, history):
         draw_graphs_subplots(found_nx_graph, titles=[f'Found Graph (fitness={final_metrics})'])
         history.show.fitness_line()
 
-    def show_action_probabilities(self, bandit_type: MutationAgentTypeEnum, stats_action_value_log, agent):
+    def show_action_probabilities(self, bandit_type: MutationAgentTypeEnum, stats_action_value_log,
+                                  actions, is_average: bool = False):
+        if is_average:
+            titles = [f'Average action Expectation Values', 'Average action Probabilities']
+        else:
+            titles = [f'Action Expectation Values', 'Action Probabilities']
         if bandit_type == MutationAgentTypeEnum.bandit:
-            plot_action_values(stats_action_value_log[0], action_tags=agent.actions)
+            plot_action_values(stats=stats_action_value_log[0], action_tags=actions, titles=titles)
             plt.show()
         else:
+            centers = sorted(self.cluster.cluster_centers_)
             for i in range(self.cluster.n_clusters):
-                plot_action_values(stats_action_value_log[i], action_tags=agent.actions,
-                                   cluster_center=f'{self.cluster.cluster_centers_[i]}')
+                titles = [title+f' for cluster with center {int(centers[i])}' for title in titles]
+                plot_action_values(stats=stats_action_value_log[i], action_tags=actions,
+                                   titles=titles)
                 plt.show()
+
+    def show_average_action_probabilities(self, show_action_probabilities: dict, actions):
+        """ Shows action probabilities across several launches. """
+        for bandit in list(show_action_probabilities.keys()):
+            total_sum = None
+            for launch in show_action_probabilities[bandit]:
+                if not total_sum:
+                    total_sum = launch
+                    continue
+                for cluster in launch.keys():
+                    for i in range(len(total_sum[cluster])):
+                        for j in range(len(total_sum[cluster][i])):
+                            total_sum[cluster][i][j] += launch[cluster][i][j]
+            for cluster in total_sum.keys():
+                for i in range(len(total_sum[cluster])):
+                    for j in range(len(total_sum[cluster][i])):
+                        total_sum[cluster][i][j] /= len(show_action_probabilities[bandit])
+            self.show_action_probabilities(bandit_type=MutationAgentTypeEnum(bandit),
+                                           stats_action_value_log=total_sum,
+                                           actions=actions,
+                                           is_average=True)
 
     def show_boxplots(self):
         sns.boxplot(data=pd.DataFrame(self.bandit_metrics))
@@ -150,16 +187,16 @@ def initial_population_func(graph_size: List[int] = None, pop_size: int = None, 
 
 
 if __name__ == '__main__':
-    timeout = 0.5
+    timeout = 0.3
     launch_num = 1
     target_size = 50
 
     bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit]
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
     initial_population_func = partial(initial_population_func,
-                                      graph_size=[random.randint(5, 10) for _ in range(11)] +
+                                      graph_size=[random.randint(5, 10) for _ in range(10)] +
                                                  [random.randint(90, 95) for _ in range(10)],
-                                      pop_size=21)
+                                      pop_size=20)
 
     helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare,
                                           n_clusters=2, is_visualize=True)
