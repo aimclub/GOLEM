@@ -89,4 +89,3 @@ class OptHistoryVisualizer:
         else:
             visualize_function = vars(self)[plot_type.name]
         visualize_function(**kwargs)
-
