@@ -7,7 +7,6 @@ from numpy._typing import ArrayLike
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.core.optimisers.optimizer import GraphOptimizer, IterationCallback
 from golem.visualisation.opt_history.utils import show_or_save_figure
 
 
@@ -18,22 +17,6 @@ def compute_fitness_diversity(population: PopulationT) -> np.ndarray:
     # compute std along each axis while ignoring nan-s
     diversity = np.nanstd(fitness_values, axis=0)
     return diversity
-
-
-class PopulationStatsLogger(IterationCallback):
-    """Stores numpy array of standard deviations of fitness values.
-    Can be used as an ``IterationCallback`` in optimizer."""
-    def __init__(self, stats_fn: Callable[[PopulationT], ArrayLike]):
-        self._stats_fn = stats_fn
-        self._history = []
-
-    def __call__(self, population: PopulationT, optimizer: GraphOptimizer) -> np.ndarray:
-        diversity = self._stats_fn(population)
-        self._history.append(diversity)
-
-    def get_history(self) -> np.ndarray:
-        np_hist = np.array(self._history)
-        return np_hist
 
 
 def plot_diversity_dynamic_gif(history: OptHistory,
