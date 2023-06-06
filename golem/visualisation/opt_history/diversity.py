@@ -1,9 +1,8 @@
-from typing import Union, Callable, Sequence, Optional
+from typing import Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
-from numpy._typing import ArrayLike
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory

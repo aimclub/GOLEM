@@ -11,7 +11,7 @@ import numpy as np
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
-from golem.core.optimisers.genetic.diversity import plot_diversity_dynamic, plot_diversity_dynamic_gif
+from golem.visualisation.opt_history.diversity import plot_diversity_dynamic, plot_diversity_dynamic_gif
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.metrics.edit_distance import get_edit_dist_metric, matrix_edit_dist
