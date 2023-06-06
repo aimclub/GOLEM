@@ -3,7 +3,7 @@ from uuid import UUID
 import pytest
 from golem.serializers import MODULE_X_NAME_DELIMITER, Serializer
 
-from .dataclasses.serialization_dataclasses import GetClassCase
+from .dataclasses_serialisation.serialization_dataclasses import GetClassCase
 from test.unit.mocks.serialization_mocks import MockGraph, MockNode, MockOperation
 from .shared_data import TestClass, TestEnum, TestSerializableClass, test_func
 

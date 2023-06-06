@@ -5,12 +5,13 @@ from inspect import isclass, isfunction, ismethod, signature
 from json import JSONDecoder, JSONEncoder
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
+from golem.core.log import default_log
+
 # NB: at the end of module init happens registration of default class coders
 
 INSTANCE_OR_CALLABLE = TypeVar('INSTANCE_OR_CALLABLE', object, Callable)
 EncodeCallable = Callable[[INSTANCE_OR_CALLABLE], Dict[str, Any]]
 DecodeCallable = Callable[[Type[INSTANCE_OR_CALLABLE], Dict[str, Any]], INSTANCE_OR_CALLABLE]
-
 
 MODULE_X_NAME_DELIMITER = '/'
 CLASS_PATH_KEY = '_class_path'
@@ -56,7 +57,6 @@ LEGACY_MODULE_PATHS = {
 
 
 class Serializer(JSONEncoder, JSONDecoder):
-
     _to_json = 'to_json'
     _from_json = 'from_json'
 
@@ -261,7 +261,12 @@ class Serializer(JSONEncoder, JSONDecoder):
         :return: Python class, function or method object OR input if it's just a regular dict
         """
         if CLASS_PATH_KEY in json_obj:
-            obj_cls = Serializer._get_class(json_obj[CLASS_PATH_KEY])
+            try:
+                obj_cls = Serializer._get_class(json_obj[CLASS_PATH_KEY])
+            except ImportError as ex:
+                default_log('Serializer').info(f'Object was not decoded and will be stored as a dict '
+                                               f'because of an ImportError: {ex}.')
+                return json_obj
             del json_obj[CLASS_PATH_KEY]
             base_type = Serializer._get_base_type(obj_cls)
             if isclass(obj_cls) and base_type is not None:

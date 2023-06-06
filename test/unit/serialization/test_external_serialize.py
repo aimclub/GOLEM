@@ -1,9 +1,11 @@
 import os.path
+from pathlib import Path
 
 import pytest
 
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.paths import project_root
+from golem.visualisation.opt_viz import OptHistoryVisualizer, PlotTypesEnum
 
 
 @pytest.mark.parametrize('history_path', [
