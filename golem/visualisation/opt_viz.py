@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 from golem.core.log import default_log
+from golem.visualisation.opt_history.diversity import DiversityLine, DiversityPopulation
 from golem.visualisation.opt_history.fitness_box import FitnessBox
 from golem.visualisation.opt_history.fitness_line import FitnessLine, FitnessLineInteractive
 from golem.visualisation.opt_history.operations_animated_bar import OperationsAnimatedBar
@@ -55,6 +56,8 @@ class OptHistoryVisualizer:
         self.fitness_line_interactive = FitnessLineInteractive(history, self.visuals_params).visualize
         self.operations_kde = OperationsKDE(history, self.visuals_params).visualize
         self.operations_animated_bar = OperationsAnimatedBar(history, self.visuals_params).visualize
+        self.diversity_line = DiversityLine(history, self.visuals_params).visualize
+        self.diversity_population = DiversityPopulation(history, self.visuals_params).visualize
 
         self.log = default_log(self)
 

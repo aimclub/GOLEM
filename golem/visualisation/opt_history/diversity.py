@@ -1,12 +1,26 @@
-from typing import Optional
+import os
+from typing import Optional, Union, TYPE_CHECKING
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT
-from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
+from golem.visualisation.opt_history.history_visualization import HistoryVisualization
 from golem.visualisation.opt_history.utils import show_or_save_figure
+
+if TYPE_CHECKING:
+    from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
+
+
+class DiversityLine(HistoryVisualization):
+    def visualize(self, show: bool = True, save_path: Optional[Union[os.PathLike, str]] = None):
+        return plot_diversity_dynamic(self.history, show=show, save_path=save_path, dpi=self.visuals_params['dpi'])
+
+
+class DiversityPopulation(HistoryVisualization):
+    def visualize(self, save_path: Union[os.PathLike, str], fps: int = 4):
+        return plot_diversity_dynamic_gif(self.history, filename=save_path, fps=fps, dpi=self.visuals_params['dpi'])
 
 
 def compute_fitness_diversity(population: PopulationT) -> np.ndarray:
@@ -18,10 +32,11 @@ def compute_fitness_diversity(population: PopulationT) -> np.ndarray:
     return diversity
 
 
-def plot_diversity_dynamic_gif(history: OptHistory,
+def plot_diversity_dynamic_gif(history: 'OptHistory',
                                filename: Optional[str] = None,
                                fig_size: int = 5,
                                fps: int = 4,
+                               dpi: int = 100,
                                ) -> FuncAnimation:
     metric_names = history.objective.metric_names
     # dtype=float removes None, puts np.nan
@@ -68,11 +83,11 @@ def plot_diversity_dynamic_gif(history: OptHistory,
     )
     # Save the GIF from animation
     if filename:
-        animate.save(filename, fps=fps, dpi=150)
+        animate.save(filename, fps=fps, dpi=dpi)
     return animate
 
 
-def plot_diversity_dynamic(history: OptHistory,
+def plot_diversity_dynamic(history: 'OptHistory',
                            show=True, save_path: Optional[str] = None, dpi: int = 100):
     labels = history.objective.metric_names
     h = history.individuals[:-1]  # don't consider final choices
@@ -95,7 +110,7 @@ def plot_diversity_dynamic(history: OptHistory,
 
     ax2 = ax.twinx()
     ax2.set_ylabel('Unique ratio')
-    ax2.set_ylim(0.25, 1.0)
+    ax2.set_ylim(0.25, 1.05)
     ax2.plot(xs, ratio_unique, label='unique ratio', color='tab:gray')
 
     # ask matplotlib for the plotted objects and their labels

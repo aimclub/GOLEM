@@ -77,8 +77,8 @@ def run_experiments(optimizer_setup: Callable,
                 draw_graphs_subplots(target_graph, found_nx_graph,
                                      titles=['Target Graph', 'Found Graph'], show=False)
                 diversity_filename = (f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif')
-                plot_diversity_dynamic_gif(history, filename=diversity_filename)
-                plot_diversity_dynamic(history, show=False)
+                history.show.diversity_population(save_path=diversity_filename)
+                history.show.diversity_line(show=False)
                 history.show.fitness_line()
             history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
 
