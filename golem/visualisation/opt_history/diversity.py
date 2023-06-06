@@ -85,18 +85,25 @@ def plot_diversity_dynamic(history: OptHistory,
     ratio_unique = [len(set(ind.graph.descriptive_id for ind in pop)) / len(pop) for pop in h]
 
     fig, ax = plt.subplots()
-    for label, metric_std in ys.items():
-        ax.plot(xs, metric_std, label=label)
-
-    ax2 = ax.twinx()
-    ax2.set_ylabel('Num unique')
-    ax2.plot(xs, ratio_unique, label='Num unique', color='tab:gray')
-
     fig.suptitle('Population diversity')
     ax.set_xlabel('Generation')
     ax.set_ylabel('Std')
     ax.grid()
-    ax.legend(loc='upper left')
+
+    for label, metric_std in ys.items():
+        ax.plot(xs, metric_std, label=label)
+
+    ax2 = ax.twinx()
+    ax2.set_ylabel('Unique ratio')
+    ax2.set_ylim(0.25, 1.0)
+    ax2.plot(xs, ratio_unique, label='unique ratio', color='tab:gray')
+
+    # ask matplotlib for the plotted objects and their labels
+    # to put them into single legend for both axes
+    lines, labels = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2,
+               loc='upper left', bbox_to_anchor=(0., 1.15))
 
     if show or save_path:
         show_or_save_figure(fig, save_path, dpi)
