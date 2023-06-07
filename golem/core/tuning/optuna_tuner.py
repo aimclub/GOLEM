@@ -52,35 +52,16 @@ class OptunaTuner(BaseTuner):
                        n_trials=self.iterations,
                        n_jobs=self.n_jobs,
                        timeout=self.timeout.seconds,
-                       callbacks=[self.early_stopping_callback,
-                                  partial(self.no_parameters_to_optimize_callback, graph=graph)],
+                       callbacks=[self.early_stopping_callback] if self.early_stopping_rounds else None,
                        show_progress_bar=show_progress)
 
-        tuned_graphs = []
-        if self.objectives_number == 1:
-            best_parameters = study.best_trials[0].params
-            tuned_graph = self.set_arg_graph(graph, best_parameters)
-            graph = self.final_check(tuned_graph)
-            tuned_graphs = graph
-            self.was_tuned = True
-        else:
-            self.obtained_metric = []
-            for best_trial in study.best_trials:
-                best_parameters = best_trial.params
-                tuned_graph = self.set_arg_graph(graph, best_parameters)
-                obtained_metric = self.get_metric_value(tuned_graph)
-                for e, value in enumerate(self.obtained_metric):
-                    if value == self._default_metric_value:
-                        obtained_metric[e] = None
-                if not MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
-                    tuned_graphs.append(tuned_graph)
-                    self.obtained_metric.append(obtained_metric)
-                    self.was_tuned = True
-            if not tuned_graphs:
-                tuned_graphs = self.init_graph
+        best_parameters = study.best_trials[0].params
+        tuned_graph = self.set_arg_graph(graph, best_parameters)
+        graph = self.final_check(tuned_graph)
+        self.was_tuned = True
 
-        tuned_graphs = self.adapter.restore(tuned_graphs)
-        return tuned_graphs
+        tuned_graph = self.adapter.restore(graph)
+        return tuned_graph
 
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Tuple[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)
