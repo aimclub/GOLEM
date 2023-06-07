@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import TypeVar, Generic, Optional
+from typing import TypeVar, Generic, Optional, Union, Tuple
 
 import numpy as np
 
@@ -10,9 +10,11 @@ from golem.core.adapter.adapter import IdentityAdapter
 from golem.core.constants import MAX_TUNING_METRIC_VALUE
 from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
+from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 DomainGraphForTune = TypeVar('DomainGraphForTune')
 
@@ -88,7 +90,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         self.init_metric = self.get_metric_value(graph=self.init_graph)
         self.log.message(f'Initial graph: {graph_structure(self.init_graph)} \n'
-                         f'Initial metric: {abs(self.init_metric):.3f}')
+                         f'Initial metric: {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
 
     def final_check(self, tuned_graph: OptGraph) -> OptGraph:
         """
@@ -133,7 +135,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.obtained_metric = final_metric
         return final_graph
 
-    def get_metric_value(self, graph: OptGraph) -> float:
+    def get_metric_value(self, graph: OptGraph) -> Union[float, Tuple[float, ]]:
         """
         Method calculates metric for algorithm validation
 
@@ -144,10 +146,19 @@ class BaseTuner(Generic[DomainGraphForTune]):
           value of loss function
         """
         graph_fitness = self.objective_evaluate(graph)
-        metric_value = graph_fitness.value
-        if not graph_fitness.valid:
-            return self._default_metric_value
-        return metric_value
+
+        if isinstance(graph_fitness, SingleObjFitness):
+            metric_value = graph_fitness.value
+            if not graph_fitness.valid:
+                return self._default_metric_value
+            return metric_value
+
+        elif isinstance(graph_fitness, MultiObjFitness):
+            metric_values = graph_fitness.getValues()
+            for e, value in enumerate(metric_values):
+                if value is None:
+                    metric_values[e] = self._default_metric_value
+            return metric_values
 
     @staticmethod
     def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:

@@ -244,13 +244,23 @@ class RandomMetric:
         return randint(0, 1000)
 
 
-class CustomMetric:
+class ParamsSumMetric:
     @staticmethod
     def get_value(graph: Graph, *args, **kwargs) -> float:
         params_sum = 0
         for node in graph.nodes:
             params = list(filter(lambda x: isinstance(x, Number), node.parameters.values()))
             params_sum += sum(params)
+        return -params_sum
+
+
+class ParamsProductMetric:
+    @staticmethod
+    def get_value(graph: Graph, *args, **kwargs) -> float:
+        params_sum = 0
+        for node in graph.nodes:
+            params = list(filter(lambda x: isinstance(x, Number), node.parameters.values()))
+            params_sum *= sum(params)
         return -params_sum
 
 
