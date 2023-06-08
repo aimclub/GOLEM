@@ -30,7 +30,7 @@ from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
 
-def get_methane():
+def get_methane() -> MolGraph:
     methane = 'C'
     return MolGraph.from_smiles(methane)
 
@@ -51,7 +51,8 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
                           timeout: Optional[timedelta] = None,
                           num_iterations: Optional[int] = None,
                           pop_size: int = 20,
-                          metrics: Optional[List[str]] = None):
+                          metrics: Optional[List[str]] = None,
+                          initial_molecules: Optional[Sequence[MolGraph]] = None):
     requirements = MolGraphRequirements(
         max_heavy_atoms=max_heavy_atoms,
         available_atom_types=atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'],
@@ -88,7 +89,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         is_multi_objective=len(metrics) > 1
     )
 
-    initial_graphs = [get_methane()]
+    initial_graphs = initial_molecules or [get_methane()]
     initial_graphs = graph_gen_params.adapter.adapt(initial_graphs)
 
     # Build the optimizer
@@ -126,6 +127,7 @@ def run_experiment(optimizer_setup: Callable,
                    max_heavy_atoms: int = 50,
                    atom_types: Optional[List[str]] = None,
                    bond_types: Sequence[BondType] = (BondType.SINGLE, BondType.DOUBLE, BondType.TRIPLE),
+                   initial_molecules: Optional[Sequence[MolGraph]] = None,
                    pop_size: int = 20,
                    metrics: Optional[List[str]] = None,
                    num_trials: int = 1,
@@ -146,7 +148,8 @@ def run_experiment(optimizer_setup: Callable,
                                                trial_timeout,
                                                trial_iterations,
                                                pop_size,
-                                               metrics)
+                                               metrics,
+                                               initial_molecules)
         found_graphs = optimizer.optimise(objective)
         history = optimizer.history
         if visualize:
