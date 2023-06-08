@@ -203,13 +203,13 @@ def test_prepare_for_visualisation(generate_history):
     history = generate_history
     assert len(history.all_historical_fitness) == pop_size * generations_quantity
 
-    leaderboard = history.print_leaderboard()
+    leaderboard = history.get_leaderboard()
     assert OptNode('lda').descriptive_id in leaderboard
     assert 'Position' in leaderboard
 
     dumped_history = history.save()
     loaded_history = OptHistory.load(dumped_history)
-    leaderboard = loaded_history.print_leaderboard()
+    leaderboard = loaded_history.get_leaderboard()
     assert OptNode('lda').descriptive_id in leaderboard
     assert 'Position' in leaderboard
 

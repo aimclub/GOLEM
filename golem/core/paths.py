@@ -38,11 +38,3 @@ def default_data_dir() -> str:
         os.mkdir(default_data_path)
 
     return default_data_path
-
-
-def create_folder(save_path):
-    """ Create folder for files """
-    save_path = os.path.abspath(save_path)
-    print(save_path)
-    if not os.path.isdir(save_path):
-        os.makedirs(save_path)

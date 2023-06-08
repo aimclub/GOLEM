@@ -13,7 +13,7 @@ from examples.molecule_search.constants import ZINC_LOGP_MEAN, ZINC_LOGP_STD, ZI
     ZINC_CYCLE_MEAN, ZINC_CYCLE_STD, MIN_LONG_CYCLE_SIZE
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.utils import largest_ring_size
-from golem.core.paths import project_root, create_folder
+from golem.core.paths import project_root
 
 sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
 import sascorer
@@ -161,7 +161,7 @@ class CLScorer:
 
     def load_shingles(self) -> Dict:
         save_dir = os.path.dirname(self.file_path)
-        create_folder(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
         if not os.path.exists(self.file_path):
             response = requests.get(self.github_url)

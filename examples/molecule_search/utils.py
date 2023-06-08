@@ -27,7 +27,7 @@ def get_free_electrons_num(atom: Atom) -> int:
 
 
 def get_functional_group(mol_graph: MolGraph, bridge: Tuple[int, int]) -> Set[int]:
-    disconnected_graph = deepcopy(mol_graph.get_nx_graph())
+    disconnected_graph = mol_graph.get_nx_graph()
     disconnected_graph.remove_edge(*bridge)
     group = nx.node_connected_component(disconnected_graph, bridge[1])
     return group
