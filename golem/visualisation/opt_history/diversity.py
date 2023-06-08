@@ -115,7 +115,7 @@ def plot_diversity_dynamic(history: 'OptHistory',
         ax.plot(xs, metric_std, label=label, alpha=line_alpha)
 
     ax2 = ax.twinx()
-    ax2_color = 'c'  # cyan
+    ax2_color = 'm'  # magenta
     ax2.set_ylabel('Structural uniqueness', color=ax2_color)
     ax2.set_ylim(0.25, 1.05)
     ax2.tick_params(axis='y', labelcolor=ax2_color)
