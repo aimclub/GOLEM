@@ -15,11 +15,16 @@ if TYPE_CHECKING:
 
 class DiversityLine(HistoryVisualization):
     def visualize(self, show: bool = True, save_path: Optional[Union[os.PathLike, str]] = None):
+        """Plots double graphic to estimate diversity of populations during optimization.
+        It plots standard deviation of all metrics (y-axis) by generation number (x-axis).
+        Additional line show ratio of structurally unique individuals."""
         return plot_diversity_dynamic(self.history, show=show, save_path=save_path, dpi=self.visuals_params['dpi'])
 
 
 class DiversityPopulation(HistoryVisualization):
     def visualize(self, save_path: Union[os.PathLike, str], fps: int = 4):
+        """Creates a GIF with violin-plot estimating distribution of each metric in populations.
+        Each frame shows distribution for a particular generation."""
         return plot_diversity_dynamic_gif(self.history, filename=save_path, fps=fps, dpi=self.visuals_params['dpi'])
 
 
@@ -88,7 +93,7 @@ def plot_diversity_dynamic_gif(history: 'OptHistory',
 
 
 def plot_diversity_dynamic(history: 'OptHistory',
-                           show=True, save_path: Optional[str] = None, dpi: int = 100):
+                           show: bool = True, save_path: Optional[str] = None, dpi: int = 100):
     labels = history.objective.metric_names
     h = history.individuals[:-1]  # don't consider final choices
     xs = np.arange(len(h))
@@ -102,16 +107,20 @@ def plot_diversity_dynamic(history: 'OptHistory',
     fig, ax = plt.subplots()
     fig.suptitle('Population diversity')
     ax.set_xlabel('Generation')
-    ax.set_ylabel('Std')
+    ax.set_ylabel('Metrics Std')
     ax.grid()
+    line_alpha = 0.8
 
     for label, metric_std in ys.items():
-        ax.plot(xs, metric_std, label=label)
+        ax.plot(xs, metric_std, label=label, alpha=line_alpha)
 
     ax2 = ax.twinx()
-    ax2.set_ylabel('Unique ratio')
+    ax2_color = 'c'  # cyan
+    ax2.set_ylabel('Structural uniqueness', color=ax2_color)
     ax2.set_ylim(0.25, 1.05)
-    ax2.plot(xs, ratio_unique, label='unique ratio', color='tab:gray')
+    ax2.tick_params(axis='y', labelcolor=ax2_color)
+    ax2.plot(xs, ratio_unique, label='unique ratio',
+             color=ax2_color, linestyle='dashed', alpha=line_alpha)
 
     # ask matplotlib for the plotted objects and their labels
     # to put them into single legend for both axes
