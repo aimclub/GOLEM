@@ -7,6 +7,7 @@ from optuna import Trial, Study
 from optuna.trial import FrozenTrial
 
 from golem.core.adapter import BaseOptimizationAdapter
+from golem.core.dag.graph_utils import graph_structure
 from golem.core.optimisers.fitness import MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
@@ -45,13 +46,15 @@ class OptunaTuner(BaseTuner):
 
         # Enqueue initial point to try
         init_parameters = self._get_initial_point(graph)
-        study.enqueue_trial(init_parameters)
+        if init_parameters:
+            study.enqueue_trial(init_parameters)
 
         study.optimize(predefined_objective,
                        n_trials=self.iterations,
                        n_jobs=self.n_jobs,
                        timeout=self.timeout.seconds,
-                       callbacks=[self.early_stopping_callback] if self.early_stopping_rounds else None,
+                       callbacks=[self.early_stopping_callback,
+                                  partial(self.no_parameters_to_optimize_callback, graph=graph)],
                        show_progress_bar=show_progress)
 
         best_parameters = study.best_trials[0].params
@@ -110,11 +113,18 @@ class OptunaTuner(BaseTuner):
         return initial_parameters
 
     def early_stopping_callback(self, study: Study, trial: FrozenTrial):
-        current_trial_number = trial.number
-        best_trial_number = study.best_trial.number
-        should_stop = (current_trial_number - best_trial_number) >= self.early_stopping_rounds
-        if should_stop:
-            self.log.debug(f'Early stopping rounds criteria was reached')
+        if self.early_stopping_rounds is not None:
+            current_trial_number = trial.number
+            best_trial_number = study.best_trial.number
+            should_stop = (current_trial_number - best_trial_number) >= self.early_stopping_rounds
+            if should_stop:
+                self.log.debug(f'Early stopping rounds criteria was reached')
+                study.stop()
+
+    def no_parameters_to_optimize_callback(self, study: Study, trial: FrozenTrial, graph: OptGraph):
+        parameters = study.best_trial.params
+        if not parameters:
+            self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
             study.stop()
 
     # def final_check(self, tuned_graph: OptGraph) -> OptGraph:
