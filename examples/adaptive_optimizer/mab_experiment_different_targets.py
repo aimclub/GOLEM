@@ -38,10 +38,10 @@ def generate_trees(graph_sizes: Sequence[int], node_types: Sequence[str] = ('x',
     return trees
 
 
-def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAgentTypeEnum):
+def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAgentTypeEnum, pop_size: int = None):
     return GPAlgorithmParameters(
         adaptive_mutation_type=adaptive_mutation_type,
-        pop_size=21,
+        pop_size=pop_size or 21,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
@@ -69,7 +69,6 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
                                                      adaptive_mutation_type=adaptive_mutation_type),
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3,
-            graph_size=[random.randint(5, 10) for _ in range(19)] + [random.randint(90, 95) for _ in range(2)]
         )
         run_adaptive_mutations(optimizer, objective, visualize=True)
 

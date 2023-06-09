@@ -81,8 +81,10 @@ class MABSyntheticExperimentHelper:
         # set iteration callback
         if bandit_type == MutationAgentTypeEnum.bandit:
             optimizer.set_iteration_callback(log_action_values)
-        else:
+        elif bandit_type in (MutationAgentTypeEnum.contextual_bandit, MutationAgentTypeEnum.neural_bandit):
             optimizer.set_iteration_callback(log_action_values_with_clusters)
+        else:
+            raise ValueError(f"No callback function was specified for that bandit type.")
 
         found_graphs = optimizer.optimise(objective)
         found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs

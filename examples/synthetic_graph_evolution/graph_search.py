@@ -26,8 +26,9 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
                        node_types: Sequence[str] = ('x',),
                        timeout: Optional[timedelta] = None,
                        num_iterations: Optional[int] = None,
-                       graph_size: Optional[List[int]] = None,
-                       initial_graphs: List[Graph] = None):
+                       initial_graph_sizes: Optional[List[int]] = None,
+                       initial_graphs: List[Graph] = None,
+                       pop_size: int = None):
     if target_graph is not None and objective is not None:
         raise ValueError('Please provide either target or objective, not both')
     elif target_graph is not None:
@@ -63,7 +64,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     )
     default_gp_params = GPAlgorithmParameters(
         adaptive_mutation_type=MutationAgentTypeEnum.random,
-        pop_size=21,
+        pop_size=pop_size or 21,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
@@ -82,9 +83,9 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
 
     # Generate simple initial population with line graphs
     if not initial_graphs:
-        if not graph_size:
-            graph_size = [7] * gp_params.pop_size
-        initial_graphs = [nx.random_tree(graph_size[i], create_using=nx.DiGraph)
+        if not initial_graph_sizes:
+            initial_graph_sizes = [7] * gp_params.pop_size
+        initial_graphs = [nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph)
                           for i in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
