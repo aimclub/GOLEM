@@ -84,7 +84,7 @@ class MABSyntheticExperimentHelper:
         elif bandit_type in (MutationAgentTypeEnum.contextual_bandit, MutationAgentTypeEnum.neural_bandit):
             optimizer.set_iteration_callback(log_action_values_with_clusters)
         else:
-            raise ValueError(f"No callback function was specified for that bandit type.")
+            raise ValueError("No callback function was specified for that bandit type.")
 
         found_graphs = optimizer.optimise(objective)
         found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
@@ -117,16 +117,16 @@ class MABSyntheticExperimentHelper:
     def show_action_probabilities(self, bandit_type: MutationAgentTypeEnum, stats_action_value_log,
                                   actions, is_average: bool = False):
         if is_average:
-            titles = [f'Average action Expectation Values', 'Average action Probabilities']
+            titles = ['Average action Expectation Values', 'Average action Probabilities']
         else:
-            titles = [f'Action Expectation Values', 'Action Probabilities']
+            titles = ['Action Expectation Values', 'Action Probabilities']
         if bandit_type == MutationAgentTypeEnum.bandit:
             plot_action_values(stats=stats_action_value_log[0], action_tags=actions, titles=titles)
             plt.show()
         else:
             centers = sorted(self.cluster.cluster_centers_)
             for i in range(self.cluster.n_clusters):
-                titles = [title+f' for cluster with center {int(centers[i])}' for title in titles]
+                titles = [title + f' for cluster with center {int(centers[i])}' for title in titles]
                 plot_action_values(stats=stats_action_value_log[i], action_tags=actions,
                                    titles=titles)
                 plt.show()
