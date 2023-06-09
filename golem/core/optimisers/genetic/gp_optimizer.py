@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Callable, Union, Any
+from typing import Sequence, Union, Any
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -15,9 +15,9 @@ from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
 
@@ -81,14 +81,14 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
             if len(initial_individuals) == self.graph_optimizer_params.pop_size:
                 break
-            new_ind = self.mutation(choice(self.initial_individuals))
+            new_ind = self.mutation(choice(initial_individuals))
             new_graph = new_ind.graph
-            if new_graph not in initial_graphs and self.graph_generation_params.verifier(new_graph):
+            if new_graph not in initial_graphs:
                 initial_individuals.append(new_ind)
                 initial_graphs.append(new_graph)
         else:
-            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
-                             f'Current size {len(self.initial_individuals)} '
+            self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping. '
+                             f'Current size {len(initial_individuals)} '
                              f'instead of {self.graph_optimizer_params.pop_size} graphs.')
 
         self.mutation.update_requirements(requirements=self.requirements)

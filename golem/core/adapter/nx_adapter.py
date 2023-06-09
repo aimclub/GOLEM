@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Optional, Dict, Any, Iterable
 
 import networkx as nx
-import numpy as np
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph_node import GraphNode
@@ -44,6 +43,7 @@ class BaseNetworkxAdapter(BaseOptimizationAdapter[nx.DiGraph]):
         for node_id, node_data in adaptee.nodes.items():
             # transform node
             node = self._node_adapt(node_data)
+            node.uid = node_id
             mapped_nodes[node_id] = node
 
         # map parent nodes
