@@ -122,27 +122,7 @@ class OptunaTuner(BaseTuner):
                 study.stop()
 
     def no_parameters_to_optimize_callback(self, study: Study, trial: FrozenTrial, graph: OptGraph):
-        parameters = study.best_trial.params
+        parameters = study.trials[-1].params
         if not parameters:
             self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
             study.stop()
-
-    # def final_check(self, tuned_graph: OptGraph) -> OptGraph:
-    #     self.obtained_metric = self.get_metric_value(graph=tuned_graph)
-    #     self.log.info('Hyperparameters optimization finished')
-    #     prefix_tuned_phrase = 'Return tuned graph due to the fact that obtained metric'
-    #     prefix_init_phrase = 'Return init graph due to the fact that obtained metric'
-    #     initial_fitness = MultiObjFitness(self.init_metric)
-    #     obtained_fitness = MultiObjFitness(self.obtained_metric)
-    #     if initial_fitness.dominates(obtained_fitness):
-    #         self.log.info(f'{prefix_init_phrase} {list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))}'
-    #                       f'worse than initial {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
-    #         final_graph = self.init_graph
-    #         final_metric = self.init_metric
-    #     elif obtained_fitness.dominates(initial_fitness):
-    #         self.log.info(f'{prefix_tuned_phrase} {list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))} equal or '
-    #                       f'better than initial{list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
-    #         final_graph = tuned_graph
-    #         final_metric = self.obtained_metric
-    #     self.log.message(f'Final metric: {list(map(abs, final_metric))}')
-    #     return final_graph

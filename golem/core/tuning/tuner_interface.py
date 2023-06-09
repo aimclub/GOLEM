@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import TypeVar, Generic, Optional, Union, Tuple
+from typing import TypeVar, Generic, Optional, Union, Tuple, Sequence
 
 import numpy as np
 
@@ -90,7 +90,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         self.init_metric = self.get_metric_value(graph=self.init_graph)
         self.log.message(f'Initial graph: {graph_structure(self.init_graph)} \n'
-                         f'Initial metric: {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
+                         f'Initial metric: '
+                         f'{list(map(lambda x: round(abs(x), 3), ensure_wrapped_in_sequence(self.init_metric)))}')
 
     def final_check(self, tuned_graph: OptGraph) -> OptGraph:
         """
@@ -135,7 +136,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.obtained_metric = final_metric
         return final_graph
 
-    def get_metric_value(self, graph: OptGraph) -> Union[float, Tuple[float, ]]:
+    def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
         """
         Method calculates metric for algorithm validation
 
