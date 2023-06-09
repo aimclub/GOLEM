@@ -74,7 +74,10 @@ def run_experiments(optimizer_setup: Callable,
             print('found graph stats: ', nxgraph_stats(found_nx_graph), file=log)
             if visualize:
                 draw_graphs_subplots(target_graph, found_nx_graph,
-                                     titles=['Target Graph', 'Found Graph'])
+                                     titles=['Target Graph', 'Found Graph'], show=False)
+                diversity_filename = (f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif')
+                history.show.diversity_population(save_path=diversity_filename)
+                history.show.diversity_line(show=False)
                 history.show.fitness_line()
             history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
 
