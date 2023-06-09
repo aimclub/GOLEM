@@ -1,0 +1,2 @@
+# heavy requirements needed for bandits and adaptive learning
+torch~=2.0.0
