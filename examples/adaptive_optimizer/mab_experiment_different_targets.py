@@ -1,7 +1,7 @@
 import random
 from datetime import timedelta
 from functools import partial
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Callable
 import networkx as nx
 
 from examples.adaptive_optimizer.experiment_setup import run_adaptive_mutations
@@ -55,7 +55,8 @@ def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAg
 
 def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
                             target_sizes: Sequence[int] = (50, 400),
-                            trial_timeout: int = 15):
+                            trial_timeout: int = 15,
+                            run_func: Callable = run_adaptive_mutations):
     for target_size in target_sizes:
         # Setup simple objective that searches for required graph size (number of nodes)
         objective = Objective({'graph_size': lambda graph: abs(target_size -
@@ -70,12 +71,13 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3,
         )
-        run_adaptive_mutations(optimizer, objective, visualize=True)
+        run_func(optimizer, objective, visualize=True)
 
 
 def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
                             target_sizes: Sequence[int] = (100, 400),
-                            trial_timeout: int = 15):
+                            trial_timeout: int = 15,
+                            run_func: Callable = run_adaptive_mutations):
     for target_size in target_sizes:
         # Setup simple objective that searches for required graph size (number of nodes)
         objective = Objective({'graph_size': lambda graph: abs(target_size -
@@ -90,12 +92,13 @@ def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3,
         )
-        run_adaptive_mutations(optimizer, objective, visualize=True)
+        run_func(optimizer, objective, visualize=True)
 
 
 def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgentTypeEnum,
                                             trial_timeout: int = 15,
-                                            trial_iterations: Optional[int] = 500):
+                                            trial_iterations: Optional[int] = 500,
+                                            run_func: Callable = run_adaptive_mutations):
     """In this experiment setup we generate different graphs with different ratios of #Edges/#Nodes.
     Respectively, probabilities of adding edges and adding nodes must be different for different targets."""
 
@@ -125,12 +128,13 @@ def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgen
             num_iterations=trial_iterations,
         )
 
-        run_adaptive_mutations(optimizer, objective, target, visualize=True)
+        run_func(optimizer, objective, target, visualize=True)
 
 
 def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
                          trial_timeout: int = 15,
-                         trial_iterations: Optional[int] = 500):
+                         trial_iterations: Optional[int] = 500,
+                         run_func: Callable = run_adaptive_mutations):
     node_types = ['x']
     for target in generate_trees(graph_sizes=[20, 30, 50], node_types=node_types):
         # Setup objective that measures some graph-theoretic similarity measure
@@ -160,7 +164,7 @@ def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
             num_iterations=trial_iterations,
         )
 
-        run_adaptive_mutations(optimizer, objective, target, visualize=True)
+        run_func(optimizer, objective, target, visualize=True)
 
 
 if __name__ == '__main__':

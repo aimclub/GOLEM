@@ -70,7 +70,8 @@ def run_adaptive_mutations_with_context(
         for i, center in enumerate(centers):
             values = optimizer.mutation.agent.get_action_values(obs=center)
             if i not in stats_action_value_log.keys():
-                stats_action_value_log[i] = (list(values))
+                stats_action_value_log[i] = []
+            stats_action_value_log[i].append(list(values))
 
     # Setup the logger and run the optimizer
     optimizer.set_iteration_callback(log_action_values_with_clusters)
