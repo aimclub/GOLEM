@@ -74,7 +74,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         elitism_type=ElitismTypesEnum.replace_worst,
         mutation_types=CHEMICAL_MUTATIONS,
         crossover_types=[CrossoverTypesEnum.none],
-        adaptive_mutation_type=MutationAgentTypeEnum.bandit
+        adaptive_mutation_type=MutationAgentTypeEnum.random
     )
     graph_gen_params = GraphGenerationParams(
         adapter=MolAdapter(),
@@ -188,8 +188,8 @@ def run_experiment(optimizer_setup: Callable,
 if __name__ == '__main__':
     run_experiment(molecule_search_setup,
                    max_heavy_atoms=38,
-                   trial_timeout=1,
+                   trial_timeout=15,
                    pop_size=50,
                    metrics=['qed_score', 'cl_score'],
                    visualize=True,
-                   num_trials=5)
+                   num_trials=10)
