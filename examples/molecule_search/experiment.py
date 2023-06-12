@@ -64,7 +64,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
         num_of_generations=num_iterations,
         keep_history=True,
         n_jobs=1,
-        history_dir=os.path.join(os.path.curdir, 'history')
+        history_dir=None,
     )
     gp_params = GPAlgorithmParameters(
         pop_size=pop_size,
@@ -102,20 +102,19 @@ def visualize_results(molecules: Iterable[MolGraph],
                       history: OptHistory,
                       save_path: Optional[str] = None,
                       show: bool = False):
-    save_path = save_path or os.path.join(os.path.curdir, 'visualisations')
-    Path(save_path).mkdir(exist_ok=True)
-
-    # Plot diversity
-    plot_diversity_dynamic_gif(history, filename=os.path.join(save_path, 'diversity.gif'))
-    plot_diversity_dynamic(history, save_path=os.path.join(save_path, 'diversity_line.png'))
+    save_path = Path(save_path or Path(os.path.curdir) / 'visualisations')
+    save_path.mkdir(exist_ok=True)
 
     # Plot pareto front (if multi-objective)
     if objective.is_multi_objective:
-        visualise_pareto(history.archive_history[-1], objectives_names=objective.metric_names[:2], folder=save_path)
+        visualise_pareto(history.archive_history[-1], objectives_names=objective.metric_names[:2], folder=str(save_path))
 
     # Plot fitness convergence
     visualizer = OptHistoryVisualizer(history)
-    visualizer.fitness_line(dpi=100, save_path=os.path.join(save_path, 'fitness_line.png'))
+    visualizer.fitness_line(dpi=100, save_path=save_path / 'fitness_line.png')
+    # Plot diversity
+    visualizer.diversity_population(save_path=save_path / 'diversity.gif')
+    visualizer.diversity_line(save_path=save_path / 'diversity_line.png')
 
     # Plot found molecules
     rw_molecules = [mol.get_rw_molecule() for mol in set(molecules)]
@@ -125,7 +124,7 @@ def visualize_results(molecules: Iterable[MolGraph],
                                  molsPerRow=min(4, len(rw_molecules)),
                                  subImgSize=(1000, 1000),
                                  legendFontSize=50)
-    image.save(os.path.join(save_path, 'best_molecules.png'))
+    image.save(save_path / 'best_molecules.png')
     if show:
         image.show()
 
@@ -189,9 +188,8 @@ def run_experiment(optimizer_setup: Callable,
 if __name__ == '__main__':
     run_experiment(molecule_search_setup,
                    max_heavy_atoms=38,
-                   trial_timeout=20,
+                   trial_timeout=1,
                    pop_size=50,
                    metrics=['qed_score', 'cl_score'],
-                   save_history=False,
                    visualize=True,
                    num_trials=5)
