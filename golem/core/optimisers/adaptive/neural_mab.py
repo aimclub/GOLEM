@@ -8,7 +8,6 @@ try:
     import torch
 except ModuleNotFoundError:
     warn_requirement('torch', 'other_requirements/requirements_adaptive.txt')
-    torch = None
 
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
