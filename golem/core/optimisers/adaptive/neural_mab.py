@@ -1,8 +1,11 @@
 import copy
 import math
+import typing
+from typing import TYPE_CHECKING
 from typing import List, Any, Union, Dict
 
-import torch
+if TYPE_CHECKING:
+    import torch
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
 from mabwiser.utils import Arm, Constants, Num

@@ -31,7 +31,7 @@ jobs:
         pip install .[docs]
         pip install .[profilers]
         pip install pytest-cov
-        pip install -r requirements_adaptive.txt
+        pip install -r other_requirements/requirements_adaptive.txt
     - name: Test with pytest
       run: |
         pytest --cov=golem test/unit
