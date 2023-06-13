@@ -5,6 +5,9 @@ from inspect import isclass, isfunction, ismethod, signature
 from json import JSONDecoder, JSONEncoder
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
+from golem.core.dag.graph_delegate import GraphDelegate
+from golem.core.dag.linked_graph import LinkedGraph
+from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.log import default_log
 
 # NB: at the end of module init happens registration of default class coders
@@ -251,6 +254,27 @@ class Serializer(JSONEncoder, JSONDecoder):
         return hasattr(method, '__self__')
 
     @staticmethod
+    def _serialize_as_base_class(json_obj: dict, ex: ImportError) -> Union[LinkedGraph, LinkedGraphNode, dict]:
+        linked_graph_keys = {'_nodes', '_postprocess_nodes'}
+        linked_node_keys = {'content', '_nodes_from', 'uid'}
+        if linked_graph_keys.issubset(json_obj.keys()):
+            obj = LinkedGraph()
+            vars(obj).update(**{k: v for k, v in json_obj.items() if k in linked_graph_keys})
+            default_log('Serializer').info(f'Object was decoded as LinkedGraph and not as an original class '
+                                           f'because of an ImportError: {ex}.')
+            return obj
+        elif linked_node_keys.issubset(json_obj.keys()):
+            obj = LinkedGraphNode.__new__(LinkedGraphNode)
+            vars(obj).update(**{k: v for k, v in json_obj.items() if k in linked_node_keys})
+            default_log('Serializer').info(f'Object was decoded as LinkedGraphNode and not as an original class '
+                                           f'because of an ImportError: {ex}.')
+            return obj
+        else:
+            default_log('Serializer').info(f'Object was not decoded and will be stored as a dict '
+                                           f'because of an ImportError: {ex}.')
+            return json_obj
+
+    @staticmethod
     def object_hook(json_obj: Dict[str, Any]) -> Union[INSTANCE_OR_CALLABLE, dict]:
         """
         Decodes every JSON-object to python class/func object or just returns dict
@@ -264,9 +288,7 @@ class Serializer(JSONEncoder, JSONDecoder):
             try:
                 obj_cls = Serializer._get_class(json_obj[CLASS_PATH_KEY])
             except ImportError as ex:
-                default_log('Serializer').info(f'Object was not decoded and will be stored as a dict '
-                                               f'because of an ImportError: {ex}.')
-                return json_obj
+                return Serializer._serialize_as_base_class(json_obj, ex)
             del json_obj[CLASS_PATH_KEY]
             base_type = Serializer._get_base_type(obj_cls)
             if isclass(obj_cls) and base_type is not None:
