@@ -5,7 +5,6 @@ from inspect import isclass, isfunction, ismethod, signature
 from json import JSONDecoder, JSONEncoder
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
-from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph import LinkedGraph
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.log import default_log
