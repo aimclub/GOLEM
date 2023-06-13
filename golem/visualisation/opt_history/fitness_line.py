@@ -294,7 +294,7 @@ def plot_average_fitness_line_per_generations(axis: plt.Axes, histories, label: 
 
     fitness_value_per_generation = []
     for history in histories:
-        generations = history.individuals
+        generations = history.generations
         for gen_num, gen in enumerate(generations):
             for ind in gen:
                 if ind.native_generation != gen_num:
