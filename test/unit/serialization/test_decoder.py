@@ -127,7 +127,4 @@ def test_decoder(case: DecoderTestCase, get_class_fixture, mock_classes_fixture)
     else:
         decoded = deserializer.object_hook(case.test_input)
         assert isinstance(decoded, type(case.test_answer)), 'Decoded object has wrong type'
-        try:
-            assert decoded == case.test_answer, 'Object was decoded incorrectly'
-        except AttributeError:
-            a = 1
+        assert decoded == case.test_answer, 'Object was decoded incorrectly'
