@@ -1,4 +1,3 @@
-import datetime
 import os
 import random
 
@@ -10,7 +9,6 @@ from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
-from golem.core.optimisers.timer import OptimisationTimer, Timer
 from golem.core.paths import project_root
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
