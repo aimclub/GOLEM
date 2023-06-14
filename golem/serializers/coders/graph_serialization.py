@@ -27,17 +27,17 @@ def _reassign_edges_by_node_ids(nodes: Sequence[Union[LinkedGraphNode, dict]]):
     """
     lookup_dict = {}
     for node in nodes:
-        if isinstance(node, LinkedGraphNode):
-            lookup_dict[node.uid] = node
-        elif isinstance(node, dict):
+        if isinstance(node, dict):
             lookup_dict[node['uid']] = node
+        else:
+            lookup_dict[node.uid] = node
 
     for node in nodes:
-        if isinstance(node, LinkedGraphNode):
-            if node.nodes_from:
-                for parent_node_idx, parent_node_uid in enumerate(node.nodes_from):
-                    node.nodes_from[parent_node_idx] = lookup_dict.get(parent_node_uid, None)
-        elif isinstance(node, dict):
+        if isinstance(node, dict):
             if node['_nodes_from']:
                 for parent_node_idx, parent_node_uid in enumerate(node['_nodes_from']):
                     node['_nodes_from'][parent_node_idx] = lookup_dict.get(parent_node_uid, None)
+        else:
+            if node.nodes_from:
+                for parent_node_idx, parent_node_uid in enumerate(node.nodes_from):
+                    node.nodes_from[parent_node_idx] = lookup_dict.get(parent_node_uid, None)
