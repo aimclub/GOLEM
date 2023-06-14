@@ -146,22 +146,18 @@ class BaseTuner(Generic[DomainGraphForTune]):
             initial_fitness = MultiObjFitness(self.init_metric)
             obtained_fitness = MultiObjFitness(self.obtained_metric)
 
-            if None in self.obtained_metric:
-                self.log.info(f'{prefix_init_phrase} contains None. Initial metric is '
-                              f'{list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
+            if initial_fitness.dominates(obtained_fitness):
+                self.log.info(f'{prefix_init_phrase} {list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))}'
+                              f' initial {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
                 final_graph = self.init_graph
                 final_metric = self.init_metric
-            elif obtained_fitness.dominates(initial_fitness):
+
+            else:
                 self.log.info(f'{prefix_tuned_phrase} '
                               f'{list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))} '
                               f'dominates initial {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
                 final_graph = tuned_graph
                 final_metric = self.obtained_metric
-            else:
-                self.log.info(f'{prefix_init_phrase} {list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))}'
-                              f' initial {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
-                final_graph = self.init_graph
-                final_metric = self.init_metric
             self.log.message(f'Final graph: {graph_structure(final_graph)}')
             self.log.message(f'Final metric: {list(map(abs, final_metric))}')
             return final_graph

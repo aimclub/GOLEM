@@ -55,10 +55,12 @@ class OptunaTuner(BaseTuner):
                        callbacks=[self.early_stopping_callback] if self.early_stopping_rounds else None,
                        show_progress_bar=show_progress)
 
-        best_parameters = study.best_trials[0].params
-        tuned_graph = self.set_arg_graph(graph, best_parameters)
-        graph = self.final_check(tuned_graph)
-        self.was_tuned = True
+        tuned_graphs = []
+        for best_trial in study.best_trials:
+            best_parameters = best_trial.params
+            tuned_graph = self.set_arg_graph(graph, best_parameters)
+            graph = self.final_check(tuned_graph)
+            self.was_tuned = True
 
         tuned_graph = self.adapter.restore(graph)
         return tuned_graph
