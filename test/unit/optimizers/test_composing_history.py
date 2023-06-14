@@ -66,7 +66,7 @@ def _test_individuals_in_history(history: OptHistory):
     uids = set()
     ids = set()
     for ind in itertools.chain(*history.generations):
-        # All individuals in `history.individuals` must have a native generation.
+        # All individuals in `history.generations` must have a native generation.
         assert ind.has_native_generation
         assert ind.fitness
         if ind.native_generation == 0:
