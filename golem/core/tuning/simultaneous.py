@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Sequence
 
 from hyperopt import Trials, fmin, space_eval
 
@@ -16,7 +16,7 @@ class SimultaneousTuner(HyperoptTuner):
         Class for hyperparameters optimization for all nodes simultaneously
     """
 
-    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
+    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> Sequence[DomainGraphForTune]:
         """ Function for hyperparameters tuning on the entire graph
 
         Args:

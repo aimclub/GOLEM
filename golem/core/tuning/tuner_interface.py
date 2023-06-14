@@ -64,7 +64,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.log = default_log(self)
 
     @abstractmethod
-    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
+    def tune(self, graph: DomainGraphForTune) -> Sequence[DomainGraphForTune]:
         """
         Function for hyperparameters tuning on the graph
 

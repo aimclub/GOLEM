@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence
 
 from hyperopt import tpe, fmin, space_eval
 
@@ -38,7 +38,7 @@ class SequentialTuner(HyperoptTuner):
 
         self.inverse_node_order = inverse_node_order
 
-    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
+    def tune(self, graph: DomainGraphForTune) -> Sequence[DomainGraphForTune]:
         """ Method for hyperparameters tuning on the entire graph
 
         Args:
@@ -87,7 +87,7 @@ class SequentialTuner(HyperoptTuner):
 
         self.was_tuned = True
 
-        return self.adapter.restore(final_graph)
+        return [self.adapter.restore(final_graph)]
 
     def get_nodes_order(self, nodes_number: int) -> range:
         """ Method returns list with indices of nodes in the graph

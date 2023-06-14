@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import partial
-from typing import Optional, Tuple, Union, Dict
+from typing import Optional, Tuple, Union, Dict, Sequence
 
 import optuna
 from optuna import Trial, Study
@@ -36,7 +36,7 @@ class OptunaTuner(BaseTuner):
                          deviation)
         self.objectives_number = objectives_number
 
-    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
+    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> Sequence[DomainGraphForTune]:
         graph = self.adapter.adapt(graph)
         predefined_objective = partial(self.objective, graph=graph)
 
@@ -57,10 +57,12 @@ class OptunaTuner(BaseTuner):
                                   partial(self.no_parameters_to_optimize_callback, graph=graph)],
                        show_progress_bar=show_progress)
 
-        best_parameters = study.best_trials[0].params
-        tuned_graph = self.set_arg_graph(graph, best_parameters)
-        graph = self.final_check(tuned_graph)
-        self.was_tuned = True
+        tuned_graphs = []
+        for best_trial in study.best_trials:
+            best_parameters = best_trial.params
+            tuned_graph = self.set_arg_graph(graph, best_parameters)
+            graph = self.final_check(tuned_graph)
+            self.was_tuned = True
 
         tuned_graph = self.adapter.restore(graph)
         return tuned_graph
