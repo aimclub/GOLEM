@@ -44,16 +44,15 @@ class InitialPopulationGenerator(InitialGraphsGenerator):
             self.generation_function = partial(self.graph_generation_params.random_graph_factory, self.requirements)
 
         population = []
-        n_iter = 0
-        while len(population) < pop_size:
+        for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
+            if len(population) == pop_size:
+                break
             new_graph = self.generation_function()
             if new_graph not in population and self.graph_generation_params.verifier(new_graph):
                 population.append(new_graph)
-            n_iter += 1
-            if n_iter >= MAX_GRAPH_GEN_ATTEMPTS:
-                self.log.warning(f'Exceeded max number of attempts for generating initial graphs, stopping.'
-                                 f'Generated {len(population)} instead of {pop_size} graphs.')
-                break
+        else:
+            self.log.warning(f'Exceeded max number of attempts for generating initial graphs, stopping.'
+                             f'Generated {len(population)} instead of {pop_size} graphs.')
         return population
 
     def with_initial_graphs(self, initial_graphs: Union[Graph, Sequence[Graph]]):

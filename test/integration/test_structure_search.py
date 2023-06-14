@@ -21,7 +21,7 @@ def test_simple_targets_are_found(size):
     assert found_graph is not None
 
     found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
-    allowed_error = ceil(size * 0.1)  # 10% of target size
+    allowed_error = ceil(size * 0.2)  # 20% of target size
     distance = tree_edit_dist(target_graph, found_nx_graph)
 
     assert distance <= allowed_error

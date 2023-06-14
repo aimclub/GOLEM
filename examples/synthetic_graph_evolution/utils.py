@@ -71,9 +71,10 @@ def plot_fitness_comparison(histories: Sequence[OptHistory],
 
 def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
     adapter = BaseNetworkxAdapter()
-    GraphVisualizer.draw_nx_dag(adapter.adapt(g), ax,
-                                node_size_scale=0.2, font_size_scale=0.25,
-                                edge_curvature_scale=0.5)
+    GraphVisualizer(adapter.adapt(g)).draw_nx_dag(ax,
+                                                  node_size_scale=0.2,
+                                                  font_size_scale=0.25,
+                                                  edge_curvature_scale=0.5)
 
 
 def draw_graphs_subplots(*graphs: nx.Graph,
@@ -97,7 +98,7 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     """
 
     graphs = ensure_wrapped_in_sequence(graphs)
-    titles = [f'Graph #{i+1}' for i in range(len(graphs))] if not titles else titles
+    titles = [f'Graph #{i + 1}' for i in range(len(graphs))] if not titles else titles
     # Setup subplots
     ncols = int(np.ceil(np.sqrt(len(graphs))))
     nrows = len(graphs) // ncols

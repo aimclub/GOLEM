@@ -1,10 +1,9 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import Callable, TypeVar, Generic
+from typing import TypeVar, Generic, Optional
 
 import numpy as np
-from hyperopt.early_stop import no_progress_loss
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import IdentityAdapter
@@ -12,54 +11,54 @@ from golem.core.constants import MAX_TUNING_METRIC_VALUE
 from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
 from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.objective import ObjectiveEvaluate
-from golem.core.optimisers.timer import Timer
-from golem.core.tuning.search_space import SearchSpace
+from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
+from golem.core.tuning.search_space import SearchSpace, convert_parameters
 
 DomainGraphForTune = TypeVar('DomainGraphForTune')
 
 
-class HyperoptTuner(Generic[DomainGraphForTune]):
+class BaseTuner(Generic[DomainGraphForTune]):
     """
-    Base class for hyperparameters optimization based on hyperopt library
-    
+    Base class for hyperparameters optimization
+
     Args:
       objective_evaluate: objective to optimize
       adapter: the function for processing of external object that should be optimized
-      iterations: max number of iterations
-      timeout: max time for tuning
       search_space: SearchSpace instance
-      algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
+      iterations: max number of iterations
+      early_stopping_rounds: Optional max number of stagnating iterations for early stopping.
+      timeout: max time for tuning
       n_jobs: num of ``n_jobs`` for parallelization (``-1`` for use all cpu's)
       deviation: required improvement (in percent) of a metric to return tuned graph.
         By default, ``deviation=0.05``, which means that tuned graph will be returned
         if it's metric will be at least 0.05% better than the initial.
     """
 
-    def __init__(self, objective_evaluate: ObjectiveEvaluate,
+    def __init__(self, objective_evaluate: ObjectiveFunction,
                  search_space: SearchSpace,
-                 adapter: BaseOptimizationAdapter = None,
-                 iterations=100, early_stopping_rounds=None,
+                 adapter: Optional[BaseOptimizationAdapter] = None,
+                 iterations: int = 100,
+                 early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
-                 algo: Callable = None,
                  n_jobs: int = -1,
                  deviation: float = 0.05):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
-        iteration_stop_count = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
-        self.early_stop_fn = no_progress_loss(iteration_stop_count=iteration_stop_count)
-        self.max_seconds = int(timeout.seconds) if timeout is not None else None
+        self.search_space = search_space
+        self.n_jobs = n_jobs
+        if isinstance(objective_evaluate, ObjectiveEvaluate):
+            objective_evaluate.eval_n_jobs = self.n_jobs
+        self.objective_evaluate = self.adapter.adapt_func(objective_evaluate)
+        self.deviation = deviation
+
+        self.timeout = timeout
+        self.early_stopping_rounds = early_stopping_rounds
+
+        self._default_metric_value = MAX_TUNING_METRIC_VALUE
+        self.was_tuned = False
         self.init_graph = None
         self.init_metric = None
         self.obtained_metric = None
-        self.n_jobs = n_jobs
-        objective_evaluate.eval_n_jobs = self.n_jobs
-        self.objective_evaluate = self.adapter.adapt_func(objective_evaluate.evaluate)
-        self._default_metric_value = MAX_TUNING_METRIC_VALUE
-        self.search_space = search_space
-        self.algo = algo
-        self.deviation = deviation
-        self.was_tuned = False
         self.log = default_log(self)
 
     @abstractmethod
@@ -74,22 +73,6 @@ class HyperoptTuner(Generic[DomainGraphForTune]):
           Graph with optimized hyperparameters
         """
         raise NotImplementedError()
-
-    def get_metric_value(self, graph: OptGraph) -> float:
-        """
-        Method calculates metric for algorithm validation
-        
-        Args:
-          graph: Graph to evaluate
-
-        Returns:
-          value of loss function
-        """
-        graph_fitness = self.objective_evaluate(graph)
-        metric_value = graph_fitness.value
-        if not graph_fitness.valid:
-            return self._default_metric_value
-        return metric_value
 
     def init_check(self, graph: OptGraph) -> None:
         """
@@ -146,11 +129,66 @@ class HyperoptTuner(Generic[DomainGraphForTune]):
         if final_metric is not None:
             self.log.message(f'Final metric: {abs(final_metric):.3f}')
         else:
-            self.log.message(f'Final metric is None')
+            self.log.message('Final metric is None')
         return final_graph
 
-    def _update_remaining_time(self, tuner_timer: Timer):
-        self.max_seconds = self.max_seconds - tuner_timer.minutes_from_start * 60
+    def get_metric_value(self, graph: OptGraph) -> float:
+        """
+        Method calculates metric for algorithm validation
+
+        Args:
+          graph: Graph to evaluate
+
+        Returns:
+          value of loss function
+        """
+        graph_fitness = self.objective_evaluate(graph)
+        metric_value = graph_fitness.value
+        if not graph_fitness.valid:
+            return self._default_metric_value
+        return metric_value
+
+    @staticmethod
+    def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:
+        """ Method for parameters setting to a graph
+
+        Args:
+            graph: graph to which parameters should be assigned
+            parameters: dictionary with parameters to set
+
+        Returns:
+            graph: graph with new hyperparameters in each node
+        """
+        # Set hyperparameters for every node
+        for node_id, node in enumerate(graph.nodes):
+            node_params = {key: value for key, value in parameters.items()
+                           if key.startswith(f'{str(node_id)} || {node.name}')}
+
+            if node_params is not None:
+                BaseTuner.set_arg_node(graph, node_id, node_params)
+
+        return graph
+
+    @staticmethod
+    def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
+        """ Method for parameters setting to a graph
+
+        Args:
+            graph: graph which contains the node
+            node_id: id of the node to which parameters should be assigned
+            node_params: dictionary with labeled parameters to set
+
+        Returns:
+            graph with new hyperparameters in each node
+        """
+
+        # Remove label prefixes
+        node_params = convert_parameters(node_params)
+
+        # Update parameters in nodes
+        graph.nodes[node_id].parameters = node_params
+
+        return graph
 
     def _stop_tuning_with_message(self, message: str):
         self.log.message(message)

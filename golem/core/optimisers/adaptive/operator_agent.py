@@ -19,6 +19,7 @@ class MutationAgentTypeEnum(Enum):
     random = 'random'
     bandit = 'bandit'
     contextual_bandit = 'contextual_bandit'
+    neural_bandit = 'neural_bandit'
 
 
 class ExperienceBuffer:

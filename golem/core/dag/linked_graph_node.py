@@ -1,6 +1,4 @@
-from typing import Union, Optional, Iterable, List, Hashable
-from uuid import uuid4
-
+from typing import Union, Optional, Iterable, List
 from golem.core.dag.graph_node import GraphNode
 from golem.core.utilities.data_structures import UniqueList
 
