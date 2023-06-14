@@ -201,7 +201,7 @@ if __name__ == '__main__':
                                       pop_size=20)
 
     helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare,
-                                          n_clusters=2, is_visualize=False)
+                                          n_clusters=2, is_visualize=True)
     helper.compare_bandits(initial_population_func=initial_population_func,
                            setup_parameters=setup_parameters_func)
     helper.show_boxplots()
