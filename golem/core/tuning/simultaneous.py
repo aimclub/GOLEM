@@ -80,7 +80,7 @@ class SimultaneousTuner(HyperoptTuner):
                     self.log.warning(f'Exception {ex} occurred during tuning')
                     final_graph = graph
 
-        # Validation is the optimization do well
+        # Validate if optimisation did well
         graph = self.final_check(final_graph)
         final_graph = self.adapter.restore(graph)
         return final_graph

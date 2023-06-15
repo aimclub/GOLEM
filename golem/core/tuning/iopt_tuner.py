@@ -172,7 +172,7 @@ class IOptTuner(BaseTuner):
 
             self.was_tuned = True
 
-        # Validation is the optimization do well
+        # Validate if optimisation did well
         graph = self.final_check(final_graph)
         final_graph = self.adapter.restore(graph)
         return final_graph
