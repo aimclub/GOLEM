@@ -99,7 +99,7 @@ class GolemMoleculeGenerator(GoalDirectedGenerator):
         # Take only the first graph's appearance in history
         individuals \
             = list({hash(self.graph_gen_params.adapter.restore(ind.graph)): ind
-                    for gen in history.individuals
+                    for gen in history.generations
                     for ind in reversed(list(gen))}.values())
 
         top_individuals = sorted(individuals,

@@ -7,7 +7,7 @@
 
     |sai| |itmo|
 
-    |python| |pypi| |build| |docs| |license| |tg| |rus| |mirror|
+    |python| |pypi| |build| |integration| |docs| |license| |tg| |rus| |mirror|
 
 
 Graph Optimization and Learning by Evolutionary Methods
@@ -190,6 +190,10 @@ There are various cases solved with GOLEM's algorithms:
 .. |build| image:: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=main
    :alt: Build Status
    :target: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml
+
+.. |integration| image:: https://github.com/aimclub/GOLEM/workflows/integration-build.yml/badge.svg?branch=main
+   :alt: Integration Build Status
+   :target: https://github.com/aimclub/GOLEM/actions/workflows/integration-build.yml
 
 .. |coverage| image:: https://codecov.io/gh/aimclub/GOLEM/branch/main/graph/badge.svg
    :alt: Coverage Status

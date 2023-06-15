@@ -46,7 +46,7 @@ def plot_diversity_dynamic_gif(history: 'OptHistory',
     metric_names = history.objective.metric_names
     # dtype=float removes None, puts np.nan
     # indexed by [population, metric, individual] after transpose (.T)
-    pops = history.individuals[1:-1]  # ignore initial pop and final choices
+    pops = history.generations[1:-1]  # ignore initial pop and final choices
     fitness_distrib = [np.array([ind.fitness.values for ind in pop], dtype=float).T
                        for pop in pops]
 
@@ -95,7 +95,7 @@ def plot_diversity_dynamic_gif(history: 'OptHistory',
 def plot_diversity_dynamic(history: 'OptHistory',
                            show: bool = True, save_path: Optional[str] = None, dpi: int = 100):
     labels = history.objective.metric_names
-    h = history.individuals[:-1]  # don't consider final choices
+    h = history.generations[:-1]  # don't consider final choices
     xs = np.arange(len(h))
 
     # Compute diversity by metrics

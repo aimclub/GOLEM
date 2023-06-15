@@ -2,7 +2,13 @@ import copy
 import math
 from typing import List, Any, Union, Dict
 
-import torch
+from golem.utilities.requirements_notificator import warn_requirement
+
+try:
+    import torch
+except ModuleNotFoundError:
+    warn_requirement('torch', 'other_requirements/requirements_adaptive.txt')
+
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
 from mabwiser.utils import Arm, Constants, Num
