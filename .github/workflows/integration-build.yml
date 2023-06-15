@@ -29,6 +29,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install .[profilers]
+          pip install .[molecule_search]
+          pip install .[requirements_adaptive]
           pip install pytest-cov
       - name: Test with pytest
         run: |
