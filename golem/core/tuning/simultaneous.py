@@ -30,17 +30,19 @@ class SimultaneousTuner(HyperoptTuner):
         graph = self.adapter.adapt(graph)
         parameters_dict, init_parameters = self._get_parameters_for_tune(graph)
 
-        if not parameters_dict:
-            self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
-
         with Timer() as global_tuner_timer:
             self.init_check(graph)
             self._update_remaining_time(global_tuner_timer)
 
-            if self.max_seconds <= MIN_TIME_FOR_TUNING_IN_SEC:
-                self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
-            else:
+            if not parameters_dict:
+                self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+                final_graph = graph
 
+            elif self.max_seconds <= MIN_TIME_FOR_TUNING_IN_SEC:
+                self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
+                final_graph = graph
+
+            else:
                 trials = Trials()
 
                 try:
@@ -53,35 +55,34 @@ class SimultaneousTuner(HyperoptTuner):
                                                                                    show_progress)
                     self._update_remaining_time(global_tuner_timer)
                     if self.max_seconds > MIN_TIME_FOR_TUNING_IN_SEC:
-                        best = fmin(partial(self._objective, graph=graph),
-                                    parameters_dict,
-                                    trials=trials,
-                                    algo=self.algo,
-                                    max_evals=self.iterations,
-                                    show_progressbar=show_progress,
-                                    early_stop_fn=self.early_stop_fn,
-                                    timeout=self.max_seconds)
+                        fmin(partial(self._objective, graph=graph),
+                             parameters_dict,
+                             trials=trials,
+                             algo=self.algo,
+                             max_evals=self.iterations,
+                             show_progressbar=show_progress,
+                             early_stop_fn=self.early_stop_fn,
+                             timeout=self.max_seconds)
                     else:
                         self.log.message('Tunner stopped after initial search due to the lack of time')
 
-                    best = space_eval(space=parameters_dict, hp_assignment=best)
+                    best = space_eval(space=parameters_dict, hp_assignment=trials.argmin)
                     # check if best point was obtained using search space with fixed initial parameters
                     is_best_trial_with_init_params = trials.best_trial.get('tid') in range(init_trials_num)
                     if is_best_trial_with_init_params:
                         best = {**best, **init_parameters}
 
-                    tuned_graph = self.set_arg_graph(graph=graph, parameters=best)
-
-                    # Validation is the optimization do well
-                    graph = self.final_check(tuned_graph)
+                    final_graph = self.set_arg_graph(graph=graph, parameters=best)
 
                     self.was_tuned = True
 
                 except Exception as ex:
                     self.log.warning(f'Exception {ex} occurred during tuning')
+                    final_graph = graph
 
+        # Validation is the optimization do well
+        graph = self.final_check(final_graph)
         final_graph = self.adapter.restore(graph)
-
         return final_graph
 
     def _search_near_initial_parameters(self, graph: OptGraph,
@@ -150,7 +151,7 @@ class SimultaneousTuner(HyperoptTuner):
             tunable_node_params = self.search_space.get_parameters_for_operation(operation_name)
             if tunable_node_params:
                 tunable_initial_params = {get_node_operation_parameter_label(node_id, operation_name, p):
-                                          node.parameters[p] for p in node.parameters if p in tunable_node_params}
+                                              node.parameters[p] for p in node.parameters if p in tunable_node_params}
                 if tunable_initial_params:
                     initial_parameters.update(tunable_initial_params)
 

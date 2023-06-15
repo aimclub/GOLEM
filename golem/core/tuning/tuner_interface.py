@@ -130,6 +130,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.log.message(f'Final metric: {abs(final_metric):.3f}')
         else:
             self.log.message('Final metric is None')
+        self.obtained_metric = final_metric
         return final_graph
 
     def get_metric_value(self, graph: OptGraph) -> float:

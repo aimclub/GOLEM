@@ -148,11 +148,12 @@ class IOptTuner(BaseTuner):
 
         no_parameters_to_optimize = (not problem_parameters.discrete_parameters_names and
                                      not problem_parameters.float_parameters_names)
+        self.init_check(graph)
+
         if no_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+            final_graph = graph
         else:
-            self.init_check(graph)
-
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
                 self.solver_parameters.startPoint = initial_point
@@ -167,15 +168,14 @@ class IOptTuner(BaseTuner):
             solution = solver.Solve()
             best_point = solution.bestTrials[0].point
             best_parameters = problem.get_parameters_dict_from_iopt_point(best_point)
-            tuned_graph = self.set_arg_graph(graph, best_parameters)
-
-            # Validation is the optimization do well
-            graph = self.final_check(tuned_graph)
+            final_graph = self.set_arg_graph(graph, best_parameters)
 
             self.was_tuned = True
 
-        tuned_graph = self.adapter.restore(graph)
-        return tuned_graph
+        # Validation is the optimization do well
+        graph = self.final_check(final_graph)
+        final_graph = self.adapter.restore(graph)
+        return final_graph
 
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[IOptProblemParameters, dict]:
         """ Method for defining the search space
