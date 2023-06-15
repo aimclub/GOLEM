@@ -1,5 +1,4 @@
 
-# from audioop import cross
 from datetime import timedelta
 import sys
 import os
@@ -20,18 +19,12 @@ from golem.core.optimisers.genetic.operators.crossover import exchange_parents_o
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.objective.objective_eval import ObjectiveEvaluate
 from golem.core.optimisers.optimizer import GraphGenerationParams
-# from pgmpy.estimators import K2Score
 from composite_model import CompositeModel
 from composite_node import CompositeNode
-# from bamt.networks.hybrid_bn import HybridBN
-# from bamt.networks.discrete_bn import DiscreteBN
-# from bamt.networks.continuous_bn import ContinuousBN
 from scipy.stats import norm
 from numpy import std, mean, log
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
-# from golem.core.dag.linked_graph import LinkedGraph
-# from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from ML import ML_models
 from composite_bn_genetic_operators import (
     custom_crossover_all_model, 
@@ -41,35 +34,6 @@ from composite_bn_genetic_operators import (
     custom_mutation_add_model,
 )
 from math import log10
-# import linecache
-# import itertools
-# from sklearn.metrics import f1_score
-
-# from catboost import CatBoostClassifier, CatBoostRegressor
-# from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-# from sklearn.cluster import KMeans
-# from sklearn.ensemble import (
-#     AdaBoostRegressor,
-#     ExtraTreesRegressor,
-#     GradientBoostingRegressor,
-#     RandomForestClassifier,
-#     RandomForestRegressor
-# )
-
-# from sklearn.naive_bayes import BernoulliNB, MultinomialNB
-# from sklearn.neural_network import MLPClassifier
-# from sklearn.svm import LinearSVR
-# from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-# from xgboost import XGBClassifier, XGBRegressor
-
-# from sklearn.linear_model import (
-#     Lasso,
-#     LinearRegression,
-#     LogisticRegression,
-#     Ridge,
-#     SGDRegressor
-# )
-
 
 
 def composite_metric(graph: CompositeModel, data: pd.DataFrame, percent = 0.02):
@@ -126,10 +90,6 @@ def composite_metric(graph: CompositeModel, data: pd.DataFrame, percent = 0.02):
 
     edges_count = len(graph.get_edges())
     score -= (edges_count*percent)*log10(len_data)*edges_count    
-    
-    # print('struc: ', graph.get_edges())
-    # print('models: ', [[n, n.content['parent_model']] for n in graph.nodes])  
-    # print('score: ', score)
 
     return -score
 
