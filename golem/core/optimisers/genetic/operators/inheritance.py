@@ -38,8 +38,6 @@ class Inheritance(Operator):
                                  prev_population: PopulationT,
                                  new_population: PopulationT
                                  ) -> PopulationT:
-        # TODO: when we have dublicate individuals -- they get higher chance to be selected.
-        #  Probabilistically we get more duplicate individuals further and further.
         return self.selection(prev_population + new_population,
                               pop_size=self.parameters.pop_size)
 

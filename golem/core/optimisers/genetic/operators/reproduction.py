@@ -61,6 +61,10 @@ class ReproductionController:
         """Reproduces and evaluates population (select, crossover, mutate).
         Doesn't implement any additional checks on population.
         """
+        # If operators can return unchanged individuals from previous population
+        # (e.g. both Mutation & Crossover are not applied with some probability)
+        # then there's a probability that duplicate individuals can appear
+
         # TODO: it can't choose more than len(population)!
         #  It can be faster if it could.
         selected_individuals = self.selection(population, pop_size)
@@ -78,7 +82,7 @@ class ReproductionController:
         follows required population size.
         """
         required_size = self.parameters.pop_size  # next population size
-        next_population = []
+        next_population = {}
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             # Estimate how many individuals we need to complete new population
             # based on average success rate of valid results
@@ -89,7 +93,8 @@ class ReproductionController:
 
             # Reproduce the required number of individuals
             new_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
-            next_population.extend(new_population)
+            # Avoid individuals that can come unchanged from previous population
+            next_population.update({ind.uid: ind for ind in new_population})
 
             # Keep running average of transform success rate (if sample is big enough)
             if len(new_population) > MIN_POP_SIZE:
@@ -101,7 +106,7 @@ class ReproductionController:
             if len(next_population) >= required_size * self.parameters.required_valid_ratio:
                 self._log.info(f'Reproduction achieved pop size {len(next_population)}'
                                f' using {i+1} attempt(s) with success rate {self.mean_success_rate:.3f}')
-                return next_population
+                return list(next_population.values())
         else:
             # If number of evaluation attempts is exceeded return a warning or raise exception
             helpful_msg = ('Check objective, constraints and evo operators. '
