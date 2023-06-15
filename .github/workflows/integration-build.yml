@@ -2,7 +2,7 @@ name: Integration
 
 on:
   schedule:
-    - cron: '0 24 * * *'
+    - cron: '0 12 * * *'
   push:
     branches: [ stable, release ]
   pull_request:
