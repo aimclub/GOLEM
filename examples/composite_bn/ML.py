@@ -1,7 +1,7 @@
 
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-from sklearn.cluster import KMeans as SklearnKmeans
+from sklearn.cluster import KMeans
 from sklearn.ensemble import (
     AdaBoostRegressor,
     ExtraTreesRegressor,
@@ -10,15 +10,15 @@ from sklearn.ensemble import (
     RandomForestRegressor
 )
 from sklearn.linear_model import (
-    Lasso as SklearnLassoReg,
-    LinearRegression as SklearnLinReg,
-    LogisticRegression as SklearnLogReg,
-    Ridge as SklearnRidgeReg,
-    SGDRegressor as SklearnSGD
+    Lasso,
+    LinearRegression,
+    LogisticRegression,
+    Ridge,
+    SGDRegressor
 )
-from sklearn.naive_bayes import BernoulliNB as SklearnBernoulliNB, MultinomialNB as SklearnMultinomialNB
+from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
-from sklearn.svm import LinearSVR as SklearnSVR
+from sklearn.svm import LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from xgboost import XGBClassifier, XGBRegressor
 import json
@@ -28,31 +28,59 @@ from random import choice
 class ML_models():
     def __init__(self):
         self.operations_by_types = {
-        'xgbreg': XGBRegressor,
-        'adareg': AdaBoostRegressor,
-        'gbr': GradientBoostingRegressor,
-        'dtreg': DecisionTreeRegressor,
-        'treg': ExtraTreesRegressor,
-        'rfr': RandomForestRegressor,
-        'linear': SklearnLinReg,
-        'ridge': SklearnRidgeReg,
-        'lasso': SklearnLassoReg,
-        'svr': SklearnSVR,
-        'sgdr': SklearnSGD,
-        'lgbmreg': LGBMRegressor,
-        'catboostreg': CatBoostRegressor,
+        'xgbreg': 'XGBRegressor',
+        'adareg': 'AdaBoostRegressor',
+        'gbr': 'GradientBoostingRegressor',
+        'dtreg': 'DecisionTreeRegressor',
+        'treg': 'ExtraTreesRegressor',
+        'rfr': 'RandomForestRegressor',
+        'linear': 'LinearRegression',
+        'ridge': 'Ridge',
+        'lasso': 'Lasso',
+        'svr': 'LinearSVR',
+        'sgdr': 'SGDRegressor',
+        'lgbmreg': 'LGBMRegressor',
+        'catboostreg': 'CatBoostRegressor',
 
-        'xgboost': XGBClassifier,
-        'logit': SklearnLogReg,
-        'bernb': SklearnBernoulliNB,
-        'multinb': SklearnMultinomialNB,
-        'dt': DecisionTreeClassifier,
-        'rf': RandomForestClassifier,
-        'mlp': MLPClassifier,
-        'lgbm': LGBMClassifier,
-        'catboost': CatBoostClassifier,
+        'xgboost': 'XGBClassifier',
+        'logit': 'LogisticRegression',
+        'bernb': 'BernoulliNB',
+        'multinb': 'MultinomialNB',
+        'dt': 'DecisionTreeClassifier',
+        'rf': 'RandomForestClassifier',
+        'mlp': 'MLPClassifier',
+        'lgbm': 'LGBMClassifier',
+        'catboost': 'CatBoostClassifier',
 
-        'kmeans': SklearnKmeans,
+        'kmeans': 'KMeans',
+    }
+        
+        self.dict_models = {
+        'XGBRegressor': XGBRegressor,
+        'AdaBoostRegressor': AdaBoostRegressor,
+        'GradientBoostingRegressor': GradientBoostingRegressor,
+        'DecisionTreeRegressor': DecisionTreeRegressor,
+        'ExtraTreesRegressor': ExtraTreesRegressor,
+        'RandomForestRegressor': RandomForestRegressor,
+        'LinearRegression': LinearRegression,
+        'Ridge': Ridge,
+        'Lasso': Lasso,
+        'LinearSVR': LinearSVR,
+        'SGDRegressor': SGDRegressor,
+        'LGBMRegressor': LGBMRegressor,
+        'CatBoostRegressor': CatBoostRegressor,
+
+        'XGBClassifier': XGBClassifier,
+        'LogisticRegression': LogisticRegression,
+        'BernoulliNB': BernoulliNB,
+        'MultinomialNB': MultinomialNB,
+        'DecisionTreeClassifier': DecisionTreeClassifier,
+        'RandomForestClassifier': RandomForestClassifier,
+        'MLPClassifier': MLPClassifier,
+        'LGBMClassifier': LGBMClassifier,
+        'CatBoostClassifier': CatBoostClassifier,
+
+        'KMeans': KMeans,
     }
 
     def get_model_by_children_type(self, node: CompositeNode):
