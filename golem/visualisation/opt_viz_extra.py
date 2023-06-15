@@ -47,7 +47,7 @@ class OptHistoryExtraVisualizer:
                           objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
         files = []
         pareto_fronts = self.history.archive_history
-        individuals = self.history.individuals
+        individuals = self.history.generations
         array_for_analysis = individuals if individuals else pareto_fronts
         all_objectives = extract_objectives(array_for_analysis, objectives_numbers)
         min_x, max_x = min(all_objectives[0]) - 0.01, max(all_objectives[0]) + 0.01
@@ -173,7 +173,7 @@ class OptHistoryExtraVisualizer:
         plt.savefig(path, bbox_inches='tight')
 
     def boxplots_gif_create(self, objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
-        individuals = self.history.individuals
+        individuals = self.history.generations
         objectives = extract_objectives(individuals)
         objectives = list(itertools.chain(*objectives))
         min_y, max_y = min(objectives), max(objectives)

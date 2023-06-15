@@ -1,7 +1,11 @@
-name: Manual build
+name: Integration
 
 on:
+  schedule:
+    - cron: '0 12 * * *'
   push:
+    branches: [ stable, release ]
+  pull_request:
     branches: [ stable, release ]
   workflow_dispatch:
 
@@ -25,6 +29,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install .[profilers]
+          pip install .[molecules]
+          pip install .[adaptive]
           pip install pytest-cov
       - name: Test with pytest
         run: |

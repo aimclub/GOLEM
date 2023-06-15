@@ -126,9 +126,9 @@ class MABSyntheticExperimentHelper:
         else:
             centers = sorted(self.cluster.cluster_centers_)
             for i in range(self.cluster.n_clusters):
-                titles = [title + f' for cluster with center {int(centers[i])}' for title in titles]
+                titles_centers = [title + f' for cluster with center {int(centers[i])}' for title in titles]
                 plot_action_values(stats=stats_action_value_log[i], action_tags=actions,
-                                   titles=titles)
+                                   titles=titles_centers)
                 plt.show()
 
     def show_average_action_probabilities(self, show_action_probabilities: dict, actions):
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     launch_num = 1
     target_size = 50
 
-    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit]
+    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit, MutationAgentTypeEnum.bandit]
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
     initial_population_func = partial(initial_population_func,
                                       graph_size=[random.randint(5, 10) for _ in range(10)] +
@@ -204,5 +204,5 @@ if __name__ == '__main__':
                                           n_clusters=2, is_visualize=True)
     helper.compare_bandits(initial_population_func=initial_population_func,
                            setup_parameters=setup_parameters_func)
-    # helper.show_boxplots()
-    # helper.show_fitness_lines()
+    helper.show_boxplots()
+    helper.show_fitness_lines()
