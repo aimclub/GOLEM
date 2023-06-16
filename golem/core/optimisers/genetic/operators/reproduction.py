@@ -93,11 +93,11 @@ class ReproductionController:
 
             # Reproduce the required number of individuals
             new_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
-            # Avoid individuals that can come unchanged from previous population
+            # Avoid duplicate individuals that can come unchanged from previous population
             next_population.update({ind.uid: ind for ind in new_population})
 
             # Keep running average of transform success rate (if sample is big enough)
-            if len(new_population) > MIN_POP_SIZE:
+            if len(new_population) >= MIN_POP_SIZE:
                 valid_ratio = len(new_population) / residual_size
                 self._success_rate_window = np.roll(self._success_rate_window, shift=1)
                 self._success_rate_window[0] = valid_ratio
@@ -116,6 +116,7 @@ class ReproductionController:
                 self._log.warning(f'Could not achieve required population size: '
                                   f'have {len(next_population)}, required {required_size}!\n'
                                   + helpful_msg)
+                return list(next_population.values())
             else:
                 raise EvaluationAttemptsError('Could not collect valid individuals'
                                               ' for next population.' + helpful_msg)

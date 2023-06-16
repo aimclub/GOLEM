@@ -89,7 +89,19 @@ def test_too_little_valid_evals(reproducer: ReproductionController, success_rate
         reproducer.reproduce(pop, evaluator)
 
 
-@pytest.mark.parametrize('success_rate', [0.4, 0.9, 1.0])
+@pytest.mark.parametrize('success_rate', [0.15, 0.2])
+def test_minimal_valid_evals(reproducer: ReproductionController, success_rate: float):
+    parameters = reproducer.parameters
+    evaluator = MockEvaluator(success_rate)
+    pop = get_rand_population(parameters.pop_size)
+    num_iters = 10
+    for i in range(num_iters):
+        pop = reproducer.reproduce(pop, evaluator)
+        actual_valid_ratio = len(pop) / parameters.pop_size
+        assert parameters.required_valid_ratio > actual_valid_ratio >= reproducer._minimum_valid_ratio
+
+
+@pytest.mark.parametrize('success_rate', [0.3, 0.9, 1.0])
 def test_pop_size_progression(reproducer: ReproductionController, success_rate: float):
     parameters = reproducer.parameters
     required_valid = parameters.required_valid_ratio
