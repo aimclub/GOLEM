@@ -82,7 +82,7 @@ class SequentialTuner(HyperoptTuner):
                                     iterations_per_node=iterations_per_node,
                                     seconds_per_node=seconds_per_node)
 
-        # Validation is the optimization do well
+        # Validate if optimisation did well
         final_graph = self.final_check(graph)
 
         self.was_tuned = True

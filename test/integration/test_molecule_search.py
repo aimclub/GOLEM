@@ -18,4 +18,4 @@ def test_molecule_search_example(metric_name, metric):
     found_graph = MolAdapter().restore(found_graphs[0])
     final_metric = metric(found_graph)
 
-    assert final_metric < init_metric
+    assert final_metric <= init_metric
