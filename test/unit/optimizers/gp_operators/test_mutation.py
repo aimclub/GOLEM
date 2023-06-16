@@ -215,8 +215,10 @@ def test_mutation_with_zero_prob(mutation_type):
     new_ind = mutation(ind)
 
     assert new_ind.graph == ind.graph
+    assert new_ind.uid == ind.uid
 
     ind = Individual(adapter.adapt(graph_fifth()))
     new_ind = mutation(ind)
 
     assert new_ind.graph == ind.graph
+    assert new_ind.uid == ind.uid
