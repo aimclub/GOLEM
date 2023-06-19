@@ -54,7 +54,7 @@ class AdaptivePopulationSize(PopulationSize):
         no_progress = not fitness_improved and not complexity_decreased
         pop_size = len(population)
         too_many_fitness_eval_errors = \
-            pop_size/self._iterator.current() < 0.5
+            pop_size / self._iterator.current() < 0.5
 
         if too_many_fitness_eval_errors or no_progress:
             if self._iterator.has_next():

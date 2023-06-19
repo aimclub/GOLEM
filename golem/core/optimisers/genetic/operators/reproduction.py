@@ -123,8 +123,8 @@ class ReproductionController:
 
             if len(collected_next_population) >= total_target_size * self._minimum_valid_ratio:
                 self._log.warning(f'Could not achieve required population size: '
-                                  f'have {len(collected_next_population)}, required {total_target_size}!\n'
-                                  + helpful_msg)
+                                  f'have {len(collected_next_population)},'
+                                  f' required {total_target_size}!\n' + helpful_msg)
                 return list(collected_next_population.values())
             else:
                 raise EvaluationAttemptsError('Could not collect valid individuals'
