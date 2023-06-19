@@ -37,10 +37,11 @@ jobs:
           pytest --cov=golem -s test/integration
       - name: Notify telegram bot
         uses: appleboy/telegram-action@master
-        if: failure() # ${{ github.event_name == 'schedule' }}
+        if: failure() && ${{ github.event_name == 'schedule' }}
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          args: 'Scheduled integration tests were failed.
-          \n
-          \nLink to the failed run - ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          message: "${{ github.event.repository.name }}: scheduled integration tests 
+          [were failed](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          format: markdown
+          disable_web_page_preview: true
