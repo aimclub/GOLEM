@@ -200,7 +200,14 @@ def initial_population_func(graph_size: List[int] = None, pop_size: int = None, 
         return initial_graphs
     initial_graphs = [nx.random_tree(graph_size[i], create_using=nx.DiGraph)
                       for i in range(pop_size)]
-    return initial_graphs
+    initial_opt_graphs = []
+    for graph in initial_graphs:
+        opt_graph = BaseNetworkxAdapter().adapt(item=graph)
+        for node in opt_graph.nodes:
+            node.content['name'] = 'x'
+            # opt_graph.update_node(old_node=node, new_node=OptNode('x', nodes_from=node.nodes_from))
+        initial_opt_graphs.append(opt_graph)
+    return initial_opt_graphs
 
 
 if __name__ == '__main__':
@@ -208,8 +215,8 @@ if __name__ == '__main__':
     launch_num = 1
     target_size = 50
 
-    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit, MutationAgentTypeEnum.contextual_bandit]
-    context_agent_types = [ContextAgentTypeEnum.feather_graph, ContextAgentTypeEnum.nodes_num]
+    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit]
+    context_agent_types = [ContextAgentTypeEnum.operations_encoding]
     bandit_labels = [f'{context.name}' for i, context in enumerate(context_agent_types)]
 
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)

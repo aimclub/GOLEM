@@ -39,11 +39,12 @@ class Mutation(Operator):
         self.graph_generation_params = graph_gen_params
         self.parameters = parameters
         self._mutations_repo = mutations_repo or base_mutations_repo
-        self._operator_agent = self._init_operator_agent(parameters, requirements)
+        self._operator_agent = self._init_operator_agent(graph_gen_params, parameters, requirements)
         self.agent_experience = ExperienceBuffer()
 
     @staticmethod
-    def _init_operator_agent(parameters: 'GPAlgorithmParameters',
+    def _init_operator_agent(graph_gen_params: GraphGenerationParams,
+                             parameters: 'GPAlgorithmParameters',
                              requirements: OptimizationParameters):
         kind = parameters.adaptive_mutation_type
         if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
@@ -52,9 +53,11 @@ class Mutation(Operator):
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs)
         elif kind == MutationAgentTypeEnum.contextual_bandit:
-            agent = ContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
-                                                    context_agent_type=parameters.context_agent_type,
-                                                    n_jobs=requirements.n_jobs)
+            agent = ContextualMultiArmedBanditAgent(
+                actions=parameters.mutation_types,
+                context_agent_type=parameters.context_agent_type,
+                available_operations=graph_gen_params.node_factory.available_nodes,
+                n_jobs=requirements.n_jobs)
         elif kind == MutationAgentTypeEnum.neural_bandit:
             agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
                                                           context_agent_type=parameters.context_agent_type,

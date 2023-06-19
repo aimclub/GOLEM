@@ -1,4 +1,5 @@
 import random
+from functools import partial
 from typing import Union, Sequence, Optional, List
 
 import numpy as np
@@ -17,6 +18,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
 
     def __init__(self, actions: Sequence[ActType],
                  context_agent_type: ContextAgentTypeEnum,
+                 available_operations: List[str],
                  n_jobs: int = 1,
                  enable_logging: bool = True):
         super().__init__(enable_logging)
@@ -27,7 +29,8 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
-        self._context_agent = ContextAgentsRepository.agent_class_by_id(context_agent_type)
+        self._context_agent = partial(ContextAgentsRepository.agent_class_by_id(context_agent_type),
+                                      available_operations=available_operations)
         self._is_fitted = False
 
     def _initial_fit(self, obs: ObsType):
