@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import TypeVar, Generic, Optional, Union, Tuple, Sequence
+from typing import TypeVar, Generic, Optional, Union, Sequence
 
 import numpy as np
 
@@ -64,7 +64,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.log = default_log(self)
 
     @abstractmethod
-    def tune(self, graph: DomainGraphForTune) -> Sequence[DomainGraphForTune]:
+    def tune(self, graph: DomainGraphForTune) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         """
         Function for hyperparameters tuning on the graph
 

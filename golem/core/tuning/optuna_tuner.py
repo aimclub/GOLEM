@@ -1,19 +1,17 @@
 from datetime import timedelta
 from functools import partial
-from typing import Optional, Tuple, Union, Dict, Sequence
+from typing import Optional, Tuple, Union, Sequence
 
 import optuna
 from optuna import Trial, Study
 from optuna.trial import FrozenTrial
 
 from golem.core.adapter import BaseOptimizationAdapter
-from golem.core.dag.graph_utils import graph_structure
 from golem.core.optimisers.fitness import MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class OptunaTuner(BaseTuner):
@@ -36,7 +34,8 @@ class OptunaTuner(BaseTuner):
                          deviation)
         self.objectives_number = objectives_number
 
-    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> Sequence[DomainGraphForTune]:
+    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> \
+            Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         graph = self.adapter.adapt(graph)
         predefined_objective = partial(self.objective, graph=graph)
 
@@ -58,14 +57,30 @@ class OptunaTuner(BaseTuner):
                        show_progress_bar=show_progress)
 
         tuned_graphs = []
-        for best_trial in study.best_trials:
-            best_parameters = best_trial.params
+        if self.objectives_number == 1:
+            best_parameters = study.best_trials[0].params
             tuned_graph = self.set_arg_graph(graph, best_parameters)
             graph = self.final_check(tuned_graph)
+            tuned_graphs = graph
             self.was_tuned = True
+        else:
+            self.obtained_metric = []
+            for best_trial in study.best_trials:
+                best_parameters = best_trial.params
+                tuned_graph = self.set_arg_graph(graph, best_parameters)
+                obtained_metric = self.get_metric_value(tuned_graph)
+                for e, value in enumerate(self.obtained_metric):
+                    if value == self._default_metric_value:
+                        obtained_metric[e] = None
+                if MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
+                    tuned_graphs.append(tuned_graph)
+                    self.obtained_metric.append(obtained_metric)
+                    self.was_tuned = True
+            if not tuned_graphs:
+                tuned_graphs = self.init_graph
 
-        tuned_graph = self.adapter.restore(graph)
-        return tuned_graph
+        tuned_graphs = self.adapter.restore(tuned_graphs)
+        return tuned_graphs
 
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Tuple[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)
