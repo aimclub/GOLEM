@@ -81,42 +81,42 @@ class ReproductionController:
         Implements additional checks on population to ensure that population size
         follows required population size.
         """
-        required_size = self.parameters.pop_size  # next population size
-        next_population = {}
+        total_target_size = self.parameters.pop_size  # next population size
+        collected_next_population = {}
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
             # Estimate how many individuals we need to complete new population
             # based on average success rate of valid results
-            residual_size = required_size - len(next_population)
+            residual_size = total_target_size - len(collected_next_population)
             residual_size = max(MIN_POP_SIZE,
                                 int(residual_size / self.mean_success_rate))
             residual_size = min(len(population), residual_size)
 
-            # Reproduce the required number of individuals
-            new_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
+            # Reproduce the required number of individuals that equals residual size
+            partial_next_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
             # Avoid duplicate individuals that can come unchanged from previous population
-            next_population.update({ind.uid: ind for ind in new_population})
+            collected_next_population.update({ind.uid: ind for ind in partial_next_population})
 
             # Keep running average of transform success rate (if sample is big enough)
-            if len(new_population) >= MIN_POP_SIZE:
-                valid_ratio = len(new_population) / residual_size
+            if len(partial_next_population) >= MIN_POP_SIZE:
+                valid_ratio = len(partial_next_population) / residual_size
                 self._success_rate_window = np.roll(self._success_rate_window, shift=1)
                 self._success_rate_window[0] = valid_ratio
 
             # Successful return: got enough individuals
-            if len(next_population) >= required_size * self.parameters.required_valid_ratio:
-                self._log.info(f'Reproduction achieved pop size {len(next_population)}'
+            if len(collected_next_population) >= total_target_size * self.parameters.required_valid_ratio:
+                self._log.info(f'Reproduction achieved pop size {len(collected_next_population)}'
                                f' using {i+1} attempt(s) with success rate {self.mean_success_rate:.3f}')
-                return list(next_population.values())
+                return list(collected_next_population.values())
         else:
             # If number of evaluation attempts is exceeded return a warning or raise exception
             helpful_msg = ('Check objective, constraints and evo operators. '
                            'Possibly they return too few valid individuals.')
 
-            if len(next_population) >= required_size * self._minimum_valid_ratio:
+            if len(collected_next_population) >= total_target_size * self._minimum_valid_ratio:
                 self._log.warning(f'Could not achieve required population size: '
-                                  f'have {len(next_population)}, required {required_size}!\n'
+                                  f'have {len(collected_next_population)}, required {total_target_size}!\n'
                                   + helpful_msg)
-                return list(next_population.values())
+                return list(collected_next_population.values())
             else:
                 raise EvaluationAttemptsError('Could not collect valid individuals'
                                               ' for next population.' + helpful_msg)

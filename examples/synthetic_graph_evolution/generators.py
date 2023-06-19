@@ -90,9 +90,11 @@ def generate_labeled_graph(kind: str,
                            connected: bool = True,
                            directed: bool = True):
     """Generate randomly labeled graph of the specified kind and size,
-    optionally enforce connectedness and direction."""
-    graph = graph_generators[kind](size)
-    return postprocess_nx_graph(graph, node_labels, connected, directed)
+    optionally enforce connectedness and direction. Important! With small specified size
+    some methods can generate smaller graphs due to removal of unconnected components."""
+    nx_graph = graph_generators[kind](size)
+    graph = postprocess_nx_graph(nx_graph, node_labels, connected, directed)
+    return graph
 
 
 def _draw_sample_graphs(kind: str = 'gnp', sizes=tuple(range(5, 50, 5))):
