@@ -72,7 +72,7 @@ class OptunaTuner(BaseTuner):
                 for e, value in enumerate(self.obtained_metric):
                     if value == self._default_metric_value:
                         obtained_metric[e] = None
-                if MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
+                if not MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
                     tuned_graphs.append(tuned_graph)
                     self.obtained_metric.append(obtained_metric)
                     self.was_tuned = True

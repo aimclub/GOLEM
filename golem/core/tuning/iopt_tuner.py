@@ -152,6 +152,7 @@ class IOptTuner(BaseTuner):
 
         if no_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+            final_graph = self.init_graph
         else:
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
