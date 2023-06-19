@@ -134,7 +134,7 @@ class OptunaTuner(BaseTuner):
             best_trial_number = study.best_trial.number
             should_stop = (current_trial_number - best_trial_number) >= self.early_stopping_rounds
             if should_stop:
-                self.log.debug(f'Early stopping rounds criteria was reached')
+                self.log.debug('Early stopping rounds criteria was reached')
                 study.stop()
 
     def no_parameters_to_optimize_callback(self, study: Study, trial: FrozenTrial, graph: OptGraph):

@@ -1,14 +1,14 @@
 from functools import partial
-from typing import Tuple, Optional, Sequence, Union
+from typing import Tuple, Optional
 
 from hyperopt import Trials, fmin, space_eval
 
 from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.timer import Timer
+from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 from golem.core.tuning.search_space import get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import DomainGraphForTune
-from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 
 
 class SimultaneousTuner(HyperoptTuner):
