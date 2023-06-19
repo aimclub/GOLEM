@@ -38,7 +38,7 @@ class SequentialTuner(HyperoptTuner):
 
         self.inverse_node_order = inverse_node_order
 
-    def tune(self, graph: DomainGraphForTune) -> Sequence[DomainGraphForTune]:
+    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
         """ Method for hyperparameters tuning on the entire graph
 
         Args:

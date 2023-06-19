@@ -142,7 +142,7 @@ class IOptTuner(BaseTuner):
                                                   epsR=np.double(eps_r),
                                                   refineSolution=refine_solution)
 
-    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> Sequence[DomainGraphForTune]:
+    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         graph = self.adapter.adapt(graph)
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
 

@@ -102,65 +102,38 @@ class BaseTuner(Generic[DomainGraphForTune]):
         """
 
         self.obtained_metric = self.get_metric_value(graph=tuned_graph)
-        is_multi_obj = len(self.obtained_metric) > 1
 
         self.log.info('Hyperparameters optimization finished')
 
         prefix_tuned_phrase = 'Return tuned graph due to the fact that obtained metric'
         prefix_init_phrase = 'Return init graph due to the fact that obtained metric'
 
-        if not is_multi_obj:
+        if self.obtained_metric == self._default_metric_value:
+            self.obtained_metric = None
 
-            if self.obtained_metric == self._default_metric_value:
-                self.obtained_metric = None
-
-            # 0.05% deviation is acceptable
-            deviation_value = (self.init_metric / 100.0) * self.deviation
-            init_metric = self.init_metric + deviation_value * (-np.sign(self.init_metric))
-            if self.obtained_metric is None:
-                self.log.info(f'{prefix_init_phrase} is None. Initial metric is {abs(init_metric):.3f}')
-                final_graph = self.init_graph
-                final_metric = self.init_metric
-            elif self.obtained_metric <= init_metric:
-                self.log.info(f'{prefix_tuned_phrase} {abs(self.obtained_metric):.3f} equal or '
-                              f'better than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
-                final_graph = tuned_graph
-                final_metric = self.obtained_metric
-            else:
-                self.log.info(f'{prefix_init_phrase} {abs(self.obtained_metric):.3f} '
-                              f'worse than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
-                final_graph = self.init_graph
-                final_metric = self.init_metric
-            self.log.message(f'Final graph: {graph_structure(final_graph)}')
-            if final_metric is not None:
-                self.log.message(f'Final metric: {abs(final_metric):.3f}')
-            else:
-                self.log.message('Final metric is None')
-            return final_graph
-
+        # 0.05% deviation is acceptable
+        deviation_value = (self.init_metric / 100.0) * self.deviation
+        init_metric = self.init_metric + deviation_value * (-np.sign(self.init_metric))
+        if self.obtained_metric is None:
+            self.log.info(f'{prefix_init_phrase} is None. Initial metric is {abs(init_metric):.3f}')
+            final_graph = self.init_graph
+            final_metric = self.init_metric
+        elif self.obtained_metric <= init_metric:
+            self.log.info(f'{prefix_tuned_phrase} {abs(self.obtained_metric):.3f} equal or '
+                          f'better than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
+            final_graph = tuned_graph
+            final_metric = self.obtained_metric
         else:
-            for e, value in enumerate(self.obtained_metric):
-                if value == self._default_metric_value:
-                    self.obtained_metric[e] = None
-
-            initial_fitness = MultiObjFitness(self.init_metric)
-            obtained_fitness = MultiObjFitness(self.obtained_metric)
-
-            if initial_fitness.dominates(obtained_fitness):
-                self.log.info(f'{prefix_init_phrase} {list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))}'
-                              f' initial {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
-                final_graph = self.init_graph
-                final_metric = self.init_metric
-
-            else:
-                self.log.info(f'{prefix_tuned_phrase} '
-                              f'{list(map(abs, ensure_wrapped_in_sequence(self.obtained_metric)))} '
-                              f'dominates initial {list(map(abs, ensure_wrapped_in_sequence(self.init_metric)))}')
-                final_graph = tuned_graph
-                final_metric = self.obtained_metric
-            self.log.message(f'Final graph: {graph_structure(final_graph)}')
-            self.log.message(f'Final metric: {list(map(abs, final_metric))}')
-            return final_graph
+            self.log.info(f'{prefix_init_phrase} {abs(self.obtained_metric):.3f} '
+                          f'worse than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
+            final_graph = self.init_graph
+            final_metric = self.init_metric
+        self.log.message(f'Final graph: {graph_structure(final_graph)}')
+        if final_metric is not None:
+            self.log.message(f'Final metric: {abs(final_metric):.3f}')
+        else:
+            self.log.message('Final metric is None')
+        return final_graph
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
         """
