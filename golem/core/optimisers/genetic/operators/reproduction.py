@@ -22,6 +22,15 @@ class ReproductionController:
     Invalid results include cases when Operators, Evaluator or GraphVerifier
     return output population that's smaller than the input population.
 
+    Example.
+    Let's say we need a population of size 50. Let's say about 20% of individuals
+    are *usually* evaluated with an error. If we take select only 50 for the new population,
+    we will get about 40 valid ones. Not enough. Therefore, we need to take more.
+    How much more? Approximately by `target_pop_size / mean_success_rate = 50 / 0.8 ~= 62'.
+    Here `mean_success_rate` estimates number of successfully evaluated individuals.
+    Then we request 62, then approximately 62*0.8~=50 of them are valid in the end,
+    and we achieve target size more reliably. This runs in a loop to control stochasticity.
+
     Args:
         parameters: genetic algorithm parameters.
         selection: operator used in reproduction.
