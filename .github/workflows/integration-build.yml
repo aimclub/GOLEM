@@ -37,7 +37,7 @@ jobs:
           pytest --cov=golem -s test/integration
       - name: Notify telegram bot
         uses: appleboy/telegram-action@master
-        if: failure() && ${{ github.event_name == 'schedule' }}
+        if: ${{ failure() && github.event_name == 'schedule' }}
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
