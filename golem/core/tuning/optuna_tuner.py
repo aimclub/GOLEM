@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import timedelta
 from functools import partial
 from typing import Optional, Tuple, Union, Sequence
@@ -38,47 +39,41 @@ class OptunaTuner(BaseTuner):
             Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         graph = self.adapter.adapt(graph)
         predefined_objective = partial(self.objective, graph=graph)
+        is_multi_objective = self.objectives_number > 1
 
         self.init_check(graph)
 
         study = optuna.create_study(directions=['minimize'] * self.objectives_number)
 
         # Enqueue initial point to try
-        init_parameters = self._get_initial_point(graph)
-        if init_parameters:
-            study.enqueue_trial(init_parameters)
-
-        study.optimize(predefined_objective,
-                       n_trials=self.iterations,
-                       n_jobs=self.n_jobs,
-                       timeout=self.timeout.seconds,
-                       callbacks=[self.early_stopping_callback] if self.early_stopping_rounds else None,
-                       show_progress_bar=show_progress)
-
-        tuned_graphs = []
-        if self.objectives_number == 1:
-            best_parameters = study.best_trials[0].params
-            tuned_graph = self.set_arg_graph(graph, best_parameters)
-            graph = self.final_check(tuned_graph)
-            tuned_graphs = graph
-            self.was_tuned = True
+        init_parameters, has_parameters_to_optimize = self._get_initial_point(graph)
+        if not has_parameters_to_optimize:
+            self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
+            tuned_graphs = self.init_graph
         else:
-            self.obtained_metric = []
-            for best_trial in study.best_trials:
-                best_parameters = best_trial.params
-                tuned_graph = self.set_arg_graph(graph, best_parameters)
-                obtained_metric = self.get_metric_value(tuned_graph)
-                for e, value in enumerate(self.obtained_metric):
-                    if value == self._default_metric_value:
-                        obtained_metric[e] = None
-                if MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
-                    tuned_graphs.append(tuned_graph)
-                    self.obtained_metric.append(obtained_metric)
-                    self.was_tuned = True
-            if not tuned_graphs:
-                tuned_graphs = self.init_graph
+            if init_parameters:
+                study.enqueue_trial(init_parameters)
 
-        tuned_graphs = self.adapter.restore(tuned_graphs)
+            study.optimize(predefined_objective,
+                           n_trials=self.iterations,
+                           n_jobs=self.n_jobs,
+                           timeout=self.timeout.seconds,
+                           callbacks=[self.early_stopping_callback],
+                           show_progress_bar=show_progress)
+
+            if not is_multi_objective:
+                best_parameters = study.best_trials[0].params
+                tuned_graphs = self.set_arg_graph(graph, best_parameters)
+                self.was_tuned = True
+            else:
+                tuned_graphs = []
+                for best_trial in study.best_trials:
+                    best_parameters = best_trial.params
+                    tuned_graph = self.set_arg_graph(deepcopy(graph), best_parameters)
+                    tuned_graphs.append(tuned_graph)
+                    self.was_tuned = True
+        final_graphs = self.final_check(tuned_graphs, is_multi_objective)
+        tuned_graphs = self.adapter.restore(final_graphs)
         return tuned_graphs
 
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Tuple[float, ]]:
@@ -113,8 +108,9 @@ class OptunaTuner(BaseTuner):
                                                trial.suggest_categorical(node_op_parameter_name, *sampling_scope)})
         return new_parameters
 
-    def _get_initial_point(self, graph: OptGraph) -> dict:
+    def _get_initial_point(self, graph: OptGraph) -> Tuple[dict, bool]:
         initial_parameters = {}
+        has_parameters_to_optimize = False
         for node_id, node in enumerate(graph.nodes):
             operation_name = node.name
 
@@ -122,11 +118,12 @@ class OptunaTuner(BaseTuner):
             tunable_node_params = self.search_space.parameters_per_operation.get(operation_name)
 
             if tunable_node_params:
+                has_parameters_to_optimize = True
                 tunable_initial_params = {get_node_operation_parameter_label(node_id, operation_name, p):
                                           node.parameters[p] for p in node.parameters if p in tunable_node_params}
                 if tunable_initial_params:
                     initial_parameters.update(tunable_initial_params)
-        return initial_parameters
+        return initial_parameters, has_parameters_to_optimize
 
     def early_stopping_callback(self, study: Study, trial: FrozenTrial):
         if self.early_stopping_rounds is not None:
@@ -137,8 +134,8 @@ class OptunaTuner(BaseTuner):
                 self.log.debug('Early stopping rounds criteria was reached')
                 study.stop()
 
-    def no_parameters_to_optimize_callback(self, study: Study, trial: FrozenTrial, graph: OptGraph):
-        parameters = study.trials[-1].params
-        if not parameters:
-            self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
-            study.stop()
+    # def no_parameters_to_optimize_callback(self, study: Study, trial: FrozenTrial, graph: OptGraph):
+    #     parameters = study.trials[-1].params
+    #     if len(parameters) == 0:
+    #         self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
+    #         study.stop()

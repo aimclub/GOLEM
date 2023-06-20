@@ -122,7 +122,7 @@ def test_node_tuning(search_space, graph):
 def test_multi_objective_tuning(search_space, tuner_cls, graph, adapter, obj_eval):
     init_metric = obj_eval.evaluate(graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, objectives_number=2)
-    tuned_graphs = tuner.tune(deepcopy(graph))
+    tuned_graphs = tuner.tune(deepcopy(graph), show_progress=False)
     for graph in tuned_graphs:
         final_metric = obj_eval.evaluate(graph)
         assert final_metric is not None

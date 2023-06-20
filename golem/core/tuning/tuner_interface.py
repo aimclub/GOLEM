@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import TypeVar, Generic, Optional, Union, Sequence
+from typing import TypeVar, Generic, Optional, Union, Sequence, List
 
 import numpy as np
 
@@ -93,17 +93,23 @@ class BaseTuner(Generic[DomainGraphForTune]):
                          f'Initial metric: '
                          f'{list(map(lambda x: round(abs(x), 3), ensure_wrapped_in_sequence(self.init_metric)))}')
 
-    def final_check(self, tuned_graph: OptGraph) -> OptGraph:
+    def final_check(self, tuned_graphs: Union[OptGraph, Sequence[OptGraph]], multi_obj: bool = False) -> OptGraph:
         """
         Method propose final quality check after optimization process
 
         Args:
-          tuned_graph: Tuned graph to calculate objective
+          tuned_graphs: Tuned graph to calculate objective
+          multi_obj: If optimization was multi objective.
         """
-
-        self.obtained_metric = self.get_metric_value(graph=tuned_graph)
-
         self.log.info('Hyperparameters optimization finished')
+
+        if multi_obj:
+            return self._multi_obj_final_check(tuned_graphs)
+        else:
+            return self._single_obj_final_check(tuned_graphs)
+
+    def _single_obj_final_check(self, tuned_graph: OptGraph):
+        self.obtained_metric = self.get_metric_value(graph=tuned_graph)
 
         prefix_tuned_phrase = 'Return tuned graph due to the fact that obtained metric'
         prefix_init_phrase = 'Return init graph due to the fact that obtained metric'
@@ -134,6 +140,28 @@ class BaseTuner(Generic[DomainGraphForTune]):
         else:
             self.log.message('Final metric is None')
         return final_graph
+
+    def _multi_obj_final_check(self, tuned_graphs: Sequence[OptGraph]):
+        self.obtained_metric = []
+        final_graphs = []
+        for tuned_graph in tuned_graphs:
+            obtained_metric = self.get_metric_value(graph=tuned_graph)
+            for e, value in enumerate(obtained_metric):
+                if value == self._default_metric_value:
+                    obtained_metric[e] = None
+            if not MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
+                self.obtained_metric.append(obtained_metric)
+                self.was_tuned = True
+                final_graphs.append(tuned_graph)
+        if final_graphs:
+            metrics_formated = '\n'.join([str(list(map(lambda x: str(round(x, 3)), metric)))
+                                          for metric in self.obtained_metric])
+            self.log.message('Return tuned graphs with obtained metrics \n'
+                             f'{metrics_formated}')
+        else:
+            self.log.message('Initial metric dominates all found solutions. Return initial graph.')
+            final_graphs = self.init_graph
+        return final_graphs
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
         """
