@@ -1,3 +1,4 @@
+import copy
 from random import shuffle
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
@@ -29,11 +30,14 @@ class Elitism(Operator):
 
     @staticmethod
     def keep_n_best_elitism(best_individuals: PopulationT, new_population: PopulationT) -> PopulationT:
-        final_population = best_individuals
+        final_population = []
+        final_population += best_individuals
         not_repetitive_inds = [ind for ind in new_population if ind not in best_individuals]
         if not_repetitive_inds:
             shuffle(not_repetitive_inds)
-            final_population += not_repetitive_inds[:(len(new_population)-len(best_individuals))]
+            remain_n = len(new_population)-len(best_individuals)
+            final_population += not_repetitive_inds[:remain_n]
+        final_population = sorted(final_population, key=lambda individual: individual.fitness, reverse=True)
         return final_population
 
     @staticmethod
