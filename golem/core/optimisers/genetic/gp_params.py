@@ -26,6 +26,9 @@ class GPAlgorithmParameters(AlgorithmParameters):
     attempts before continuing
     :param mutation_strength: strength of mutation in tree (using in certain mutation types)
     :param min_pop_size_with_elitism: minimal population size with which elitism is applicable
+    :params required_valid_ratio: ratio of valid individuals on next population to continue optimization.
+
+    Used in `ReproductionController` to compensate for invalid individuals. See the class for details.
 
     :param adaptive_mutation_type: Experimental feature! Enables adaptive Mutation agent.
 
@@ -70,6 +73,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     max_num_of_operator_attempts: int = 100
     mutation_strength: MutationStrengthEnum = MutationStrengthEnum.mean
     min_pop_size_with_elitism: int = 5
+    required_valid_ratio: float = 0.9
 
     adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
     context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.nodes_num

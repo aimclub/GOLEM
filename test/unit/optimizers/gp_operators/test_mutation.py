@@ -9,12 +9,14 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters, Mutat
 from golem.core.optimisers.genetic.operators.base_mutations import (
     no_mutation,
     simple_mutation,
-    growth_mutation,
     reduce_mutation,
-    single_add_mutation,
     single_edge_mutation,
     single_drop_mutation,
-    single_change_mutation, add_separate_parent_node, add_as_child, add_intermediate_node, MutationTypesEnum
+    single_change_mutation,
+    add_separate_parent_node,
+    add_as_child,
+    add_intermediate_node,
+    MutationTypesEnum
 )
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -213,8 +215,10 @@ def test_mutation_with_zero_prob(mutation_type):
     new_ind = mutation(ind)
 
     assert new_ind.graph == ind.graph
+    assert new_ind.uid == ind.uid
 
     ind = Individual(adapter.adapt(graph_fifth()))
     new_ind = mutation(ind)
 
     assert new_ind.graph == ind.graph
+    assert new_ind.uid == ind.uid

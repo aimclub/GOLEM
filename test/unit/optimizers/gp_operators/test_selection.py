@@ -39,7 +39,7 @@ def test_individuals_selection_random_individuals():
     types = [SelectionTypesEnum.tournament]
     requirements = GPAlgorithmParameters(selection_types=types, pop_size=num_of_inds)
     selection = Selection(requirements)
-    selected_individuals = selection.individuals_selection(individuals=population)
+    selected_individuals = selection(population)
     selected_individuals_ref = [str(ind) for ind in selected_individuals]
     assert (len(set(selected_individuals_ref)) == len(selected_individuals) and
             len(selected_individuals) == num_of_inds)
@@ -52,7 +52,7 @@ def test_individuals_selection_equality_individuals():
     requirements = GPAlgorithmParameters(selection_types=types, pop_size=num_of_inds)
     population = [one_ind for _ in range(4)]
     selection = Selection(requirements)
-    selected_individuals = selection.individuals_selection(individuals=population)
+    selected_individuals = selection(population)
     selected_individuals_ref = [str(ind) for ind in selected_individuals]
     assert (len(selected_individuals) == num_of_inds and
             len(set(selected_individuals_ref)) == 1)
