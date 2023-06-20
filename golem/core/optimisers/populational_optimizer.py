@@ -94,7 +94,7 @@ class PopulationalOptimizer(GraphOptimizer):
             while not self.stop_optimization():
                 try:
                     new_population = self._evolve_population(evaluator)
-                    if self.graph_optimizer_params.check_structure_uniqueness and \
+                    if self.graph_optimizer_params.check_structure_diversity and \
                             self.generations.generation_num % 5 == 0 and self.generations.generation_num != 0:
                         new_population = self._get_structure_unique_population(population=new_population)
                 except EvaluationAttemptsError as ex:
