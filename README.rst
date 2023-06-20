@@ -192,7 +192,7 @@ GOLEM можно установить с помощью ``pip``:
    :alt: Build Status
    :target: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml
 
-.. |integration| image:: https://github.com/aimclub/GOLEM/workflows/integration-build.yml/badge.svg?branch=main
+.. |integration| image:: https://github.com/aimclub/GOLEM/actions/workflows/integration-build.yml/badge.svg?branch=main
    :alt: Integration Build Status
    :target: https://github.com/aimclub/GOLEM/actions/workflows/integration-build.yml
 
