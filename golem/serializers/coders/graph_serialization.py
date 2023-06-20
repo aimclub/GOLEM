@@ -33,11 +33,7 @@ def _reassign_edges_by_node_ids(nodes: Sequence[Union[LinkedGraphNode, dict]]):
             lookup_dict[node.uid] = node
 
     for node in nodes:
-        if isinstance(node, dict):
-            if node['_nodes_from']:
-                for parent_node_idx, parent_node_uid in enumerate(node['_nodes_from']):
-                    node['_nodes_from'][parent_node_idx] = lookup_dict.get(parent_node_uid, None)
-        else:
-            if node.nodes_from:
-                for parent_node_idx, parent_node_uid in enumerate(node.nodes_from):
-                    node.nodes_from[parent_node_idx] = lookup_dict.get(parent_node_uid, None)
+        nodes_from = node['_nodes_from'] if isinstance(node, dict) else node.nodes_from
+        if nodes_from:
+            for parent_node_idx, parent_node_uid in enumerate(nodes_from):
+                nodes_from[parent_node_idx] = lookup_dict.get(parent_node_uid, None)
