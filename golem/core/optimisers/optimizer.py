@@ -41,6 +41,7 @@ class AlgorithmParameters:
     max_pop_size: Optional[int] = 55
     adaptive_depth: bool = False
     adaptive_depth_max_stagnation: int = 3
+    check_structure_uniqueness: bool = True
 
 
 @dataclass

@@ -30,7 +30,9 @@ class Elitism(Operator):
     @staticmethod
     def keep_n_best_elitism(best_individuals: PopulationT, new_population: PopulationT) -> PopulationT:
         shuffle(new_population)
-        new_population[:len(best_individuals)] = best_individuals
+        not_repetitive_inds = [ind for ind in best_individuals if ind not in new_population]
+        if len(not_repetitive_inds) > 0:
+            new_population[:len(not_repetitive_inds)] = not_repetitive_inds
         return new_population
 
     @staticmethod

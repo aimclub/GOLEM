@@ -1,8 +1,10 @@
+import math
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Dict
 
 from tqdm import tqdm
 
+from golem.core.constants import MIN_POP_SIZE
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
@@ -13,6 +15,7 @@ from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.utilities.grouped_condition import GroupedCondition
+from test.unit.utils import graphs_same
 
 
 class PopulationalOptimizer(GraphOptimizer):
@@ -91,6 +94,9 @@ class PopulationalOptimizer(GraphOptimizer):
             while not self.stop_optimization():
                 try:
                     new_population = self._evolve_population(evaluator)
+                    if self.graph_optimizer_params.check_structure_uniqueness and \
+                            self.generations.generation_num % 5 == 0 and self.generations.generation_num != 0:
+                        new_population = self._get_structure_unique_population(population=new_population)
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
                     return [ind.graph for ind in self.best_individuals]
@@ -132,6 +138,25 @@ class PopulationalOptimizer(GraphOptimizer):
         self.history.add_to_archive_history(self.generations.best_individuals)
         if self.requirements.history_dir:
             self.history.save_current_results(self.requirements.history_dir)
+
+    @staticmethod
+    def _get_structure_unique_population(population: PopulationT) -> PopulationT:
+        """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
+        Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
+        unique_population = [population[0]]
+        for cur_ind in population:
+            for unique_ind in unique_population:
+                if graphs_same(cur_ind.graph, unique_ind.graph):
+                    break
+            else:
+                unique_population.append(cur_ind)
+
+        # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
+        if len(unique_population) < MIN_POP_SIZE:
+            n = math.ceil(MIN_POP_SIZE / len(unique_population))
+            unique_population = \
+                sorted(unique_population, key=lambda pos_ind: pos_ind.fitness, reverse=True)*n[:MIN_POP_SIZE]
+        return unique_population
 
     @property
     def _progressbar(self):

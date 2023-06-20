@@ -71,7 +71,9 @@ class Mutation(Operator):
         if isinstance(population, Individual):
             return self._mutation(population)[0]
         mutated_population, mutations_applied = unzip(map(self._mutation, population))
-        return mutated_population
+        # drop individuals to which mutations could not be applied
+        final_population = [i for i, j in zip(mutated_population, mutations_applied) if j is not None]
+        return final_population
 
     def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
         """ Function applies mutation operator to graph """
