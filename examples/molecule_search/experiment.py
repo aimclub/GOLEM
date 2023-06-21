@@ -26,7 +26,6 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
-from golem.visualisation.opt_viz import OptHistoryVisualizer
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
 
@@ -107,10 +106,11 @@ def visualize_results(molecules: Iterable[MolGraph],
 
     # Plot pareto front (if multi-objective)
     if objective.is_multi_objective:
-        visualise_pareto(history.archive_history[-1], objectives_names=objective.metric_names[:2], folder=str(save_path))
+        visualise_pareto(history.archive_history[-1],
+                         objectives_names=objective.metric_names[:2],
+                         folder=str(save_path))
 
     # Plot fitness convergence
-    pass
     history.show.fitness_line(dpi=100, save_path=save_path / 'fitness_line.png')
     # Plot diversity
     history.show.diversity_population(save_path=save_path / 'diversity.gif')

@@ -311,14 +311,13 @@ def plot_average_fitness_line_per_generations(
         label: Optional[str] = None,
         metric_id: int = 0,
         with_confidence: bool = True,
-        z_score: float = 1.96  # z-score for 95% confidence value
-        ):
+        z_score: float = 1.96):
     """Plots average fitness line per number of histories
-    with confidence interval for given z-score (default z is for 95% confidence)."""
+    with confidence interval for given z-score (default z=1.96 is for 95% confidence)."""
 
     trial_fitnesses: List[List[float]] = []
     for history in histories:
-        best_fitnesses, _,_ = find_best_running_fitness(history.generations, metric_id)
+        best_fitnesses, _, _ = find_best_running_fitness(history.generations, metric_id)
         trial_fitnesses.append(best_fitnesses)
 
     # Get average fitness value with confidence values
