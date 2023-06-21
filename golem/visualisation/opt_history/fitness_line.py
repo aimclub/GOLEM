@@ -2,8 +2,8 @@ import functools
 import os
 from datetime import datetime
 from pathlib import Path
-from statistics import mean
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from statistics import mean, stdev
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING, Sequence
 
 import matplotlib as mpl
 import numpy as np
@@ -258,12 +258,16 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
     """ Class to compare fitness changes during optimization process.
     :param histories_to_compare: dictionary with labels to display as keys and histories as values. """
 
-    def __init__(self, histories_to_compare: Dict[str, List['OptHistory']], visuals_params: Dict[str, Any] = None):
+    def __init__(self,
+                 histories_to_compare: Dict[str, Sequence['OptHistory']],
+                 visuals_params: Dict[str, Any] = None):
         self.histories_to_compare = histories_to_compare
         self.visuals_params = visuals_params or {}
         self.log = default_log(self)
 
-    def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None):
+    def visualize(self,
+                  save_path: Optional[Union[os.PathLike, str]] = None,
+                  dpi: Optional[int] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
         :param save_path: path to save the visualization. If set, then the image will be saved,
             and if not, it will be displayed.
@@ -274,20 +278,24 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         xlabel = 'Generation'
-        self.plot_multiple_fitness_lines(ax=ax)
+        self.plot_multiple_fitness_lines(ax)
         setup_fitness_plot(ax, xlabel)
         plt.legend()
         show_or_save_figure(fig, save_path, dpi)
 
-    def plot_multiple_fitness_lines(self, ax: plt.axis):
+    def plot_multiple_fitness_lines(self, ax: plt.axis, with_confidence: bool = True):
         for histories, label in zip(list(self.histories_to_compare.values()), list(self.histories_to_compare.keys())):
-            plot_average_fitness_line_per_generations(axis=ax, histories=histories, label=label)
+            plot_average_fitness_line_per_generations(ax, histories, label, with_confidence)
 
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
 
 
-def plot_average_fitness_line_per_generations(axis: plt.Axes, histories, label: Optional[str] = None):
+def plot_average_fitness_line_per_generations(axis: plt.Axes,
+                                              histories: Sequence['OptHistory'],
+                                              label: Optional[str] = None,
+                                              with_confidence: bool = True
+                                              ):
     """ Plots average fitness line. """
     best_fitness = null_fitness()
     best_individuals = {}
@@ -316,8 +324,9 @@ def plot_average_fitness_line_per_generations(axis: plt.Axes, histories, label: 
 
         fitness_value_per_generation.append(best_fitnesses)
 
-    # get average fitness value
+    # Get average fitness value with confidence values
     average_fitness_per_gen = []
+    confidence_fitness_per_gen = []
     max_len = max(len(i) for i in fitness_value_per_generation)
     for i in range(max_len):
         all_fitness_gen = []
@@ -325,4 +334,15 @@ def plot_average_fitness_line_per_generations(axis: plt.Axes, histories, label: 
             if i < len(fitnesses):
                 all_fitness_gen.append(fitnesses[i])
         average_fitness_per_gen.append(mean(all_fitness_gen))
-    axis.plot(range(len(average_fitness_per_gen)), average_fitness_per_gen, label=label)
+        confidence = stdev(all_fitness_gen) / np.sqrt(len(all_fitness_gen))
+        confidence_fitness_per_gen.append(confidence)
+
+    # Compute confidence interval
+    z_score = 1.96  # z-score for 95% confidence value
+    xs = np.arange(len(average_fitness_per_gen))
+    ys = np.array(average_fitness_per_gen)
+    ci = z_score * np.array(confidence_fitness_per_gen)
+
+    axis.plot(xs, average_fitness_per_gen, label=label)
+    if with_confidence:
+        axis.fill_between(xs, (ys - ci), (ys + ci), alpha=.2)
