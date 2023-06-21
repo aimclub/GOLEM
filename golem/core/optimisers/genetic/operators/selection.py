@@ -14,13 +14,16 @@ class SelectionTypesEnum(Enum):
 
 
 class Selection(Operator):
-    def __call__(self, population: PopulationT) -> PopulationT:
+    def __call__(self, population: PopulationT, pop_size: Optional[int] = None) -> PopulationT:
         """
         Selection of individuals based on specified type of selection
         :param population: A list of individuals to select from.
+        :param pop_size: Optional custom population_size.
+        Taken from algorithm parameters if not specified.
         """
+        pop_size = pop_size or self.parameters.pop_size
         selection_type = choice(self.parameters.selection_types)
-        return self._selection_by_type(selection_type)(population, self.parameters.pop_size)
+        return self._selection_by_type(selection_type)(population, pop_size)
 
     @staticmethod
     def _selection_by_type(selection_type: SelectionTypesEnum) -> Callable[[PopulationT, int], PopulationT]:
@@ -32,9 +35,6 @@ class Selection(Operator):
             return selections[selection_type]
         else:
             raise ValueError(f'Required selection not found: {selection_type}')
-
-    def individuals_selection(self, individuals: PopulationT) -> PopulationT:
-        return self.__call__(individuals)
 
 
 def default_selection_behaviour(selection_func: Optional[Callable] = None, *, ensure_unique: bool = True,

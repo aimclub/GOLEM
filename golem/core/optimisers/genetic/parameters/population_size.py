@@ -1,18 +1,16 @@
 import math
 from typing import Optional
 
-from .parameter import AdaptiveParameter
-from golem.core.utilities.data_structures import BidirectionalIterator
-from golem.core.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
-from ..gp_params import GPAlgorithmParameters
+from golem.core.constants import MIN_POP_SIZE
 from golem.core.optimisers.archive.generation_keeper import ImprovementWatcher
+from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT
+from golem.core.optimisers.genetic.parameters.parameter import AdaptiveParameter
+from golem.core.utilities.data_structures import BidirectionalIterator
+from golem.core.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
 
 PopulationSize = AdaptiveParameter[int]
-
-# min pop size to avoid getting stuck in local maximum during optimization
-MIN_POP_SIZE = 5
 
 
 class ConstRatePopulationSize(PopulationSize):
@@ -56,7 +54,7 @@ class AdaptivePopulationSize(PopulationSize):
         no_progress = not fitness_improved and not complexity_decreased
         pop_size = len(population)
         too_many_fitness_eval_errors = \
-            pop_size/self._iterator.current() < 0.5
+            pop_size / self._iterator.current() < 0.5
 
         if too_many_fitness_eval_errors or no_progress:
             if self._iterator.has_next():
