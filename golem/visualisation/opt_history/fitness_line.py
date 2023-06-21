@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from statistics import mean, stdev
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING, Sequence
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING, Sequence, Tuple
 
 import matplotlib as mpl
 import numpy as np
@@ -109,30 +109,44 @@ def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str]
     return best_individuals
 
 
-def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Optional[str] = None) \
-        -> Dict[int, Individual]:
-    best_fitness = null_fitness()
+def find_best_running_fitness(generations: Sequence[Sequence[Individual]],
+                              metric_id: int = 0,
+                              ) -> Tuple[List[float], List[int], Dict[int, Individual]]:
+    """For each trial history per each generation find the best fitness *seen so far*.
+    Returns tuple:
+    - list of best seen metric up to that generation,
+    - list of indices where current best individual belongs.
+    - dict mapping of best index to best individuals
+    """
+    best_metric = np.inf  # Assuming metric minimization
     best_individuals = {}
 
+    # Core logic
     for gen_num, gen in enumerate(generations):
         for ind in gen:
             if ind.native_generation != gen_num:
                 continue
-            if ind.fitness > best_fitness:
+            target_metric = ind.fitness.values[metric_id]
+            if target_metric <= best_metric:
                 best_individuals[gen_num] = ind
-                best_fitness = ind.fitness
+                best_metric = target_metric
 
-    best_generations, best_fitnesses = np.transpose(
-        [(gen_num, abs(individual.fitness.value))
+    # Additional unwrapping of the data for simpler plotting
+    best_generations, best_metrics = np.transpose(
+        [(gen_num, abs(individual.fitness.values[metric_id]))
          for gen_num, individual in best_individuals.items()])
-
     best_generations = list(best_generations)
-    best_fitnesses = list(best_fitnesses)
-
+    best_metrics = list(best_metrics)
     if best_generations[-1] != len(generations) - 1:
-        best_fitnesses.append(abs(best_fitness.value))
+        best_metrics.append(abs(best_metric))
         best_generations.append(len(generations) - 1)
 
+    return best_metrics, best_generations, best_individuals
+
+
+def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Optional[str] = None) \
+        -> Dict[int, Individual]:
+    best_fitnesses, best_generations, best_individuals = find_best_running_fitness(generations, metric_id=0)
     axis.step(best_generations, best_fitnesses, where='post', label=label)
     axis.set_xticks(range(len(generations)))
     axis.locator_params(nbins=10)
@@ -291,46 +305,29 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
         return self.visuals_params.get(param)
 
 
-def plot_average_fitness_line_per_generations(axis: plt.Axes,
-                                              histories: Sequence['OptHistory'],
-                                              label: Optional[str] = None,
-                                              with_confidence: bool = True
-                                              ):
-    """ Plots average fitness line. """
-    best_fitness = null_fitness()
-    best_individuals = {}
+def plot_average_fitness_line_per_generations(
+        axis: plt.Axes,
+        histories: Sequence['OptHistory'],
+        label: Optional[str] = None,
+        metric_id: int = 0,
+        with_confidence: bool = True,
+        z_score: float = 1.96  # z-score for 95% confidence value
+        ):
+    """Plots average fitness line per number of histories
+    with confidence interval for given z-score (default z is for 95% confidence)."""
 
-    fitness_value_per_generation = []
+    trial_fitnesses: List[List[float]] = []
     for history in histories:
-        generations = history.generations
-        for gen_num, gen in enumerate(generations):
-            for ind in gen:
-                if ind.native_generation != gen_num:
-                    continue
-                if ind.fitness > best_fitness:
-                    best_individuals[gen_num] = ind
-                    best_fitness = ind.fitness
-
-        best_generations, best_fitnesses = np.transpose(
-            [(gen_num, abs(individual.fitness.value))
-             for gen_num, individual in best_individuals.items()])
-
-        best_generations = list(best_generations)
-        best_fitnesses = list(best_fitnesses)
-
-        if best_generations[-1] != len(generations) - 1:
-            best_fitnesses.append(abs(best_fitness.value))
-            best_generations.append(len(generations) - 1)
-
-        fitness_value_per_generation.append(best_fitnesses)
+        best_fitnesses, _,_ = find_best_running_fitness(history.generations, metric_id)
+        trial_fitnesses.append(best_fitnesses)
 
     # Get average fitness value with confidence values
     average_fitness_per_gen = []
     confidence_fitness_per_gen = []
-    max_len = max(len(i) for i in fitness_value_per_generation)
-    for i in range(max_len):
+    max_generations = max(len(i) for i in trial_fitnesses)
+    for i in range(max_generations):
         all_fitness_gen = []
-        for fitnesses in fitness_value_per_generation:
+        for fitnesses in trial_fitnesses:
             if i < len(fitnesses):
                 all_fitness_gen.append(fitnesses[i])
         average_fitness_per_gen.append(mean(all_fitness_gen))
@@ -338,7 +335,6 @@ def plot_average_fitness_line_per_generations(axis: plt.Axes,
         confidence_fitness_per_gen.append(confidence)
 
     # Compute confidence interval
-    z_score = 1.96  # z-score for 95% confidence value
     xs = np.arange(len(average_fitness_per_gen))
     ys = np.array(average_fitness_per_gen)
     ci = z_score * np.array(confidence_fitness_per_gen)
