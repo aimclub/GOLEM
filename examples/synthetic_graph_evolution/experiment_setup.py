@@ -3,7 +3,7 @@ from functools import partial
 from io import StringIO
 from itertools import product
 from pathlib import Path
-from typing import Sequence, Type, Callable, Optional
+from typing import Sequence, Type, Callable, Optional, List
 
 import networkx as nx
 import numpy as np
@@ -98,10 +98,12 @@ def run_trial(target_graph: nx.DiGraph,
               optimizer_setup: Callable,
               optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
               timeout: Optional[timedelta] = None,
-              num_iterations: Optional[int] = None):
+              num_iterations: Optional[int] = None,
+              node_types: Optional[List[str]] = None):
     optimizer, objective = optimizer_setup(target_graph,
                                            optimizer_cls=optimizer_cls,
                                            timeout=timeout,
+                                           node_types=node_types,
                                            num_iterations=num_iterations)
     found_graphs = optimizer.optimise(objective)
     found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs

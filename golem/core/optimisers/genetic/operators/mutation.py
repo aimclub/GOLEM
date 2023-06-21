@@ -70,11 +70,14 @@ class Mutation(Operator):
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
             mutated_population, mutations_applied = unzip(map(self._mutation, [population]))
-            result = mutated_population[0] if mutations_applied[0] is not None else []
+            result = mutated_population[0] \
+                if mutations_applied[0] is None or population.graph != mutated_population[0].graph \
+                else []
             return result
         mutated_population, mutations_applied = unzip(map(self._mutation, population))
         # drop individuals to which mutations could not be applied
-        final_population = [i for i, j in zip(mutated_population, mutations_applied) if j is not None]
+        final_population = [i for i, j, e in zip(mutated_population, population, mutations_applied)
+                            if e is None or i.graph != j.graph]
         return final_population
 
     def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
@@ -83,9 +86,10 @@ class Mutation(Operator):
         for _ in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
 
-            new_graph, mutation_applied = self._apply_mutations(new_graph)
-            if mutation_applied is None:
+            new_graph, cur_mutation_applied = self._apply_mutations(new_graph)
+            if cur_mutation_applied is None:
                 continue
+            mutation_applied = cur_mutation_applied
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation',
