@@ -69,27 +69,29 @@ class Mutation(Operator):
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
-            mutated_population, mutations_applied = unzip(map(self._mutation, [population]))
-            result = mutated_population[0] \
-                if mutations_applied[0] is None or population.graph != mutated_population[0].graph \
-                else []
-            return result
-        mutated_population, mutations_applied = unzip(map(self._mutation, population))
+            population = [population]
+
+        final_population, mutations_applied, is_applied = tuple(zip(*map(self._mutation, population)))
+
         # drop individuals to which mutations could not be applied
-        final_population = [i for i, j, e in zip(mutated_population, population, mutations_applied)
-                            if e is None or i.graph != j.graph]
+        final_population = [i for i, j, e in zip(final_population, population, is_applied)
+                            if not e or i.graph != j.graph]
+        if len(population) == 1:
+            return final_population[0] if final_population else final_population
+
         return final_population
 
-    def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
+    def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType], bool]:
         """ Function applies mutation operator to graph """
+        is_applied = False
         mutation_applied = None
         for _ in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
 
-            new_graph, cur_mutation_applied = self._apply_mutations(new_graph)
-            if cur_mutation_applied is None:
+            new_graph, mutation_applied = self._apply_mutations(new_graph)
+            if mutation_applied is None:
                 continue
-            mutation_applied = cur_mutation_applied
+            is_applied = True
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation',
@@ -104,7 +106,7 @@ class Mutation(Operator):
         else:
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')
-        return individual, mutation_applied
+        return individual, mutation_applied, is_applied
 
     def _sample_num_of_mutations(self) -> int:
         # most of the time returns 1 or rarely several mutations
