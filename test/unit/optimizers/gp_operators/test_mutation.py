@@ -222,3 +222,19 @@ def test_mutation_with_zero_prob(mutation_type):
 
     assert new_ind.graph == ind.graph
     assert new_ind.uid == ind.uid
+
+
+def test_mutation_with_max_prob():
+    """ Checks that individual is not included in next population if mutation was not applied
+    due to inability to do this, not the probability  """
+    adapter = DirectAdapter()
+    params = get_mutation_params([MutationTypesEnum.none], mutation_prob=1)
+    mutation = Mutation(**params)
+
+    ind = Individual(adapter.adapt(graph_with_single_node()))
+    new_ind = mutation(ind)
+    assert new_ind == []
+
+    population = [ind, ind]
+    new_population = mutation(population)
+    assert new_population == []

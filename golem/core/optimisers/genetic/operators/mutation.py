@@ -69,7 +69,9 @@ class Mutation(Operator):
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
-            return self._mutation(population)[0]
+            mutated_population, mutations_applied = unzip(map(self._mutation, [population]))
+            result = mutated_population[0] if mutations_applied[0] is not None else []
+            return result
         mutated_population, mutations_applied = unzip(map(self._mutation, population))
         # drop individuals to which mutations could not be applied
         final_population = [i for i, j in zip(mutated_population, mutations_applied) if j is not None]

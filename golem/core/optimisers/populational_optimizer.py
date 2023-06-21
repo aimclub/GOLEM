@@ -96,7 +96,7 @@ class PopulationalOptimizer(GraphOptimizer):
                     new_population = self._evolve_population(evaluator)
                     if self.graph_optimizer_params.check_structure_diversity and \
                             self.generations.generation_num % 5 == 0 and self.generations.generation_num != 0:
-                        new_population = self._get_structure_unique_population(population=new_population)
+                        new_population = self.get_structure_unique_population(population=new_population)
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
                     return [ind.graph for ind in self.best_individuals]
@@ -140,7 +140,7 @@ class PopulationalOptimizer(GraphOptimizer):
             self.history.save_current_results(self.requirements.history_dir)
 
     @staticmethod
-    def _get_structure_unique_population(population: PopulationT) -> PopulationT:
+    def get_structure_unique_population(population: PopulationT) -> PopulationT:
         """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
         Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
         unique_population = [population[0]]
@@ -154,8 +154,8 @@ class PopulationalOptimizer(GraphOptimizer):
         # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
         if len(unique_population) < MIN_POP_SIZE:
             n = math.ceil(MIN_POP_SIZE / len(unique_population))
-            unique_population = \
-                sorted(unique_population, key=lambda pos_ind: pos_ind.fitness, reverse=True)*n[:MIN_POP_SIZE]
+            unique_population = sorted(unique_population, key=lambda pos_ind: pos_ind.fitness, reverse=True)*n
+            unique_population = unique_population[:MIN_POP_SIZE]
         return unique_population
 
     @property
