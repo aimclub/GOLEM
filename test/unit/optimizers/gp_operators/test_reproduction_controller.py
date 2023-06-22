@@ -94,7 +94,7 @@ def test_too_little_valid_evals(reproducer: ReproductionController, success_rate
         reproducer.reproduce(pop, evaluator)
 
 
-@pytest.mark.parametrize('success_rate', [0.18, 0.2])
+@pytest.mark.parametrize('success_rate', [0.16, 0.2])
 def test_minimal_valid_evals(reproducer: ReproductionController, success_rate: float):
     parameters = reproducer.parameters
     evaluator = MockEvaluator(success_rate)
