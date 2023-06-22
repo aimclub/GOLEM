@@ -143,13 +143,14 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         """ Shows the amount of successfully evaluated individuals and total number of individuals in population.
          If there are more that 50% of successful evaluations than it's more likely
          there is no problem in optimization process. """
-        if evaluated_pop_size / pop_size > STAGNATION_EVALUATION_PERCENTAGE:
+        if pop_size == 0 or evaluated_pop_size / pop_size <= STAGNATION_EVALUATION_PERCENTAGE:
+            success_rate = evaluated_pop_size / pop_size if pop_size != 0 else 0
+            self.logger.warning(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
+                                f"were evaluated successfully. {success_rate}% "
+                                f"is a fairly small percentage of successful evaluation.")
+        else:
             self.logger.message(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
                                 f"were evaluated successfully.")
-        else:
-            self.logger.warning(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
-                                f"were evaluated successfully. {evaluated_pop_size / pop_size}% "
-                                f"is a fairly small percentage of successful evaluation.")
 
     @abstractmethod
     def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
