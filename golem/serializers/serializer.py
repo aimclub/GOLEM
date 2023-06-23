@@ -58,6 +58,10 @@ LEGACY_MODULE_PATHS = {
 }
 
 
+class OptinalUnion:
+    pass
+
+
 class Serializer(JSONEncoder, JSONDecoder):
     _to_json = 'to_json'
     _from_json = 'from_json'
@@ -224,7 +228,7 @@ class Serializer(JSONEncoder, JSONDecoder):
         return JSONEncoder.default(self, obj)
 
     @staticmethod
-    def _get_class(class_path: str) -> Type[INSTANCE_OR_CALLABLE]:
+    def _get_class(json_obj: dict) -> Optional[Type[INSTANCE_OR_CALLABLE]]:
         """
         Gets the object type from the class_path
 
@@ -232,14 +236,19 @@ class Serializer(JSONEncoder, JSONDecoder):
 
         :return: class, function or method type
         """
+        class_path = json_obj[CLASS_PATH_KEY]
         class_path = LEGACY_CLASS_PATHS.get(class_path, class_path)
         module_name, class_name = class_path.split(MODULE_X_NAME_DELIMITER)
         module_name = Serializer._legacy_module_map(module_name)
 
-        obj_cls = import_module(module_name)
-        for sub in class_name.split('.'):
-            obj_cls = getattr(obj_cls, sub)
-        return obj_cls
+        try:
+            obj_cls = import_module(module_name)
+            for sub in class_name.split('.'):
+                obj_cls = getattr(obj_cls, sub)
+            return obj_cls
+
+        except ImportError as ex:
+            return Serializer._serialize_as_base_class(json_obj, ex)
 
     @staticmethod
     def _legacy_module_map(module_path: str) -> str:
@@ -253,25 +262,22 @@ class Serializer(JSONEncoder, JSONDecoder):
         return hasattr(method, '__self__')
 
     @staticmethod
-    def _serialize_as_base_class(json_obj: dict, ex: ImportError) -> Union[LinkedGraph, LinkedGraphNode, dict]:
+    def _serialize_as_base_class(json_obj: dict, ex: ImportError)\
+            -> Optional[Union[Type[LinkedGraph], Type[LinkedGraphNode]]]:
         linked_graph_keys = {'_nodes', '_postprocess_nodes'}
         linked_node_keys = {'content', '_nodes_from', 'uid'}
         if linked_graph_keys.issubset(json_obj.keys()):
-            obj = LinkedGraph()
-            vars(obj).update(**{k: v for k, v in json_obj.items() if k in linked_graph_keys})
             default_log('Serializer').info(f'Object was decoded as LinkedGraph and not as an original class '
                                            f'because of an ImportError: {ex}.')
-            return obj
+            return LinkedGraph
         elif linked_node_keys.issubset(json_obj.keys()):
-            obj = LinkedGraphNode.__new__(LinkedGraphNode)
-            vars(obj).update(**{k: v for k, v in json_obj.items() if k in linked_node_keys})
             default_log('Serializer').info(f'Object was decoded as LinkedGraphNode and not as an original class '
                                            f'because of an ImportError: {ex}.')
-            return obj
+            return LinkedGraphNode
         else:
             default_log('Serializer').info(f'Object was not decoded and will be stored as a dict '
                                            f'because of an ImportError: {ex}.')
-            return json_obj
+            return None
 
     @staticmethod
     def object_hook(json_obj: Dict[str, Any]) -> Union[INSTANCE_OR_CALLABLE, dict]:
@@ -284,10 +290,7 @@ class Serializer(JSONEncoder, JSONDecoder):
         :return: Python class, function or method object OR input if it's just a regular dict
         """
         if CLASS_PATH_KEY in json_obj:
-            try:
-                obj_cls = Serializer._get_class(json_obj[CLASS_PATH_KEY])
-            except ImportError as ex:
-                return Serializer._serialize_as_base_class(json_obj, ex)
+            obj_cls = Serializer._get_class(json_obj)
             del json_obj[CLASS_PATH_KEY]
             base_type = Serializer._get_base_type(obj_cls)
             if isclass(obj_cls) and base_type is not None:
@@ -299,6 +302,8 @@ class Serializer(JSONEncoder, JSONDecoder):
                     return coder(obj_cls, json_obj)
             elif isfunction(obj_cls) or ismethod(obj_cls):
                 return obj_cls
+            elif obj_cls is None:
+                return json_obj
             raise TypeError(f'Parsed obj_cls={obj_cls} is not serializable, but should be')
         return json_obj
 
