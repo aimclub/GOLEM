@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import TypeVar, Generic, Optional, Union, Sequence, List
+from typing import TypeVar, Generic, Optional, Union, Sequence
 
 import numpy as np
 
@@ -93,7 +93,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
                          f'Initial metric: '
                          f'{list(map(lambda x: round(abs(x), 3), ensure_wrapped_in_sequence(self.init_metric)))}')
 
-    def final_check(self, tuned_graphs: Union[OptGraph, Sequence[OptGraph]], multi_obj: bool = False) -> OptGraph:
+    def final_check(self, tuned_graphs: Union[OptGraph, Sequence[OptGraph]], multi_obj: bool = False) \
+            -> Union[OptGraph, Sequence[OptGraph]]:
         """
         Method propose final quality check after optimization process
 
@@ -141,7 +142,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.log.message('Final metric is None')
         return final_graph
 
-    def _multi_obj_final_check(self, tuned_graphs: Sequence[OptGraph]):
+    def _multi_obj_final_check(self, tuned_graphs: Sequence[OptGraph]) -> Sequence[OptGraph]:
         self.obtained_metric = []
         final_graphs = []
         for tuned_graph in tuned_graphs:

@@ -1,9 +1,11 @@
 Tuning of graph parameters
 ==========================
 
-``SimultaneousTuner``, ``IOptTuner`` and ``SequentialTuner`` work with internal graph representation (also called `optimization graph`, see `Adaptation of Graphs`_).
+All tuners work with internal graph representation (also called `optimization graph`, see `Adaptation of Graphs`_).
 To optimise custom domain graph pass ``adapter``. If your graph class is inherited from ``OptGraph`` no adapter is needed.
 Tuners optimise parameters stored in ``OptNode.parameters``.
+
+Multi-objective optimisation is supported only by ``OptunaTuner``.
 
 To specify parameters search space use ``SearchSpace`` class.
 Initialize ``SearchSpace`` with dictionary of the form
@@ -45,7 +47,7 @@ Three types of parameters are available: `continuous`, `discrete` and `categoric
 Simultaneous
 ~~~~~~~~~~~~
 
-You can tune all parameters of graph nodes simultaneously using ``SimultaneousTuner`` or ``IOptTuner``.
+You can tune all parameters of graph nodes simultaneously using ``SimultaneousTuner``, ``OptunaTuner`` or ``IOptTuner``.
 
 .. note::
    ``IOptTuner`` implements deterministic algorithm.

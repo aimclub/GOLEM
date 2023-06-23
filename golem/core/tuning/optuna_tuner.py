@@ -8,7 +8,6 @@ from optuna import Trial, Study
 from optuna.trial import FrozenTrial
 
 from golem.core.adapter import BaseOptimizationAdapter
-from golem.core.optimisers.fitness import MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
@@ -133,9 +132,3 @@ class OptunaTuner(BaseTuner):
             if should_stop:
                 self.log.debug('Early stopping rounds criteria was reached')
                 study.stop()
-
-    # def no_parameters_to_optimize_callback(self, study: Study, trial: FrozenTrial, graph: OptGraph):
-    #     parameters = study.trials[-1].params
-    #     if len(parameters) == 0:
-    #         self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
-    #         study.stop()
