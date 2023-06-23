@@ -330,7 +330,8 @@ def plot_average_fitness_line_per_generations(
             if i < len(fitnesses):
                 all_fitness_gen.append(fitnesses[i])
         average_fitness_per_gen.append(mean(all_fitness_gen))
-        confidence = stdev(all_fitness_gen) / np.sqrt(len(all_fitness_gen))
+        confidence = stdev(all_fitness_gen) / np.sqrt(len(all_fitness_gen)) \
+            if len(all_fitness_gen) >= 2 else 0.
         confidence_fitness_per_gen.append(confidence)
 
     # Compute confidence interval
