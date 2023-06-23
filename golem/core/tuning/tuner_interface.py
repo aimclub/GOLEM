@@ -73,6 +73,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         Returns:
           Graph with optimized hyperparameters
+          or pareto front of optimized graphs in case of multi-objective optimization
         """
         raise NotImplementedError()
 

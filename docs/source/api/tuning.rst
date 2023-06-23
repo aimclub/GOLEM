@@ -66,6 +66,9 @@ You can tune all parameters of graph nodes simultaneously using ``SimultaneousTu
 .. autoclass:: golem.core.tuning.iopt_tuner.IOptTuner
    :members:
 
+.. autoclass:: golem.core.tuning.optuna_tuner.OptunaTuner
+   :members:
+
 Sequential
 ~~~~~~~~~~
 
