@@ -153,7 +153,6 @@ class BaseTuner(Generic[DomainGraphForTune]):
                     obtained_metric[e] = None
             if not MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
                 self.obtained_metric.append(obtained_metric)
-                self.was_tuned = True
                 final_graphs.append(tuned_graph)
         if final_graphs:
             metrics_formated = '\n'.join([str(list(map(lambda x: str(round(x, 3)), metric)))

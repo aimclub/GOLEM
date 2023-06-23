@@ -44,12 +44,12 @@ class OptunaTuner(BaseTuner):
 
         study = optuna.create_study(directions=['minimize'] * self.objectives_number)
 
-        # Enqueue initial point to try
         init_parameters, has_parameters_to_optimize = self._get_initial_point(graph)
         if not has_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
             tuned_graphs = self.init_graph
         else:
+            # Enqueue initial point to try
             if init_parameters:
                 study.enqueue_trial(init_parameters)
 
@@ -72,8 +72,8 @@ class OptunaTuner(BaseTuner):
                     tuned_graphs.append(tuned_graph)
                     self.was_tuned = True
         final_graphs = self.final_check(tuned_graphs, is_multi_objective)
-        tuned_graphs = self.adapter.restore(final_graphs)
-        return tuned_graphs
+        final_graphs = self.adapter.restore(final_graphs)
+        return final_graphs
 
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Tuple[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)
