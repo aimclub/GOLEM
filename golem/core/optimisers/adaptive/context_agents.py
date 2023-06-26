@@ -9,12 +9,23 @@ from golem.core.adapter.nx_adapter import BanditNetworkxAdapter, BaseNetworkxAda
 from golem.core.optimisers.opt_history_objects.individual import Individual
 
 
-def adapter_func(func):
+def adapter_func_to_networkx(func):
     """ Decorator function to adapt observation to networkx graphs. """
-    def wrapper(obs):
+    def wrapper(obs, available_operations):
         nx_graph = BanditNetworkxAdapter().restore(obs)
-        embedding = func(nx_graph)
+        embedding = func(nx_graph, available_operations)
         return embedding
+    return wrapper
+
+
+def adapter_func_to_graph(func):
+    """ Decorator function to adapt observation to networkx graphs. """
+    def wrapper(obs, available_operations):
+        if isinstance(obs, Individual):
+            graph = obs.graph
+        else:
+            graph = obs
+        return func(graph, available_operations)
     return wrapper
 
 
@@ -35,7 +46,7 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
     return encoded
 
 
-@adapter_func
+@adapter_func_to_networkx
 def feather_graph(obs: Any, available_operations: List[str]) -> List[float]:
     """ Returns embedding based on an implementation of `"FEATHER-G" <https://arxiv.org/abs/2005.07959>`_.
     The procedure uses characteristic functions of node features with random walk weights to describe
@@ -48,32 +59,28 @@ def feather_graph(obs: Any, available_operations: List[str]) -> List[float]:
     return embd
 
 
+@adapter_func_to_graph
 def nodes_num(obs: Any, available_operations: List[str]) -> List[int]:
     """ Returns number of nodes in graph. """
-    if isinstance(obs, Individual):
-        return [len(obs.graph.nodes)]
-    else:
-        return [len(obs.nodes)]
+    return [len(obs.nodes)]
 
 
+@adapter_func_to_graph
 def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graph with its edges with nodes labels. """
     operations = []
-    for node in obs.graph.nodes:
+    for node in obs.nodes:
         for node_ in node.nodes_from:
             operations.append(node_.name)
             operations.append(node.name)
     return encode_operations(operations=operations, available_operations=available_operations)
 
 
+@adapter_func_to_graph
 def operations_encoding(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graphs as vectors with quantity of each operation. """
     encoding = [0] * len(available_operations)
-    if isinstance(obs, Individual):
-        graph = obs.graph
-    else:
-        graph = obs
-    for node in graph.nodes:
+    for node in obs.nodes:
         encoding[available_operations.index(node.name)] += 1
     return encoding
 
