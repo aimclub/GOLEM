@@ -16,9 +16,15 @@ def get_opt_graph():
 
 
 @pytest.mark.parametrize('context_agent_enum, result_encoding',
-                         [(ContextAgentTypeEnum.operations_encoding, [1, 2, 1, 1, 1]),
-                          (ContextAgentTypeEnum.labeled_edges, [3, 4, 1, 4, 2, 4, 0, 3, 1, 3]),
-                          (ContextAgentTypeEnum.nodes_num, [6])])
+                         [(ContextAgentTypeEnum.operations_encoding,
+                           [1, 2, 1, 1, 1]),
+                          (ContextAgentTypeEnum.labeled_edges,
+                           [3, 4, 1, 4, 2, 4, 0, 3, 1, 3]),
+                          (ContextAgentTypeEnum.adjacency_matrix,
+                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]),
+                          (ContextAgentTypeEnum.nodes_num,
+                           [6])
+                          ])
 def test_operations_encoding(context_agent_enum, result_encoding):
     """ Checks the correctness of context agents output. """
     graph = get_opt_graph()

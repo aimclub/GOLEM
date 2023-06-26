@@ -2,7 +2,7 @@ from enum import Enum
 
 from typing import List, Callable, Any
 
-import networkx as nx
+import numpy as np
 from karateclub import FeatherGraph
 
 from golem.core.adapter.nx_adapter import BanditNetworkxAdapter, BaseNetworkxAdapter
@@ -85,11 +85,24 @@ def operations_encoding(obs: Any, available_operations: List[str]) -> List[int]:
     return encoding
 
 
+@adapter_func_to_graph
+def adjacency_matrix(obs: Any, available_operations: List[str]) -> List[int]:
+    """ Encodes graphs as flattened adjacency matrix. """
+    matrix = np.zeros((len(available_operations), len(available_operations)))
+    for node in obs.nodes:
+        operation_parent_idx = available_operations.index(node.name)
+        for node_ in node.nodes_from:
+            operation_child_idx = available_operations.index(node_.name)
+            matrix[operation_parent_idx][operation_child_idx] += 1
+    return matrix.reshape(1, -1)[0].astype(int).tolist()
+
+
 class ContextAgentTypeEnum(Enum):
     feather_graph = 'feather_graph'
     nodes_num = 'nodes_num'
     labeled_edges = 'labeled_edges'
     operations_encoding = 'operations_encoding'
+    adjacency_matrix = 'adjacency_matrix'
 
 
 class ContextAgentsRepository:
@@ -98,7 +111,8 @@ class ContextAgentsRepository:
         ContextAgentTypeEnum.feather_graph: feather_graph,
         ContextAgentTypeEnum.nodes_num: nodes_num,
         ContextAgentTypeEnum.labeled_edges: labeled_edges,
-        ContextAgentTypeEnum.operations_encoding: operations_encoding
+        ContextAgentTypeEnum.operations_encoding: operations_encoding,
+        ContextAgentTypeEnum.adjacency_matrix: adjacency_matrix
     }
 
     @staticmethod
