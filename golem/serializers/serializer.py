@@ -302,9 +302,8 @@ class Serializer(JSONEncoder, JSONDecoder):
                     return coder(obj_cls, json_obj)
             elif isfunction(obj_cls) or ismethod(obj_cls):
                 return obj_cls
-            elif obj_cls is None:
+            else:
                 return json_obj
-            raise TypeError(f'Parsed obj_cls={obj_cls} is not serializable, but should be')
         return json_obj
 
 
