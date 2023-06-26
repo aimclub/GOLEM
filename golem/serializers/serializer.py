@@ -248,7 +248,7 @@ class Serializer(JSONEncoder, JSONDecoder):
             return obj_cls
 
         except ImportError as ex:
-            return Serializer._serialize_as_base_class(json_obj, ex)
+            return Serializer._import_as_base_class(json_obj, ex)
 
     @staticmethod
     def _legacy_module_map(module_path: str) -> str:
@@ -262,7 +262,7 @@ class Serializer(JSONEncoder, JSONDecoder):
         return hasattr(method, '__self__')
 
     @staticmethod
-    def _serialize_as_base_class(json_obj: dict, ex: ImportError)\
+    def _import_as_base_class(json_obj: dict, ex: ImportError)\
             -> Optional[Union[Type[LinkedGraph], Type[LinkedGraphNode]]]:
         linked_graph_keys = {'_nodes', '_postprocess_nodes'}
         linked_node_keys = {'content', '_nodes_from', 'uid'}
