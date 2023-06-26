@@ -190,7 +190,7 @@ def run_experiment(optimizer_setup: Callable,
           f' std={ff(trial_metrics_std)}')
 
 
-def plot_experiment_comparison(experiment_ids: Sequence[str], results_dir='./results'):
+def plot_experiment_comparison(experiment_ids: Sequence[str], metric_id: int = 0, results_dir='./results'):
     root = Path(results_dir)
     histories = {}
     for exp_name in experiment_ids:
@@ -202,7 +202,7 @@ def plot_experiment_comparison(experiment_ids: Sequence[str], results_dir='./res
         histories[exp_name] = trials
         print(f'Loaded {len(trials)} trial histories for experiment: {exp_name}')
     # Visualize
-    MultipleFitnessLines(histories).visualize()
+    MultipleFitnessLines(histories).visualize(metric_id=metric_id)
     return histories
 
 

@@ -281,10 +281,12 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
     def visualize(self,
                   save_path: Optional[Union[os.PathLike, str]] = None,
+                  metric_id: int = 0,
                   dpi: Optional[int] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
         :param save_path: path to save the visualization. If set, then the image will be saved,
             and if not, it will be displayed.
+        :param metric_id: numeric index of the metric to visualize (for multi-objective opt-n).
         :param dpi: DPI of the output figure.
         """
         save_path = save_path or self.get_predefined_value('save_path')
@@ -292,14 +294,16 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         xlabel = 'Generation'
-        self.plot_multiple_fitness_lines(ax)
+        self.plot_multiple_fitness_lines(ax, metric_id)
         setup_fitness_plot(ax, xlabel)
         plt.legend()
         show_or_save_figure(fig, save_path, dpi)
 
-    def plot_multiple_fitness_lines(self, ax: plt.axis, with_confidence: bool = True):
+    def plot_multiple_fitness_lines(self, ax: plt.axis, metric_id: int = 0, with_confidence: bool = True):
         for histories, label in zip(list(self.histories_to_compare.values()), list(self.histories_to_compare.keys())):
-            plot_average_fitness_line_per_generations(ax, histories, label, with_confidence)
+            plot_average_fitness_line_per_generations(ax, histories, label,
+                                                      with_confidence=with_confidence,
+                                                      metric_id=metric_id)
 
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
