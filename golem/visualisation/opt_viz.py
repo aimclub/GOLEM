@@ -20,6 +20,8 @@ class PlotTypesEnum(Enum):
     fitness_line_interactive = FitnessLineInteractive
     operations_kde = OperationsKDE
     operations_animated_bar = OperationsAnimatedBar
+    diversity_line = DiversityLine
+    diversity_population = DiversityPopulation
 
     @classmethod
     def member_names(cls):
