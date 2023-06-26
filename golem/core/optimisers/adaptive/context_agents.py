@@ -5,7 +5,7 @@ from typing import List, Callable, Any
 import numpy as np
 from karateclub import FeatherGraph
 
-from golem.core.adapter.nx_adapter import BanditNetworkxAdapter, BaseNetworkxAdapter
+from golem.core.adapter.nx_adapter import BanditNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.individual import Individual
 
 
@@ -40,7 +40,7 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
         if mode == 'label':
             encoding = available_operations.index(operation)
         else:
-            encoding = [0]*len(available_operations)
+            encoding = [0] * len(available_operations)
             encoding[available_operations.index(operation)] = 1
         encoded.append(encoding)
     return encoded
