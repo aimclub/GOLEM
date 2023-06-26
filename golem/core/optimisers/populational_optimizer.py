@@ -154,7 +154,7 @@ class PopulationalOptimizer(GraphOptimizer):
         # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
         if len(unique_population) < MIN_POP_SIZE:
             n = math.ceil(MIN_POP_SIZE / len(unique_population))
-            unique_population = sorted(unique_population, key=lambda pos_ind: pos_ind.fitness, reverse=True)*n
+            unique_population = sorted(unique_population, key=lambda pos_ind: pos_ind.fitness, reverse=True) * n
             unique_population = unique_population[:MIN_POP_SIZE]
         return unique_population
 

@@ -30,7 +30,7 @@ def population_with_structural_duplicates(operations: List[str]):
     adapter = DirectAdapter()
     population = []
     for op in operations:
-        population += [Individual(adapter.adapt(get_graph_with_operation(operation=op)))]*2
+        population += [Individual(adapter.adapt(get_graph_with_operation(operation=op)))] * 2
     return population
 
 
@@ -86,7 +86,6 @@ def test_replace_subtree():
                           ([graph_second(), graph_third()], [0, 15]),
                           ([graph_third(), graph_third()], [1, 10])])
 def test_graphs_equivalent_subtree(graphs_to_search_in, subgraphs_counts):
-
     graph_1, graph_2 = graphs_to_search_in
     answer_primary, answer_non_primary = subgraphs_counts
 
@@ -138,4 +137,3 @@ def test_recover_pop_size_after_structure_check():
     new_population = PopulationalOptimizer.get_structure_unique_population(population=population_with_reps)
 
     assert len(new_population) == MIN_POP_SIZE
-
