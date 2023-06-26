@@ -10,7 +10,7 @@ from golem.core.dag.graph import Graph
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.paths import default_data_dir
-from golem.structural_analysis.base_sa_approaches import BaseAnalyzeApproach
+from golem.structural_analysis.graph_sa.base_sa_approaches import BaseAnalyzeApproach
 from golem.structural_analysis.graph_sa.entities.edge import Edge
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import \
     DeletionSAApproachResult
@@ -64,6 +64,10 @@ class EdgeAnalysis:
 
         for approach in self.approaches:
             if timer is not None and timer.is_time_limit_reached():
+                # to fill uncalculated approaches with default results
+                approaches_left = self.approaches[self.approaches.index(approach):]
+                for approach_left in approaches_left:
+                    results.add_result(approach_left.get_default_results(len_obj=len(objective.metrics)))
                 break
 
             results.add_result(approach(graph=graph,
@@ -72,6 +76,15 @@ class EdgeAnalysis:
                                         path_to_save=self.path_to_save).analyze(edge=edge))
 
         return results
+
+    @staticmethod
+    def _get_default_results(approach: Type['EdgeAnalyzeApproach']):
+        if isinstance(approach, EdgeDeletionAnalyze):
+            res_approach = DeletionSAApproachResult()
+        else:
+            res_approach = ReplaceSAApproachResult()
+        res_approach.add_results([-2])
+        return res_approach
 
 
 class EdgeAnalyzeApproach(BaseAnalyzeApproach, ABC):
@@ -151,6 +164,12 @@ class EdgeDeletionAnalyze(EdgeAnalyzeApproach):
             return None
 
         return graph_sample
+
+    @staticmethod
+    def get_default_results(len_obj: int):
+        res = DeletionSAApproachResult()
+        res.add_results(metrics_values=len_obj*[-2.0])
+        return res
 
 
 class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
@@ -316,3 +335,9 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
 
         edges_for_replacement = random.sample(available_edges_idx, min(number_of_operations, len(available_edges_idx)))
         return edges_for_replacement
+
+    @staticmethod
+    def get_default_results(len_obj: int):
+        res = ReplaceSAApproachResult()
+        res.add_results(entity_to_replace_to='none', metrics_values=len_obj*[-2.0])
+        return res
