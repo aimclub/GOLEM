@@ -3,7 +3,7 @@ from datetime import timedelta
 from examples.synthetic_graph_evolution.experiment_setup import run_trial
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
-
+from golem.core.optimisers.optimizer import STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 
 DIVERSITY_THRESHOLD = 0.6
 
@@ -21,7 +21,7 @@ def test_structural_diversity():
     h = history.generations[:-1]
     ratio_unique = [len(set(ind.graph.descriptive_id for ind in pop)) / len(pop) for pop in h]
     for i in range(len(ratio_unique)):
-        if i % 5 == 0:
+        if i % STRUCTURAL_DIVERSITY_FREQUENCY_CHECK == 0:
             # structural check is applied every 5-th generation
             assert ratio_unique[i] == 1
         else:

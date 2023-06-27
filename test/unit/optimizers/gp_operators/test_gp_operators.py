@@ -11,10 +11,14 @@ from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.optimisers.archive import ParetoFront
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.gp_operators import filter_duplicates, replace_subtrees, equivalent_subtree
+from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.optimization_parameters import GraphRequirements
+from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_with_multi_roots_second, \
-    graph_with_multi_roots_first, graphs_same
+    graph_with_multi_roots_first, graphs_same, RandomMetric
 
 
 def get_graph_with_operation(operation: str) -> LinkedGraph:
@@ -32,6 +36,16 @@ def population_with_structural_duplicates(operations: List[str]):
     for op in operations:
         population += [Individual(adapter.adapt(get_graph_with_operation(operation=op)))] * 2
     return population
+
+
+def set_up_optimizer(operations: List[str]):
+    num_of_gens = 1
+    objective = Objective({'random_metric': RandomMetric.get_value})
+    requirements = GraphRequirements(num_of_generations=num_of_gens)
+    graph_generation_params = GraphGenerationParams(available_node_types=operations)
+    opt_params = GPAlgorithmParameters(pop_size=6)
+    optimizer = PopulationalOptimizer(objective, [], requirements, graph_generation_params, opt_params)
+    return optimizer
 
 
 def test_filter_duplicates():
@@ -116,9 +130,12 @@ def test_graphs_with_multi_root_equivalent_subtree():
 
 
 def test_structural_diversity():
+    """ Checks if `get_structure_unique_population` method returns population without structural duplicates. """
     operations = ['a', 'b', 'c', 'd', 'e']
     population_with_reps = population_with_structural_duplicates(operations=operations)
-    new_population = PopulationalOptimizer.get_structure_unique_population(population=population_with_reps)
+    optimizer = set_up_optimizer(operations=operations)
+
+    new_population = optimizer.get_structure_unique_population(population=population_with_reps)
 
     adapter = DirectAdapter()
     target_new_population = []
@@ -134,6 +151,7 @@ def test_recover_pop_size_after_structure_check():
     if after structural check there sre less than MIN_POP_SIZE individuals in population. """
     operations = ['a', 'b', 'c']
     population_with_reps = population_with_structural_duplicates(operations=operations)
-    new_population = PopulationalOptimizer.get_structure_unique_population(population=population_with_reps)
+    optimizer = set_up_optimizer(operations=operations)
+    new_population = optimizer.get_structure_unique_population(population=population_with_reps)
 
     assert len(new_population) == MIN_POP_SIZE

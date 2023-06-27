@@ -31,12 +31,11 @@ class Elitism(Operator):
     def keep_n_best_elitism(best_individuals: PopulationT, new_population: PopulationT) -> PopulationT:
         final_population = []
         final_population += best_individuals
-        not_repetitive_inds = [ind for ind in new_population if ind not in best_individuals]
-        if not_repetitive_inds:
-            shuffle(not_repetitive_inds)
+        new_unique_inds = [ind for ind in new_population if ind not in best_individuals]
+        if new_unique_inds:
+            shuffle(new_unique_inds)
             remain_n = len(new_population) - len(best_individuals)
-            final_population += not_repetitive_inds[:remain_n]
-        final_population = sorted(final_population, key=lambda individual: individual.fitness, reverse=True)
+            final_population += new_unique_inds[:remain_n]
         return final_population
 
     @staticmethod
