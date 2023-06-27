@@ -58,10 +58,6 @@ LEGACY_MODULE_PATHS = {
 }
 
 
-class OptinalUnion:
-    pass
-
-
 class Serializer(JSONEncoder, JSONDecoder):
     _to_json = 'to_json'
     _from_json = 'from_json'
@@ -243,12 +239,20 @@ class Serializer(JSONEncoder, JSONDecoder):
 
         try:
             obj_cls = import_module(module_name)
-            for sub in class_name.split('.'):
-                obj_cls = getattr(obj_cls, sub)
-            return obj_cls
-
         except ImportError as ex:
-            return Serializer._import_as_base_class(json_obj, ex)
+            obj_cls = Serializer._import_as_base_class(json_obj)
+            if obj_cls:
+                default_log('Serializer').info(
+                    f'Object was not decoded and will be stored as a dict '
+                    f'because of an ImportError: {ex}.')
+            else:
+                default_log('Serializer').info(
+                    f'Object was decoded as {obj_cls.__class__} and not as an original class '
+                    f'because of an ImportError: {ex}.')
+
+        for sub in class_name.split('.'):
+            obj_cls = getattr(obj_cls, sub)
+        return obj_cls
 
     @staticmethod
     def _legacy_module_map(module_path: str) -> str:
@@ -262,21 +266,15 @@ class Serializer(JSONEncoder, JSONDecoder):
         return hasattr(method, '__self__')
 
     @staticmethod
-    def _import_as_base_class(json_obj: dict, ex: ImportError)\
+    def _import_as_base_class(json_obj: dict) \
             -> Optional[Union[Type[LinkedGraph], Type[LinkedGraphNode]]]:
         linked_graph_keys = {'_nodes', '_postprocess_nodes'}
         linked_node_keys = {'content', '_nodes_from', 'uid'}
         if linked_graph_keys.issubset(json_obj.keys()):
-            default_log('Serializer').info(f'Object was decoded as LinkedGraph and not as an original class '
-                                           f'because of an ImportError: {ex}.')
             return LinkedGraph
         elif linked_node_keys.issubset(json_obj.keys()):
-            default_log('Serializer').info(f'Object was decoded as LinkedGraphNode and not as an original class '
-                                           f'because of an ImportError: {ex}.')
             return LinkedGraphNode
         else:
-            default_log('Serializer').info(f'Object was not decoded and will be stored as a dict '
-                                           f'because of an ImportError: {ex}.')
             return None
 
     @staticmethod
@@ -318,6 +316,7 @@ def default_save(obj: Any, json_file_path: Optional[Union[str, os.PathLike]] = N
 
 def default_load(json_str_or_file_path: Union[str, os.PathLike]) -> Any:
     """ Default load from json using Serializer """
+
     def load_as_file_path():
         with open(json_str_or_file_path, mode='r') as json_file:
             return json.load(json_file, cls=Serializer)
