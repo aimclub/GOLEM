@@ -249,6 +249,7 @@ class Serializer(JSONEncoder, JSONDecoder):
                 default_log('Serializer').info(
                     f'Object was decoded as {obj_cls.__class__} and not as an original class '
                     f'because of an ImportError: {ex}.')
+            return obj_cls
 
         for sub in class_name.split('.'):
             obj_cls = getattr(obj_cls, sub)
