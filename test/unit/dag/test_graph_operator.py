@@ -257,17 +257,3 @@ def test_get_edges(graph):
 
     edges = graph.get_edges()
     assert res_edges == edges
-
-
-def test_reset_descriptive_id():
-    """ Checks if descriptive_id is set to None after any changes in graph. """
-    graph = get_initial_graph()
-
-    initial_descriptive_id = graph.descriptive_id
-    assert initial_descriptive_id is not None
-
-    graph.delete_node(graph.nodes[0])
-
-    final_descriptive_id = graph.descriptive_id
-    assert initial_descriptive_id is not None
-    assert final_descriptive_id != initial_descriptive_id
