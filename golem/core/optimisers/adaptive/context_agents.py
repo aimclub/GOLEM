@@ -33,7 +33,7 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
     """ Encoding of operations.
     :param operations: operations to encode
     :param available_operations: list of all available operations
-    :param mode: mode of encoding. Available type: 'ohe' and 'label', default -- 'label'
+    :param mode: mode of encoding. Available type: 'OHE' and 'label', default -- 'label'
     """
     encoded = []
     for operation in operations:
@@ -77,7 +77,7 @@ def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
 
 
 @adapter_func_to_graph
-def operations_encoding(obs: Any, available_operations: List[str]) -> List[int]:
+def operations_quantity(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graphs as vectors with quantity of each operation. """
     encoding = [0] * len(available_operations)
     for node in obs.nodes:
@@ -97,12 +97,18 @@ def adjacency_matrix(obs: Any, available_operations: List[str]) -> List[int]:
     return matrix.reshape(1, -1)[0].astype(int).tolist()
 
 
+def none_encoding(obs: Any, available_operations: List[str]) -> List[int]:
+    """ Empty encoding. """
+    return obs
+
+
 class ContextAgentTypeEnum(Enum):
     feather_graph = 'feather_graph'
     nodes_num = 'nodes_num'
     labeled_edges = 'labeled_edges'
-    operations_encoding = 'operations_encoding'
+    operations_quantity = 'operations_quantity'
     adjacency_matrix = 'adjacency_matrix'
+    none_encoding = 'none_encoding'
 
 
 class ContextAgentsRepository:
@@ -111,8 +117,9 @@ class ContextAgentsRepository:
         ContextAgentTypeEnum.feather_graph: feather_graph,
         ContextAgentTypeEnum.nodes_num: nodes_num,
         ContextAgentTypeEnum.labeled_edges: labeled_edges,
-        ContextAgentTypeEnum.operations_encoding: operations_encoding,
-        ContextAgentTypeEnum.adjacency_matrix: adjacency_matrix
+        ContextAgentTypeEnum.operations_quantity: operations_quantity,
+        ContextAgentTypeEnum.adjacency_matrix: adjacency_matrix,
+        ContextAgentTypeEnum.none_encoding: none_encoding
     }
 
     @staticmethod

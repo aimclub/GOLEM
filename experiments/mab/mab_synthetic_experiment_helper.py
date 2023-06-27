@@ -146,7 +146,7 @@ class MABSyntheticExperimentHelper:
 
     def show_average_action_probabilities(self, show_action_probabilities: dict, actions):
         """ Shows action probabilities across several launches. """
-        for bandit in list(show_action_probabilities.keys()):
+        for idx, bandit in enumerate(list(show_action_probabilities.keys())):
             total_sum = None
             for launch in show_action_probabilities[bandit]:
                 if not total_sum:
@@ -160,7 +160,7 @@ class MABSyntheticExperimentHelper:
                 for i in range(len(total_sum[cluster])):
                     for j in range(len(total_sum[cluster][i])):
                         total_sum[cluster][i][j] /= len(show_action_probabilities[bandit])
-            self.show_action_probabilities(bandit_type=MutationAgentTypeEnum(bandit),
+            self.show_action_probabilities(bandit_type=MutationAgentTypeEnum(self.bandits_to_compare[idx]),
                                            stats_action_value_log=total_sum,
                                            actions=actions,
                                            is_average=True)
@@ -205,7 +205,6 @@ def initial_population_func(graph_size: List[int] = None, pop_size: int = None, 
         opt_graph = BaseNetworkxAdapter().adapt(item=graph)
         for node in opt_graph.nodes:
             node.content['name'] = 'x'
-            # opt_graph.update_node(old_node=node, new_node=OptNode('x', nodes_from=node.nodes_from))
         initial_opt_graphs.append(opt_graph)
     return initial_opt_graphs
 
@@ -215,9 +214,12 @@ if __name__ == '__main__':
     launch_num = 1
     target_size = 50
 
-    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit]
-    context_agent_types = [ContextAgentTypeEnum.operations_encoding]
-    bandit_labels = [f'{context.name}' for i, context in enumerate(context_agent_types)]
+    # `bandits_to_compare`, `context_agent_types` and `bandit_labels` correlate one to one.
+    # Context must be specified for each bandit: for contextual and neural bandits real context must be specified,
+    # for simple bandits -- ContextAgentTypeEnum.none
+    bandits_to_compare = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
+    context_agent_types = [ContextAgentTypeEnum.none_encoding, ContextAgentTypeEnum.operations_quantity]
+    bandit_labels = ['simple_bandit', f'context_{context_agent_types[1].name}']
 
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
     initial_population_func = partial(initial_population_func,
@@ -227,7 +229,7 @@ if __name__ == '__main__':
 
     helper = MABSyntheticExperimentHelper(timeout=timeout, launch_num=launch_num, bandits_to_compare=bandits_to_compare,
                                           bandit_labels=bandit_labels, context_agent_types=context_agent_types,
-                                          n_clusters=2, is_visualize=False)
+                                          n_clusters=2, is_visualize=True)
     helper.compare_bandits(initial_population_func=initial_population_func,
                            setup_parameters=setup_parameters_func)
     helper.show_boxplots()
