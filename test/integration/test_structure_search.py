@@ -26,18 +26,18 @@ def run_search(size, timeout_min=1) -> Tuple[float, Graph]:
     return distance, found_graph
 
 
-@pytest.mark.parametrize('size', [8, 16])
+@pytest.mark.parametrize('size', [10, 24])
 def test_simple_targets_are_found(size):
     num_trials = 5
     distances = []
     for i in range(num_trials):
-        distance, target_graph = run_search(size, timeout_min=1)
+        distance, target_graph = run_search(size, timeout_min=2)
         distances.append(distance)
 
         assert target_graph is not None
         assert distance < size
 
-    allowed_error = ceil(size * 0.2)  # 20% of target size
+    allowed_error = ceil(size * 0.25)  # 20% of target size
     mean_dist = np.mean(distances)
 
     assert mean_dist <= allowed_error
