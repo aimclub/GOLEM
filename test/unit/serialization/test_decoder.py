@@ -2,7 +2,7 @@ from uuid import UUID
 
 import pytest
 from golem.serializers import CLASS_PATH_KEY, Serializer
-from .dataclasses.serialization_dataclasses import DecoderTestCase
+from test.unit.serialization.serialization_dataclasses import DecoderTestCase
 
 from test.unit.mocks.serialization_mocks import MockGraph, MockNode, MockOperation
 from .shared_data import (
@@ -127,4 +127,4 @@ def test_decoder(case: DecoderTestCase, get_class_fixture, mock_classes_fixture)
     else:
         decoded = deserializer.object_hook(case.test_input)
         assert isinstance(decoded, type(case.test_answer)), 'Decoded object has wrong type'
-        assert decoded == case.test_answer, f'Object was decoded incorrectly'
+        assert decoded == case.test_answer, 'Object was decoded incorrectly'

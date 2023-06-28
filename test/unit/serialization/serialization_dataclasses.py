@@ -18,7 +18,7 @@ class EncoderTestCase:
 
 @dataclass
 class GetClassCase:
-    test_input: str
+    test_input: Dict[str, Any]
     test_answer: INSTANCE_OR_CALLABLE
 
 
