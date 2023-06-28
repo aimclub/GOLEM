@@ -241,13 +241,13 @@ class Serializer(JSONEncoder, JSONDecoder):
             obj_cls = import_module(module_name)
         except ImportError as ex:
             obj_cls = Serializer._import_as_base_class(json_obj)
-            if obj_cls:
+            if not obj_cls:
                 default_log('Serializer').info(
                     f'Object was not decoded and will be stored as a dict '
                     f'because of an ImportError: {ex}.')
             else:
                 default_log('Serializer').info(
-                    f'Object was decoded as {obj_cls.__class__} and not as an original class '
+                    f'Object was decoded as {obj_cls} and not as an original class '
                     f'because of an ImportError: {ex}.')
             return obj_cls
 
