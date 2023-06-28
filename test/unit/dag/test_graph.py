@@ -23,7 +23,7 @@ def get_graph() -> GraphImpl:
     second_level_one = GraphNode('l2_n1', nodes_from=[third_level_one])
     second_level_two = GraphNode('l2_n2')
 
-    second_level_three = GraphNode('l2_n3')
+    second_level_three = GraphNode('l2_n3', nodes_from=[second_level_two])
 
     first_level_one = GraphNode('l1_n1', nodes_from=[second_level_one, second_level_two, second_level_three])
 
@@ -334,33 +334,38 @@ def test_reset_descriptive_id():
 
     # Create, Update, Delete methods
 
-    graph.delete_node(graph.nodes[0])
+    graph.delete_node(graph.nodes[3])
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.disconnect_nodes(graph.nodes[3], graph.nodes[4])
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.connect_nodes(graph.nodes[3], graph.nodes[4])
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.update_node(graph.nodes[0], LinkedGraphNode('new'))
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.update_subtree(graph.nodes[2], LinkedGraphNode('new_1'))
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.add_node(LinkedGraphNode('new_2'))
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.delete_subtree(graph.nodes[2])
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.actualise_old_node_children(graph.nodes[2], LinkedGraphNode('new_3'))
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
-    graph.sort_nodes()
-    perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
-
+    initial_descriptive_id = graph.descriptive_id
     graph.nodes = [LinkedGraphNode('new_4')]
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id, initial_descriptive_id=initial_descriptive_id)
 
@@ -368,41 +373,55 @@ def test_reset_descriptive_id():
 
     graph = get_graph()
 
+    initial_descriptive_id = graph.descriptive_id
     graph.node_children(graph.nodes[2])
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
+    graph.sort_nodes()
+    perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
+                               initial_descriptive_id=initial_descriptive_id,
+                               is_equal=True)
+
+    initial_descriptive_id = graph.descriptive_id
     graph.get_edges()
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.get_node_by_uid(graph.nodes[1].uid)
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
     graph.root_nodes()
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
     _ = graph.graph_description
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
     _ = graph.nodes
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
     _ = graph.descriptive_id
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
                                is_equal=True)
 
+    initial_descriptive_id = graph.descriptive_id
     _ = graph.depth
     perform_test_cycle_asserts(final_descriptive_id=graph.descriptive_id,
                                initial_descriptive_id=initial_descriptive_id,
