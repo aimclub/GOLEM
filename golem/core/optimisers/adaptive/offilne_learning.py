@@ -14,7 +14,7 @@ from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.optimizer import GraphOptimizer, AlgorithmParameters, GraphGenerationParams
 
 
-class OfflineTrainer:
+class HistoryCollector:
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Sequence[Union[Graph, Any]],
@@ -32,13 +32,6 @@ class OfflineTrainer:
         self.requirements = requirements or OptimizationParameters()
         self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()
-
-    def fit_agent(self, agent: OperatorAgent) -> OperatorAgent:
-        for history in self.load_histories():
-            experience = ExperienceBuffer()
-            experience.collect_history(history)
-            agent.partial_fit(experience)
-        return agent
 
     def collect_histories(self,
                           optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
@@ -91,7 +84,7 @@ class OfflineTrainer:
         """Iteratively loads saved histories one-by-ony."""
         num_histories = 0
         total_individuals = 0
-        for history_path in OfflineTrainer.traverse_histories(self.save_path):
+        for history_path in HistoryCollector.traverse_histories(self.save_path):
             history = OptHistory.load(history_path)
             num_histories += 1
             total_individuals += sum(map(len, history.generations))
@@ -119,4 +112,12 @@ class OfflineTrainer:
         update_dict = dataclasses.asdict(update_dc) if dataclasses.is_dataclass(update_dc) else update_dc
         new_base = dataclasses.replace(base_dc, **update_dict)
         return new_base
+
+
+def fit_agent(collector: HistoryCollector, agent: OperatorAgent) -> OperatorAgent:
+    for history in collector.load_histories():
+        experience = ExperienceBuffer()
+        experience.collect_history(history)
+        agent.partial_fit(experience)
+    return agent
 
