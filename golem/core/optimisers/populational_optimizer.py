@@ -73,7 +73,7 @@ class PopulationalOptimizer(GraphOptimizer):
                 'Optimisation finished: Early stopping timeout criteria was satisfied'
             )
         # in how many generations structural diversity check should be performed
-        self.gen_structural_check = self.graph_optimizer_params.gen_structural_check
+        self.gen_structural_diversity_check = self.graph_optimizer_params.structural_diversity_frequency_check
 
     @property
     def current_generation_num(self) -> int:
@@ -95,8 +95,8 @@ class PopulationalOptimizer(GraphOptimizer):
             while not self.stop_optimization():
                 try:
                     new_population = self._evolve_population(evaluator)
-                    if self.gen_structural_check != -1 \
-                            and self.generations.generation_num % self.gen_structural_check == 0 \
+                    if self.gen_structural_diversity_check != -1 \
+                            and self.generations.generation_num % self.gen_structural_diversity_check == 0 \
                             and self.generations.generation_num != 0:
                         new_population = self.get_structure_unique_population(population=new_population)
                 except EvaluationAttemptsError as ex:
@@ -151,8 +151,7 @@ class PopulationalOptimizer(GraphOptimizer):
     def get_structure_unique_population(self, population: PopulationT) -> PopulationT:
         """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
         Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
-        descriptive_ids = [ind.graph.descriptive_id for ind in population]
-        unique_population_with_ids = dict(zip(descriptive_ids, population))
+        unique_population_with_ids = {population[i].graph.descriptive_id: population[i] for i in range(len(population))}
         unique_population = list(unique_population_with_ids.values())
 
         # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals

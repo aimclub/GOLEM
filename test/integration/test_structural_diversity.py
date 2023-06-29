@@ -32,7 +32,7 @@ def set_up_params(gen_structural_check: int):
             MutationTypesEnum.single_drop,
         ],
         crossover_types=[CrossoverTypesEnum.none],
-        gen_structural_check=gen_structural_check
+        structural_diversity_frequency_check=gen_structural_check
     )
     return gp_params
 

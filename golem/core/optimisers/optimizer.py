@@ -44,7 +44,7 @@ class AlgorithmParameters:
     max_pop_size: Optional[int] = 55
     adaptive_depth: bool = False
     adaptive_depth_max_stagnation: int = 3
-    gen_structural_check: int = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
+    structural_diversity_frequency_check: int = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 
 
 @dataclass
