@@ -13,16 +13,6 @@ from golem.core.paths import copy_doc
 NodePostprocessCallable = Callable[[Graph, Sequence[GraphNode]], Any]
 
 
-def reset_descriptive_id(func):
-    """ Decorator function to reset descriptive_id of graph after change in it.
-    There is a need to store descriptive_id since it is computationally expensive to calculate it every time.
-    IMPORTANT: must be added to every method that changes graph. """
-    def wrapper(*args, **kwargs):
-        args[0]._descriptive_id = None
-        return func(*args, **kwargs)
-    return wrapper
-
-
 class LinkedGraph(Graph, Copyable):
     """Graph implementation based on linked graph node
     that directly stores its parent nodes.
@@ -38,13 +28,11 @@ class LinkedGraph(Graph, Copyable):
         for node in ensure_wrapped_in_sequence(nodes):
             self.add_node(node)
         self._postprocess_nodes = postprocess_nodes or self._empty_postprocess
-        self._descriptive_id = None
 
     @staticmethod
     def _empty_postprocess(*args):
         pass
 
-    @reset_descriptive_id
     @copy_doc(Graph.delete_node)
     def delete_node(self, node: GraphNode, reconnect: ReconnectType = ReconnectType.single) -> object:
         node_children_cached = self.node_children(node)
@@ -68,7 +56,6 @@ class LinkedGraph(Graph, Copyable):
 
         self._postprocess_nodes(self, self._nodes)
 
-    @reset_descriptive_id
     @copy_doc(Graph.delete_subtree)
     def delete_subtree(self, subtree: GraphNode):
         subtree_nodes = ordered_subnodes_hierarchy(subtree)
@@ -77,7 +64,6 @@ class LinkedGraph(Graph, Copyable):
         for subtree in self._nodes:
             subtree.nodes_from = remove_items(subtree.nodes_from, subtree_nodes)
 
-    @reset_descriptive_id
     @copy_doc(Graph.update_node)
     def update_node(self, old_node: GraphNode, new_node: GraphNode):
         self.actualise_old_node_children(old_node, new_node)
@@ -87,7 +73,6 @@ class LinkedGraph(Graph, Copyable):
         self.sort_nodes()
         self._postprocess_nodes(self, self._nodes)
 
-    @reset_descriptive_id
     @copy_doc(Graph.update_subtree)
     def update_subtree(self, old_subtree: GraphNode, new_subtree: GraphNode):
         new_subtree = deepcopy(new_subtree)
@@ -96,7 +81,6 @@ class LinkedGraph(Graph, Copyable):
         self.add_node(new_subtree)
         self.sort_nodes()
 
-    @reset_descriptive_id
     @copy_doc(Graph.add_node)
     def add_node(self, node: GraphNode):
         if node not in self._nodes:
@@ -104,7 +88,6 @@ class LinkedGraph(Graph, Copyable):
             for n in node.nodes_from:
                 self.add_node(n)
 
-    @reset_descriptive_id
     def actualise_old_node_children(self, old_node: GraphNode, new_node: GraphNode):
         """Changes parent of ``old_node`` children to ``new_node``
 
@@ -116,7 +99,6 @@ class LinkedGraph(Graph, Copyable):
             updated_index = old_node_child.nodes_from.index(old_node)
             old_node_child.nodes_from[updated_index] = new_node
 
-    @reset_descriptive_id
     def sort_nodes(self):
         """ Layer by layer sorting """
         if not isinstance(self.root_node, Sequence):
@@ -129,7 +111,6 @@ class LinkedGraph(Graph, Copyable):
                 if other_node.nodes_from and
                 node in other_node.nodes_from]
 
-    @reset_descriptive_id
     @copy_doc(Graph.connect_nodes)
     def connect_nodes(self, node_parent: GraphNode, node_child: GraphNode):
         if node_child in self.node_children(node_parent):
@@ -149,7 +130,6 @@ class LinkedGraph(Graph, Copyable):
             for node in node.nodes_from:
                 self._clean_up_leftovers(node)
 
-    @reset_descriptive_id
     @copy_doc(Graph.disconnect_nodes)
     def disconnect_nodes(self, node_parent: GraphNode, node_child: GraphNode,
                          clean_up_leftovers: bool = False):
@@ -171,7 +151,6 @@ class LinkedGraph(Graph, Copyable):
 
     @nodes.setter
     def nodes(self, new_nodes: List[GraphNode]):
-        self._descriptive_id = None
         self._nodes = new_nodes
 
     @copy_doc(Graph.__eq__)
@@ -183,9 +162,7 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.descriptive_id)
     @property
     def descriptive_id(self) -> str:
-        if not self._descriptive_id:
-            self._descriptive_id = ''.join([r.descriptive_id for r in self.root_nodes()])
-        return self._descriptive_id
+        return ''.join([r.descriptive_id for r in self.root_nodes()])
 
     @copy_doc(Graph.depth)
     @property

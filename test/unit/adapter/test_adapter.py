@@ -90,9 +90,7 @@ def test_changes_to_transformed_dont_affect_origin(adapter, graph):
     assert graph.descriptive_id == opt_graph.descriptive_id
 
     changed_node = choice(opt_graph.nodes)
-    new_node = deepcopy(changed_node)
-    new_node.content['name'] = 'another_operation'
-    opt_graph.update_node(changed_node, new_node)
+    changed_node.content['name'] = 'another_operation'
 
     # assert that changes to the adapted graph don't affect original graph
     assert graph.descriptive_id != opt_graph.descriptive_id
@@ -105,9 +103,7 @@ def test_changes_to_transformed_dont_affect_origin(adapter, graph):
     assert opt_graph.descriptive_id == restored_graph.descriptive_id
 
     changed_node = choice(restored_graph.nodes)
-    new_node = deepcopy(changed_node)
-    new_node.content['name'] = 'yet_another_operation'
-    restored_graph.update_node(changed_node, new_node)
+    changed_node.content['name'] = 'yet_another_operation'
 
     # assert that changes to the restored graph don't affect original graph
     assert opt_graph.descriptive_id != restored_graph.descriptive_id
