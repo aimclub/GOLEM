@@ -1,4 +1,9 @@
-from typing import Union, Sequence, List, TYPE_CHECKING, Callable
+from copy import copy
+from typing import Sequence, List, TYPE_CHECKING, Callable, Optional
+
+from networkx import simple_cycles
+
+from golem.core.dag.convert import graph_structure_as_nx_graph
 
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
@@ -16,11 +21,16 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
         int: distance to root level
     """
 
-    def recursive_child_height(parent_node: 'GraphNode') -> int:
+    def recursive_child_height(parent_node: 'GraphNode', visited_nodes: Optional[Sequence['GraphNode']] = None) -> int:
+        if visited_nodes is None:
+            visited_nodes = []
+        if parent_node in visited_nodes:
+            return -1
+        visited_nodes.append(parent_node)
         node_child = graph.node_children(parent_node)
         if node_child:
-            height = recursive_child_height(node_child[0]) + 1
-            return height
+            height = recursive_child_height(node_child[0], copy(visited_nodes))
+            return height + 1 if height > 0 else -1
         return 0
 
     height = recursive_child_height(node)
@@ -28,7 +38,7 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
 
 
 def distance_to_primary_level(node: 'GraphNode') -> int:
-    return node_depth(node) - 1
+    return node_depth(node) - 1 if node_depth(node) > 0 else -1
 
 
 def nodes_from_layer(graph: 'Graph', layer_number: int) -> Sequence['GraphNode']:
@@ -86,19 +96,30 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
     return subtree_impl(node)
 
 
-def node_depth(node: 'GraphNode') -> int:
+def node_depth(node: 'GraphNode', visited_nodes: Optional[Sequence['GraphNode']] = None) -> int:
     """Gets this graph depth from the provided ``node`` to the graph source node
 
     Args:
         node: where to start diving from
 
+
     Returns:
         int: length of a path from the provided ``node`` to the farthest primary node
     """
-    if not node.nodes_from:
+    if visited_nodes is None:
+        visited_nodes = []
+    if node in visited_nodes:
+        return -1
+
+    elif not node.nodes_from:
         return 1
     else:
-        return 1 + max(node_depth(next_node) for next_node in node.nodes_from)
+        visited_nodes.append(node)
+        parent_depths = [node_depth(next_node, copy(visited_nodes)) for next_node in node.nodes_from]
+        if any([depth < 0 for depth in parent_depths]):
+            return -1
+        else:
+            return 1 + max(parent_depths)
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:
@@ -136,3 +157,9 @@ def graph_structure(graph: 'Graph') -> str:
         str: graph structure
     """
     return '\n'.join([str(graph), *(f'{node.name} - {node.parameters}' for node in graph.nodes)])
+
+
+def graph_has_cycle(graph: 'Graph') -> bool:
+    """ Returns True if the graph contains a cycle and False otherwise."""
+    nx_graph, _ = graph_structure_as_nx_graph(graph)
+    return len(list(simple_cycles(nx_graph))) > 0

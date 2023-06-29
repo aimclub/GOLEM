@@ -1,18 +1,19 @@
 from copy import deepcopy
 from functools import partial
 from random import choice, randint, random, sample
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from golem.core.adapter import register_native
 from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
-from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
+from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level, \
+    graph_has_cycle
 from golem.core.optimisers.advisor import RemoveType
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.core.utilities.data_structures import ComparableEnum as Enum, ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -38,20 +39,22 @@ class MutationTypesEnum(Enum):
     none = 'none'
 
 
-def get_mutation_prob(mut_id: MutationStrengthEnum, node: GraphNode,
+def get_mutation_prob(mut_id: MutationStrengthEnum, node: Optional[GraphNode],
                       default_mutation_prob: float = 0.7) -> float:
     """ Function returns mutation probability for certain node in the graph
 
     :param mut_id: MutationStrengthEnum mean weak or strong mutation
     :param node: root node of the graph
-    :param default_mutation_prob: mutation probability used when mutation_id is invalid
+    :param default_mutation_prob: mutation probability used when mutation_id is invalid or graph has cycles
     :return mutation_prob: mutation probability
     """
-    if mut_id in list(MutationStrengthEnum):
+    mutation_prob = default_mutation_prob
+    graph_cycled = node is None
+    if node:
+        graph_cycled = distance_to_primary_level(node) < 0
+    if mut_id in list(MutationStrengthEnum) and not graph_cycled:
         mutation_strength = mut_id.value
         mutation_prob = mutation_strength / (distance_to_primary_level(node) + 1)
-    else:
-        mutation_prob = default_mutation_prob
     return mutation_prob
 
 
@@ -83,11 +86,12 @@ def simple_mutation(graph: OptGraph,
             visited_nodes.add(new_node)
             for parent in node.nodes_from:
                 replace_node_to_random_recursive(parent)
-
+    root_node = choice(ensure_wrapped_in_sequence(graph.root_node)) if graph.root_node else None
     node_mutation_probability = get_mutation_prob(mut_id=parameters.mutation_strength,
-                                                  node=graph.root_node)
+                                                  node=root_node)
 
-    replace_node_to_random_recursive(graph.root_node)
+    root_node = root_node or choice(graph.nodes)
+    replace_node_to_random_recursive(root_node)
 
     return graph
 
@@ -111,11 +115,15 @@ def single_edge_mutation(graph: OptGraph,
 
         source_node, target_node = sample(graph.nodes, 2)
 
-        nodes_not_cycling = (target_node.descriptive_id not in
-                             [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
-        if nodes_not_cycling and (source_node not in target_node.nodes_from):
+        if graph_has_cycle(graph):
             graph.connect_nodes(source_node, target_node)
             break
+        else:
+            nodes_not_cycling = (target_node.descriptive_id not in
+                                 [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
+            if nodes_not_cycling and (source_node not in target_node.nodes_from):
+                graph.connect_nodes(source_node, target_node)
+                break
 
     if graph.depth > requirements.max_depth:
         return old_graph
@@ -278,11 +286,15 @@ def tree_growth(graph: OptGraph,
     """
     node_from_graph = choice(graph.nodes)
     if local_growth:
-        max_depth = distance_to_primary_level(node_from_graph)
+        primary_level_dist = distance_to_primary_level(node_from_graph)
+        max_depth = primary_level_dist if primary_level_dist > 0 else requirements.max_depth
         is_primary_node_selected = (not node_from_graph.nodes_from) or (node_from_graph != graph.root_node and
                                                                         randint(0, 1))
     else:
-        max_depth = requirements.max_depth - distance_to_root_level(graph, node_from_graph)
+        root_level_dist = distance_to_root_level(graph, node_from_graph)
+        max_depth = requirements.max_depth
+        if root_level_dist > 0:
+            max_depth -= root_level_dist
         is_primary_node_selected = \
             distance_to_root_level(graph, node_from_graph) >= requirements.max_depth and randint(0, 1)
     if is_primary_node_selected:

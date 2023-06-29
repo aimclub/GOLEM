@@ -1,11 +1,12 @@
 from copy import deepcopy
+from operator import attrgetter
 from typing import Any, Dict, List, Optional, Tuple, Union, Callable, Sequence
 
-from networkx import graph_edit_distance, set_node_attributes
+from networkx import graph_edit_distance, set_node_attributes, simple_cycles
 
 from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
-from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth
+from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth, graph_has_cycle
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
 from golem.core.paths import copy_doc
@@ -162,12 +163,20 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.descriptive_id)
     @property
     def descriptive_id(self) -> str:
-        return ''.join([r.descriptive_id for r in self.root_nodes()])
+        if self.root_nodes():
+            return ''.join([r.descriptive_id for r in self.root_nodes()])
+        else:
+            return sorted(self.nodes, key=attrgetter('uid'))[0].descriptive_id
 
     @copy_doc(Graph.depth)
     @property
     def depth(self) -> int:
-        return 0 if not self._nodes else max(map(node_depth, self.root_nodes()))
+        if not self._nodes:
+            return 0
+        elif not self.root_nodes() or graph_has_cycle(self):
+            return -1
+        else:
+            return max(map(node_depth, self.root_nodes()))
 
     @copy_doc(Graph.get_edges)
     def get_edges(self) -> Sequence[Tuple[GraphNode, GraphNode]]:
