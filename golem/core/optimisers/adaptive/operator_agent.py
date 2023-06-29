@@ -2,7 +2,7 @@ import random
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum
-from typing import Union, Sequence, Hashable, Tuple, Optional, List
+from typing import Union, Sequence, Hashable, Tuple, Optional, List, Iterable
 
 import numpy as np
 
@@ -11,6 +11,7 @@ from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 ObsType = Graph
 ActType = Hashable
@@ -51,6 +52,15 @@ class ExperienceBuffer:
         self._observations = deque(maxlen=self.window_size)
         self._actions = deque(maxlen=self.window_size)
         self._rewards = deque(maxlen=self.window_size)
+
+    def collect_history(self, history: OptHistory):
+        seen = set()
+        # We don't need the initial assumptions, as they have no parent operators, hence [1:]
+        for generation in history.generations[1:]:
+            for ind in generation:
+                if ind.uid not in seen:
+                    seen.add(ind.uid)
+                    self.collect_result(ind)
 
     def collect_results(self, results: Sequence[Individual]):
         for ind in results:
