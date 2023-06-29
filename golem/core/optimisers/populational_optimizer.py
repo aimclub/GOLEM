@@ -151,7 +151,7 @@ class PopulationalOptimizer(GraphOptimizer):
     def get_structure_unique_population(self, population: PopulationT) -> PopulationT:
         """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
         Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
-        unique_population_with_ids = {population[i].graph.descriptive_id: population[i] for i in range(len(population))}
+        unique_population_with_ids = {ind.graph.descriptive_id: ind for ind in population}
         unique_population = list(unique_population_with_ids.values())
 
         # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
