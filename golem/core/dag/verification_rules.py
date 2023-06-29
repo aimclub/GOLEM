@@ -1,5 +1,5 @@
 import networkx as nx
-from networkx import isolates, simple_cycles
+from networkx import isolates
 
 from golem.core.adapter import register_native
 from golem.core.dag.convert import graph_structure_as_nx_graph

@@ -116,8 +116,9 @@ def single_edge_mutation(graph: OptGraph,
         source_node, target_node = sample(graph.nodes, 2)
 
         if graph_has_cycle(graph):
-            graph.connect_nodes(source_node, target_node)
-            break
+            if source_node not in target_node.nodes_from:
+                graph.connect_nodes(source_node, target_node)
+                break
         else:
             nodes_not_cycling = (target_node.descriptive_id not in
                                  [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])

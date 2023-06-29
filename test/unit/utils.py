@@ -239,6 +239,17 @@ def tree_graph():
     return graph
 
 
+def cycled_graph():
+    node_a_primary = LinkedGraphNode('a')
+    node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
+    node_c = LinkedGraphNode('c', nodes_from=[node_b])
+    node_d = LinkedGraphNode('d', nodes_from=[node_c])
+    node_e = LinkedGraphNode('e', nodes_from=[node_d])
+    node_b.nodes_from.append(node_e)
+    graph = GraphDelegate(node_d)
+    return graph
+
+
 class RandomMetric:
     @staticmethod
     def get_value(graph, *args, delay=0, **kwargs) -> float:

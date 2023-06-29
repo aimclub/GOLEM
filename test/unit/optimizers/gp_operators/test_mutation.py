@@ -23,8 +23,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from test.unit.utils import simple_linear_graph, tree_graph, graph_with_single_node, graph_first, \
-    graph_fifth
-
+    graph_fifth, cycled_graph
 
 available_node_types = ['a', 'b', 'c', 'd', 'e', 'f']
 
@@ -54,19 +53,19 @@ def test_mutation_none():
     assert new_graph == graph
 
 
-def test_simple_mutation():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_simple_mutation(graph):
     """
     Test correctness of simple mutation
     """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
     new_graph = simple_mutation(new_graph, **get_mutation_params())
     for i in range(len(graph.nodes)):
         assert graph.nodes[i] != new_graph.nodes[i]
 
 
-def test_drop_node():
-    graph = simple_linear_graph()
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_drop_node(graph):
     new_graph = deepcopy(graph)
     params = get_mutation_params()
     for _ in range(5):
@@ -74,9 +73,10 @@ def test_drop_node():
     assert len(new_graph) < len(graph)
 
 
-def test_add_as_parent_node_linear():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_add_as_parent_node(graph):
     """
-    Test correctness of adding as a parent in simple case
+    Test correctness of adding as a parent
     """
     graph = simple_linear_graph()
     new_graph = deepcopy(graph)
@@ -89,26 +89,11 @@ def test_add_as_parent_node_linear():
     assert len(node_to_mutate.nodes_from) > len(graph.nodes[1].nodes_from)
 
 
-def test_add_as_parent_node_tree():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_add_as_child_node(graph):
     """
-    Test correctness of adding as a parent in complex case
+    Test correctness of adding as a child
     """
-    graph = tree_graph()
-    new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
-    params = get_mutation_params()
-    node_factory = params['graph_gen_params'].node_factory
-
-    add_separate_parent_node(new_graph, node_to_mutate, node_factory)
-
-    assert len(node_to_mutate.nodes_from) > len(graph.nodes[1].nodes_from)
-
-
-def test_add_as_child_node_linear():
-    """
-    Test correctness of adding as a child in simple case
-    """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
     node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
@@ -120,27 +105,11 @@ def test_add_as_child_node_linear():
     assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
 
 
-def test_add_as_child_node_tree():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_add_as_intermediate_node(graph):
     """
-    Test correctness of adding as a child in complex case
+    Test correctness of adding as an intermediate node
     """
-    graph = tree_graph()
-    new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[2]
-    params = get_mutation_params()
-    node_factory = params['graph_gen_params'].node_factory
-
-    add_as_child(new_graph, node_to_mutate, node_factory)
-
-    assert len(new_graph) > len(graph)
-    assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
-
-
-def test_add_as_intermediate_node_linear():
-    """
-    Test correctness of adding as an intermediate node in simple case
-    """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
     node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
@@ -152,38 +121,21 @@ def test_add_as_intermediate_node_linear():
     assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
 
 
-def test_add_as_intermediate_node_tree():
-    """
-    Test correctness of adding as intermediate node in complex case
-    """
-    graph = tree_graph()
-    new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
-    params = get_mutation_params()
-    node_factory = params['graph_gen_params'].node_factory
-
-    add_intermediate_node(new_graph, node_to_mutate, node_factory)
-
-    assert len(new_graph) > len(graph)
-    assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
-
-
-def test_edge_mutation_for_graph():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_edge_mutation_for_graph(graph):
     """
     Tests edge mutation can add edge between nodes
     """
+    new_graph = deepcopy(graph)
+    new_graph = single_edge_mutation(new_graph, **get_mutation_params())
+    assert len(new_graph.get_edges()) > len(graph.get_edges())
 
-    graph_without_edge = simple_linear_graph()
-    graph_with_edge = single_edge_mutation(graph_without_edge, **get_mutation_params())
-    assert graph_with_edge.nodes[0].nodes_from == graph_with_edge.nodes[1:]
 
-
-def test_replace_mutation_for_linear_graph():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+def test_replace_mutation(graph):
     """
     Tests single_change mutation can change node to another
     """
-    graph = simple_linear_graph()
-
     new_graph = single_change_mutation(graph, **get_mutation_params())
     operations = [node.content['name'] for node in new_graph.nodes]
 

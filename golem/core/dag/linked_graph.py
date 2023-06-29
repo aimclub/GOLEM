@@ -1,15 +1,14 @@
 from copy import deepcopy
-from operator import attrgetter
 from typing import Any, Dict, List, Optional, Tuple, Union, Callable, Sequence
 
-from networkx import graph_edit_distance, set_node_attributes, simple_cycles
+from networkx import graph_edit_distance, set_node_attributes
 
+from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth, graph_has_cycle
-from golem.core.dag.convert import graph_structure_as_nx_graph
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
 from golem.core.paths import copy_doc
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
 
 NodePostprocessCallable = Callable[[Graph, Sequence[GraphNode]], Any]
 
@@ -102,7 +101,7 @@ class LinkedGraph(Graph, Copyable):
 
     def sort_nodes(self):
         """ Layer by layer sorting """
-        if not isinstance(self.root_node, Sequence):
+        if not isinstance(self.root_node, Sequence) and not graph_has_cycle(self):
             self._nodes = ordered_subnodes_hierarchy(self.root_node)
 
     @copy_doc(Graph.node_children)
@@ -166,7 +165,7 @@ class LinkedGraph(Graph, Copyable):
         if self.root_nodes():
             return ''.join([r.descriptive_id for r in self.root_nodes()])
         else:
-            return sorted(self.nodes, key=attrgetter('uid'))[0].descriptive_id
+            return sorted(self.nodes, key=lambda x: str(x.uid))[0].descriptive_id
 
     @copy_doc(Graph.depth)
     @property
