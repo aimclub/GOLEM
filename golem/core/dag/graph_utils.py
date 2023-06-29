@@ -30,7 +30,7 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
         node_child = graph.node_children(parent_node)
         if node_child:
             height = recursive_child_height(node_child[0], copy(visited_nodes))
-            return height + 1 if height > 0 else -1
+            return height + 1 if height >= 0 else -1
         return 0
 
     height = recursive_child_height(node)

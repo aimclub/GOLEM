@@ -162,7 +162,9 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.descriptive_id)
     @property
     def descriptive_id(self) -> str:
-        if self.root_nodes():
+        if self.length == 0:
+            return 'EMPTY'
+        elif self.root_nodes():
             return ''.join([r.descriptive_id for r in self.root_nodes()])
         else:
             return sorted(self.nodes, key=lambda x: str(x.uid))[0].descriptive_id

@@ -63,7 +63,7 @@ def test_cycled_graphs_evolution():
 def nxgraph_with_cycle(nodes_num):
     graph = nx.DiGraph()
     graph.add_nodes_from(range(nodes_num))
-    graph.add_edges_from([(i, (i + 1) % (nodes_num-1)) for i in range(nodes_num-1)])
-    graph.add_edge(nodes_num-2, nodes_num-1)
+    graph.add_edges_from([(i, (i + 1) % (nodes_num - 1)) for i in range(nodes_num - 1)])
+    graph.add_edge(nodes_num - 2, nodes_num - 1)
     graph = relabel_nx_graph(graph, available_names=('x',))
     return graph

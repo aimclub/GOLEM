@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from operator import attrgetter
 from os import PathLike
 from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
 

@@ -1,18 +1,17 @@
 from copy import deepcopy
-from random import choice, random, sample
-from math import ceil
 from itertools import chain
+from math import ceil
+from random import choice, random, sample
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
-from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.utilities.data_structures import ComparableEnum as Enum
 
