@@ -70,7 +70,7 @@ def test_drop_node(graph):
     params = get_mutation_params()
     for _ in range(5):
         new_graph = single_drop_mutation(new_graph, **params)
-    assert len(new_graph) < len(graph)
+    assert new_graph.length < graph.length
 
 
 @pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
@@ -78,7 +78,6 @@ def test_add_as_parent_node(graph):
     """
     Test correctness of adding as a parent
     """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
     node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
@@ -101,7 +100,7 @@ def test_add_as_child_node(graph):
 
     add_as_child(new_graph, node_to_mutate, node_factory)
 
-    assert len(new_graph) > len(graph)
+    assert new_graph.length > graph.length
     assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
 
 
@@ -117,7 +116,7 @@ def test_add_as_intermediate_node(graph):
 
     add_intermediate_node(new_graph, node_to_mutate, node_factory)
 
-    assert len(new_graph) > len(graph)
+    assert new_graph.length > graph.length
     assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
 
 

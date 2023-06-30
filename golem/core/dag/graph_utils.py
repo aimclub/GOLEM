@@ -21,18 +21,15 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
         int: distance to root level
     """
 
-    def recursive_child_height(parent_node: 'GraphNode', visited_nodes: Optional[Sequence['GraphNode']] = None) -> int:
-        if visited_nodes is None:
-            visited_nodes = []
-        if parent_node in visited_nodes:
-            return -1
-        visited_nodes.append(parent_node)
+    def recursive_child_height(parent_node: 'GraphNode') -> int:
         node_child = graph.node_children(parent_node)
         if node_child:
-            height = recursive_child_height(node_child[0], copy(visited_nodes))
-            return height + 1 if height >= 0 else -1
+            height = recursive_child_height(node_child[0])
+            return height + 1
         return 0
 
+    if graph_has_cycle(graph):
+        return -1
     height = recursive_child_height(node)
     return height
 
@@ -101,16 +98,14 @@ def node_depth(node: 'GraphNode', visited_nodes: Optional[Sequence['GraphNode']]
 
     Args:
         node: where to start diving from
-
+        visited_nodes: nodes that were already visited during recursive evaluation
 
     Returns:
         int: length of a path from the provided ``node`` to the farthest primary node
     """
-    if visited_nodes is None:
-        visited_nodes = []
+    visited_nodes = visited_nodes or []
     if node in visited_nodes:
         return -1
-
     elif not node.nodes_from:
         return 1
     else:

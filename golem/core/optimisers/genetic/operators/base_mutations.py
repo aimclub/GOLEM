@@ -1,4 +1,3 @@
-from copy import deepcopy
 from functools import partial
 from random import choice, randint, random, sample
 from typing import TYPE_CHECKING, Optional
@@ -107,27 +106,21 @@ def single_edge_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-    old_graph = deepcopy(graph)
-
     for _ in range(parameters.max_num_of_operator_attempts):
         if len(graph.nodes) < 2 or graph.depth > requirements.max_depth:
             return graph
 
         source_node, target_node = sample(graph.nodes, 2)
-
-        if graph_has_cycle(graph):
-            if source_node not in target_node.nodes_from:
+        if source_node not in target_node.nodes_from:
+            if graph_has_cycle(graph):
                 graph.connect_nodes(source_node, target_node)
                 break
-        else:
-            nodes_not_cycling = (target_node.descriptive_id not in
-                                 [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
-            if nodes_not_cycling and (source_node not in target_node.nodes_from):
-                graph.connect_nodes(source_node, target_node)
-                break
-
-    if graph.depth > requirements.max_depth:
-        return old_graph
+            else:
+                nodes_not_cycling = (target_node.descriptive_id not in
+                                     [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
+                if nodes_not_cycling:
+                    graph.connect_nodes(source_node, target_node)
+                    break
     return graph
 
 
@@ -287,15 +280,11 @@ def tree_growth(graph: OptGraph,
     """
     node_from_graph = choice(graph.nodes)
     if local_growth:
-        primary_level_dist = distance_to_primary_level(node_from_graph)
-        max_depth = primary_level_dist if primary_level_dist > 0 else requirements.max_depth
+        max_depth = distance_to_primary_level(node_from_graph)
         is_primary_node_selected = (not node_from_graph.nodes_from) or (node_from_graph != graph.root_node and
                                                                         randint(0, 1))
     else:
-        root_level_dist = distance_to_root_level(graph, node_from_graph)
-        max_depth = requirements.max_depth
-        if root_level_dist > 0:
-            max_depth -= root_level_dist
+        max_depth = requirements.max_depth - distance_to_root_level(graph, node_from_graph)
         is_primary_node_selected = \
             distance_to_root_level(graph, node_from_graph) >= requirements.max_depth and randint(0, 1)
     if is_primary_node_selected:

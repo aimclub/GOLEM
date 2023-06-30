@@ -20,7 +20,7 @@ def _label_dist(label1: str, label2: str) -> int:
 def tree_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     """Compares nodes by their `name` (if present) or `uid` attribute.
     Nodes with the same name/id are considered the same."""
-    if not is_tree(target_graph) or not is_tree(graph):
+    if not (is_tree(target_graph) and is_tree(graph)):
         raise ValueError('Both target graphs must be trees')
     target_tree_root = _nx_to_zss_tree(target_graph)
     cmp_tree_root = _nx_to_zss_tree(graph)

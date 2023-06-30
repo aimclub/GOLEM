@@ -16,13 +16,24 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.metrics.graph_metrics import spectral_dist
 
 
+def nxgraph_with_cycle(nodes_num):
+    graph = nx.DiGraph()
+    graph.add_nodes_from(range(nodes_num))
+    graph.add_edges_from([(i, (i + 1) % (nodes_num - 1)) for i in range(nodes_num - 1)])
+    graph.add_edge(nodes_num - 2, nodes_num - 1)
+    graph = relabel_nx_graph(graph, available_names=('x',))
+    return graph
+
+
 def test_cycled_graphs_evolution():
     target_graph = nx.DiGraph()
     target_graph.add_nodes_from(range(18))
     target_graph.add_edges_from([(0, 1), (1, 2), (2, 0), (2, 3),
                                  (3, 4), (4, 5), (5, 3), (5, 6),
-                                 (6, 7), (7, 8), (8, 6), (8, 9), (9, 10), (10, 11), (11, 12), (12, 13), (13, 14),
-                                 (14, 15), (15, 16), (16, 11), (16, 17)])
+                                 (6, 7), (7, 8), (8, 6), (8, 9),
+                                 (9, 10), (10, 11), (11, 12), (12, 13),
+                                 (13, 14), (14, 15), (15, 16), (16, 11),
+                                 (16, 17)])
     target_graph = relabel_nx_graph(target_graph, available_names=('x',))
     num_iterations = 50
     objective = Objective(partial(spectral_dist, target_graph))
@@ -58,12 +69,3 @@ def test_cycled_graphs_evolution():
     found_graph: nx.DiGraph = graph_gen_params.adapter.restore(found_graphs[0])
     assert found_graph is not None
     assert len(found_graph.nodes) > 0
-
-
-def nxgraph_with_cycle(nodes_num):
-    graph = nx.DiGraph()
-    graph.add_nodes_from(range(nodes_num))
-    graph.add_edges_from([(i, (i + 1) % (nodes_num - 1)) for i in range(nodes_num - 1)])
-    graph.add_edge(nodes_num - 2, nodes_num - 1)
-    graph = relabel_nx_graph(graph, available_names=('x',))
-    return graph
