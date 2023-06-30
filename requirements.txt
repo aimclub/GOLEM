@@ -25,6 +25,7 @@ psutil>=5.9.2
 # Optimisation
 hyperopt>=0.2.7
 iOpt==0.1.6
+optuna>=3.2.0
 
 # Tests
 pytest>=6.2.0
