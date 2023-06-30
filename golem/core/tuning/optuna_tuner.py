@@ -75,7 +75,7 @@ class OptunaTuner(BaseTuner):
         final_graphs = self.adapter.restore(final_graphs)
         return final_graphs
 
-    def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Tuple[float, ]]:
+    def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Sequence[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)
         new_graph = BaseTuner.set_arg_graph(graph, new_parameters)
         metric_value = self.get_metric_value(new_graph)
@@ -87,24 +87,22 @@ class OptunaTuner(BaseTuner):
             operation_name = node.name
 
             # Get available parameters for operation
-            tunable_node_params = self.search_space.parameters_per_operation.get(operation_name)
+            tunable_node_params = self.search_space.parameters_per_operation.get(operation_name, {})
 
-            if tunable_node_params is not None:
+            for parameter_name, parameter_properties in tunable_node_params.items():
+                node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
-                for parameter_name, parameter_properties in tunable_node_params.items():
-                    node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
-
-                    parameter_type = parameter_properties.get('type')
-                    sampling_scope = parameter_properties.get('sampling-scope')
-                    if parameter_type == 'discrete':
-                        new_parameters.update({node_op_parameter_name:
-                                               trial.suggest_int(node_op_parameter_name, *sampling_scope)})
-                    elif parameter_type == 'continuous':
-                        new_parameters.update({node_op_parameter_name:
-                                               trial.suggest_float(node_op_parameter_name, *sampling_scope)})
-                    elif parameter_type == 'categorical':
-                        new_parameters.update({node_op_parameter_name:
-                                               trial.suggest_categorical(node_op_parameter_name, *sampling_scope)})
+                parameter_type = parameter_properties.get('type')
+                sampling_scope = parameter_properties.get('sampling-scope')
+                if parameter_type == 'discrete':
+                    new_parameters.update({node_op_parameter_name:
+                                           trial.suggest_int(node_op_parameter_name, *sampling_scope)})
+                elif parameter_type == 'continuous':
+                    new_parameters.update({node_op_parameter_name:
+                                           trial.suggest_float(node_op_parameter_name, *sampling_scope)})
+                elif parameter_type == 'categorical':
+                    new_parameters.update({node_op_parameter_name:
+                                           trial.suggest_categorical(node_op_parameter_name, *sampling_scope)})
         return new_parameters
 
     def _get_initial_point(self, graph: OptGraph) -> Tuple[dict, bool]:

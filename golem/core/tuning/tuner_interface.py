@@ -116,7 +116,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         prefix_tuned_phrase = 'Return tuned graph due to the fact that obtained metric'
         prefix_init_phrase = 'Return init graph due to the fact that obtained metric'
 
-        if self.obtained_metric == self._default_metric_value:
+        if np.isclose(self.obtained_metric, self._default_metric_value):
             self.obtained_metric = None
 
         # 0.05% deviation is acceptable
@@ -149,16 +149,16 @@ class BaseTuner(Generic[DomainGraphForTune]):
         for tuned_graph in tuned_graphs:
             obtained_metric = self.get_metric_value(graph=tuned_graph)
             for e, value in enumerate(obtained_metric):
-                if value == self._default_metric_value:
+                if np.isclose(value, self._default_metric_value):
                     obtained_metric[e] = None
             if not MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
                 self.obtained_metric.append(obtained_metric)
                 final_graphs.append(tuned_graph)
         if final_graphs:
-            metrics_formated = '\n'.join([str(list(map(lambda x: str(round(x, 3)), metric)))
-                                          for metric in self.obtained_metric])
+            metrics_formatted = [str(list(map(lambda x: round(x, 3), metric))) for metric in self.obtained_metric]
+            metrics_formatted = '\n'.join(metrics_formatted)
             self.log.message('Return tuned graphs with obtained metrics \n'
-                             f'{metrics_formated}')
+                             f'{metrics_formatted}')
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
             final_graphs = self.init_graph
@@ -183,7 +183,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             return metric_value
 
         elif isinstance(graph_fitness, MultiObjFitness):
-            metric_values = graph_fitness.getValues()
+            metric_values = graph_fitness.values
             for e, value in enumerate(metric_values):
                 if value is None:
                     metric_values[e] = self._default_metric_value
