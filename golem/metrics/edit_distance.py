@@ -67,7 +67,7 @@ def get_edit_dist_metric(target_graph: nx.DiGraph,
                                   node_match=node_match,
                                   upper_bound=upper_bound,
                                   timeout=timeout.total_seconds() if timeout else None,
-                                 )
+                                  )
         return float(ged) or upper_bound
 
     return metric
@@ -111,5 +111,3 @@ def try_tree_edit_distance(sizes1=None, sizes2=None, node_types=None,
 
 if __name__ == "__main__":
     try_tree_edit_distance(print_trees=False, node_types=list('XYZWQ'))
-
-
