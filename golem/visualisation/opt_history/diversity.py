@@ -56,9 +56,10 @@ def plot_diversity_dynamic_gif(history: 'OptHistory',
     lims_min = np.min([np.quantile(pop, q, axis=1) for pop in fitness_distrib], axis=0)
 
     # Setup the plot
-    fig, axs = plt.subplots(ncols=len(metric_names))
-    fig.set_size_inches(fig_size * len(metric_names), fig_size)
-    np.ravel(axs)
+    ncols = max(len(metric_names), 1)
+    fig, axs = plt.subplots(ncols=ncols)
+    fig.set_size_inches(fig_size * ncols, fig_size)
+    axs = np.atleast_1d(np.ravel(axs))
 
     # Set update function for updating data on the axes
     def update_axes(iframe: int):
@@ -72,7 +73,8 @@ def plot_diversity_dynamic_gif(history: 'OptHistory',
             ax.grid()
             # Plot information
             fig.suptitle(f'Population {iframe+1} diversity by metric')
-            ax.set_title(f'{metric_names[i]}, '
+            metric_name = metric_names[i] if metric_names else f"metric{i}"
+            ax.set_title(f'{metric_name}, '
                          f'mean={np.mean(metric_distrib).round(3)}, '
                          f'std={np.nanstd(metric_distrib).round(3)}')
             ax.violinplot(metric_distrib,

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import pytest
-from golem.serializers import Serializer, any_to_json, any_from_json
+from golem.serializers import Serializer, any_to_json, any_from_json, CLASS_PATH_KEY
 from golem.serializers.coders import (
     enum_from_json,
     enum_to_json,
@@ -17,8 +17,8 @@ from .shared_data import TestClass, TestEnum, TestSerializableClass
 
 @pytest.fixture
 def get_class_fixture(monkeypatch):
-    def mock_get_class(obj_type: type):
-        return obj_type
+    def mock_get_class(json_obj: dict):
+        return json_obj[CLASS_PATH_KEY]
 
     monkeypatch.setattr(
         f'{Serializer._get_class.__module__}.{Serializer._get_class.__qualname__}',

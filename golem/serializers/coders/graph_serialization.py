@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type, Sequence
+from typing import Any, Dict, Type, Sequence, Union
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_delegate import GraphDelegate
@@ -20,13 +20,21 @@ def graph_from_json(cls: Type[Graph], json_obj: Dict[str, Any]) -> Graph:
     return obj
 
 
-def _reassign_edges_by_node_ids(nodes: Sequence[LinkedGraphNode]):
+def _reassign_edges_by_node_ids(nodes: Sequence[Union[LinkedGraphNode, dict]]):
     """
     Assigns each <inner_node> from "nodes_from" to equal <outer_node> from "nodes"
         (cause each node from "nodes_from" in fact should point to the same node from "nodes")
     """
-    lookup_dict = {node.uid: node for node in nodes}
+    lookup_dict = {}
     for node in nodes:
-        if node.nodes_from:
-            for parent_node_idx, parent_node_uid in enumerate(node.nodes_from):
-                node.nodes_from[parent_node_idx] = lookup_dict.get(parent_node_uid, None)
+        if isinstance(node, dict):
+            lookup_dict[node['uid']] = node
+        else:
+            lookup_dict[node.uid] = node
+
+    for node in nodes:
+        nodes_from = node['_nodes_from'] if isinstance(node, dict) else node.nodes_from
+        if not nodes_from:
+            continue
+        for parent_node_idx, parent_node_uid in enumerate(nodes_from):
+            nodes_from[parent_node_idx] = lookup_dict.get(parent_node_uid, None)

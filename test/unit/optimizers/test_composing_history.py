@@ -263,7 +263,9 @@ def test_newly_generated_history(n_jobs: int):
 @pytest.mark.parametrize('plot_type', PlotTypesEnum)
 def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_history):
     save_path = Path(tmp_path, plot_type.name)
-    save_path = save_path.with_suffix('.gif') if plot_type is PlotTypesEnum.operations_animated_bar \
+    gif_plots = [PlotTypesEnum.operations_animated_bar,
+                 PlotTypesEnum.diversity_population]
+    save_path = save_path.with_suffix('.gif') if plot_type in gif_plots \
         else save_path.with_suffix('.png')
     history: OptHistory = generate_history
     visualizer = OptHistoryVisualizer(history)
