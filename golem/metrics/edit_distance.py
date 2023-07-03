@@ -24,6 +24,10 @@ def tree_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     return dist
 
 
+def graph_size(target_graph: nx.DiGraph, graph: nx.DiGraph) -> int:
+    return abs(target_graph.number_of_nodes() - graph.number_of_nodes())
+
+
 def _nx_to_zss_tree(graph: nx.DiGraph) -> zss.Node:
     # Root is the node without successors
     root = _get_root_node(graph)
