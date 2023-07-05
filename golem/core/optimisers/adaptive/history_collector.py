@@ -6,7 +6,6 @@ from typing import Sequence, Type, Optional, Any, Union, Generator, Dict
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.adaptive.operator_agent import ExperienceBuffer, OperatorAgent
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
@@ -112,12 +111,3 @@ class HistoryCollector:
         update_dict = dataclasses.asdict(update_dc) if dataclasses.is_dataclass(update_dc) else update_dc
         new_base = dataclasses.replace(base_dc, **update_dict)
         return new_base
-
-
-def fit_agent(collector: HistoryCollector, agent: OperatorAgent) -> OperatorAgent:
-    for history in collector.load_histories():
-        experience = ExperienceBuffer()
-        experience.collect_history(history)
-        agent.partial_fit(experience)
-    return agent
-
