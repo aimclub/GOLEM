@@ -1,4 +1,5 @@
 import random
+from functools import partial
 from typing import Union, Sequence, Optional, List
 
 import numpy as np
@@ -15,8 +16,10 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
     """ Contextual Multi-Armed bandit. Observations can be encoded with simple context agent without
     using NN to guarantee convergence. """
 
-    def __init__(self, actions: Sequence[ActType], n_jobs: int = 1,
-                 context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.nodes_num,
+    def __init__(self, actions: Sequence[ActType],
+                 context_agent_type: ContextAgentTypeEnum,
+                 available_operations: List[str],
+                 n_jobs: int = 1,
                  enable_logging: bool = True):
         super().__init__(enable_logging)
         self.actions = list(actions)
@@ -26,7 +29,8 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
-        self._context_agent = ContextAgentsRepository.agent_class_by_id(context_agent_type)
+        self._context_agent = partial(ContextAgentsRepository.agent_class_by_id(context_agent_type),
+                                      available_operations=available_operations)
         self._is_fitted = False
 
     def _initial_fit(self, obs: ObsType):
@@ -44,7 +48,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         if not self._is_fitted:
             self._initial_fit(obs=obs)
         contexts = self.get_context(obs=obs)
-        arm = self._agent.predict(contexts=contexts)
+        arm = self._agent.predict(contexts=np.array(contexts).reshape(1, -1))
         action = self.actions[arm]
         return action
 
@@ -52,7 +56,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         if not self._is_fitted:
             self._initial_fit(obs=obs)
         contexts = self.get_context(obs)
-        prob_dict = self._agent.predict_expectations(contexts=contexts)
+        prob_dict = self._agent.predict_expectations(contexts=np.array(contexts).reshape(1, -1))
         prob_list = [prob_dict[i] for i in range(len(prob_dict))]
         return prob_list
 
@@ -73,12 +77,12 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
 
     def get_context(self, obs: Union[List[ObsType], ObsType]) -> List[List[float]]:
         """ Returns contexts based on specified context agent. """
-        contexts = []
         if not isinstance(obs, list):
-            obs = [obs]
+            return self._context_agent(obs)
+        contexts = []
         for ob in obs:
             if isinstance(ob, list) or isinstance(ob, np.ndarray):
                 contexts.append(ob)
             else:
-                contexts.append([self._context_agent(ob)])
+                contexts.append(self._context_agent(ob))
         return contexts
