@@ -63,6 +63,8 @@ def default_selection_behaviour(selection_func: Optional[Callable] = None, *, en
 
 @default_selection_behaviour
 def tournament_selection(individuals: PopulationT, pop_size: int, fraction: float = 0.1) -> PopulationT:
+    """ Having the size of *individuals* equals to *n* will have no effect other
+    than lax ordering of *individuals*. """
     individuals = list(individuals)  # don't modify original
     group_size = math.ceil(len(individuals) * fraction)
     min_group_size = min(2, len(individuals))

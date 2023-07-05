@@ -1,8 +1,10 @@
+import math
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Dict
 
 from tqdm import tqdm
 
+from golem.core.constants import MIN_POP_SIZE
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
@@ -70,6 +72,8 @@ class PopulationalOptimizer(GraphOptimizer):
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
                 'Optimisation finished: Early stopping timeout criteria was satisfied'
             )
+        # in how many generations structural diversity check should be performed
+        self.gen_structural_diversity_check = self.graph_optimizer_params.structural_diversity_frequency_check
 
     @property
     def current_generation_num(self) -> int:
@@ -91,6 +95,10 @@ class PopulationalOptimizer(GraphOptimizer):
             while not self.stop_optimization():
                 try:
                     new_population = self._evolve_population(evaluator)
+                    if self.gen_structural_diversity_check != -1 \
+                            and self.generations.generation_num % self.gen_structural_diversity_check == 0 \
+                            and self.generations.generation_num != 0:
+                        new_population = self.get_structure_unique_population(population=new_population)
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
                     return [ind.graph for ind in self.best_individuals]
@@ -113,6 +121,13 @@ class PopulationalOptimizer(GraphOptimizer):
         """ Method realizing full evolution cycle """
         raise NotImplementedError()
 
+    def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
+        """ Extends population to specified `target_pop_size`. """
+        n = math.ceil(target_pop_size / len(pop))
+        extended_population = sorted(pop, key=lambda pos_ind: pos_ind.fitness, reverse=True) * n
+        extended_population = extended_population[:target_pop_size]
+        return extended_population
+
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
                            metadata: Optional[Dict[str, Any]] = None):
         self.generations.append(next_population)
@@ -132,6 +147,17 @@ class PopulationalOptimizer(GraphOptimizer):
         self.history.add_to_archive_history(self.generations.best_individuals)
         if self.requirements.history_dir:
             self.history.save_current_results(self.requirements.history_dir)
+
+    def get_structure_unique_population(self, population: PopulationT) -> PopulationT:
+        """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
+        Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
+        unique_population_with_ids = {ind.graph.descriptive_id: ind for ind in population}
+        unique_population = list(unique_population_with_ids.values())
+
+        # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
+        if len(unique_population) < MIN_POP_SIZE:
+            unique_population = self._extend_population(pop=population, target_pop_size=MIN_POP_SIZE)
+        return unique_population
 
     @property
     def _progressbar(self):

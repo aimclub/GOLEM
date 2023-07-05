@@ -115,7 +115,7 @@ class ReproductionController:
             if len(collected_next_population) >= total_target_size * self.parameters.required_valid_ratio:
                 self._log.info(f'Reproduction achieved pop size {len(collected_next_population)}'
                                f' using {i+1} attempt(s) with success rate {self.mean_success_rate:.3f}')
-                return list(collected_next_population.values())
+                return list(collected_next_population.values())[:total_target_size]
         else:
             # If number of evaluation attempts is exceeded return a warning or raise exception
             helpful_msg = ('Check objective, constraints and evo operators. '

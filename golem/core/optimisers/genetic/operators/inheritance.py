@@ -38,7 +38,10 @@ class Inheritance(Operator):
                                  prev_population: PopulationT,
                                  new_population: PopulationT
                                  ) -> PopulationT:
-        return self.selection(prev_population + new_population,
+        # use individuals with non-repetitive uid
+        not_repetitive_inds = [ind for ind in prev_population if ind not in new_population]
+        full_population = new_population + not_repetitive_inds
+        return self.selection(full_population,
                               pop_size=self.parameters.pop_size)
 
     def direct_inheritance(self, new_population: PopulationT) -> PopulationT:

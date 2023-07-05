@@ -137,7 +137,7 @@ def test_ancestor_for_mutation():
 
     requirements = GraphRequirements()
     graph_params = GraphGenerationParams(available_node_types=['a'])
-    parameters = GPAlgorithmParameters(mutation_types=[MutationTypesEnum.simple], mutation_prob=1)
+    parameters = GPAlgorithmParameters(mutation_types=[MutationTypesEnum.single_add], mutation_prob=1)
     mutation = Mutation(parameters, requirements, graph_params)
 
     mutation_result = mutation(parent_ind)
