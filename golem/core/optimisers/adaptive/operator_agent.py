@@ -37,6 +37,12 @@ class ExperienceBuffer:
         self._reset_main_storages()
         self.reset()
 
+    @staticmethod
+    def from_history(history: OptHistory) -> 'ExperienceBuffer':
+        exp = ExperienceBuffer()
+        exp.collect_history(history)
+        return exp
+
     def reset(self):
         self._current_observations = []
         self._current_actions = []
