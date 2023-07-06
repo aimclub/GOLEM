@@ -155,7 +155,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
                 self.obtained_metric.append(obtained_metric)
                 final_graphs.append(tuned_graph)
         if final_graphs:
-            metrics_formatted = [str(list(map(lambda x: round(x, 3), metric))) for metric in self.obtained_metric]
+            metrics_formatted = [str([round(x, 3) for x in metrics]) for metrics in self.obtained_metric]
             metrics_formatted = '\n'.join(metrics_formatted)
             self.log.message('Return tuned graphs with obtained metrics \n'
                              f'{metrics_formatted}')
