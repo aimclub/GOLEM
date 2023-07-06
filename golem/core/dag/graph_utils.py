@@ -21,21 +21,25 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
         int: distance to root level
     """
 
-    def recursive_child_height(parent_node: 'GraphNode') -> int:
-        node_child = graph.node_children(parent_node)
-        if node_child:
-            height = recursive_child_height(node_child[0])
-            return height + 1
-        return 0
+    def child_height(parent_node: 'GraphNode') -> int:
+        height = 0
+        for _ in range(graph.depth):
+            node_children = graph.node_children(parent_node)
+            if node_children:
+                height += 1
+                parent_node = node_children[0]
+            else:
+                return height
 
     if graph_has_cycle(graph):
         return -1
-    height = recursive_child_height(node)
+    height = child_height(node)
     return height
 
 
 def distance_to_primary_level(node: 'GraphNode') -> int:
-    return node_depth(node) - 1 if node_depth(node) > 0 else -1
+    depth = node_depth(node)
+    return depth - 1 if depth > 0 else -1
 
 
 def nodes_from_layer(graph: 'Graph', layer_number: int) -> Sequence['GraphNode']:
@@ -93,28 +97,30 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
     return subtree_impl(node)
 
 
-def node_depth(node: 'GraphNode', visited_nodes: Optional[Sequence['GraphNode']] = None) -> int:
+def node_depth(node: 'GraphNode') -> int:
     """Gets this graph depth from the provided ``node`` to the graph source node
 
     Args:
         node: where to start diving from
-        visited_nodes: nodes that were already visited during recursive evaluation
 
     Returns:
         int: length of a path from the provided ``node`` to the farthest primary node
     """
-    visited_nodes = visited_nodes or []
-    if node in visited_nodes:
-        return -1
-    elif not node.nodes_from:
-        return 1
-    else:
-        visited_nodes.append(node)
-        parent_depths = [node_depth(next_node, copy(visited_nodes)) for next_node in node.nodes_from]
-        if any([depth < 0 for depth in parent_depths]):
-            return -1
-        else:
-            return 1 + max(parent_depths)
+    visited_nodes = [node]
+    depth = 1
+    parents = node.nodes_from
+    while parents:
+        depth += 1
+        grandparents = []
+        for parent in parents:
+            if parent in visited_nodes:
+                return -1
+            grandparents.extend(parent.nodes_from)
+
+        visited_nodes.extend(parents)
+        parents = grandparents
+
+    return depth
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:

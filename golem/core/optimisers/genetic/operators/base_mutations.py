@@ -85,7 +85,8 @@ def simple_mutation(graph: OptGraph,
             visited_nodes.add(new_node)
             for parent in node.nodes_from:
                 replace_node_to_random_recursive(parent)
-    root_node = choice(ensure_wrapped_in_sequence(graph.root_node)) if graph.root_node else None
+    root_nodes = graph.root_nodes()
+    root_node = choice(root_nodes) if root_nodes else None
     node_mutation_probability = get_mutation_prob(mut_id=parameters.mutation_strength,
                                                   node=root_node)
 
