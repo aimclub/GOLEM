@@ -29,9 +29,14 @@ class Elitism(Operator):
 
     @staticmethod
     def keep_n_best_elitism(best_individuals: PopulationT, new_population: PopulationT) -> PopulationT:
-        shuffle(new_population)
-        new_population[:len(best_individuals)] = best_individuals
-        return new_population
+        final_population = []
+        final_population += best_individuals
+        new_unique_inds = [ind for ind in new_population if ind not in best_individuals]
+        if new_unique_inds:
+            shuffle(new_unique_inds)
+            remain_n = len(new_population) - len(best_individuals)
+            final_population += new_unique_inds[:remain_n]
+        return final_population
 
     @staticmethod
     def replace_worst_elitism(best_individuals: PopulationT, new_population: PopulationT) -> PopulationT:

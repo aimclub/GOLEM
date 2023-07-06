@@ -7,6 +7,7 @@ from examples.adaptive_optimizer.experiment_setup import run_adaptive_mutations
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.generators import postprocess_nx_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
+from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -37,9 +38,11 @@ def generate_trees(graph_sizes: Sequence[int], node_types: Sequence[str] = ('x',
     return trees
 
 
-def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAgentTypeEnum, pop_size: int = None):
+def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAgentTypeEnum,
+                        context_agent_type: ContextAgentTypeEnum = None, pop_size: int = None):
     return GPAlgorithmParameters(
         adaptive_mutation_type=adaptive_mutation_type,
+        context_agent_type=context_agent_type,
         pop_size=pop_size or 21,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,

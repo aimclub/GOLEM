@@ -24,6 +24,10 @@ def tree_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     return dist
 
 
+def graph_size(target_graph: nx.DiGraph, graph: nx.DiGraph) -> int:
+    return abs(target_graph.number_of_nodes() - graph.number_of_nodes())
+
+
 def _nx_to_zss_tree(graph: nx.DiGraph) -> zss.Node:
     # Root is the node without successors
     root = _get_root_node(graph)
@@ -63,7 +67,7 @@ def get_edit_dist_metric(target_graph: nx.DiGraph,
                                   node_match=node_match,
                                   upper_bound=upper_bound,
                                   timeout=timeout.total_seconds() if timeout else None,
-                                 )
+                                  )
         return float(ged) or upper_bound
 
     return metric
@@ -107,5 +111,3 @@ def try_tree_edit_distance(sizes1=None, sizes2=None, node_types=None,
 
 if __name__ == "__main__":
     try_tree_edit_distance(print_trees=False, node_types=list('XYZWQ'))
-
-
