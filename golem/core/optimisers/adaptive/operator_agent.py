@@ -15,6 +15,9 @@ from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 ObsType = Graph
 ActType = Hashable
+# Trajectory step includes: (past observation, action, reward, next observation)
+TrajectoryStep = Tuple[Individual, ActType, float]
+GraphTrajectory = Sequence[TrajectoryStep]
 
 
 class MutationAgentTypeEnum(Enum):
@@ -59,6 +62,40 @@ class ExperienceBuffer:
         self._actions = deque(maxlen=self.window_size)
         self._rewards = deque(maxlen=self.window_size)
 
+    @staticmethod
+    def unroll_action_step(result: Individual) -> TrajectoryStep:
+        """Unrolls individual's history to get its source individual, action and resulting reward."""
+        if not result.parent_operator or result.parent_operator.type_ != 'mutation':
+            return None, None, np.nan
+        source_ind = result.parent_operator.parent_individuals[0]
+        action = result.parent_operator.operators[0]
+        # we're minimising the fitness, that's why less is better
+        prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
+        # we're minimising the fitness, that's why less is better
+        # reward is defined as fitness improvement rate (FIR) to stabilize the algorithm
+        reward = (prev_fitness - result.fitness.value) / abs(prev_fitness) \
+            if prev_fitness is not None and prev_fitness != 0 else 0.
+        return source_ind, action, reward
+
+    @staticmethod
+    def unroll_trajectories(history: OptHistory) -> List[GraphTrajectory]:
+        """Iterates through history and find continuous sequences of applied operator actions."""
+        trajectories = []
+        seen_uids = set()
+        for terminal_individual in history.final_choices:
+            trajectory = []
+            next_ind = terminal_individual
+            while True:
+                seen_uids.add(next_ind.uid)
+                source_ind, action, reward = ExperienceBuffer.unroll_action_step(next_ind)
+                if source_ind is None or source_ind.uid in seen_uids:
+                    break
+                # prepend step to keep historical direction
+                trajectory.insert(0, (source_ind, action, reward))
+                next_ind = source_ind
+            trajectories.append(trajectory)
+        return trajectories
+
     def collect_history(self, history: OptHistory):
         seen = set()
         # We don't need the initial assumptions, as they have no parent operators, hence [1:]
@@ -77,18 +114,14 @@ class ExperienceBuffer:
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
-            return
-        if not result.parent_operator or result.parent_operator.type_ != 'mutation':
+            # avoid collecting results from indiiduals that didn't change
             return
         self._next_pop.add(result.uid)
-        obs = result.graph
-        action = result.parent_operator.operators[0]
-        prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
-        # we're minimising the fitness, that's why less is better
-        # reward is defined as fitness improvement rate (FIR) to stabilize the algorithm
-        reward = (prev_fitness - result.fitness.value) / abs(prev_fitness) \
-            if prev_fitness is not None and prev_fitness != 0 else 0.
-        self.collect_experience(obs, action, reward)
+
+        source_ind, action, reward = self.unroll_action_step(result)
+        if action is None:
+            return
+        self.collect_experience(source_ind.graph, action, reward)
 
     def collect_experience(self, obs: ObsType, action: ActType, reward: float):
         self._current_observations.append(obs)
