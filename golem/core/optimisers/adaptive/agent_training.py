@@ -1,15 +1,22 @@
-from typing import Sequence, Optional, Any, Tuple
+import operator
+from functools import reduce
+from typing import Sequence, Optional, Any, Tuple, List, Iterable
+
+import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.history_collector import HistoryCollector
-from golem.core.optimisers.adaptive.operator_agent import ExperienceBuffer, OperatorAgent
+from golem.core.optimisers.adaptive.operator_agent import ExperienceBuffer, OperatorAgent, GraphTrajectory, \
+    TrajectoryStep
 from golem.core.optimisers.fitness import null_fitness, Fitness
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-
+from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 
 MutationIdType = Any
+# Sequence of applied mutations and received rewards
 
 
 class AgentLearner:
@@ -29,32 +36,54 @@ class AgentLearner:
     def fit(self, collector: HistoryCollector) -> OperatorAgent:
         for history in collector.load_histories():
             experience = ExperienceBuffer.from_history(history)
+            # TODO: can I get oss/reward from there?
             self.agent.partial_fit(experience)
         return self.agent
 
-    def validate_history(self, history: OptHistory) -> float:
-        """Validates history of mutated individuals against ideal scenario
-        when for each graph the best (by fitness) mutation is chosen."""
-        experience = ExperienceBuffer.from_history(history)
-        graphs, actual_mutations, rewards = experience.retrieve_experience()
-        best_mutations, best_rewards = tuple(*zip(map(self._select_best_mutation, graphs)))
-        categorical_loss, reward_loss = self._compute_loss(actual_mutations, rewards,
-                                                           best_mutations, best_rewards)
+    def validate_on_rollouts(self, histories: Sequence[OptHistory]) -> float:
+        """Validates rollouts of agent vs. historic trajectories, comparing
+        their mean total rewards (i.e. total fitness gain over the trajectory)."""
+
+        # Collect all trajectories from all histories; and their rewards
+        trajectories = concat_lists(map(ExperienceBuffer.unroll_trajectories, histories))
+
+        mean_traj_len = int(np.mean([len(tr) for tr in trajectories]))
+        traj_rewards = [sum(reward for _, reward, _ in traj) for traj in trajectories]
+        mean_baseline_reward = np.mean(traj_rewards)
+
+        # Collect same number of trajectories of the same length; and their rewards
+        agent_trajectories = [self._sample_trajectory(initial=tr[0][0], length=mean_traj_len)
+                              for tr in trajectories]
+        agent_traj_rewards = [sum(reward for _, reward, _ in traj) for traj in agent_trajectories]
+        mean_agent_reward = np.mean(agent_traj_rewards)
+
+        # Compute improvement score of agent over baseline histories
+        improvement = mean_agent_reward - mean_baseline_reward
+        return improvement
+
+    def validate_history(self, history: OptHistory) -> Tuple[float, float]:
+        """Validates history of mutated individuals against optimal policy."""
+        history_trajectories = ExperienceBuffer.unroll_trajectories(history)
+        return self._validate_against_optimal(history_trajectories)
 
     def validate_agent(self, graphs: Sequence[Graph]):
-        # TODO: it is much more correct to estimate policy on rollouts,
-        #  instead of per-point basis. That's why *history is a trajectory*,
-        #  and here we collect *approximately same size of trajectory*.
-        best_mutations, best_rewards = tuple(*zip(map(self._select_best_mutation, graphs)))
-        actual_mutations, actual_rewards = [], []
-        for graph in graphs:
-            predicted_action = self.agent.choose_action(graph)
-            reward = self._compute_reward(predicted_action, graph)
-            actual_mutations.append(predicted_action)
-            actual_rewards.append(reward)
-        categorical_loss, reward_loss = self._compute_loss(actual_mutations, actual_rewards,
-                                                           best_mutations, best_rewards)
-        # TODO
+        """Validates agent policy against optimal policy on given graphs."""
+        agent_steps = [self._make_action_step(Individual(g)) for g in graphs]
+        return self._validate_against_optimal(trajectories=[agent_steps])
+
+    def _validate_against_optimal(self, trajectories: Sequence[GraphTrajectory]) -> Tuple[float, float]:
+        """Validates a policy trajectories against optimal policy
+        that at each step always chooses the best action with max reward."""
+        action_losses, reward_losses = [], []
+        for trajectory in trajectories:
+            inds, actions, rewards = unzip(trajectory)
+            _, best_actions, best_rewards = unzip(map(self._apply_best_action, inds))
+            action_loss, reward_loss = self._compute_loss(actions, rewards, best_actions, best_rewards)
+            action_losses.append(action_loss)
+            reward_losses.append(reward_loss)
+        action_loss = float(np.mean(action_losses))
+        reward_loss = float(np.mean(reward_losses))
+        return action_loss, reward_loss
 
     def _compute_loss(self,
                       actions, rewards,
@@ -63,18 +92,41 @@ class AgentLearner:
         # TODO: compute some loss! Either categorical OR reward loss OR both
         pass
 
-    def _select_best_mutation(self, graph: Graph) -> Tuple[MutationIdType, float]:
-        """Returns best mutation for given graph and associated reward for choosing it."""
-        prev_fitness = self.objective(graph)
-        rewards = {mutation_id: self._compute_reward(mutation_id, graph, prev_fitness)
+    def _apply_best_action(self, graph: Graph) -> TrajectoryStep:
+        """Returns greedily optimal mutation for given graph and associated reward."""
+        ind = Individual(graph, fitness=self.objective(graph))
+        results = {mutation_id: self._apply_action(mutation_id, ind)
                    for mutation_id in self._mutation_types}
-        best_mutation = max(rewards.keys(), key=lambda m: rewards[m])
-        return best_mutation, rewards[best_mutation]
+        step = max(results.items(), key=lambda m: results[m][-1])
+        return step
 
-    def _compute_reward(self, action: MutationIdType, graph: Graph, prev_fitness: Optional[Fitness] = None) -> float:
-        new_graph, applied = self.mutation._adapt_and_apply_mutation(graph, action)
+    def _apply_action(self, action: MutationIdType, ind: Individual) -> TrajectoryStep:
+        new_graph, applied = self.mutation._adapt_and_apply_mutation(ind.graph, action)
         fitness = null_fitness() if applied else self.objective(new_graph)
-        prev_fitness = prev_fitness or self.objective(graph)
-        reward = prev_fitness.value - fitness.value if prev_fitness is not None else 0.
-        return reward
+        parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=ind)
+        new_ind = Individual(new_graph, fitness=fitness, parent_operator=parent_op)
 
+        prev_fitness = ind.fitness or self.objective(ind.graph)
+        reward = prev_fitness.value - fitness.value if prev_fitness is not None else 0.
+        return new_ind, action, reward
+
+    def _make_action_step(self, ind: Individual) -> TrajectoryStep:
+        action = self.agent.choose_action(ind.graph)
+        return self._apply_action(action, ind)
+
+    def _sample_trajectory(self, initial: Individual, length: int) -> GraphTrajectory:
+        trajectory = []
+        past_ind = initial
+        for i in range(length):
+            next_ind, action, reward = self._make_action_step(past_ind)
+            trajectory.append((next_ind, action, reward))
+            past_ind = next_ind
+        return trajectory
+
+
+def unzip(seq: Sequence[Tuple]) -> Tuple[Sequence]:
+    return tuple(*zip(seq))
+
+
+def concat_lists(lists: Iterable[List]) -> List:
+    return reduce(operator.add, lists, [])
