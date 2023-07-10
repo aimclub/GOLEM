@@ -177,7 +177,8 @@ class LinkedGraph(Graph, Copyable):
         elif not self.root_nodes() or graph_has_cycle(self):
             return -1
         else:
-            return max(map(node_depth, self.root_nodes()))
+            depths = node_depth(self.root_nodes())
+            return max(ensure_wrapped_in_sequence(depths))
 
     @copy_doc(Graph.get_edges)
     def get_edges(self) -> Sequence[Tuple[GraphNode, GraphNode]]:

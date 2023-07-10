@@ -1,4 +1,6 @@
-from typing import Sequence, List, TYPE_CHECKING, Callable
+from typing import Sequence, List, TYPE_CHECKING, Callable, Union
+
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
@@ -92,30 +94,35 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
     return subtree_impl(node)
 
 
-def node_depth(node: 'GraphNode') -> int:
+def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> Union[int, List[int]]:
     """Gets this graph depth from the provided ``node`` to the graph source node
 
     Args:
-        node: where to start diving from
+        nodes: where to start diving from
 
     Returns:
         int: length of a path from the provided ``node`` to the farthest primary node
     """
-    visited_nodes = [node]
-    depth = 1
-    parents = node.nodes_from
-    while parents:
-        depth += 1
-        grandparents = []
-        for parent in parents:
-            if parent in visited_nodes:
-                return -1
-            grandparents.extend(parent.nodes_from)
+    def node_depth_util(node: 'GraphNode'):
+        visited_nodes = [node]
+        depth = 1
+        parents = node.nodes_from
+        while parents:
+            depth += 1
+            grandparents = []
+            for parent in parents:
+                if parent in visited_nodes:
+                    return -1
+                grandparents.extend(parent.nodes_from)
 
-        visited_nodes.extend(parents)
-        parents = grandparents
+            visited_nodes.extend(parents)
+            parents = grandparents
+        return depth
 
-    return depth
+    depths = []
+    for node in ensure_wrapped_in_sequence(nodes):
+        depths.append(node_depth_util(node))
+    return depths if len(depths) > 1 else depths[0]
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:
