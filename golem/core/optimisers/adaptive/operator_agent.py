@@ -1,22 +1,15 @@
 import random
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Union, Sequence, Hashable, Tuple, Optional
+from typing import Union, Sequence, Optional
 
 import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
+from golem.core.optimisers.adaptive.common_types import ObsType, ActType
 from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
-from golem.core.optimisers.opt_history_objects.individual import Individual
-
-ObsType = Union[Individual, Graph]
-ActType = Hashable
-# Trajectory step includes (past observation, action, reward)
-TrajectoryStep = Tuple[Individual, ActType, float]
-# Trajectory is a sequence of applied mutations and received rewards
-GraphTrajectory = Sequence[TrajectoryStep]
 
 
 class MutationAgentTypeEnum(Enum):

@@ -6,12 +6,12 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, GraphTrajectory, \
-    TrajectoryStep
+from golem.core.optimisers.adaptive.operator_agent import OperatorAgent
+from golem.core.optimisers.adaptive.common_types import TrajectoryStep, GraphTrajectory
 from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
 from golem.core.optimisers.fitness import null_fitness, Fitness
 from golem.core.optimisers.genetic.operators.mutation import Mutation
-from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.objective import ObjectiveFunction, Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
@@ -19,7 +19,7 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 
 class AgentLearner:
     def __init__(self,
-                 objective: ObjectiveFunction,
+                 objective: Objective,
                  mutation_operator: Mutation,
                  agent: Optional[OperatorAgent] = None,
                  ):
@@ -30,6 +30,13 @@ class AgentLearner:
 
     def fit(self, histories: Iterable[OptHistory], validate_each: int = -1) -> OperatorAgent:
         for i, history in enumerate(histories):
+            # Preliminary validity check
+            # This allows to filter out histories with different objectives automatically
+            if history.objective.metric_names != self.objective.metric_names:
+                self._log.warning(f'History #{i+1} has different objective! '
+                                  f'Expected {self.objective}, got {history.objective}.')
+                continue
+
             # Build datasets
             experience = ExperienceBuffer.from_history(history)
             val_experience = None
@@ -37,6 +44,7 @@ class AgentLearner:
                 experience, val_experience = experience.split(ratio=0.8, shuffle=True)
 
             # Train
+            self._log.info(f'Training on history #{i+1} with {len(history.generations)} generations')
             self.agent.partial_fit(experience)
 
             # Validate

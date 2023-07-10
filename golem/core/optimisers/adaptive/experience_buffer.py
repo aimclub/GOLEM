@@ -2,7 +2,7 @@ from typing import List, Iterable, Tuple
 
 import numpy as np
 
-from golem.core.optimisers.adaptive.operator_agent import TrajectoryStep, GraphTrajectory, ActType, ObsType
+from golem.core.optimisers.adaptive.common_types import ObsType, ActType, TrajectoryStep, GraphTrajectory
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
@@ -21,7 +21,7 @@ class ExperienceBuffer:
         self.reset(inds, actions, rewards)
 
     def reset(self, inds=None, actions=None, rewards=None):
-        if not (len(inds) == len(actions) == len(rewards)):
+        if inds and not (len(inds) == len(actions) == len(rewards)):
             raise ValueError('lengths of buffers do not mathch')
         self._individuals = inds or []
         self._actions = actions or []

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Sequence, Type, Optional, Any, Union, Generator
+from typing import Sequence, Type, Optional, Any, Union, Iterable
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
@@ -87,7 +87,7 @@ class HistoryReader:
         self.save_path = save_path or Path("results")
         self.save_path.mkdir(parents=True, exist_ok=True)
 
-    def load_histories(self) -> Generator[OptHistory]:
+    def load_histories(self) -> Iterable[OptHistory]:
         """Iteratively loads saved histories one-by-ony."""
         num_histories = 0
         total_individuals = 0
@@ -105,7 +105,7 @@ class HistoryReader:
                           f'with {total_individuals} individuals in total.')
 
     @staticmethod
-    def traverse_histories(path) -> Generator[Path]:
+    def traverse_histories(path) -> Iterable[Path]:
         if path.exists():
             # recursive traversal of the save directory
             for root, dirs, files in os.walk(path):
