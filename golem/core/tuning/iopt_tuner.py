@@ -233,22 +233,20 @@ def get_node_parameters_for_iopt(search_space: SearchSpace, node_id: int, operat
         and their range per operation
     """
     # Get available parameters for operation
-    parameters_dict = search_space.parameters_per_operation.get(operation_name)
+    parameters_dict = search_space.parameters_per_operation.get(operation_name, {})
 
     discrete_parameters_dict = {}
     float_parameters_dict = {}
 
-    if parameters_dict is not None:
+    for parameter_name, parameter_properties in parameters_dict.items():
+        node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
-        for parameter_name, parameter_properties in parameters_dict.items():
-            node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
-
-            parameter_type = parameter_properties.get('type')
-            if parameter_type == 'discrete':
-                discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                                .get('sampling-scope')})
-            elif parameter_type == 'continuous':
-                float_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                             .get('sampling-scope')})
+        parameter_type = parameter_properties.get('type')
+        if parameter_type == 'discrete':
+            discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                            .get('sampling-scope')})
+        elif parameter_type == 'continuous':
+            float_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                         .get('sampling-scope')})
 
     return float_parameters_dict, discrete_parameters_dict

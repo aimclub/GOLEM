@@ -7,9 +7,9 @@ from hyperopt import tpe, fmin, space_eval
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.tuner_interface import DomainGraphForTune
-from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 
 
 class SequentialTuner(HyperoptTuner):
@@ -86,8 +86,9 @@ class SequentialTuner(HyperoptTuner):
         final_graph = self.final_check(graph)
 
         self.was_tuned = True
+        final_graph = self.adapter.restore(final_graph)
 
-        return self.adapter.restore(final_graph)
+        return final_graph
 
     def get_nodes_order(self, nodes_number: int) -> range:
         """ Method returns list with indices of nodes in the graph

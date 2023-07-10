@@ -3,6 +3,8 @@ from numbers import Number
 from random import randint
 from typing import Sequence, Optional, List, Callable
 
+import numpy as np
+
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.graph_node import GraphNode
@@ -244,7 +246,7 @@ class RandomMetric:
         return randint(0, 1000)
 
 
-class CustomMetric:
+class ParamsSumMetric:
     @staticmethod
     def get_value(graph: Graph, *args, **kwargs) -> float:
         params_sum = 0
@@ -252,6 +254,16 @@ class CustomMetric:
             params = list(filter(lambda x: isinstance(x, Number), node.parameters.values()))
             params_sum += sum(params)
         return -params_sum
+
+
+class ParamsProductMetric:
+    @staticmethod
+    def get_value(graph: Graph, *args, **kwargs) -> float:
+        params_prod = 1
+        for node in graph.nodes:
+            params = list(filter(lambda x: isinstance(x, Number), node.parameters.values()))
+            params_prod *= np.prod(params)
+        return params_prod
 
 
 class DepthMetric:
