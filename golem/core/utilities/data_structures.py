@@ -1,10 +1,11 @@
 import collections.abc
+import dataclasses
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum
 from typing import Callable, Container, Generic, Iterable, Iterator, List, Optional, Sequence, Sized, TypeVar, Union, \
-    Tuple
+    Tuple, Any, Dict
 
 T = TypeVar('T')
 
@@ -308,3 +309,9 @@ class BidirectionalIterator(Iterator[T]):
 
 def unzip(tuples: Iterable[Tuple]) -> Tuple[Sequence, Sequence]:
     return tuple(zip(*tuples))
+
+
+def update_dataclass(base_dc: Any, update_dc: Union[Any, Dict]) -> Any:
+    update_dict = dataclasses.asdict(update_dc) if dataclasses.is_dataclass(update_dc) else update_dc
+    new_base = dataclasses.replace(base_dc, **update_dict)
+    return new_base
