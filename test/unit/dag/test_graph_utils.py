@@ -7,6 +7,8 @@ from test.unit.utils import graph_first, simple_cycled_graph, branched_cycled_gr
 from golem.core.dag.graph_utils import distance_to_primary_level
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 
+_ = graph
+
 
 def get_nodes():
     node_a_first = LinkedGraphNode('a')

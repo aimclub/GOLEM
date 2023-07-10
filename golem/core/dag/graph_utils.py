@@ -1,9 +1,4 @@
-from copy import copy
-from typing import Sequence, List, TYPE_CHECKING, Callable, Optional
-
-from networkx import simple_cycles
-
-from golem.core.dag.convert import graph_structure_as_nx_graph
+from typing import Sequence, List, TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
