@@ -112,7 +112,7 @@ class Mutation(Operator):
                 break
             else:
                 # Collect invalid actions
-                self.agent_experience.collect_experience(individual.graph, mutation_applied, reward=-1.0)
+                self.agent_experience.collect_experience(individual, mutation_applied, reward=-1.0)
         else:
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')

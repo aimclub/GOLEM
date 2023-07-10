@@ -13,7 +13,7 @@ from golem.core.optimisers.genetic.operators.base_mutations import MutationTypes
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
-ObsType = Graph
+ObsType = Union[Individual, Graph]
 ActType = Hashable
 # Trajectory step includes: (past observation, action, reward, next observation)
 TrajectoryStep = Tuple[Individual, ActType, float]
@@ -121,22 +121,31 @@ class ExperienceBuffer:
         source_ind, action, reward = self.unroll_action_step(result)
         if action is None:
             return
-        self.collect_experience(source_ind.graph, action, reward)
+        self.collect_experience(source_ind, action, reward)
 
     def collect_experience(self, obs: ObsType, action: ActType, reward: float):
-        self._current_observations.append(obs)
-        self._current_actions.append(action)
-        self._current_rewards.append(reward)
+        self._observations.append(obs)
+        self._actions.append(action)
+        self._rewards.append(reward)
 
-    def retrieve_experience(self) -> Tuple[List[ObsType], List[ActType], List[float]]:
-        """Get all collected experience and clear the experience buffer."""
-        observations, actions, rewards = self._observations, self._actions, self._rewards
+    def retrieve_experience(self, as_graphs: bool = True) -> Tuple[List[ObsType], List[ActType], List[float]]:
+        """Get all collected experience and clear the experience buffer.
+        Args:
+            as_graphs: if True (by default) returns observations as graphs, otherwise as individuals.
+        Return:
+             Unzipped trajectories (tuple of lists of observations, actions, rewards).
+        """
+        individuals, actions, rewards = self._observations, self._actions, self._rewards
+        observations = [ind.graph for ind in individuals] if as_graphs else individuals
         next_pop = self._next_pop
         self.reset()
         self._prev_pop = next_pop
-        return list(observations), \
-            list(actions), \
-            list(rewards)
+        return observations, actions, rewards
+
+    def retrieve_trajectories(self) -> GraphTrajectory:
+        """Same as `retrieve_experience` but in the form of zipped trajectories that consist from steps."""
+        trajectories = list(zip(self.retrieve_experience(as_graphs=False)))
+        return trajectories
 
 
 class OperatorAgent(ABC):
@@ -153,7 +162,7 @@ class OperatorAgent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def choose_nodes(self, graph: Graph, num_nodes: int = 1) -> Union[GraphNode, Sequence[GraphNode]]:
+    def choose_nodes(self, graph: ObsType, num_nodes: int = 1) -> Union[GraphNode, Sequence[GraphNode]]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -198,7 +207,7 @@ class RandomAgent(OperatorAgent):
         self._probs = probs or [1. / len(actions)] * len(actions)
         super().__init__(enable_logging)
 
-    def choose_action(self, obs: ObsType) -> ActType:
+    def choose_action(self, obs: Graph) -> ActType:
         action = np.random.choice(self.actions, p=self.get_action_probs(obs))
         return action
 
@@ -210,8 +219,8 @@ class RandomAgent(OperatorAgent):
         obs, actions, rewards = experience.retrieve_experience()
         self._dbg_log(obs, actions, rewards)
 
-    def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:
+    def get_action_probs(self, obs: Optional[Graph] = None) -> Sequence[float]:
         return self._probs
 
-    def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
+    def get_action_values(self, obs: Optional[Graph] = None) -> Sequence[float]:
         return self._probs
