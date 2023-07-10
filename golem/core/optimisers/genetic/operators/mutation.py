@@ -9,7 +9,8 @@ from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import Conte
 from golem.core.optimisers.adaptive.mab_agents.mab_agent import MultiArmedBanditAgent
 from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.operator_agent import \
-    OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
+    OperatorAgent, RandomAgent, MutationAgentTypeEnum
+from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
 from golem.core.optimisers.genetic.operators.base_mutations import \
     base_mutations_repo, MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator

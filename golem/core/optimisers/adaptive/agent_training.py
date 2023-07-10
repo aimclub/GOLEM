@@ -6,8 +6,9 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.adaptive.operator_agent import ExperienceBuffer, OperatorAgent, GraphTrajectory, \
+from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, GraphTrajectory, \
     TrajectoryStep
+from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
 from golem.core.optimisers.fitness import null_fitness, Fitness
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.objective import ObjectiveFunction
