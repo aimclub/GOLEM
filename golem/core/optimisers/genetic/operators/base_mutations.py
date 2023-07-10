@@ -85,6 +85,7 @@ def simple_mutation(graph: OptGraph,
             visited_nodes.add(new_node)
             for parent in node.nodes_from:
                 replace_node_to_random_recursive(parent)
+
     root_nodes = graph.root_nodes()
     root_node = choice(root_nodes) if root_nodes else None
     node_mutation_probability = get_mutation_prob(mut_id=parameters.mutation_strength,
@@ -107,6 +108,11 @@ def single_edge_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
+
+    def nodes_not_cycling(source_node: OptNode, target_node: OptNode):
+        return (target_node.descriptive_id not in
+                [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
+
     for _ in range(parameters.max_num_of_operator_attempts):
         if len(graph.nodes) < 2 or graph.depth > requirements.max_depth:
             return graph
@@ -117,9 +123,7 @@ def single_edge_mutation(graph: OptGraph,
                 graph.connect_nodes(source_node, target_node)
                 break
             else:
-                nodes_not_cycling = (target_node.descriptive_id not in
-                                     [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
-                if nodes_not_cycling:
+                if nodes_not_cycling(source_node, target_node):
                     graph.connect_nodes(source_node, target_node)
                     break
     return graph
@@ -370,7 +374,6 @@ base_mutations_repo = {
     MutationTypesEnum.single_change: single_change_mutation,
 }
 
-
 simple_mutation_set = (
     MutationTypesEnum.tree_growth,
     MutationTypesEnum.single_add,
@@ -381,7 +384,6 @@ simple_mutation_set = (
     # flip edge
     # cycle edge
 )
-
 
 rich_mutation_set = (
     MutationTypesEnum.simple,
