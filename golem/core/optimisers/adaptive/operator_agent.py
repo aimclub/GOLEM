@@ -13,8 +13,9 @@ from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 ObsType = Union[Individual, Graph]
 ActType = Hashable
-# Trajectory step includes: (past observation, action, reward, next observation)
+# Trajectory step includes (past observation, action, reward)
 TrajectoryStep = Tuple[Individual, ActType, float]
+# Trajectory is a sequence of applied mutations and received rewards
 GraphTrajectory = Sequence[TrajectoryStep]
 
 
@@ -149,11 +150,15 @@ class ExperienceBuffer:
         return buffer_train, buffer_val
 
 
-
 class OperatorAgent(ABC):
-    def __init__(self, enable_logging: bool = True):
+    def __init__(self, actions: Sequence[ActType], enable_logging: bool = True):
+        self.actions = list(actions)
         self._enable_logging = enable_logging
         self._log = default_log(self)
+
+    @property
+    def available_actions(self) -> Sequence[ActType]:
+        return self.actions
 
     @abstractmethod
     def partial_fit(self, experience: ExperienceBuffer):
@@ -202,9 +207,8 @@ class RandomAgent(OperatorAgent):
                  actions: Sequence[ActType],
                  probs: Optional[Sequence[float]] = None,
                  enable_logging: bool = True):
-        self.actions = list(actions)
+        super().__init__(actions, enable_logging)
         self._probs = probs or [1. / len(actions)] * len(actions)
-        super().__init__(enable_logging)
 
     def choose_action(self, obs: Graph) -> ActType:
         action = np.random.choice(self.actions, p=self.get_action_probs(obs))

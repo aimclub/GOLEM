@@ -6,7 +6,6 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.adaptive.history_collector import HistoryCollector
 from golem.core.optimisers.adaptive.operator_agent import ExperienceBuffer, OperatorAgent, GraphTrajectory, \
     TrajectoryStep
 from golem.core.optimisers.fitness import null_fitness, Fitness
@@ -15,9 +14,6 @@ from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
-
-MutationIdType = Any
-# Sequence of applied mutations and received rewards
 
 
 class AgentLearner:
@@ -31,18 +27,13 @@ class AgentLearner:
         self.mutation = mutation_operator
         self.objective = objective
 
-    @property
-    def _mutation_types(self) -> Sequence:
-        # TODO: abstract that
-        return self.agent.actions
-
-    def fit(self, collector: HistoryCollector, validate_each: int = -1) -> OperatorAgent:
-        for i, history in enumerate(collector.load_histories()):
+    def fit(self, histories: Iterable[OptHistory], validate_each: int = -1) -> OperatorAgent:
+        for i, history in enumerate(histories):
             # Build datasets
             experience = ExperienceBuffer.from_history(history)
             val_experience = None
             if validate_each > 0 and i % validate_each == 0:
-                experience, val_experience = experience.split(ratio=0.8, shuffle=False)
+                experience, val_experience = experience.split(ratio=0.8, shuffle=True)
 
             # Train
             self.agent.partial_fit(experience)
@@ -124,11 +115,11 @@ class AgentLearner:
         """Returns greedily optimal mutation for given graph and associated reward."""
         ind = Individual(graph, fitness=self.objective(graph))
         results = {mutation_id: self._apply_action(mutation_id, ind)
-                   for mutation_id in self._mutation_types}
+                   for mutation_id in self.agent.available_actions}
         step = max(results.items(), key=lambda m: results[m][-1])
         return step
 
-    def _apply_action(self, action: MutationIdType, ind: Individual) -> TrajectoryStep:
+    def _apply_action(self, action: Any, ind: Individual) -> TrajectoryStep:
         new_graph, applied = self.mutation._adapt_and_apply_mutation(ind.graph, action)
         fitness = null_fitness() if applied else self.objective(new_graph)
         parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=ind)
