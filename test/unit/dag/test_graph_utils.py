@@ -1,8 +1,9 @@
 import pytest
 
-from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy
+from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy, \
+    graph_has_cycle
 from test.unit.dag.test_graph_operator import graph
-from test.unit.utils import graph_first
+from test.unit.utils import graph_first, simple_cycled_graph, branched_cycled_graph, graph_second, graph_third
 from golem.core.dag.graph_utils import distance_to_primary_level
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 
@@ -76,3 +77,10 @@ def test_ordered_subnodes_cycle():
 
     with pytest.raises(ValueError, match='cycle'):
         ordered_subnodes_hierarchy(root)
+
+
+def test_graph_has_cycle():
+    for graph in [simple_cycled_graph(), branched_cycled_graph()]:
+        assert graph_has_cycle(graph)
+    for graph in [graph_first(), graph_second(), graph_third()]:
+        assert not graph_has_cycle(graph)

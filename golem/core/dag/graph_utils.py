@@ -23,7 +23,7 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
 
     def child_height(parent_node: 'GraphNode') -> int:
         height = 0
-        for _ in range(graph.depth):
+        for _ in range(graph.length):
             node_children = graph.node_children(parent_node)
             if node_children:
                 height += 1
@@ -161,6 +161,26 @@ def graph_structure(graph: 'Graph') -> str:
 
 
 def graph_has_cycle(graph: 'Graph') -> bool:
-    """ Returns True if the graph contains a cycle and False otherwise."""
-    nx_graph, _ = graph_structure_as_nx_graph(graph)
-    return len(list(simple_cycles(nx_graph))) > 0
+    """ Returns True if the graph contains a cycle and False otherwise. Implements Depth-First Search."""
+
+    visited = {node.uid: False for node in graph.nodes}
+    stack = []
+    on_stack = {node.uid: False for node in graph.nodes}
+    for node in graph.nodes:
+        if visited[node.uid]:
+            continue
+        stack.append(node)
+        while len(stack) > 0:
+            cur_node = stack[-1]
+            if not visited[cur_node.uid]:
+                visited[cur_node.uid] = True
+                on_stack[cur_node.uid] = True
+            else:
+                on_stack[cur_node.uid] = False
+                stack.pop()
+            for parent in cur_node.nodes_from:
+                if not visited[parent.uid]:
+                    stack.append(parent)
+                elif on_stack[parent.uid]:
+                    return True
+    return False

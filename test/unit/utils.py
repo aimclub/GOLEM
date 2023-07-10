@@ -239,7 +239,7 @@ def tree_graph():
     return graph
 
 
-def cycled_graph():
+def simple_cycled_graph():
     node_a_primary = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
     node_c = LinkedGraphNode('c', nodes_from=[node_b])
@@ -247,6 +247,22 @@ def cycled_graph():
     node_e = LinkedGraphNode('e', nodes_from=[node_d])
     node_b.nodes_from.append(node_e)
     graph = GraphDelegate(node_d)
+    return graph
+
+
+def branched_cycled_graph():
+    node_a_primary = LinkedGraphNode('a')
+    node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
+    node_c = LinkedGraphNode('c', nodes_from=[node_b])
+    node_d = LinkedGraphNode('d', nodes_from=[node_c])
+    node_e = LinkedGraphNode('e', nodes_from=[node_d])
+    node_b.nodes_from.append(node_e)
+
+    node_f = LinkedGraphNode('f', nodes_from=[node_a_primary])
+    node_g = LinkedGraphNode('g', nodes_from=[node_f])
+    node_h = LinkedGraphNode('h', nodes_from=[node_f])
+
+    graph = GraphDelegate([node_d, node_g, node_h])
     return graph
 
 

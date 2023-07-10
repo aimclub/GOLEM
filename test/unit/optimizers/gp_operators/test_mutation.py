@@ -23,7 +23,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from test.unit.utils import simple_linear_graph, tree_graph, graph_with_single_node, graph_first, \
-    graph_fifth, cycled_graph
+    graph_fifth, simple_cycled_graph
 
 available_node_types = ['a', 'b', 'c', 'd', 'e', 'f']
 
@@ -53,7 +53,7 @@ def test_mutation_none():
     assert new_graph == graph
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_simple_mutation(graph):
     """
     Test correctness of simple mutation
@@ -64,7 +64,7 @@ def test_simple_mutation(graph):
         assert graph.nodes[i] != new_graph.nodes[i]
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_drop_node(graph):
     new_graph = deepcopy(graph)
     params = get_mutation_params()
@@ -73,7 +73,7 @@ def test_drop_node(graph):
     assert new_graph.length < graph.length
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_add_as_parent_node(graph):
     """
     Test correctness of adding as a parent
@@ -88,7 +88,7 @@ def test_add_as_parent_node(graph):
     assert len(node_to_mutate.nodes_from) > len(graph.nodes[1].nodes_from)
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_add_as_child_node(graph):
     """
     Test correctness of adding as a child
@@ -104,7 +104,7 @@ def test_add_as_child_node(graph):
     assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_add_as_intermediate_node(graph):
     """
     Test correctness of adding as an intermediate node
@@ -120,7 +120,7 @@ def test_add_as_intermediate_node(graph):
     assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_edge_mutation_for_graph(graph):
     """
     Tests edge mutation can add edge between nodes
@@ -130,7 +130,7 @@ def test_edge_mutation_for_graph(graph):
     assert len(new_graph.get_edges()) > len(graph.get_edges())
 
 
-@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), cycled_graph()])
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
 def test_replace_mutation(graph):
     """
     Tests single_change mutation can change node to another
