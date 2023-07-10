@@ -82,7 +82,7 @@ def test_ordered_subnodes_cycle():
 
 
 def test_graph_has_cycle():
-    for graph in [simple_cycled_graph(), branched_cycled_graph()]:
-        assert graph_has_cycle(graph)
-    for graph in [graph_first(), graph_second(), graph_third()]:
-        assert not graph_has_cycle(graph)
+    for cycled_graph in [simple_cycled_graph(), branched_cycled_graph()]:
+        assert graph_has_cycle(cycled_graph)
+    for not_cycled_graph in [graph_first(), graph_second(), graph_third()]:
+        assert not graph_has_cycle(not_cycled_graph)
