@@ -37,18 +37,21 @@ class AgentLearner:
         return self.agent.actions
 
     def fit(self, collector: HistoryCollector, validate_each: int = -1) -> OperatorAgent:
-        # TODO: how to understand that it learns at all?
-        # -> check that reward on train trajectories increases at all
-        # -> check that reward approaches theoretical maximum (optimal exhaustive policy)
-        #   baseline <= agent <= optimal (pointwise)
         for i, history in enumerate(collector.load_histories()):
+            # Build datasets
             experience = ExperienceBuffer.from_history(history)
-            # TODO: can I get oss/reward from there?
-            self.agent.partial_fit(experience)
+            val_experience = None
             if validate_each > 0 and i % validate_each == 0:
-                # TODO: get optimal rewards also
-                reward_loss = self.validate_agent()
+                experience, val_experience = experience.split(ratio=0.8, shuffle=False)
 
+            # Train
+            self.agent.partial_fit(experience)
+
+            # Validate
+            if val_experience:
+                reward_loss, reward_target = self.validate_agent(experience=val_experience)
+                self._log.info(f'Agent validation for history #{i+1} & {experience}: '
+                               f'Reward target={reward_target:.3f}, loss={reward_loss:.3f}')
         return self.agent
 
     def validate_on_rollouts(self, histories: Sequence[OptHistory]) -> float:
@@ -72,35 +75,38 @@ class AgentLearner:
         improvement = mean_agent_reward - mean_baseline_reward
         return improvement
 
-    def validate_history(self, history: OptHistory) -> float:
+    def validate_history(self, history: OptHistory) -> Tuple[float, float]:
         """Validates history of mutated individuals against optimal policy."""
         history_trajectories = ExperienceBuffer.unroll_trajectories(history)
         return self._validate_against_optimal(history_trajectories)
 
     def validate_agent(self,
                        graphs: Optional[Sequence[Graph]] = None,
-                       history: Optional[OptHistory] = None) -> float:
+                       experience: Optional[ExperienceBuffer] = None) -> Tuple[float, float]:
         """Validates agent policy against optimal policy on given graphs."""
-        if history is not None:
-            agent_steps = ExperienceBuffer.from_history(history).retrieve_trajectories()
+        if experience:
+            agent_steps = experience.retrieve_trajectories()
         elif graphs:
             agent_steps = [self._make_action_step(Individual(g)) for g in graphs]
         else:
             self._log.warning(f'Either graphs or history must not be None for validation!')
-            return 0.
+            return 0., 0.
         return self._validate_against_optimal(trajectories=[agent_steps])
 
-    def _validate_against_optimal(self, trajectories: Sequence[GraphTrajectory]) -> float:
+    def _validate_against_optimal(self, trajectories: Sequence[GraphTrajectory]) -> Tuple[float, float]:
         """Validates a policy trajectories against optimal policy
         that at each step always chooses the best action with max reward."""
         reward_losses = []
+        reward_targets = []
         for trajectory in trajectories:
             inds, actions, rewards = unzip(trajectory)
             _, best_actions, best_rewards = unzip(map(self._apply_best_action, inds))
             reward_loss = self._compute_reward_loss(rewards, best_rewards)
             reward_losses.append(reward_loss)
+            reward_targets.append(np.mean(best_rewards))
         reward_loss = float(np.mean(reward_losses))
-        return reward_loss
+        reward_target = float(np.mean(reward_targets))
+        return reward_loss, reward_target
 
     @staticmethod
     def _compute_reward_loss(rewards, optimal_rewards, normalized=False) -> float:

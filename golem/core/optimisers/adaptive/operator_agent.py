@@ -1,6 +1,5 @@
 import random
 from abc import ABC, abstractmethod
-from collections import deque
 from enum import Enum
 from typing import Union, Sequence, Hashable, Tuple, Optional, List, Iterable
 
@@ -9,7 +8,6 @@ import numpy as np
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
-from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
@@ -29,16 +27,8 @@ class MutationAgentTypeEnum(Enum):
 
 
 class ExperienceBuffer:
-    """
-    Buffer for learning experience of ``OperatorAgent``.
-    Keeps (State, Action, Reward) lists until retrieval.
-    Can be used with window_size for actualizing experience.
-    """
-
-    def __init__(self, window_size: Optional[int] = None):
-        self.window_size = window_size
-        self._reset_main_storages()
-        self.reset()
+    """Buffer for learning experience of ``OperatorAgent``.
+    Keeps (State, Action, Reward) lists until retrieval."""
 
     @staticmethod
     def from_history(history: OptHistory) -> 'ExperienceBuffer':
@@ -46,21 +36,17 @@ class ExperienceBuffer:
         exp.collect_history(history)
         return exp
 
-    def reset(self):
-        self._current_observations = []
-        self._current_actions = []
-        self._current_rewards = []
+    def __init__(self, inds=None, actions=None, rewards=None):
+        self.reset(inds, actions, rewards)
+
+    def reset(self, inds=None, actions=None, rewards=None):
+        if not (len(inds) == len(actions) == len(rewards)):
+            raise ValueError('lengths of buffers do not mathch')
+        self._individuals = inds or []
+        self._actions = actions or []
+        self._rewards = rewards or []
         self._prev_pop = set()
         self._next_pop = set()
-
-        # if window size was not specified than there is no need to store these values for reuse
-        if self.window_size is None:
-            self._reset_main_storages()
-
-    def _reset_main_storages(self):
-        self._observations = deque(maxlen=self.window_size)
-        self._actions = deque(maxlen=self.window_size)
-        self._rewards = deque(maxlen=self.window_size)
 
     @staticmethod
     def unroll_action_step(result: Individual) -> TrajectoryStep:
@@ -70,11 +56,7 @@ class ExperienceBuffer:
         source_ind = result.parent_operator.parent_individuals[0]
         action = result.parent_operator.operators[0]
         # we're minimising the fitness, that's why less is better
-        prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
-        # we're minimising the fitness, that's why less is better
-        # reward is defined as fitness improvement rate (FIR) to stabilize the algorithm
-        reward = (prev_fitness - result.fitness.value) / abs(prev_fitness) \
-            if prev_fitness is not None and prev_fitness != 0 else 0.
+        reward = source_ind.fitness.value - result.fitness.value if source_ind.fitness is not None else 0.
         return source_ind, action, reward
 
     @staticmethod
@@ -96,6 +78,12 @@ class ExperienceBuffer:
             trajectories.append(trajectory)
         return trajectories
 
+    def __len__(self):
+        return len(self._individuals)
+
+    def __str__(self):
+        return f'{self.__class__.__name__}({len(self)})'
+
     def collect_history(self, history: OptHistory):
         seen = set()
         # We don't need the initial assumptions, as they have no parent operators, hence [1:]
@@ -105,12 +93,9 @@ class ExperienceBuffer:
                     seen.add(ind.uid)
                     self.collect_result(ind)
 
-    def collect_results(self, results: Sequence[Individual]):
+    def collect_results(self, results: Iterable[Individual]):
         for ind in results:
             self.collect_result(ind)
-        self._observations += self._current_observations
-        self._actions += self._current_actions
-        self._rewards += self._current_rewards
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
@@ -123,8 +108,8 @@ class ExperienceBuffer:
             return
         self.collect_experience(source_ind, action, reward)
 
-    def collect_experience(self, obs: ObsType, action: ActType, reward: float):
-        self._observations.append(obs)
+    def collect_experience(self, obs: Individual, action: ActType, reward: float):
+        self._individuals.append(obs)
         self._actions.append(action)
         self._rewards.append(reward)
 
@@ -135,7 +120,7 @@ class ExperienceBuffer:
         Return:
              Unzipped trajectories (tuple of lists of observations, actions, rewards).
         """
-        individuals, actions, rewards = self._observations, self._actions, self._rewards
+        individuals, actions, rewards = self._individuals, self._actions, self._rewards
         observations = [ind.graph for ind in individuals] if as_graphs else individuals
         next_pop = self._next_pop
         self.reset()
@@ -146,6 +131,23 @@ class ExperienceBuffer:
         """Same as `retrieve_experience` but in the form of zipped trajectories that consist from steps."""
         trajectories = list(zip(self.retrieve_experience(as_graphs=False)))
         return trajectories
+
+    def split(self, ratio: float = 0.8, shuffle: bool = False
+              ) -> Tuple['ExperienceBuffer', 'ExperienceBuffer']:
+        """Splits buffer in 2 parts, useful for train/validation split."""
+        mask_train = np.full_like(self._individuals, True, dtype=bool)
+        num_train = int(len(self._individuals) * ratio)
+        mask_train[-num_train:] = False
+        if shuffle:
+            np.random.default_rng().shuffle(mask_train)
+        buffer_train = ExperienceBuffer(inds=self._individuals[mask_train].aslist(),
+                                        actions=self._actions[mask_train].aslist(),
+                                        rewards=self._rewards[mask_train].aslist())
+        buffer_val = ExperienceBuffer(inds=self._individuals[~mask_train].aslist(),
+                                      actions=self._actions[~mask_train].aslist(),
+                                      rewards=self._rewards[~mask_train].aslist())
+        return buffer_train, buffer_val
+
 
 
 class OperatorAgent(ABC):
@@ -184,10 +186,7 @@ class OperatorAgent(ABC):
                         f'min={nonzero.min()} max={nonzero.max()} ')
 
             self._log.info(msg)
-
-            actions_names = [action.name if isinstance(action, MutationTypesEnum) else action.__name__
-                             for action in actions]
-            self._log.info(f'actions/rewards: {list(zip(actions_names, rr))}')
+            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
 
             action_values = list(map(self.get_action_values, obs))
             action_probs = list(map(self.get_action_probs, obs))
