@@ -5,6 +5,7 @@ from typing import Sequence, Optional, Any, Tuple, List, Iterable
 import numpy as np
 
 from golem.core.dag.graph import Graph
+from golem.core.log import default_log
 from golem.core.optimisers.adaptive.history_collector import HistoryCollector
 from golem.core.optimisers.adaptive.operator_agent import ExperienceBuffer, OperatorAgent, GraphTrajectory, \
     TrajectoryStep
@@ -21,10 +22,12 @@ MutationIdType = Any
 
 class AgentLearner:
     def __init__(self,
-                 agent: OperatorAgent,
+                 objective: ObjectiveFunction,
                  mutation_operator: Mutation,
-                 objective: ObjectiveFunction):
-        self.agent = agent
+                 agent: Optional[OperatorAgent] = None,
+                 ):
+        self._log = default_log(self)
+        self.agent = agent if agent is not None else mutation_operator.agent
         self.mutation = mutation_operator
         self.objective = objective
 
@@ -33,11 +36,19 @@ class AgentLearner:
         # TODO: abstract that
         return self.agent.actions
 
-    def fit(self, collector: HistoryCollector) -> OperatorAgent:
-        for history in collector.load_histories():
+    def fit(self, collector: HistoryCollector, validate_each: int = -1) -> OperatorAgent:
+        # TODO: how to understand that it learns at all?
+        # -> check that reward on train trajectories increases at all
+        # -> check that reward approaches theoretical maximum (optimal exhaustive policy)
+        #   baseline <= agent <= optimal (pointwise)
+        for i, history in enumerate(collector.load_histories()):
             experience = ExperienceBuffer.from_history(history)
             # TODO: can I get oss/reward from there?
             self.agent.partial_fit(experience)
+            if validate_each > 0 and i % validate_each == 0:
+                # TODO: get optimal rewards also
+                reward_loss = self.validate_agent()
+
         return self.agent
 
     def validate_on_rollouts(self, histories: Sequence[OptHistory]) -> float:
@@ -61,36 +72,47 @@ class AgentLearner:
         improvement = mean_agent_reward - mean_baseline_reward
         return improvement
 
-    def validate_history(self, history: OptHistory) -> Tuple[float, float]:
+    def validate_history(self, history: OptHistory) -> float:
         """Validates history of mutated individuals against optimal policy."""
         history_trajectories = ExperienceBuffer.unroll_trajectories(history)
         return self._validate_against_optimal(history_trajectories)
 
-    def validate_agent(self, graphs: Sequence[Graph]):
+    def validate_agent(self,
+                       graphs: Optional[Sequence[Graph]] = None,
+                       history: Optional[OptHistory] = None) -> float:
         """Validates agent policy against optimal policy on given graphs."""
-        agent_steps = [self._make_action_step(Individual(g)) for g in graphs]
+        if history is not None:
+            agent_steps = ExperienceBuffer.from_history(history).retrieve_trajectories()
+        elif graphs:
+            agent_steps = [self._make_action_step(Individual(g)) for g in graphs]
+        else:
+            self._log.warning(f'Either graphs or history must not be None for validation!')
+            return 0.
         return self._validate_against_optimal(trajectories=[agent_steps])
 
-    def _validate_against_optimal(self, trajectories: Sequence[GraphTrajectory]) -> Tuple[float, float]:
+    def _validate_against_optimal(self, trajectories: Sequence[GraphTrajectory]) -> float:
         """Validates a policy trajectories against optimal policy
         that at each step always chooses the best action with max reward."""
-        action_losses, reward_losses = [], []
+        reward_losses = []
         for trajectory in trajectories:
             inds, actions, rewards = unzip(trajectory)
             _, best_actions, best_rewards = unzip(map(self._apply_best_action, inds))
-            action_loss, reward_loss = self._compute_loss(actions, rewards, best_actions, best_rewards)
-            action_losses.append(action_loss)
+            reward_loss = self._compute_reward_loss(rewards, best_rewards)
             reward_losses.append(reward_loss)
-        action_loss = float(np.mean(action_losses))
         reward_loss = float(np.mean(reward_losses))
-        return action_loss, reward_loss
+        return reward_loss
 
-    def _compute_loss(self,
-                      actions, rewards,
-                      target_actions, target_rewards
-                      ) -> Tuple[float, float]:
-        # TODO: compute some loss! Either categorical OR reward loss OR both
-        pass
+    @staticmethod
+    def _compute_reward_loss(rewards, optimal_rewards, normalized=False) -> float:
+        """Returns difference (or deviation) from optimal reward.
+        When normalized, 0. means actual rewards match optimal rewards completely,
+        0.5 means they on average deviate by 50% from optimal rewards,
+        and 2.2 means they on average deviate by more than 2 times from optimal reward."""
+        reward_losses = np.subtract(optimal_rewards, rewards)  # always positive
+        if normalized:
+            reward_losses = reward_losses / np.abs(optimal_rewards)
+        means = np.mean(reward_losses)
+        return float(means)
 
     def _apply_best_action(self, graph: Graph) -> TrajectoryStep:
         """Returns greedily optimal mutation for given graph and associated reward."""
@@ -124,7 +146,7 @@ class AgentLearner:
         return trajectory
 
 
-def unzip(seq: Sequence[Tuple]) -> Tuple[Sequence]:
+def unzip(seq: Iterable[Tuple]) -> Tuple[Sequence, ...]:
     return tuple(*zip(seq))
 
 
