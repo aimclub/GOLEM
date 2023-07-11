@@ -110,7 +110,7 @@ class ExperienceBuffer:
 
     def retrieve_trajectories(self) -> GraphTrajectory:
         """Same as `retrieve_experience` but in the form of zipped trajectories that consist from steps."""
-        trajectories = list(zip(self.retrieve_experience(as_graphs=False)))
+        trajectories = list(zip(*self.retrieve_experience(as_graphs=False)))
         return trajectories
 
     def split(self, ratio: float = 0.8, shuffle: bool = False
@@ -121,10 +121,10 @@ class ExperienceBuffer:
         mask_train[-num_train:] = False
         if shuffle:
             np.random.default_rng().shuffle(mask_train)
-        buffer_train = ExperienceBuffer(inds=self._individuals[mask_train].aslist(),
-                                        actions=self._actions[mask_train].aslist(),
-                                        rewards=self._rewards[mask_train].aslist())
-        buffer_val = ExperienceBuffer(inds=self._individuals[~mask_train].aslist(),
-                                      actions=self._actions[~mask_train].aslist(),
-                                      rewards=self._rewards[~mask_train].aslist())
+        buffer_train = ExperienceBuffer(inds=np.array(self._individuals)[mask_train].tolist(),
+                                        actions=np.array(self._actions)[mask_train].tolist(),
+                                        rewards=np.array(self._rewards)[mask_train].tolist())
+        buffer_val = ExperienceBuffer(inds=np.array(self._individuals)[~mask_train].tolist(),
+                                      actions=np.array(self._actions)[~mask_train].tolist(),
+                                      rewards=np.array(self._rewards)[~mask_train].tolist())
         return buffer_train, buffer_val

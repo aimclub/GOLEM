@@ -15,6 +15,7 @@ from golem.core.optimisers.objective import ObjectiveFunction, Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
+from golem.core.utilities.data_structures import unzip
 
 
 class AgentLearner:
@@ -150,10 +151,6 @@ class AgentLearner:
             trajectory.append((next_ind, action, reward))
             past_ind = next_ind
         return trajectory
-
-
-def unzip(seq: Iterable[Tuple]) -> Tuple[Sequence, ...]:
-    return tuple(*zip(seq))
 
 
 def concat_lists(lists: Iterable[List]) -> List:

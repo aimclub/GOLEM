@@ -307,7 +307,7 @@ class BidirectionalIterator(Iterator[T]):
         return self
 
 
-def unzip(tuples: Iterable[Tuple]) -> Tuple[Sequence, Sequence]:
+def unzip(tuples: Iterable[Tuple]) -> Tuple[Sequence, ...]:
     return tuple(zip(*tuples))
 
 
