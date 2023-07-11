@@ -14,11 +14,14 @@ from golem.metrics.edit_distance import tree_edit_dist, graph_size
 
 
 def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> Tuple[float, Graph]:
-    target_graph = generate_labeled_graph('tree', size, node_labels=['x'])
+    node_types = ['a', 'b']
+    target_graph = generate_labeled_graph('tree', size, node_labels=node_types)
     # running the example
     found_graph, history = run_trial(target_graph=target_graph,
                                      optimizer_setup=tree_search_setup,
-                                     timeout=timedelta(minutes=timeout_min))
+                                     timeout=timedelta(minutes=timeout_min),
+                                     node_types=node_types
+                                     )
 
     found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
     distance = distance_function(target_graph, found_nx_graph)
@@ -35,7 +38,7 @@ def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
         num_trials = 5
         distances = []
         for i in range(num_trials):
-            distance, target_graph = run_search(target_size, distance_function=distance_function, timeout_min=2)
+            distance, target_graph = run_search(target_size, distance_function=distance_function, timeout_min=1)
             distances.append(distance)
 
             assert target_graph is not None
