@@ -1,4 +1,5 @@
 import operator
+from copy import deepcopy
 from functools import reduce
 from typing import Sequence, Optional, Any, Tuple, List, Iterable
 
@@ -6,12 +7,12 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
-from golem.core.optimisers.adaptive.operator_agent import OperatorAgent
 from golem.core.optimisers.adaptive.common_types import TrajectoryStep, GraphTrajectory
 from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
-from golem.core.optimisers.fitness import null_fitness, Fitness
+from golem.core.optimisers.adaptive.operator_agent import OperatorAgent
+from golem.core.optimisers.fitness import Fitness
 from golem.core.optimisers.genetic.operators.mutation import Mutation
-from golem.core.optimisers.objective import ObjectiveFunction, Objective
+from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
@@ -28,8 +29,13 @@ class AgentLearner:
         self.agent = agent if agent is not None else mutation_operator.agent
         self.mutation = mutation_operator
         self.objective = objective
+        self._adapter = self.mutation.graph_generation_params.adapter
 
     def fit(self, histories: Iterable[OptHistory], validate_each: int = -1) -> OperatorAgent:
+        # Set mutation probabilities to 1.0
+        initial_req = deepcopy(self.mutation.requirements)
+        self.mutation.requirements.mutation_prob = 1.0
+
         for i, history in enumerate(histories):
             # Preliminary validity check
             # This allows to filter out histories with different objectives automatically
@@ -53,6 +59,9 @@ class AgentLearner:
                 reward_loss, reward_target = self.validate_agent(experience=val_experience)
                 self._log.info(f'Agent validation for history #{i+1} & {experience}: '
                                f'Reward target={reward_target:.3f}, loss={reward_loss:.3f}')
+
+        # Reset mutation probabilities to default
+        self.mutation.update_requirements(requirements=initial_req)
         return self.agent
 
     def validate_on_rollouts(self, histories: Sequence[OptHistory]) -> float:
@@ -121,23 +130,37 @@ class AgentLearner:
         means = np.mean(reward_losses)
         return float(means)
 
-    def _apply_best_action(self, graph: Graph) -> TrajectoryStep:
+    def _apply_best_action(self, ind: Individual) -> TrajectoryStep:
         """Returns greedily optimal mutation for given graph and associated reward."""
-        ind = Individual(graph, fitness=self.objective(graph))
-        results = {mutation_id: self._apply_action(mutation_id, ind)
-                   for mutation_id in self.agent.available_actions}
-        step = max(results.items(), key=lambda m: results[m][-1])
-        return step
+        candidates = []
+        for mutation_id in self.agent.available_actions:
+            try:
+                values = self._apply_action(mutation_id, ind)
+            except Exception as e:
+                self._log.warning(f'Eval error for mutation <{mutation_id}> '
+                                  f'on graph: {ind.graph.descriptive_id}:\n{e}')
+                continue
+            candidates.append(values)
+        best_step = max(candidates, key=lambda step: step[-1])
+        return best_step
 
     def _apply_action(self, action: Any, ind: Individual) -> TrajectoryStep:
         new_graph, applied = self.mutation._adapt_and_apply_mutation(ind.graph, action)
-        fitness = null_fitness() if applied else self.objective(new_graph)
+        fitness = self._eval_objective(new_graph) if applied else None
         parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=ind)
         new_ind = Individual(new_graph, fitness=fitness, parent_operator=parent_op)
 
-        prev_fitness = ind.fitness or self.objective(ind.graph)
-        reward = prev_fitness.value - fitness.value if prev_fitness is not None else 0.
+        prev_fitness = ind.fitness or self._eval_objective(ind.graph)
+        if prev_fitness and fitness:
+            reward = prev_fitness.value - fitness.value
+        elif prev_fitness and not fitness:
+            reward = -1.
+        else:
+            reward = 0.
         return new_ind, action, reward
+
+    def _eval_objective(self, graph: Graph) -> Fitness:
+        return self._adapter.adapt_func(self.objective)(graph)
 
     def _make_action_step(self, ind: Individual) -> TrajectoryStep:
         action = self.agent.choose_action(ind.graph)

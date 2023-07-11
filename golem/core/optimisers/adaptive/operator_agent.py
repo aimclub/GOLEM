@@ -57,8 +57,8 @@ class OperatorAgent(ABC):
             nonzero = rr[rr.nonzero()]
             msg = f'len={len(rr)} nonzero={len(nonzero)} '
             if len(nonzero) > 0:
-                msg += (f'avg={nonzero.mean()} std={nonzero.std()} '
-                        f'min={nonzero.min()} max={nonzero.max()} ')
+                msg += (f'avg={nonzero.mean():.3f} std={nonzero.std():.3f} '
+                        f'min={nonzero.min():.3f} max={nonzero.max():.3f} ')
 
             self._log.info(msg)
             self._log.info(f'actions/rewards: {list(zip(actions, rr))}')

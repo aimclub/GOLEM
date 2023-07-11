@@ -50,7 +50,11 @@ def restore_edges_params_from_nodes(graph: nx.DiGraph) -> nx.DiGraph:
     all_edges_params = {}
     for node in graph.nodes():
         for predecessor in graph.predecessors(node):
-            edge_params = edge_params_by_node[node][predecessor]
-            all_edges_params.update({(predecessor, node): edge_params})
+            node_params = edge_params_by_node[node]
+            # sometimes by unknown reason some nodes are encoded as int, some as str.
+            # maybe that's deserialization messing up somewhere.
+            edge_params = node_params.get(predecessor) or node_params.get(str(predecessor))
+            if edge_params:
+                all_edges_params[(predecessor, node)] = edge_params
     nx.set_edge_attributes(graph, all_edges_params)
     return graph
