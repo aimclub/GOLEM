@@ -131,13 +131,14 @@ def visualize_results(molecules: Iterable[MolGraph],
         image.show()
 
 
-def pretrain_agent(optimizer, objective, results_dir='./results'):
+def pretrain_agent(optimizer, objective, results_dir='./results') -> AgentLearner:
     agent = optimizer.mutation.agent
     trainer = AgentLearner(objective, optimizer.mutation, agent)
     # load histories
     history_reader = HistoryReader(Path(results_dir))
     # train agent
     trainer.fit(histories=history_reader.load_histories(), validate_each=1)
+    return trainer
 
 
 def run_experiment(optimizer_setup: Callable,
@@ -179,6 +180,7 @@ def run_experiment(optimizer_setup: Callable,
                                                initial_molecules)
         if pretrain_dir:
             pretrain_agent(optimizer, objective, pretrain_dir)
+
         found_graphs = optimizer.optimise(objective)
         history = optimizer.history
 
@@ -229,4 +231,5 @@ if __name__ == '__main__':
                    metrics=['qed_score', 'cl_score'],
                    visualize=True,
                    num_trials=5,
-                   pretrain_dir='results/evo_random_popsize50_min15_qed_score_cl_score')
+                   pretrain_dir='results/evo_random_popsize50_min15_qed_score_cl_score'
+                   )
