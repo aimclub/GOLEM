@@ -167,7 +167,7 @@ class LinkedGraph(Graph, Copyable):
         elif self.root_nodes():
             return ''.join([r.descriptive_id for r in self.root_nodes()])
         else:
-            return sorted(self.nodes, key=lambda x: str(x.uid))[0].descriptive_id
+            return sorted(self.nodes, key=lambda x: x.uid)[0].descriptive_id
 
     @copy_doc(Graph.depth)
     @property

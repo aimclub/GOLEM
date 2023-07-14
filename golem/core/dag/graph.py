@@ -249,7 +249,7 @@ class Graph(ABC):
         if self.root_nodes:
             return self.root_node.descriptive_id
         else:
-            return sorted(self.nodes, key=lambda x: str(x.uid))[0].descriptive_id
+            return sorted(self.nodes, key=lambda x: x.uid)[0].descriptive_id
 
     def __str__(self):
         return str(self.graph_description)
