@@ -110,8 +110,16 @@ def single_edge_mutation(graph: OptGraph,
     """
 
     def nodes_not_cycling(source_node: OptNode, target_node: OptNode):
-        return (target_node.descriptive_id not in
-                [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
+        parents = source_node.nodes_from
+        while parents:
+            if target_node not in parents:
+                grandparents = []
+                for parent in parents:
+                    grandparents.extend(parent.nodes_from)
+                parents = grandparents
+            else:
+                return False
+        return True
 
     for _ in range(parameters.max_num_of_operator_attempts):
         if len(graph.nodes) < 2 or graph.depth > requirements.max_depth:

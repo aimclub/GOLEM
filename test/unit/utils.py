@@ -101,7 +101,9 @@ def graph_fourth():
 
 
 def graph_fifth():
-    # a   b
+    # a
+    # |
+    # f   b
     #  \ /
     #   c
     #   |
@@ -109,9 +111,10 @@ def graph_fifth():
     #   |
     #   e
     node_a_primary = LinkedGraphNode('a')
+    node_f = LinkedGraphNode('f', nodes_from=[node_a_primary])
     node_b_primary = LinkedGraphNode('b')
 
-    node_c = LinkedGraphNode('c', nodes_from=[node_a_primary, node_b_primary])
+    node_c = LinkedGraphNode('c', nodes_from=[node_f, node_b_primary])
     node_d = LinkedGraphNode('d', nodes_from=[node_c])
 
     node_e = LinkedGraphNode('e', nodes_from=[node_d])
@@ -251,6 +254,7 @@ def simple_cycled_graph():
 
 
 def branched_cycled_graph():
+    #
     node_a_primary = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
     node_c = LinkedGraphNode('c', nodes_from=[node_b])

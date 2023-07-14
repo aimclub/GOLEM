@@ -95,34 +95,42 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
 
 
 def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> Union[int, List[int]]:
-    """Gets this graph depth from the provided ``node`` to the graph source node
+    """Gets the depth of the provided ``nodes`` in the graph
 
     Args:
-        nodes: where to start diving from
+        nodes: nodes to calculate the depth for
 
     Returns:
-        int: length of a path from the provided ``node`` to the farthest primary node
+        int or List[int]: depth(s) of the nodes in the graph
     """
-    def node_depth_util(node: 'GraphNode'):
-        visited_nodes = [node]
-        depth = 1
-        parents = node.nodes_from
-        while parents:
-            depth += 1
-            grandparents = []
-            for parent in parents:
-                if parent in visited_nodes:
-                    return -1
-                grandparents.extend(parent.nodes_from)
+    def calculate_depth(node, visited):
+        if node.uid in visited:
+            return -1
+        if node in final_depths:
+            return final_depths[node]
 
-            visited_nodes.extend(parents)
-            parents = grandparents
-        return depth
+        visited.add(node.uid)
+        max_depth = 0
+        for parent in node.nodes_from:
+            depth = calculate_depth(parent, visited)
+            if depth == -1:
+                return -1
+            max_depth = max(max_depth, depth)
 
+        visited.remove(node.uid)
+        final_depths[node] = max_depth + 1
+        return max_depth + 1
+
+    nodes = ensure_wrapped_in_sequence(nodes)
+    final_depths = {}
     depths = []
-    for node in ensure_wrapped_in_sequence(nodes):
-        depths.append(node_depth_util(node))
-    return depths if len(depths) > 1 else depths[0]
+    for node in nodes:
+        depth = calculate_depth(node, set())
+        if depth == -1:
+            return -1 if len(nodes) == 1 else [-1] * len(nodes)
+        depths.append(depth)
+
+    return depths[0] if len(depths) == 1 else depths
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:
