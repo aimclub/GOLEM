@@ -98,7 +98,7 @@ class PopulationalOptimizer(GraphOptimizer):
                     if self.gen_structural_diversity_check != -1 \
                             and self.generations.generation_num % self.gen_structural_diversity_check == 0 \
                             and self.generations.generation_num != 0:
-                        new_population = self.get_structure_unique_population(population=new_population)
+                        new_population = self.get_structure_unique_population(new_population, evaluator)
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
                     return [ind.graph for ind in self.best_individuals]
@@ -148,7 +148,7 @@ class PopulationalOptimizer(GraphOptimizer):
         if self.requirements.history_dir:
             self.history.save_current_results(self.requirements.history_dir)
 
-    def get_structure_unique_population(self, population: PopulationT) -> PopulationT:
+    def get_structure_unique_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
         Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
         unique_population_with_ids = {ind.graph.descriptive_id: ind for ind in population}
@@ -157,7 +157,7 @@ class PopulationalOptimizer(GraphOptimizer):
         # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
         if len(unique_population) < MIN_POP_SIZE:
             unique_population = self._extend_population(pop=population, target_pop_size=MIN_POP_SIZE)
-        return unique_population
+        return evaluator(unique_population)
 
     @property
     def _progressbar(self):

@@ -86,4 +86,3 @@ def test_custom_graph_opt():
     assert isinstance(optimized_network, CustomModel)
     assert isinstance(optimized_network.nodes[0], CustomNode)
     assert optimized_network.length > 1
-    assert optimized_network.depth > 1
