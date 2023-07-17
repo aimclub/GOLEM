@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Generic, Tuple, Any, Optional
 
 import numpy as np
-from iOpt.method.listener import ConsoleFullOutputListener
+from iOpt.output_system.listeners.console_outputers import ConsoleOutputListener
 from iOpt.problem import Problem
 from iOpt.solver import Solver
 from iOpt.solver_parametrs import SolverParameters
@@ -150,13 +150,13 @@ class IOptTuner(BaseTuner):
         if self._check_if_tuning_possible(graph, has_parameters_to_optimize):
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
-                self.solver_parameters.startPoint = initial_point
+                self.solver_parameters.start_point = initial_point
 
             problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
             solver = Solver(problem, parameters=self.solver_parameters)
 
             if show_progress:
-                console_output = ConsoleFullOutputListener(mode='full')
+                console_output = ConsoleOutputListener(mode='full')
                 solver.AddListener(console_output)
 
             solution = solver.Solve()
