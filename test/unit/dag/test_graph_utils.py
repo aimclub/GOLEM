@@ -1,13 +1,12 @@
-import numpy as np
 import pytest
 
+from golem.core.dag.graph_utils import distance_to_primary_level
 from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy, \
     graph_has_cycle, node_depth
+from golem.core.dag.linked_graph_node import LinkedGraphNode
 from test.unit.dag.test_graph_operator import graph
 from test.unit.utils import graph_first, simple_cycled_graph, branched_cycled_graph, graph_second, graph_third, \
     graph_fifth, graph_with_multi_roots_first
-from golem.core.dag.graph_utils import distance_to_primary_level
-from golem.core.dag.linked_graph_node import LinkedGraphNode
 
 _ = graph
 

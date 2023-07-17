@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from golem.core.adapter import register_native
 from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
-from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level, \
-    graph_has_cycle
+from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level, graph_has_cycle
 from golem.core.optimisers.advisor import RemoveType
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
