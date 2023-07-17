@@ -304,8 +304,6 @@ class EdgeReplaceOperationAnalyze(EdgeAnalyzeApproach):
             for child_node in cur_graph.nodes:
                 if parent_node == child_node:
                     continue
-                if parent_node == cur_graph.root_node:
-                    continue
                 if [parent_node, child_node] in edges_in_graph or [child_node, parent_node] in edges_in_graph:
                     continue
                 if cur_graph.nodes.index(parent_node) == child_node_index and \
