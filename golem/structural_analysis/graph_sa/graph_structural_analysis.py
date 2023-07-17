@@ -1,5 +1,6 @@
 import os
 from copy import deepcopy
+from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 import multiprocessing
 
@@ -262,10 +263,16 @@ class GraphStructuralAnalysis:
         for i in iters:
             nodes_labels, edges_labels = get_nodes_and_edges_labels(analysis_result=analysis_result, iter=i)
             if not (mode == 'final' and i != iters[-1]):
+                if not Path.is_file(Path(save_path)):
+                    j = 0
+                    while f'pipeline_after_sa_{j}.png' in os.listdir(save_path):
+                        j += 1
+                    cur_path = os.path.join(save_path, f'pipeline_after_sa_{j}.png')
                 graph.show(node_color=node_color, dpi=dpi, node_size_scale=node_size_scale,
                            nodes_labels=nodes_labels, font_size_scale=font_size_scale,
                            edge_curvature_scale=edge_curvature_scale,
-                           edges_labels=edges_labels, save_path=save_path)
+                           edges_labels=edges_labels, save_path=cur_path)
+                default_log("SA_visualization").info(f"SA visualization was saved to: {cur_path}")
             if mode == 'by_iteration':
                 graph = GraphStructuralAnalysis.apply_results(graph=graph, analysis_result=analysis_result,
                                                               metric_idx_to_optimize_by=metric_idx_to_optimize_by,
