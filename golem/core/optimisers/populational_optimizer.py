@@ -1,5 +1,5 @@
-import math
 from abc import abstractmethod
+from random import choice
 from typing import Any, Optional, Sequence, Dict
 
 from tqdm import tqdm
@@ -9,9 +9,10 @@ from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.objective.objective import Objective
+from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.utilities.grouped_condition import GroupedCondition
@@ -123,9 +124,9 @@ class PopulationalOptimizer(GraphOptimizer):
 
     def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
         """ Extends population to specified `target_pop_size`. """
-        n = math.ceil(target_pop_size / len(pop))
-        extended_population = sorted(pop, key=lambda pos_ind: pos_ind.fitness, reverse=True) * n
-        extended_population = extended_population[:target_pop_size]
+        n = target_pop_size - len(pop)
+        extended_population = list(pop)
+        extended_population.extend([Individual(graph=choice(pop).graph) for _ in range(n)])
         return extended_population
 
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
@@ -156,7 +157,7 @@ class PopulationalOptimizer(GraphOptimizer):
 
         # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
         if len(unique_population) < MIN_POP_SIZE:
-            unique_population = self._extend_population(pop=population, target_pop_size=MIN_POP_SIZE)
+            unique_population = self._extend_population(pop=unique_population, target_pop_size=MIN_POP_SIZE)
         return evaluator(unique_population)
 
     @property
