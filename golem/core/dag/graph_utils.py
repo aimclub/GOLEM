@@ -103,34 +103,22 @@ def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> Union[int, L
     Returns:
         int or List[int]: depth(s) of the nodes in the graph
     """
-    def calculate_depth(node, visited):
-        if node.uid in visited:
-            return -1
-        if node in final_depths:
-            return final_depths[node]
-
-        visited.add(node.uid)
-        max_depth = 0
-        for parent in node.nodes_from:
-            depth = calculate_depth(parent, visited)
-            if depth == -1:
-                return -1
-            max_depth = max(max_depth, depth)
-
-        visited.remove(node.uid)
-        final_depths[node] = max_depth + 1
-        return max_depth + 1
-
     nodes = ensure_wrapped_in_sequence(nodes)
-    final_depths = {}
-    depths = []
-    for node in nodes:
-        depth = calculate_depth(node, set())
-        if depth == -1:
-            return -1 if len(nodes) == 1 else [-1] * len(nodes)
-        depths.append(depth)
+    visited_nodes = [[node] for node in nodes]
+    depth = 1
+    parents = [node.nodes_from for node in nodes]
+    while any(parents):
+        depth += 1
+        for i, ith_parents in enumerate(parents):
+            grandparents = []
+            for parent in ith_parents:
+                if parent in visited_nodes[i]:
+                    return -1
+                grandparents.extend(parent.nodes_from)
+            visited_nodes[i].extend(ith_parents)
+            parents[i] = grandparents
 
-    return depths[0] if len(depths) == 1 else depths
+    return depth
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:

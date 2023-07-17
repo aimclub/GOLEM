@@ -90,11 +90,11 @@ def test_graph_has_cycle():
         assert not graph_has_cycle(not_cycled_graph)
 
 
-@pytest.mark.parametrize('graph, nodes_names, correct_depths', [(simple_cycled_graph(), ['c', 'd', 'e'], [-1, -1, -1]),
-                                                                (graph_fifth(), ['b', 'c', 'd'], [1, 3, 4]),
+@pytest.mark.parametrize('graph, nodes_names, correct_depths', [(simple_cycled_graph(), ['c', 'd', 'e'], -1),
+                                                                (graph_fifth(), ['b', 'c', 'd'], 4),
                                                                 (graph_with_multi_roots_first(), ['16', '13', '14'],
-                                                                 [3, 1, 2])])
+                                                                 3)])
 def test_node_depth(graph, nodes_names, correct_depths):
     nodes = [graph.get_nodes_by_name(name)[0] for name in nodes_names]
     depths = node_depth(nodes)
-    assert all(np.array(depths) == np.array(correct_depths))
+    assert depths == correct_depths
