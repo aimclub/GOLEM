@@ -228,8 +228,8 @@ def get_node_parameters_for_iopt(search_space: SearchSpace, node_id: int, operat
 
         parameter_type = parameter_properties.get('type')
         if parameter_type == 'discrete':
-            discrete_parameters_dict.update({node_op_parameter_name: [range(*parameter_properties
-                                                                            .get('sampling-scope'))]})
+            discrete_parameters_dict.update({node_op_parameter_name: list(range(*parameter_properties
+                                                                                .get('sampling-scope')))})
         elif parameter_type == 'continuous':
             float_parameters_dict.update({node_op_parameter_name: parameter_properties
                                          .get('sampling-scope')})
