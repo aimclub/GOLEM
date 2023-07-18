@@ -1,5 +1,6 @@
 import random
 from abc import ABC, abstractmethod
+from collections import deque
 from enum import Enum
 from typing import Union, Sequence, Hashable, Tuple, Optional, List
 
@@ -26,13 +27,14 @@ class ExperienceBuffer:
     """Buffer for learning experience of ``OperatorAgent``.
     Keeps (State, Action, Reward) lists until retrieval."""
 
-    def __init__(self):
+    def __init__(self, window_size: int = 100):
+        self.window_size = window_size
         self.reset()
 
     def reset(self):
-        self._observations = []
-        self._actions = []
-        self._rewards = []
+        self._observations = deque(maxlen=self.window_size)
+        self._actions = deque(maxlen=self.window_size)
+        self._rewards = deque(maxlen=self.window_size)
         self._prev_pop = set()
         self._next_pop = set()
 
@@ -50,7 +52,9 @@ class ExperienceBuffer:
         action = result.parent_operator.operators[0]
         prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
         # we're minimising the fitness, that's why less is better
-        reward = prev_fitness - result.fitness.value if prev_fitness is not None else 0.
+        # reward is defined as fitness improvement rate (FIR) to stabilize the algorithm
+        reward = (prev_fitness - result.fitness.value)/abs(prev_fitness) \
+            if prev_fitness is not None and prev_fitness != 0 else 0.
         self.collect_experience(obs, action, reward)
 
     def collect_experience(self, obs: ObsType, action: ActType, reward: float):
@@ -64,7 +68,7 @@ class ExperienceBuffer:
         next_pop = self._next_pop
         self.reset()
         self._prev_pop = next_pop
-        return observations, actions, rewards
+        return list(observations), list(actions), list(rewards)
 
 
 class OperatorAgent(ABC):
