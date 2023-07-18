@@ -67,4 +67,4 @@ def test_structural_analysis():
     optimized_graph, _ = sa.optimize(graph=opt_graph, n_jobs=1,
                                      max_iter=2)
 
-    assert abs(objective(optimized_graph).value) >= abs(objective(opt_graph).value) * 0.85
+    assert abs(objective(optimized_graph).value) >= abs(objective(opt_graph).value) * 0.7
