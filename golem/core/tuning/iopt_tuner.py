@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from random import choice
 from typing import List, Dict, Generic, Tuple, Any, Optional
 
 import numpy as np
@@ -36,16 +37,11 @@ class IOptProblemParameters:
         upper_bounds_of_float_parameters = [bounds[1] for bounds in float_parameters_dict.values()]
         discrete_parameters_vals = [values_set for values_set in discrete_parameters_dict.values()]
 
-        # TODO: Remove - for now IOpt handles only float variables, so we treat discrete parameters as float ones
-        float_parameters_names.extend(discrete_parameters_names)
-        lower_bounds_of_discrete_parameters = [bounds[0] for bounds in discrete_parameters_dict.values()]
-        upper_bounds_of_discrete_parameters = [bounds[1] for bounds in discrete_parameters_dict.values()]
-        lower_bounds_of_float_parameters.extend(lower_bounds_of_discrete_parameters)
-        upper_bounds_of_float_parameters.extend(upper_bounds_of_discrete_parameters)
-
-        return IOptProblemParameters(float_parameters_names, discrete_parameters_names,
+        return IOptProblemParameters(float_parameters_names,
+                                     discrete_parameters_names,
                                      lower_bounds_of_float_parameters,
-                                     upper_bounds_of_float_parameters, discrete_parameters_vals)
+                                     upper_bounds_of_float_parameters,
+                                     discrete_parameters_vals)
 
 
 class GolemProblem(Problem, Generic[DomainGraphForTune]):
@@ -84,12 +80,6 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
             if point.floatVariables is not None else {}
         discrete_parameters = dict(zip(self.discreteVariableNames, point.discreteVariables)) \
             if point.discreteVariables is not None else {}
-
-        # TODO: Remove workaround - for now IOpt handles only float variables, so discrete parameters
-        #  are optimized as continuous and we need to round them
-        for parameter_name in float_parameters:
-            if parameter_name in self.discreteVariableNames:
-                float_parameters[parameter_name] = round(float_parameters[parameter_name])
 
         parameters_dict = {**float_parameters, **discrete_parameters}
         return parameters_dict
@@ -188,20 +178,21 @@ class IOptTuner(BaseTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            float_node_parameters, discrete_node_parameters = get_node_parameters_for_iopt(self.search_space,
-                                                                                           node_id,
-                                                                                           operation_name)
+            float_node_parameters, discrete_node_parameters = get_node_parameters_for_iopt(
+                self.search_space,
+                node_id,
+                operation_name)
 
             # Set initial parameters for search
             for parameter, bounds in float_node_parameters.items():
                 # If parameter is not set use parameter minimum possible value
-                initaial_value = node.parameters.get(parameter) or bounds[0]
-                initial_parameters['floatVariables'].append(initaial_value)
+                initial_value = node.parameters.get(parameter) or bounds[0]
+                initial_parameters['floatVariables'].append(initial_value)
 
-            for parameter, bounds in discrete_node_parameters.items():
-                # If parameter is not set use parameter minimum possible value
-                initaial_value = node.parameters.get(parameter) or bounds[0]
-                initial_parameters['discreteVariables'].append(initaial_value)
+            for parameter, values in discrete_node_parameters.items():
+                # If parameter is not set use parameter random value
+                initial_value = node.parameters.get(parameter) or choice(values)
+                initial_parameters['discreteVariables'].append(initial_value)
 
             float_parameters_dict.update(float_node_parameters)
             discrete_parameters_dict.update(discrete_node_parameters)
@@ -230,16 +221,22 @@ def get_node_parameters_for_iopt(search_space: SearchSpace, node_id: int, operat
 
     discrete_parameters_dict = {}
     float_parameters_dict = {}
+    categorical_parameters_dict = {}
 
     for parameter_name, parameter_properties in parameters_dict.items():
         node_op_parameter_name = get_node_operation_parameter_label(node_id, operation_name, parameter_name)
 
         parameter_type = parameter_properties.get('type')
         if parameter_type == 'discrete':
-            discrete_parameters_dict.update({node_op_parameter_name: parameter_properties
-                                            .get('sampling-scope')})
+            discrete_parameters_dict.update({node_op_parameter_name: [range(*parameter_properties
+                                                                            .get('sampling-scope'))]})
         elif parameter_type == 'continuous':
             float_parameters_dict.update({node_op_parameter_name: parameter_properties
                                          .get('sampling-scope')})
+        elif parameter_type == 'categorical':
+            categorical_parameters_dict.update({node_op_parameter_name: parameter_properties
+                                               .get('sampling-scope')[0]})
 
+    # IOpt does not distinguish between discrete and categorical parameters
+    discrete_parameters_dict = {**discrete_parameters_dict, **categorical_parameters_dict}
     return float_parameters_dict, discrete_parameters_dict

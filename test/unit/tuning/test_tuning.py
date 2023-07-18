@@ -35,6 +35,11 @@ def search_space():
                 'hyperopt-dist': hp.loguniform,
                 'sampling-scope': [1e-3, 1],
                 'type': 'continuous'
+            },
+            'a3': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [['A', 'B', 'C']],
+                'type': 'categorical'
             }
         },
         'b': {
