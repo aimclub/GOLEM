@@ -43,7 +43,7 @@ class BaseNetworkxAdapter(BaseOptimizationAdapter[nx.DiGraph]):
         for node_id, node_data in adaptee.nodes.items():
             # transform node
             node = self._node_adapt(node_data)
-            node.uid = node_id
+            node.uid = str(node_id)
             mapped_nodes[node_id] = node
 
         # map parent nodes

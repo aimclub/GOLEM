@@ -49,7 +49,8 @@ def test_sort_nodes(graph):
     new_subroot = LinkedGraphNode('new_n2', nodes_from=[new_node])
 
     # when
-    selected_node.nodes_from.append(new_subroot)
+    graph.add_node(new_subroot)
+    graph.connect_nodes(new_subroot, selected_node)
     graph.operator.sort_nodes()
 
     # then

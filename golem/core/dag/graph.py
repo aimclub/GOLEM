@@ -246,7 +246,10 @@ class Graph(ABC):
         Returns:
             str: text description of the content in the node and its parameters
         """
-        return self.root_node.descriptive_id
+        if self.root_nodes:
+            return self.root_node.descriptive_id
+        else:
+            return sorted(self.nodes, key=lambda x: x.uid)[0].descriptive_id
 
     def __str__(self):
         return str(self.graph_description)

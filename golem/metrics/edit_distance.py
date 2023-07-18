@@ -5,7 +5,7 @@ from typing import Optional, Callable, Dict, Sequence
 import networkx as nx
 import numpy as np
 import zss
-from networkx import graph_edit_distance
+from networkx import graph_edit_distance, is_tree
 
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -20,6 +20,8 @@ def _label_dist(label1: str, label2: str) -> int:
 def tree_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
     """Compares nodes by their `name` (if present) or `uid` attribute.
     Nodes with the same name/id are considered the same."""
+    if not (is_tree(target_graph) and is_tree(graph)):
+        raise ValueError('Both target graphs must be trees')
     target_tree_root = _nx_to_zss_tree(target_graph)
     cmp_tree_root = _nx_to_zss_tree(graph)
     dist = zss.simple_distance(target_tree_root, cmp_tree_root, label_dist=_label_dist)

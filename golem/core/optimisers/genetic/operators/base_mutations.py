@@ -1,12 +1,11 @@
-from copy import deepcopy
 from functools import partial
 from random import choice, randint, random, sample
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from golem.core.adapter import register_native
 from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
-from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
+from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level, graph_has_cycle
 from golem.core.optimisers.advisor import RemoveType
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
@@ -38,20 +37,22 @@ class MutationTypesEnum(Enum):
     none = 'none'
 
 
-def get_mutation_prob(mut_id: MutationStrengthEnum, node: GraphNode,
+def get_mutation_prob(mut_id: MutationStrengthEnum, node: Optional[GraphNode],
                       default_mutation_prob: float = 0.7) -> float:
     """ Function returns mutation probability for certain node in the graph
 
     :param mut_id: MutationStrengthEnum mean weak or strong mutation
     :param node: root node of the graph
-    :param default_mutation_prob: mutation probability used when mutation_id is invalid
+    :param default_mutation_prob: mutation probability used when mutation_id is invalid or graph has cycles
     :return mutation_prob: mutation probability
     """
-    if mut_id in list(MutationStrengthEnum):
+    mutation_prob = default_mutation_prob
+    graph_cycled = node is None
+    if node:
+        graph_cycled = distance_to_primary_level(node) < 0
+    if mut_id in list(MutationStrengthEnum) and not graph_cycled:
         mutation_strength = mut_id.value
         mutation_prob = mutation_strength / (distance_to_primary_level(node) + 1)
-    else:
-        mutation_prob = default_mutation_prob
     return mutation_prob
 
 
@@ -84,10 +85,13 @@ def simple_mutation(graph: OptGraph,
             for parent in node.nodes_from:
                 replace_node_to_random_recursive(parent)
 
+    root_nodes = graph.root_nodes()
+    root_node = choice(root_nodes) if root_nodes else None
     node_mutation_probability = get_mutation_prob(mut_id=parameters.mutation_strength,
-                                                  node=graph.root_node)
+                                                  node=root_node)
 
-    replace_node_to_random_recursive(graph.root_node)
+    root_node = root_node or choice(graph.nodes)
+    replace_node_to_random_recursive(root_node)
 
     return graph
 
@@ -103,22 +107,32 @@ def single_edge_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-    old_graph = deepcopy(graph)
+
+    def nodes_not_cycling(source_node: OptNode, target_node: OptNode):
+        parents = source_node.nodes_from
+        while parents:
+            if target_node not in parents:
+                grandparents = []
+                for parent in parents:
+                    grandparents.extend(parent.nodes_from)
+                parents = grandparents
+            else:
+                return False
+        return True
 
     for _ in range(parameters.max_num_of_operator_attempts):
         if len(graph.nodes) < 2 or graph.depth > requirements.max_depth:
             return graph
 
         source_node, target_node = sample(graph.nodes, 2)
-
-        nodes_not_cycling = (target_node.descriptive_id not in
-                             [n.descriptive_id for n in ordered_subnodes_hierarchy(source_node)])
-        if nodes_not_cycling and (source_node not in target_node.nodes_from):
-            graph.connect_nodes(source_node, target_node)
-            break
-
-    if graph.depth > requirements.max_depth:
-        return old_graph
+        if source_node not in target_node.nodes_from:
+            if graph_has_cycle(graph):
+                graph.connect_nodes(source_node, target_node)
+                break
+            else:
+                if nodes_not_cycling(source_node, target_node):
+                    graph.connect_nodes(source_node, target_node)
+                    break
     return graph
 
 
@@ -367,7 +381,6 @@ base_mutations_repo = {
     MutationTypesEnum.single_change: single_change_mutation,
 }
 
-
 simple_mutation_set = (
     MutationTypesEnum.tree_growth,
     MutationTypesEnum.single_add,
@@ -378,7 +391,6 @@ simple_mutation_set = (
     # flip edge
     # cycle edge
 )
-
 
 rich_mutation_set = (
     MutationTypesEnum.simple,

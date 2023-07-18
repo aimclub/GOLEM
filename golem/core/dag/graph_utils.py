@@ -1,4 +1,6 @@
-from typing import Union, Sequence, List, TYPE_CHECKING, Callable
+from typing import Sequence, List, TYPE_CHECKING, Callable, Union
+
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
@@ -16,19 +18,25 @@ def distance_to_root_level(graph: 'Graph', node: 'GraphNode') -> int:
         int: distance to root level
     """
 
-    def recursive_child_height(parent_node: 'GraphNode') -> int:
-        node_child = graph.node_children(parent_node)
-        if node_child:
-            height = recursive_child_height(node_child[0]) + 1
-            return height
-        return 0
+    def child_height(parent_node: 'GraphNode') -> int:
+        height = 0
+        for _ in range(graph.length):
+            node_children = graph.node_children(parent_node)
+            if node_children:
+                height += 1
+                parent_node = node_children[0]
+            else:
+                return height
 
-    height = recursive_child_height(node)
+    if graph_has_cycle(graph):
+        return -1
+    height = child_height(node)
     return height
 
 
 def distance_to_primary_level(node: 'GraphNode') -> int:
-    return node_depth(node) - 1
+    depth = node_depth(node)
+    return depth - 1 if depth > 0 else -1
 
 
 def nodes_from_layer(graph: 'Graph', layer_number: int) -> Sequence['GraphNode']:
@@ -86,19 +94,31 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
     return subtree_impl(node)
 
 
-def node_depth(node: 'GraphNode') -> int:
-    """Gets this graph depth from the provided ``node`` to the graph source node
+def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> Union[int, List[int]]:
+    """Gets the depth of the provided ``nodes`` in the graph
 
     Args:
-        node: where to start diving from
+        nodes: nodes to calculate the depth for
 
     Returns:
-        int: length of a path from the provided ``node`` to the farthest primary node
+        int or List[int]: depth(s) of the nodes in the graph
     """
-    if not node.nodes_from:
-        return 1
-    else:
-        return 1 + max(node_depth(next_node) for next_node in node.nodes_from)
+    nodes = ensure_wrapped_in_sequence(nodes)
+    visited_nodes = [[node] for node in nodes]
+    depth = 1
+    parents = [node.nodes_from for node in nodes]
+    while any(parents):
+        depth += 1
+        for i, ith_parents in enumerate(parents):
+            grandparents = []
+            for parent in ith_parents:
+                if parent in visited_nodes[i]:
+                    return -1
+                grandparents.extend(parent.nodes_from)
+            visited_nodes[i].extend(ith_parents)
+            parents[i] = grandparents
+
+    return depth
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:
@@ -136,3 +156,29 @@ def graph_structure(graph: 'Graph') -> str:
         str: graph structure
     """
     return '\n'.join([str(graph), *(f'{node.name} - {node.parameters}' for node in graph.nodes)])
+
+
+def graph_has_cycle(graph: 'Graph') -> bool:
+    """ Returns True if the graph contains a cycle and False otherwise. Implements Depth-First Search."""
+
+    visited = {node.uid: False for node in graph.nodes}
+    stack = []
+    on_stack = {node.uid: False for node in graph.nodes}
+    for node in graph.nodes:
+        if visited[node.uid]:
+            continue
+        stack.append(node)
+        while len(stack) > 0:
+            cur_node = stack[-1]
+            if not visited[cur_node.uid]:
+                visited[cur_node.uid] = True
+                on_stack[cur_node.uid] = True
+            else:
+                on_stack[cur_node.uid] = False
+                stack.pop()
+            for parent in cur_node.nodes_from:
+                if not visited[parent.uid]:
+                    stack.append(parent)
+                elif on_stack[parent.uid]:
+                    return True
+    return False
