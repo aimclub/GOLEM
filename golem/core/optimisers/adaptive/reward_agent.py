@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from golem.core.optimisers.adaptive.operator_agent import ObsType
 
@@ -14,20 +14,17 @@ class RewardAgent:
         self._decaying_factor = decaying_factor
 
     def get_rewards_for_arms(self, obs: List[ObsType], arms: List[int]) -> List[float]:
-        decay_values = self.get_decay_values(obs, arms)
-        frr = self.get_fitness_rank_rate(decay_values)
-        frr_values = []
-        unique_arms = list(set(arms))
-        for arm in arms:
-            frr_values.append(frr[unique_arms.index(arm)])
+        unique_arms, decay_values = self.get_decay_values_for_arms(obs, arms)
+        frr_per_arm = self.get_fitness_rank_rate(decay_values)
+        frr_values = [frr_per_arm[unique_arms.index(arm)] for arm in arms]
         return frr_values
 
-    def get_decay_values(self, rewards: List[ObsType], arms: List[int]) -> List[float]:
+    def get_decay_values_for_arms(self, rewards: List[ObsType], arms: List[int]) -> Tuple[List[int], List[float]]:
         decays = dict.fromkeys(set(arms), 0.0)
         for i, reward in enumerate(rewards):
             decays[arms[i]] += reward
         decays.update((key, value * self._decaying_factor) for key, value in decays.items())
-        return list(decays.values())
+        return list(decays.keys()), list(decays.values())
 
     @staticmethod
     def get_fitness_rank_rate(decay_values: List[float]) -> List[float]:
