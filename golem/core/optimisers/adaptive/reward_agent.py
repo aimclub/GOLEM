@@ -4,7 +4,12 @@ from golem.core.optimisers.adaptive.operator_agent import ObsType
 
 
 class RewardAgent:
-    """ Agent to process raw fitness values. """
+    """
+    Agent to process raw fitness values.
+    The original idea is that the use of raw fitness values as rewards affects algorithm's robustness,
+    therefore fitness values must be processed.
+    The article with explanation -- https://ieeexplore.ieee.org/document/6410018
+    """
     def __init__(self, window_size: int = 1, decaying_factor: float = 1.):
         self._window_size = window_size
         self._decaying_factor = decaying_factor
@@ -13,8 +18,9 @@ class RewardAgent:
         decay_values = self.get_decay_values(obs, arms)
         frr = self.get_fitness_rank_rate(decay_values)
         frr_values = []
+        unique_arms = list(set(arms))
         for arm in arms:
-            frr_values.append(frr[arms.index(arm)])
+            frr_values.append(frr[unique_arms.index(arm)])
         return frr_values
 
     def get_decay_values(self, rewards: List[ObsType], arms: List[int]) -> List[float]:

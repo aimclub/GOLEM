@@ -2,6 +2,7 @@ import random
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum
+from itertools import chain
 from typing import Union, Sequence, Hashable, Tuple, Optional, List
 
 import numpy as np
@@ -27,20 +28,26 @@ class ExperienceBuffer:
     """Buffer for learning experience of ``OperatorAgent``.
     Keeps (State, Action, Reward) lists until retrieval."""
 
-    def __init__(self, window_size: int = 100):
+    def __init__(self, window_size: int = 5):
         self.window_size = window_size
-        self.reset()
-
-    def reset(self):
         self._observations = deque(maxlen=self.window_size)
         self._actions = deque(maxlen=self.window_size)
         self._rewards = deque(maxlen=self.window_size)
+        self.reset()
+
+    def reset(self):
+        self._current_observations = []
+        self._current_actions = []
+        self._current_rewards = []
         self._prev_pop = set()
         self._next_pop = set()
 
     def collect_results(self, results: Sequence[Individual]):
         for ind in results:
             self.collect_result(ind)
+        self._observations.append(self._current_observations)
+        self._actions.append(self._current_actions)
+        self._rewards.append(self._current_rewards)
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
@@ -58,9 +65,9 @@ class ExperienceBuffer:
         self.collect_experience(obs, action, reward)
 
     def collect_experience(self, obs: ObsType, action: ActType, reward: float):
-        self._observations.append(obs)
-        self._actions.append(action)
-        self._rewards.append(reward)
+        self._current_observations.append(obs)
+        self._current_actions.append(action)
+        self._current_rewards.append(reward)
 
     def retrieve_experience(self) -> Tuple[List[ObsType], List[ActType], List[float]]:
         """Get all collected experience and clear the experience buffer."""
@@ -68,7 +75,9 @@ class ExperienceBuffer:
         next_pop = self._next_pop
         self.reset()
         self._prev_pop = next_pop
-        return list(observations), list(actions), list(rewards)
+        return list(chain.from_iterable(observations)), \
+            list(chain.from_iterable(actions)), \
+            list(chain.from_iterable(rewards))
 
 
 class OperatorAgent(ABC):
