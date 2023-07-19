@@ -10,8 +10,7 @@ class RewardAgent:
     therefore fitness values must be processed.
     The article with explanation -- https://ieeexplore.ieee.org/document/6410018
     """
-    def __init__(self, window_size: int = 1, decaying_factor: float = 1.):
-        self._window_size = window_size
+    def __init__(self, decaying_factor: float = 1.):
         self._decaying_factor = decaying_factor
 
     def get_rewards_for_arms(self, obs: List[ObsType], arms: List[int]) -> List[float]:

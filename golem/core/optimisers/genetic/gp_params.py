@@ -65,6 +65,9 @@ class GPAlgorithmParameters(AlgorithmParameters):
     then the size and the probabilities increase. When fitness improves, the size and the
     probabilities decrease. That is, the algorithm choose a more stable and conservative
     mode when optimization seems to converge.
+
+    :param decaying_factor: decaying factor for Multi-Armed Bandits for managing the profit from operators.
+    The smaller the value of decaying_factor, the larger the influence for the best operator.
     """
 
     crossover_prob: float = 0.8
@@ -86,6 +89,8 @@ class GPAlgorithmParameters(AlgorithmParameters):
     elitism_type: ElitismTypesEnum = ElitismTypesEnum.keep_n_best
     regularization_type: RegularizationTypesEnum = RegularizationTypesEnum.none
     genetic_scheme_type: GeneticSchemeTypesEnum = GeneticSchemeTypesEnum.generational
+
+    decaying_factor: float = 1.0
 
     def __post_init__(self):
         if self.multi_objective:

@@ -51,7 +51,8 @@ class Mutation(Operator):
         elif kind == MutationAgentTypeEnum.bandit:
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs,
-                                          path_to_save=requirements.agent_dir)
+                                          path_to_save=requirements.agent_dir,
+                                          decaying_factor=parameters.decaying_factor)
         elif kind == MutationAgentTypeEnum.contextual_bandit:
             agent = ContextualMultiArmedBanditAgent(
                 actions=parameters.mutation_types,

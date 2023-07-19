@@ -60,7 +60,7 @@ class ExperienceBuffer:
         prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
         # we're minimising the fitness, that's why less is better
         # reward is defined as fitness improvement rate (FIR) to stabilize the algorithm
-        reward = (prev_fitness - result.fitness.value)/abs(prev_fitness) \
+        reward = (prev_fitness - result.fitness.value) / abs(prev_fitness) \
             if prev_fitness is not None and prev_fitness != 0 else 0.
         self.collect_experience(obs, action, reward)
 

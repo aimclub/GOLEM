@@ -19,7 +19,8 @@ class MultiArmedBanditAgent(OperatorAgent):
                  actions: Sequence[ActType],
                  n_jobs: int = 1,
                  enable_logging: bool = True,
-                 path_to_save: Optional[str] = None):
+                 path_to_save: Optional[str] = None,
+                 decaying_factor: float = 1.0):
         super().__init__(enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
@@ -27,7 +28,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=n_jobs)
-        self._reward_agent = RewardAgent()
+        self._reward_agent = RewardAgent(decaying_factor=decaying_factor)
         self._initial_fit()
         self._path_to_save = path_to_save
 
