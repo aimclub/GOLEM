@@ -68,6 +68,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
 
     :param decaying_factor: decaying factor for Multi-Armed Bandits for managing the profit from operators.
     The smaller the value of decaying_factor, the larger the influence for the best operator.
+    :param window_size: the size of sliding window for Multi-Armed Bandits to decrease variance.
     """
 
     crossover_prob: float = 0.8
@@ -91,6 +92,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     genetic_scheme_type: GeneticSchemeTypesEnum = GeneticSchemeTypesEnum.generational
 
     decaying_factor: float = 1.0
+    window_size: int = 5
 
     def __post_init__(self):
         if self.multi_objective:

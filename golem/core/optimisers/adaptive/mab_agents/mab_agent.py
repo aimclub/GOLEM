@@ -56,11 +56,16 @@ class MultiArmedBanditAgent(OperatorAgent):
 
     def partial_fit(self, experience: ExperienceBuffer):
         """Continues learning of underlying agent with new experience."""
+        _, arms, processed_rewards = self._get_experience(experience)
+        self._agent.partial_fit(decisions=arms, rewards=processed_rewards)
+
+    def _get_experience(self, experience: ExperienceBuffer):
+        """ Get experience from ExperienceBuffer, process rewards and log. """
         obs, actions, rewards = experience.retrieve_experience()
         arms = [self._arm_by_action[action] for action in actions]
         processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
         self._dbg_log(obs, actions, processed_rewards)
-        self._agent.partial_fit(decisions=arms, rewards=processed_rewards)
+        return obs, arms, processed_rewards
 
     def save(self, path_to_save: Optional[str] = None):
         """ Saves bandit to specified file. """
