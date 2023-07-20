@@ -82,6 +82,7 @@ class GraphRequirements(OptimizationParameters):
     max_depth: int = 10
     min_arity: int = 2
     max_arity: int = 4
+    num_edges: int = 1 #это
 
     def __post_init__(self):
         excluded_fields = ['n_jobs']
