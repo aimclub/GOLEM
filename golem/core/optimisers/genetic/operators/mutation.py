@@ -3,7 +3,7 @@ from random import random
 from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
 import numpy as np
-
+from datetime import datetime
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import ContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
@@ -18,6 +18,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements, OptimizationParameters
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
+from golem.core.utilities.data_structures import unzip
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -42,13 +43,13 @@ class Mutation(Operator):
         self.agent_experience = ExperienceBuffer(window_size=parameters.window_size)
 
     @staticmethod
-    def _init_operator_agent(graph_gen_params: GraphGenerationParams,
-                             parameters: 'GPAlgorithmParameters',
+    def _init_operator_agent(parameters: 'GPAlgorithmParameters',
                              requirements: OptimizationParameters):
         kind = parameters.adaptive_mutation_type
         if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
             agent = RandomAgent(actions=parameters.mutation_types)
         elif kind == MutationAgentTypeEnum.bandit:
+
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs,
                                           path_to_save=requirements.agent_dir,
@@ -69,6 +70,7 @@ class Mutation(Operator):
         # if agent was specified pretrained (with instance)
         elif isinstance(parameters.adaptive_mutation_type, OperatorAgent):
             agent = kind
+
         else:
             raise TypeError(f'Unknown parameter {kind}')
         return agent
@@ -79,7 +81,11 @@ class Mutation(Operator):
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
-            population = [population]
+            return self._mutation(population)[0]
+      #  print('whole population',population)
+        mutated_population, mutations_applied = unzip(map(self._mutation, population))
+        return mutated_population
+
 
         final_population, mutations_applied, application_attempts = tuple(zip(*map(self._mutation, population)))
 
@@ -93,31 +99,31 @@ class Mutation(Operator):
         return final_population
 
     def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType], bool]:
+
         """ Function applies mutation operator to graph """
-        application_attempt = False
         mutation_applied = None
-        for _ in range(self.parameters.max_num_of_operator_attempts):
+        for o in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
 
             new_graph, mutation_applied = self._apply_mutations(new_graph)
             if mutation_applied is None:
                 continue
-            application_attempt = True
-            is_correct_graph = self.graph_generation_params.verifier(new_graph)
-            if is_correct_graph:
+            #is_correct_graph = self.graph_generation_params.verifier(new_graph)
+            #print('is correct', is_correct_graph, datetime.now())
+            if True:#is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation',
                                                  operators=mutation_applied,
                                                  parent_individuals=individual)
                 individual = Individual(new_graph, parent_operator,
                                         metadata=self.requirements.static_individual_metadata)
                 break
-            else:
+           # else:
                 # Collect invalid actions
-                self.agent_experience.collect_experience(individual.graph, mutation_applied, reward=-1.0)
+            #    self.agent_experience.collect_experience(individual.graph, mutation_applied, reward=-1.0)
         else:
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')
-        return individual, mutation_applied, application_attempt
+        return individual, mutation_applied
 
     def _sample_num_of_mutations(self) -> int:
         # most of the time returns 1 or rarely several mutations
@@ -129,7 +135,9 @@ class Mutation(Operator):
 
     def _apply_mutations(self, new_graph: OptGraph) -> Tuple[OptGraph, Optional[MutationIdType]]:
         """Apply mutation 1 or few times iteratively"""
+
         mutation_type = self._operator_agent.choose_action(new_graph)
+
         mutation_applied = None
         for _ in range(self._sample_num_of_mutations()):
             new_graph, applied = self._adapt_and_apply_mutation(new_graph, mutation_type)

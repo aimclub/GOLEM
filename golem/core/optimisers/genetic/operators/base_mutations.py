@@ -1,11 +1,13 @@
+import math
+from copy import deepcopy
 from functools import partial
 from random import choice, randint, random, sample
-from typing import TYPE_CHECKING, Optional
-
+from typing import TYPE_CHECKING
+from datetime import datetime
 from golem.core.adapter import register_native
 from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
-from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level, graph_has_cycle
+from golem.core.dag.graph_utils import distance_to_root_level, ordered_subnodes_hierarchy, distance_to_primary_level
 from golem.core.optimisers.advisor import RemoveType
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
@@ -20,7 +22,8 @@ if TYPE_CHECKING:
 class MutationStrengthEnum(Enum):
     weak = 0.2
     mean = 1.0
-    strong = 5.0
+    f = 5.0
+    strong = f
 
 
 class MutationTypesEnum(Enum):
@@ -33,26 +36,36 @@ class MutationTypesEnum(Enum):
     single_change = 'single_change'
     single_drop = 'single_drop'
     single_edge = 'single_edge'
+    single_edge_del = 'edge_delete'
+    change_label = 'change_label'
+    change_label_to_1 = 'change_label_to_1'
+    change_label_to_0 = 'change_label_to_0'
+    change_label_to_diff = 'change_label_to_diff'
+
+    star_edge = 'star_edge'
+    path_edge='path_edge'
+    cycle_edge='cycle_edge'
+    batch_edge='batch_edge'
+    dense_edge='dense_edge'
+    batch_edge_del = 'batch_edge_delete'
 
     none = 'none'
 
 
-def get_mutation_prob(mut_id: MutationStrengthEnum, node: Optional[GraphNode],
+def get_mutation_prob(mut_id: MutationStrengthEnum, node: GraphNode,
                       default_mutation_prob: float = 0.7) -> float:
     """ Function returns mutation probability for certain node in the graph
 
     :param mut_id: MutationStrengthEnum mean weak or strong mutation
     :param node: root node of the graph
-    :param default_mutation_prob: mutation probability used when mutation_id is invalid or graph has cycles
+    :param default_mutation_prob: mutation probability used when mutation_id is invalid
     :return mutation_prob: mutation probability
     """
-    mutation_prob = default_mutation_prob
-    graph_cycled = node is None
-    if node:
-        graph_cycled = distance_to_primary_level(node) < 0
-    if mut_id in list(MutationStrengthEnum) and not graph_cycled:
+    if mut_id in list(MutationStrengthEnum):
         mutation_strength = mut_id.value
         mutation_prob = mutation_strength / (distance_to_primary_level(node) + 1)
+    else:
+        mutation_prob = default_mutation_prob
     return mutation_prob
 
 
@@ -60,7 +73,7 @@ def get_mutation_prob(mut_id: MutationStrengthEnum, node: Optional[GraphNode],
 def simple_mutation(graph: OptGraph,
                     requirements: GraphRequirements,
                     graph_gen_params: GraphGenerationParams,
-                    parameters: 'GPAlgorithmParameters'
+                    parameters: 'GPAlgorithmParameters',
                     ) -> OptGraph:
     """
     This type of mutation is passed over all nodes of the tree started from the root node and changes
@@ -85,13 +98,10 @@ def simple_mutation(graph: OptGraph,
             for parent in node.nodes_from:
                 replace_node_to_random_recursive(parent)
 
-    root_nodes = graph.root_nodes()
-    root_node = choice(root_nodes) if root_nodes else None
     node_mutation_probability = get_mutation_prob(mut_id=parameters.mutation_strength,
-                                                  node=root_node)
+                                                  node=graph.root_node)
 
-    root_node = root_node or choice(graph.nodes)
-    replace_node_to_random_recursive(root_node)
+    replace_node_to_random_recursive(graph.root_node)
 
     return graph
 
@@ -100,7 +110,43 @@ def simple_mutation(graph: OptGraph,
 def single_edge_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters'
+                         parameters: 'GPAlgorithmParameters',
+                         ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    old_graph = deepcopy(graph)
+    for _ in range(parameters.max_num_of_operator_attempts):
+        if len(graph.nodes) < 2:# or graph.depth > requirements.max_depth:
+                return graph
+
+
+        source_node, target_node = sample(graph.nodes, 2)
+        if (source_node not in target_node.nodes_from) and (target_node not in source_node.nodes_from):
+            graph.connect_nodes(source_node, target_node)
+            break
+    for _ in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.get_edges()) ==0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+            graph.disconnect_nodes(source_node, target_node)
+            break
+        except:
+            continue
+
+#    if graph.depth > requirements.max_depth:
+ #       return old_graph
+    return graph
+
+@register_native
+def batch_edge_mutation(graph: OptGraph,
+                         requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters',
                          ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
@@ -108,31 +154,270 @@ def single_edge_mutation(graph: OptGraph,
     :param graph: graph to mutate
     """
 
-    def nodes_not_cycling(source_node: OptNode, target_node: OptNode):
-        parents = source_node.nodes_from
-        while parents:
-            if target_node not in parents:
-                grandparents = []
-                for parent in parents:
-                    grandparents.extend(parent.nodes_from)
-                parents = grandparents
-            else:
-                return False
-        return True
+    num_edges = requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
+   # print('num nodes',num_edges)
+    old_graph = deepcopy(graph)
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.nodes) < 2:# or graph.depth > requirements.max_depth:
+                    return graph
 
-    for _ in range(parameters.max_num_of_operator_attempts):
-        if len(graph.nodes) < 2 or graph.depth > requirements.max_depth:
-            return graph
 
-        source_node, target_node = sample(graph.nodes, 2)
-        if source_node not in target_node.nodes_from:
-            if graph_has_cycle(graph):
+            source_node, target_node = sample(graph.nodes, 2)
+            if (source_node not in target_node.nodes_from) and (target_node not in source_node.nodes_from):
                 graph.connect_nodes(source_node, target_node)
                 break
-            else:
-                if nodes_not_cycling(source_node, target_node):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            try:
+                if len(graph.get_edges()) ==0:
+                    return graph
+                source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+                graph.disconnect_nodes(source_node, target_node)
+                break
+            except:
+                continue
+
+      #  if graph.depth > requirements.max_depth:
+       #     return old_graph
+
+    return graph
+@register_native
+def star_edge_mutation(graph: OptGraph,
+                         requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters',
+                         ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    num_edges = requirements.num_edges
+    num_nodes = num_edges + 1
+    old_graph = deepcopy(graph)
+
+    for _ in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.nodes) < 2: # or graph.depth > requirements.max_depth:
+                    return graph
+
+            nodes = sample(graph.nodes, num_nodes)
+
+            source_node = nodes[0]
+            for target_node in nodes[1:]:
+                if (source_node not in target_node.nodes_from) and (target_node not in source_node.nodes_from):
                     graph.connect_nodes(source_node, target_node)
-                    break
+            break
+        except:
+            continue
+
+    for _ in range(int(num_edges)):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            try:
+                if len(graph.get_edges()) == 0:
+                    return graph
+                source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+                graph.disconnect_nodes(source_node, target_node)
+                break
+            except:
+                continue
+
+    #if graph.depth > requirements.max_depth:
+     #   return old_graph
+    return graph
+
+
+@register_native
+def cycle_edge_mutation(graph: OptGraph,
+                       requirements: GraphRequirements,
+                       graph_gen_params: GraphGenerationParams,
+                       parameters: 'GPAlgorithmParameters',
+                       ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    num_edges = requirements.num_edges
+    num_nodes = num_edges
+    old_graph = deepcopy(graph)
+
+    for _ in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.nodes) < 2: # or graph.depth > requirements.max_depth:
+                return graph
+
+            nodes = sample(graph.nodes, num_nodes)
+            print(nodes)
+            first_node=nodes[0]
+            source_node = first_node
+            for target_node in nodes[1:]:
+                if (source_node not in target_node.nodes_from) and (target_node not in source_node .nodes_from):
+                    graph.connect_nodes(source_node, target_node)
+                source_node = target_node
+            if (first_node not in target_node.nodes_from) and (target_node not in source_node .nodes_from):
+                graph.connect_nodes(source_node, first_node)
+            break
+        except:
+            continue
+    for _ in range(int(num_edges)):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            try:
+                if len(graph.get_edges()) == 0:
+                    return graph
+                source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+                graph.disconnect_nodes(source_node, target_node)
+                break
+            except:
+                continue
+
+#    if graph.depth > requirements.max_depth:
+ #       return old_graph
+    return graph
+
+@register_native
+def path_edge_mutation(graph: OptGraph,
+                       requirements: GraphRequirements,
+                       graph_gen_params: GraphGenerationParams,
+                       parameters: 'GPAlgorithmParameters',
+                       ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    num_edges = requirements.num_edges
+    num_nodes = num_edges + 1
+
+    old_graph = deepcopy(graph)
+
+    for _ in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.nodes) < 2: # or graph.depth > requirements.max_depth:
+                return graph
+
+            nodes = sample(graph.nodes, num_nodes)
+
+            source_node = nodes[0]
+            for target_node in nodes[1:]:
+                if (source_node not in target_node.nodes_from) and (target_node not in source_node.nodes_from):
+                    graph.connect_nodes(source_node, target_node)
+                source_node = target_node
+            break
+        except:
+            continue
+    for _ in range(int(num_edges)):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            try:
+                if len(graph.get_edges()) == 0:
+                    return graph
+                source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+                graph.disconnect_nodes(source_node, target_node)
+                break
+            except:
+                continue
+
+ #   if graph.depth > requirements.max_depth:
+  #      return old_graph
+    return graph
+
+
+
+@register_native
+def dense_edge_mutation(graph: OptGraph,
+                       requirements: GraphRequirements,
+                       graph_gen_params: GraphGenerationParams,
+                       parameters: 'GPAlgorithmParameters',
+                       ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    num_edges = requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
+    num_nodes = int((1 + math.sqrt(1+8*num_edges))/2)#num_nodes*(num_nodes-1)/2
+    old_graph = deepcopy(graph)
+    for o in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.nodes) < 2:# or graph.depth > requirements.max_depth:
+                return graph
+
+            nodes = sample(graph.nodes, num_nodes)
+            for k,source_node in enumerate(nodes):
+                for target_node in nodes[k:]:
+                    if (source_node not in target_node.nodes_from) and (target_node not in source_node.nodes_from):
+                        graph.connect_nodes(source_node, target_node)
+                    source_node = target_node
+            break
+        except:
+            continue
+    print('remove edges', datetime.now())
+    for _ in range(int(num_edges)):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            try:
+                if len(graph.get_edges()) == 0:
+                    return graph
+                source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+                graph.disconnect_nodes(source_node, target_node)
+                break
+            except:
+                continue
+    print('after remove edges', datetime.now())
+   # if graph.depth > requirements.max_depth:
+    #    return old_graph
+    return graph
+
+@register_native
+def single_edge_delete_mutation(graph: OptGraph,
+                         requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters',
+                         ) -> OptGraph:
+    """
+    This mutation deletes one edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    for _ in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.get_edges()) ==0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+            graph.disconnect_nodes(source_node, target_node)
+            break
+        except:
+            continue
+    return graph
+
+def batch_edge_delete_mutation(graph: OptGraph,
+                         requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters',
+                         ) -> OptGraph:
+    """
+    This mutation deletes one edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    num_nodes = 9
+
+    num_edges = requirements.num_edges#int((num_nodes * (num_nodes - 1)) / 4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) ==0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+            graph.disconnect_nodes(source_node, target_node)
+            break
+
     return graph
 
 
@@ -152,6 +437,78 @@ def add_intermediate_node(graph: OptGraph,
     # add new node to graph
     graph.add_node(new_node)
     return graph
+
+@register_native
+def change_label(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+    node = choice(graph.nodes)
+    print('before change label')
+    new_label = randint(0,1)
+    ind = randint(0,len(graph.nodes)-1)
+    graph.nodes[ind].content['label']=new_label
+    print('after change label')
+    return graph
+
+@register_native
+def change_label_to_1(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+    num_nodes = 9
+    num_edges = int((num_nodes*(num_nodes-1))/4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) ==0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 1
+            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 1
+            break
+    return graph
+
+@register_native
+def change_label_to_0(graph: OptGraph,requirements: GraphRequirements,
+                      graph_gen_params: GraphGenerationParams,
+                      parameters: 'GPAlgorithmParameters') -> OptGraph:
+    num_nodes = 9
+    num_edges = int((num_nodes * (num_nodes - 1)) / 4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) == 0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+            #print(source_node.descriptive_id, (source_node.descriptive_id.split('_')[-1]))
+            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 0
+            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 0
+            break
+    return graph
+
+@register_native
+def change_label_to_diff(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+    num_nodes = 9
+    num_edges = int((num_nodes * (num_nodes - 1)) / 4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) == 0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 0
+            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 1
+            break
+    return graph
+
+def node_parents(graph, node: GraphNode):
+    nodes = []
+    for other_node in graph.nodes:
+        if other_node in node.nodes_from:
+            nodes.append(other_node)
+    return nodes
+
 
 
 @register_native
@@ -195,7 +552,7 @@ def add_as_child(graph: OptGraph,
 def single_add_mutation(graph: OptGraph,
                         requirements: GraphRequirements,
                         graph_gen_params: GraphGenerationParams,
-                        parameters: AlgorithmParameters
+                        parameters: AlgorithmParameters,
                         ) -> OptGraph:
     """
     Add new node between two sequential existing modes
@@ -203,9 +560,9 @@ def single_add_mutation(graph: OptGraph,
     :param graph: graph to mutate
     """
 
-    if graph.depth >= requirements.max_depth:
+   # if graph.depth >= requirements.max_depth:
         # add mutation is not possible
-        return graph
+    #    return graph
 
     node_to_mutate = choice(graph.nodes)
 
@@ -222,7 +579,7 @@ def single_add_mutation(graph: OptGraph,
 def single_change_mutation(graph: OptGraph,
                            requirements: GraphRequirements,
                            graph_gen_params: GraphGenerationParams,
-                           parameters: AlgorithmParameters
+                           parameters: AlgorithmParameters,
                            ) -> OptGraph:
     """
     Change node between two sequential existing modes.
@@ -241,7 +598,7 @@ def single_change_mutation(graph: OptGraph,
 def single_drop_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: AlgorithmParameters
+                         parameters: AlgorithmParameters,
                          ) -> OptGraph:
     """
     Drop single node from graph.
@@ -258,7 +615,8 @@ def single_drop_mutation(graph: OptGraph,
         graph.delete_node(node_to_del)
         nodes_to_delete = \
             [n for n in graph.nodes
-             if n.descriptive_id.count('data_source') == 1 and node_name in n.descriptive_id]
+             if n.descriptive_id.count('data_source') == 1
+             and node_name in n.descriptive_id]
         for child_node in nodes_to_delete:
             graph.delete_node(child_node, reconnect=ReconnectType.all)
     elif removal_type == RemoveType.with_parents:
@@ -376,9 +734,24 @@ base_mutations_repo = {
     MutationTypesEnum.reduce: reduce_mutation,
     MutationTypesEnum.single_add: single_add_mutation,
     MutationTypesEnum.single_edge: single_edge_mutation,
+
+    MutationTypesEnum.star_edge: star_edge_mutation,
+    MutationTypesEnum.dense_edge: dense_edge_mutation,
+    MutationTypesEnum.path_edge: path_edge_mutation,
+    MutationTypesEnum.cycle_edge: cycle_edge_mutation,
+    MutationTypesEnum.batch_edge: batch_edge_mutation,
+
+    MutationTypesEnum.single_edge_del: single_edge_delete_mutation,
+    MutationTypesEnum.batch_edge_del: batch_edge_delete_mutation,
     MutationTypesEnum.single_drop: single_drop_mutation,
-    MutationTypesEnum.single_change: single_change_mutation
+
+    MutationTypesEnum.single_change: single_change_mutation,
+    MutationTypesEnum.change_label: change_label,
+MutationTypesEnum.change_label_to_1: change_label_to_1,
+MutationTypesEnum.change_label_to_0: change_label_to_0,
+MutationTypesEnum.change_label_to_diff: change_label_to_diff,
 }
+
 
 simple_mutation_set = (
     MutationTypesEnum.tree_growth,
@@ -390,6 +763,7 @@ simple_mutation_set = (
     # flip edge
     # cycle edge
 )
+
 
 rich_mutation_set = (
     MutationTypesEnum.simple,
