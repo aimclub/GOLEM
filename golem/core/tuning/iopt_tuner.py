@@ -10,6 +10,7 @@ from iOpt.solver_parametrs import SolverParameters
 from iOpt.trial import Point, FunctionValue
 
 from golem.core.adapter import BaseOptimizationAdapter
+from golem.core.optimisers.genetic.evaluation import determine_n_jobs
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
@@ -125,12 +126,14 @@ class IOptTuner(BaseTuner):
                          iterations=iterations,
                          n_jobs=n_jobs,
                          deviation=deviation, **kwargs)
+        self.n_jobs = determine_n_jobs(self.n_jobs)
         self.solver_parameters = SolverParameters(r=np.double(r),
                                                   eps=np.double(eps),
                                                   itersLimit=iterations,
                                                   evolventDensity=evolvent_density,
                                                   epsR=np.double(eps_r),
-                                                  refineSolution=refine_solution)
+                                                  refineSolution=refine_solution,
+                                                  numberOfParallelPoints=n_jobs)
 
     def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
@@ -149,7 +152,8 @@ class IOptTuner(BaseTuner):
                 console_output = ConsoleOutputListener(mode='full')
                 solver.AddListener(console_output)
 
-            solution = solver.Solve()
+            solver.Solve()
+            solution = solver.GetResults()
             best_point = solution.bestTrials[0].point
             best_parameters = problem.get_parameters_dict_from_iopt_point(best_point)
             final_graph = self.set_arg_graph(graph, best_parameters)
