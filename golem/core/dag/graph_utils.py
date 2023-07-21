@@ -95,7 +95,7 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
 
 
 def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> int:
-    """Gets the maximal depth фьщтп the provided ``nodes`` in the graph
+    """Gets the maximal depth among the provided ``nodes`` in the graph
 
     Args:
         nodes: nodes to calculate the depth for
