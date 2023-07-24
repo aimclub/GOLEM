@@ -6,7 +6,7 @@ from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level,
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from test.unit.dag.test_graph_operator import graph
 from test.unit.utils import graph_first, simple_cycled_graph, branched_cycled_graph, graph_second, graph_third, \
-    graph_fifth, graph_with_multi_roots_first
+    graph_fifth, graph_with_multi_roots_first, joined_branches_graph
 
 _ = graph
 
@@ -91,8 +91,8 @@ def test_graph_has_cycle():
 
 @pytest.mark.parametrize('graph, nodes_names, correct_depths', [(simple_cycled_graph(), ['c', 'd', 'e'], -1),
                                                                 (graph_fifth(), ['b', 'c', 'd'], 4),
-                                                                (graph_with_multi_roots_first(), ['16', '13', '14'],
-                                                                 3)])
+                                                                (graph_with_multi_roots_first(), ['16', '13', '14'], 3),
+                                                                (joined_branches_graph(), ['d', 'f', 'c'], 5)])
 def test_node_depth(graph, nodes_names, correct_depths):
     nodes = [graph.get_nodes_by_name(name)[0] for name in nodes_names]
     depths = node_depth(nodes)

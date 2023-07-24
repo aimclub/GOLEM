@@ -254,7 +254,6 @@ def simple_cycled_graph():
 
 
 def branched_cycled_graph():
-    #
     node_a_primary = LinkedGraphNode('a')
     node_b = LinkedGraphNode('b', nodes_from=[node_a_primary])
     node_c = LinkedGraphNode('c', nodes_from=[node_b])
@@ -267,6 +266,23 @@ def branched_cycled_graph():
     node_h = LinkedGraphNode('h', nodes_from=[node_f])
 
     graph = GraphDelegate([node_d, node_g, node_h])
+    return graph
+
+
+def joined_branches_graph():
+    #   a
+    #  / \
+    # c - b
+    # |   /
+    # d  /
+    # | /
+    # f
+    node_a = LinkedGraphNode('a')
+    node_b = LinkedGraphNode('b', nodes_from=[node_a])
+    node_c = LinkedGraphNode('c', nodes_from=[node_b, node_a])
+    node_d = LinkedGraphNode('d', nodes_from=[node_c])
+    node_f = LinkedGraphNode('f', nodes_from=[node_d, node_b])
+    graph = GraphDelegate(node_f)
     return graph
 
 
