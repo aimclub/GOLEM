@@ -94,31 +94,49 @@ def ordered_subnodes_hierarchy(node: 'GraphNode') -> List['GraphNode']:
     return subtree_impl(node)
 
 
-def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> Union[int, List[int]]:
-    """Gets the depth of the provided ``nodes`` in the graph
+def node_depth(nodes: Union['GraphNode', Sequence['GraphNode']]) -> int:
+    """Gets the maximal depth among the provided ``nodes`` in the graph
 
     Args:
         nodes: nodes to calculate the depth for
 
     Returns:
-        int or List[int]: depth(s) of the nodes in the graph
+        int: maximal depth
     """
     nodes = ensure_wrapped_in_sequence(nodes)
-    visited_nodes = [[node] for node in nodes]
-    depth = 1
-    parents = [node.nodes_from for node in nodes]
-    while any(parents):
-        depth += 1
-        for i, ith_parents in enumerate(parents):
-            grandparents = []
-            for parent in ith_parents:
-                if parent in visited_nodes[i]:
+    final_depth = {}
+    subnodes = set()
+    for node in nodes:
+        max_depth = 0
+        # if node is a subnode of another node it has smaller depth
+        if node.uid in subnodes:
+            continue
+        depth = 1
+        visited = []
+        if node in visited:
+            return -1
+        visited.append(node)
+        stack = [(node, depth, iter(node.nodes_from))]
+        while stack:
+            curr_node, depth_now, parents = stack[-1]
+            try:
+                parent = next(parents)
+                subnodes.add(parent.uid)
+                if parent not in visited:
+                    visited.append(parent)
+                    if parent.uid in final_depth:
+                        # depth of the parent has been already calculated
+                        stack.append((parent, depth_now + final_depth[parent.uid], iter([])))
+                    else:
+                        stack.append((parent, depth_now + 1, iter(parent.nodes_from)))
+                else:
                     return -1
-                grandparents.extend(parent.nodes_from)
-            visited_nodes[i].extend(ith_parents)
-            parents[i] = grandparents
-
-    return depth
+            except StopIteration:
+                _, depth_now, _ = stack.pop()
+                visited.pop()
+                max_depth = max(max_depth, depth_now)
+        final_depth[node.uid] = max_depth
+    return max(final_depth.values())
 
 
 def map_dag_nodes(transform: Callable, nodes: Sequence) -> Sequence:

@@ -69,7 +69,7 @@ class LinkedGraph(Graph, Copyable):
         self.actualise_old_node_children(old_node, new_node)
         new_node.nodes_from.extend(old_node.nodes_from)
         self._nodes.remove(old_node)
-        self._nodes.append(new_node)
+        self.add_node(new_node)
         self.sort_nodes()
         self._postprocess_nodes(self, self._nodes)
 
