@@ -4,6 +4,9 @@ Parameter classes
 .. autoclass:: golem.core.optimisers.optimizer.AlgorithmParameters
    :members:
 
+.. autoclass:: golem.core.optimisers.genetic.gp_params.GPAlgorithmParameters
+   :members:
+
 .. autoclass:: golem.core.optimisers.optimization_parameters.OptimizationParameters
    :members:
 
