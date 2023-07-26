@@ -18,12 +18,10 @@ class GPAlgorithmParameters(AlgorithmParameters):
     """
     Defines parameters of evolutionary operators and the algorithm of genetic optimizer.
 
-    :param crossover_prob: crossover probability (the chance that two chromosomes exchange some of their parts)
-    :param mutation_prob: mutation probability
-    :param variable_mutation_num: determines if in each iteration mutation is applied once
-    or possibly few times for each individual
-    :param max_num_of_operator_attempts: max number of unsuccessful operator (mutation/crossover)
-    attempts before continuing
+    :param crossover_prob: crossover probability (chance that two individuals will be mated).
+    :param mutation_prob: mutation probability (chance that an individual will be mutated).
+    :param variable_mutation_num: flag to apply mutation one or few times for individual in each iteration.
+    :param max_num_of_operator_attempts: max number of unsuccessful evo operator attempts before continuing.
     :param mutation_strength: strength of mutation in tree (using in certain mutation types)
     :param min_pop_size_with_elitism: minimal population size with which elitism is applicable
     :params required_valid_ratio: ratio of valid individuals on next population to continue optimization.
@@ -35,11 +33,10 @@ class GPAlgorithmParameters(AlgorithmParameters):
     Adaptive mutation agent uses specified algorithm. 'random' type is the default non-adaptive version.
     Requires crossover_types to be CrossoverTypesEnum.none for correct adaptive learning,
     so that fitness changes depend only on agent's actions (chosen mutations).
-    MutationAgentTypeEnum.bandit uses Multi-Armed Bandit (MAB) learning algorithm.
-    MutationAgentTypeEnum.contextual bandit uses contextual MAB learning algorithm.
+    ``MutationAgentTypeEnum.bandit`` uses Multi-Armed Bandit (MAB) learning algorithm.
+    ``MutationAgentTypeEnum.contextual`` bandit uses contextual MAB learning algorithm.
 
-    :param context_agent_type: specifies how the context of graph/node will be obtained.
-    Should be specified with ContextAgentTypeEnum.
+    :param context_agent_type: specifies implementation of graph/node encoder for adaptive mutation agent.
 
     :param selection_types: Sequence of selection operators types
     :param crossover_types: Sequence of crossover operators types
