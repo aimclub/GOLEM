@@ -24,19 +24,22 @@ class GPAlgorithmParameters(AlgorithmParameters):
     :param max_num_of_operator_attempts: max number of unsuccessful evo operator attempts before continuing.
     :param mutation_strength: strength of mutation in tree (using in certain mutation types)
     :param min_pop_size_with_elitism: minimal population size with which elitism is applicable
-    :params required_valid_ratio: ratio of valid individuals on next population to continue optimization.
+    :param required_valid_ratio: ratio of valid individuals on next population to continue optimization.
 
     Used in `ReproductionController` to compensate for invalid individuals. See the class for details.
 
     :param adaptive_mutation_type: Experimental feature! Enables adaptive Mutation agent.
+    :param context_agent_type: Experimental feature! Enables graph encoding for Mutation agent.
 
     Adaptive mutation agent uses specified algorithm. 'random' type is the default non-adaptive version.
     Requires crossover_types to be CrossoverTypesEnum.none for correct adaptive learning,
     so that fitness changes depend only on agent's actions (chosen mutations).
     ``MutationAgentTypeEnum.bandit`` uses Multi-Armed Bandit (MAB) learning algorithm.
-    ``MutationAgentTypeEnum.contextual`` bandit uses contextual MAB learning algorithm.
+    ``MutationAgentTypeEnum.contextual_bandit`` uses contextual MAB learning algorithm.
+    ``MutationAgentTypeEnum.neural_bandit`` uses contextual MAB learning algorithm with Deep Neural encoding.
 
-    :param context_agent_type: specifies implementation of graph/node encoder for adaptive mutation agent.
+    Parameter `context_agent_type` specifies implementation of graph/node encoder for adaptive
+    mutation agent. It is relevant for contextual and neural bandits.
 
     :param selection_types: Sequence of selection operators types
     :param crossover_types: Sequence of crossover operators types
