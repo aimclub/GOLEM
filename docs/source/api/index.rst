@@ -12,6 +12,7 @@ This is automatically generated API reference.
    optimizer
    objective
    parameters
+   reproduction
    profiler
    logging
    tuning
