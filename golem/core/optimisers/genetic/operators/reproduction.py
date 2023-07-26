@@ -36,8 +36,7 @@ class ReproductionController:
         selection: operator used in reproduction.
         mutation: operator used in reproduction.
         crossover: operator used in reproduction.
-        window_size: size in iterations of the moving window
-        to compute reproduction success rate.
+        window_size: size in iterations of the moving window to compute reproduction success rate.
     """
 
     def __init__(self,
@@ -60,6 +59,9 @@ class ReproductionController:
 
     @property
     def mean_success_rate(self) -> float:
+        """Returns mean success rate of reproduction + evaluation,
+        fraction of how many individuals were reproduced and mutated successfully.
+        Computed as average fraction for the last N iterations (N = window size param)"""
         return float(np.mean(self._success_rate_window))
 
     def reproduce_uncontrolled(self,
