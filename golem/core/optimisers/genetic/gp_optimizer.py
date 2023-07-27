@@ -127,6 +127,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         if not self.generations.is_any_improved:
             self.graph_optimizer_params.mutation_prob, self.graph_optimizer_params.crossover_prob = \
                 self._operators_prob.next(self.population)
+            self.log.info(
+                f'Next mutation proba: {self.graph_optimizer_params.mutation_prob}; '
+                f'Next crossover proba: {self.graph_optimizer_params.crossover_prob}')
         self.graph_optimizer_params.pop_size = self._pop_size.next(self.population)
         self.requirements.max_depth = self._graph_depth.next()
         self.log.info(
