@@ -48,18 +48,13 @@ class AdaptivePopulationSize(PopulationSize):
         return self._initial
 
     def next(self, population: PopulationT) -> int:
-        fitness_improved = self._improvements.is_quality_improved
-        complexity_decreased = self._improvements.is_complexity_improved
-        progress_in_both_goals = fitness_improved and complexity_decreased
-        no_progress = not fitness_improved and not complexity_decreased
         pop_size = len(population)
-        too_many_fitness_eval_errors = \
-            pop_size / self._iterator.current() < 0.5
+        too_many_fitness_eval_errors = pop_size / self._iterator.current() < 0.5
 
-        if too_many_fitness_eval_errors or no_progress:
+        if too_many_fitness_eval_errors or not self._improvements.is_any_improved:
             if self._iterator.has_next():
                 pop_size = self._iterator.next()
-        elif progress_in_both_goals and pop_size > 0:
+        elif self._improvements.is_quality_improved and self._improvements.is_complexity_improved and pop_size > 0:
             if self._iterator.has_prev():
                 pop_size = self._iterator.prev()
 
