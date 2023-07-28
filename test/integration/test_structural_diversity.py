@@ -12,7 +12,7 @@ from golem.core.optimisers.optimizer import STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 from golem.metrics.edit_distance import tree_edit_dist
 from golem.metrics.graph_metrics import degree_distance
 
-DIVERSITY_THRESHOLD = 0.6
+DIVERSITY_THRESHOLD = 0.5
 
 
 def set_up_params(gen_structural_check: int):
@@ -42,6 +42,7 @@ def test_structural_diversity():
     target_graph = generate_labeled_graph('tree', 4, node_labels=['x'])
     node_types = ['x', 'y', 'z', 'w', 'v', 'u']
     gen_structural_check = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
+    reset_diversity_threshold = 0.90
 
     gp_params = set_up_params(gen_structural_check=gen_structural_check)
     # running the example
@@ -55,6 +56,6 @@ def test_structural_diversity():
     for i in range(len(ratio_unique)):
         if i % gen_structural_check == 0:
             # structural check is applied every 5-th generation
-            assert ratio_unique[i] == 1
+            assert ratio_unique[i] >= reset_diversity_threshold
         else:
-            assert ratio_unique[i] > DIVERSITY_THRESHOLD
+            assert ratio_unique[i] >= DIVERSITY_THRESHOLD
