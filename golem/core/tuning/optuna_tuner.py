@@ -33,6 +33,7 @@ class OptunaTuner(BaseTuner):
                          n_jobs,
                          deviation)
         self.objectives_number = objectives_number
+        self.study = None
 
     def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> \
             Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
@@ -42,7 +43,7 @@ class OptunaTuner(BaseTuner):
 
         self.init_check(graph)
 
-        study = optuna.create_study(directions=['minimize'] * self.objectives_number)
+        self.study = optuna.create_study(directions=['minimize'] * self.objectives_number)
 
         init_parameters, has_parameters_to_optimize = self._get_initial_point(graph)
         if not has_parameters_to_optimize:
@@ -51,22 +52,22 @@ class OptunaTuner(BaseTuner):
         else:
             # Enqueue initial point to try
             if init_parameters:
-                study.enqueue_trial(init_parameters)
+                self.study.enqueue_trial(init_parameters)
 
-            study.optimize(predefined_objective,
-                           n_trials=self.iterations,
-                           n_jobs=self.n_jobs,
-                           timeout=self.timeout.seconds,
-                           callbacks=[self.early_stopping_callback],
-                           show_progress_bar=show_progress)
+            self.study.optimize(predefined_objective,
+                                n_trials=self.iterations,
+                                n_jobs=self.n_jobs,
+                                timeout=self.timeout.seconds,
+                                callbacks=[self.early_stopping_callback],
+                                show_progress_bar=show_progress)
 
             if not is_multi_objective:
-                best_parameters = study.best_trials[0].params
+                best_parameters = self.study.best_trials[0].params
                 tuned_graphs = self.set_arg_graph(graph, best_parameters)
                 self.was_tuned = True
             else:
                 tuned_graphs = []
-                for best_trial in study.best_trials:
+                for best_trial in self.study.best_trials:
                     best_parameters = best_trial.params
                     tuned_graph = self.set_arg_graph(deepcopy(graph), best_parameters)
                     tuned_graphs.append(tuned_graph)
