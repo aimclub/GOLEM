@@ -19,8 +19,6 @@ from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
-from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
@@ -30,7 +28,9 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 import numpy as np
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 import random
-import pickle
+
+
+
 class GeneratorModel(GraphDelegate):
     def __init__(self, nodes: Optional[Union[LinkedGraphNode, List[LinkedGraphNode]]] = None):
         super().__init__(nodes)
@@ -60,7 +60,10 @@ class GeneratorNode(LinkedGraphNode):
 
         return self.content["name"]
 
-def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_cluster,des_num_nodes, des_label_assort, timeout=15, visualize=True):
+
+
+@timeout(900)
+def run_graph_search(df, dense, cycle, path, star, size, num_edges, des_degree, des_cluster,des_num_nodes, des_label_assort, timeout=15, visualize=True):
     # Generate target graph that will be sought by optimizer
 
     def overall_mape(des_values, fact_values):
@@ -124,9 +127,13 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         G_new.add_edges_from(G.get_edges())
 
         d = nx.average_clustering(G_new.to_undirected())
+        # print('i am in objective', G.get_edges())
         return (d - des_cl) * (d - des_cl)
+    # Generate initial population with small tree graphs
 
-    # Generate initial population with random graphs
+    #initial_graphs = [generate_labeled_graph('gnp', 5, node_types) for _ in range(30)]
+
+
     initial_graphs = []
     for _ in range(20):
         Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
@@ -145,7 +152,8 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
         initial_graphs.append(Init2)
 
-    print('avg degree of random graph: {} vs des:{}'.format( np.mean(list(dict(Init2.degree()).values())),des_degree))
+    print('avg degree of found graph real: {} vs des:{}'.format( np.mean(list(dict(Init2.degree()).values())),des_degree))
+    #print('number of nodes real:{} vs des:{}'.format(found_graph.number_of_nodes(),des_num_nodes))
 
     nodes = []
     colors = []
@@ -159,50 +167,25 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     G_new.add_nodes_from(nodes)
     for edge in Init2.get_edges():
         G_new.add_edge(edge[0], edge[1])
+    #G_new.add_edges_from(found_graph.get_edges())
 
-    print('clustering coefficient of random graph: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()), des_cluster))
+    print('clustering coefficient real: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()), des_cluster))
 
     objective = Objective({'avg degree': partial(avg_deg_count, des_degree),
                            'cluster coef': partial(avg_cluster_count, des_cluster)}, is_multi_objective=True)
 #, 'label assort': partial(lab_assort_count,des_label_assort)
-
     # Setup optimization parameters
     max_graph_size=des_num_nodes
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size*10000,
-        num_of_generations = 600,
+        num_of_generations = 500,
         early_stopping_iterations=100,
         timeout=timedelta(minutes=timeout),
         n_jobs=-1,
         num_edges = num_edges
     )
-
-    mutation_types = [MutationTypesEnum.single_edge,
-                      MutationTypesEnum.batch_edge_5,
-                      MutationTypesEnum.batch_edge_10,
-                      MutationTypesEnum.batch_edge_15,
-                      MutationTypesEnum.batch_edge_20,
-                      MutationTypesEnum.batch_edge_25,
-                      MutationTypesEnum.batch_edge_30,
-                      MutationTypesEnum.batch_edge_35,
-                      MutationTypesEnum.batch_edge_40,
-                      MutationTypesEnum.batch_edge_45,
-                      MutationTypesEnum.batch_edge_50,
-                      MutationTypesEnum.batch_edge_55,
-                      MutationTypesEnum.star_edge_5,
-                      MutationTypesEnum.star_edge_10,
-                      MutationTypesEnum.star_edge_15,
-                      MutationTypesEnum.star_edge_20,
-                      MutationTypesEnum.star_edge_25,
-                      MutationTypesEnum.star_edge_30,
-                      MutationTypesEnum.star_edge_35,
-                      MutationTypesEnum.star_edge_40,
-                      MutationTypesEnum.star_edge_45,
-                      MutationTypesEnum.star_edge_50,
-                      MutationTypesEnum.star_edge_55,
-
-                      ]
+    mutation_types = [MutationTypesEnum.single_edge,MutationTypesEnum.batch_edge]
     if dense:
         mutation_types.append(MutationTypesEnum.dense_edge)
     if star:
@@ -211,30 +194,63 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         mutation_types.append(MutationTypesEnum.cycle_edge)
     if path:
         mutation_types.append(MutationTypesEnum.path_edge)
-
     gp_params = GPAlgorithmParameters(
+     #   genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         max_pop_size = 10,
         crossover_prob = 0.8,
         mutation_prob = 1,
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         multi_objective=objective.is_multi_objective,
-        mutation_types=mutation_types,
-        adaptive_mutation_type = MutationAgentTypeEnum.neural_bandit,
-        context_agent_type = ContextAgentTypeEnum.none_encoding,
+        mutation_types=mutation_types,#MutationTypesEnum.single_add,
+                        #MutationTypesEnum.single_drop,
+                        #MutationTypesEnum.single_edge,
+                      #  MutationTypesEnum.star_edge,
+                      #  MutationTypesEnum.path_edge,
+                       # MutationTypesEnum.cycle_edge,
+                        #MutationTypesEnum.dense_edge,
+                      # MutationTypesEnum.batch_edge,
+
+                       # MutationTypesEnum.batch_edge_del,
+                        #MutationTypesEnum.single_edge_del,
+
+          #              MutationTypesEnum.change_label,
+         #               MutationTypesEnum.change_label_to_1,
+        #    MutationTypesEnum.change_label_to_diff,
+       #     MutationTypesEnum.change_label_to_0,
+
+                        #MutationTypesEnum.local_growth
+
         crossover_types=[CrossoverTypesEnum.none]
     )
 
-    graph_gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter())
+#   mutationa
+#    simple = 'simple'
+#    growth = 'growth'
+#    local_growth = 'local_growth'
+#    tree_growth = 'tree_growth'
+#    reduce = 'reduce'
+#    single_add = 'single_add'
+#    single_change = 'single_change'
+#    single_drop = 'single_drop'
+#    single_edge = 'single_edge'
+
+    graph_gen_params = GraphGenerationParams(
+        #adapter=BaseNetworkxAdapter(),  # Example works with NetworkX graphs
+      #  rules_for_constraint=[has_no_self_cycled_nodes],
+          # We don't want cycles in the graph
+        #available_node_types=node_types  # Node types that can appear in graphs
+    )
+
     all_parameters = (requirements, graph_gen_params, gp_params)
 
     # Build and run the optimizer
     optimiser = EvoGraphOptimizer(objective, initial_graphs, *all_parameters)
     found_graphs = optimiser.optimise(objective)
-
     if visualize:
         # Restore the NetworkX graph back from internal Graph representation
         found_graph = graph_gen_params.adapter.restore(found_graphs[0])
-        print('avg degree of found graph real: {} vs des:{}'.format( np.mean(list(dict(found_graph.degree()).values())), des_degree))
+       # print('avg degree of found graph real: {} vs des:{}'.format( np.mean(list(dict(found_graph.degree()).values())), des_degree))
+        #print('number of nodes real:{} vs des:{}'.format(found_graph.number_of_nodes(),des_num_nodes))
 
         nodes = []
         colors = []
@@ -249,17 +265,20 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         for edge in found_graph.get_edges():
             G_new.add_edge(edge[0],edge[1])
 
-        G_new.add_edges_from(found_graph.get_edges())
+        new_row={'cycle':cycle,'star':star, 'path':path,'dense':dense ,'num nodes':des_num_nodes, 'num edges':num_edges,'avg degree': des_degree,'des cl':des_cluster, 'fact deg': np.mean(list(dict(found_graph.degree()).values())), 'fact cl':round(nx.average_clustering(G_new.to_undirected()),4),'time':round(optimiser.timer.minutes_from_start, 2)}
+        df = df.append(new_row,ignore_index=True)
+        #G_new.add_edges_from(found_graph.get_edges())
 
-        print('clustering coefficient real: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()),des_cluster))
-        print('label assortativity real: {} vs des: {} '.format(label_assortativity(found_graphs[0]), des_label_assort) )
+        #print('clustering coefficient real: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()),des_cluster))
+        #print('label assortativity real: {} vs des: {} '.format(label_assortativity(found_graphs[0]), des_label_assort) )
 
-        des_values = [des_degree, des_cluster, des_label_assort]
-        fact_values = [np.mean(list(dict(found_graph.degree()).values())), nx.average_clustering(G_new.to_undirected()), label_assortativity(found_graphs[0])]
-        print(nx.degree(G_new), len(G_new.edges()), len(G_new.edges()), 'mape', overall_mape(des_values, fact_values))
-        print(found_graph.degree())
+        #des_values = [des_degree, des_cluster, des_label_assort]
+        #fact_values = [np.mean(list(dict(found_graph.degree()).values())), nx.average_clustering(G_new.to_undirected()), label_assortativity(found_graphs[0])]
+       # print(nx.degree(G_new), len(G_new.edges()), len(G_new.edges()), 'mape', overall_mape(des_values, fact_values))
+      #  print(found_graph.degree())
         #nx.draw(G_new,node_color = colors)
         #plt.show()
-        return G_new
-
+        #draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        #optimiser.history.show.fitness_line()
+    return df
 

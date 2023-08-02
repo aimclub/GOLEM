@@ -15,6 +15,8 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
 from golem.core.utilities.data_structures import ComparableEnum as Enum
 
+from functools import partial
+
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
@@ -45,7 +47,32 @@ class MutationTypesEnum(Enum):
     star_edge = 'star_edge'
     path_edge='path_edge'
     cycle_edge='cycle_edge'
-    batch_edge='batch_edge'
+
+    batch_edge_5='batch_edge_5'
+    batch_edge_10='batch_edge_10'
+    batch_edge_15='batch_edge_15'
+    batch_edge_20='batch_edge_20'
+    batch_edge_25='batch_edge_25'
+    batch_edge_30='batch_edge_30'
+    batch_edge_35='batch_edge_35'
+    batch_edge_40='batch_edge_40'
+    batch_edge_45='batch_edge_45'
+    batch_edge_50='batch_edge_50'
+    batch_edge_55='batch_edge_55'
+
+
+    star_edge_5='star_edge_5'
+    star_edge_10='star_edge_10'
+    star_edge_15='star_edge_15'
+    star_edge_20='star_edge_20'
+    star_edge_25='star_edge_25'
+    star_edge_30='star_edge_30'
+    star_edge_35='star_edge_35'
+    star_edge_40='star_edge_40'
+    star_edge_45='star_edge_45'
+    star_edge_50='star_edge_50'
+    star_edge_55='star_edge_55'
+
     dense_edge='dense_edge'
     batch_edge_del = 'batch_edge_delete'
 
@@ -146,7 +173,7 @@ def single_edge_mutation(graph: OptGraph,
 def batch_edge_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters',
+                         parameters: 'GPAlgorithmParameters',num_edges
                          ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
@@ -154,7 +181,7 @@ def batch_edge_mutation(graph: OptGraph,
     :param graph: graph to mutate
     """
 
-    num_edges = requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
+   # num_edges = 5 #requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
    # print('num nodes',num_edges)
     old_graph = deepcopy(graph)
     for _ in range(num_edges):
@@ -180,20 +207,33 @@ def batch_edge_mutation(graph: OptGraph,
 
       #  if graph.depth > requirements.max_depth:
        #     return old_graph
-
     return graph
+
+batch_edge_5_mutation = partial(batch_edge_mutation, num_edges=5)
+batch_edge_10_mutation = partial(batch_edge_mutation, num_edges=10)
+batch_edge_15_mutation = partial(batch_edge_mutation, num_edges=15)
+batch_edge_20_mutation = partial(batch_edge_mutation, num_edges=20)
+batch_edge_25_mutation = partial(batch_edge_mutation, num_edges=25)
+batch_edge_30_mutation = partial(batch_edge_mutation, num_edges=30)
+batch_edge_35_mutation = partial(batch_edge_mutation, num_edges=35)
+batch_edge_40_mutation = partial(batch_edge_mutation, num_edges=40)
+batch_edge_45_mutation = partial(batch_edge_mutation, num_edges=45)
+batch_edge_50_mutation = partial(batch_edge_mutation, num_edges=50)
+batch_edge_55_mutation = partial(batch_edge_mutation, num_edges=55)
+
+
 @register_native
 def star_edge_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters',
+                         parameters: 'GPAlgorithmParameters',num_edges
                          ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
 
     :param graph: graph to mutate
     """
-    num_edges = requirements.num_edges
+    #num_edges = requirements.num_edges
     num_nodes = num_edges + 1
     old_graph = deepcopy(graph)
 
@@ -227,6 +267,17 @@ def star_edge_mutation(graph: OptGraph,
     #if graph.depth > requirements.max_depth:
      #   return old_graph
     return graph
+star_edge_5_mutation = partial(star_edge_mutation, num_edges=5)
+star_edge_10_mutation = partial(star_edge_mutation, num_edges=10)
+star_edge_15_mutation = partial(star_edge_mutation, num_edges=15)
+star_edge_20_mutation = partial(star_edge_mutation, num_edges=20)
+star_edge_25_mutation = partial(star_edge_mutation, num_edges=25)
+star_edge_30_mutation = partial(star_edge_mutation, num_edges=30)
+star_edge_35_mutation = partial(star_edge_mutation, num_edges=35)
+star_edge_40_mutation = partial(star_edge_mutation, num_edges=40)
+star_edge_45_mutation = partial(star_edge_mutation, num_edges=45)
+star_edge_50_mutation = partial(star_edge_mutation, num_edges=50)
+star_edge_55_mutation = partial(star_edge_mutation, num_edges=55)
 
 
 @register_native
@@ -372,53 +423,6 @@ def dense_edge_mutation(graph: OptGraph,
     #    return old_graph
     return graph
 
-@register_native
-def single_edge_delete_mutation(graph: OptGraph,
-                         requirements: GraphRequirements,
-                         graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters',
-                         ) -> OptGraph:
-    """
-    This mutation deletes one edge between two random nodes in graph.
-
-    :param graph: graph to mutate
-    """
-    for _ in range(parameters.max_num_of_operator_attempts):
-        try:
-            if len(graph.get_edges()) ==0:
-                return graph
-            source_node, target_node = sample(graph.get_edges(), 1)[0]
-
-            graph.disconnect_nodes(source_node, target_node)
-            break
-        except:
-            continue
-    return graph
-
-def batch_edge_delete_mutation(graph: OptGraph,
-                         requirements: GraphRequirements,
-                         graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters',
-                         ) -> OptGraph:
-    """
-    This mutation deletes one edge between two random nodes in graph.
-
-    :param graph: graph to mutate
-    """
-    num_nodes = 9
-
-    num_edges = requirements.num_edges#int((num_nodes * (num_nodes - 1)) / 4)
-
-    for _ in range(num_edges):
-        for _ in range(parameters.max_num_of_operator_attempts):
-            if len(graph.get_edges()) ==0:
-                return graph
-            source_node, target_node = sample(graph.get_edges(), 1)[0]
-
-            graph.disconnect_nodes(source_node, target_node)
-            break
-
-    return graph
 
 
 @register_native
@@ -735,14 +739,32 @@ base_mutations_repo = {
     MutationTypesEnum.single_add: single_add_mutation,
     MutationTypesEnum.single_edge: single_edge_mutation,
 
-    MutationTypesEnum.star_edge: star_edge_mutation,
+    MutationTypesEnum.star_edge_5: star_edge_5_mutation,
+    MutationTypesEnum.star_edge_10: star_edge_10_mutation,
+    MutationTypesEnum.star_edge_15: star_edge_15_mutation,
+    MutationTypesEnum.star_edge_20: star_edge_20_mutation,
+    MutationTypesEnum.star_edge_25: star_edge_25_mutation,
+    MutationTypesEnum.star_edge_30: star_edge_30_mutation,
+    MutationTypesEnum.star_edge_35: star_edge_35_mutation,
+    MutationTypesEnum.star_edge_40: star_edge_40_mutation,
+    MutationTypesEnum.star_edge_45: star_edge_45_mutation,
+    MutationTypesEnum.star_edge_50: star_edge_50_mutation,
+    MutationTypesEnum.star_edge_55: star_edge_55_mutation,
+
     MutationTypesEnum.dense_edge: dense_edge_mutation,
     MutationTypesEnum.path_edge: path_edge_mutation,
     MutationTypesEnum.cycle_edge: cycle_edge_mutation,
-    MutationTypesEnum.batch_edge: batch_edge_mutation,
-
-    MutationTypesEnum.single_edge_del: single_edge_delete_mutation,
-    MutationTypesEnum.batch_edge_del: batch_edge_delete_mutation,
+    MutationTypesEnum.batch_edge_5: batch_edge_5_mutation,
+    MutationTypesEnum.batch_edge_10: batch_edge_10_mutation,
+    MutationTypesEnum.batch_edge_15: batch_edge_15_mutation,
+    MutationTypesEnum.batch_edge_20: batch_edge_20_mutation,
+    MutationTypesEnum.batch_edge_25: batch_edge_25_mutation,
+    MutationTypesEnum.batch_edge_30: batch_edge_30_mutation,
+    MutationTypesEnum.batch_edge_35: batch_edge_35_mutation,
+    MutationTypesEnum.batch_edge_40: batch_edge_40_mutation,
+    MutationTypesEnum.batch_edge_45: batch_edge_45_mutation,
+    MutationTypesEnum.batch_edge_50: batch_edge_50_mutation,
+    MutationTypesEnum.batch_edge_55: batch_edge_55_mutation,
     MutationTypesEnum.single_drop: single_drop_mutation,
 
     MutationTypesEnum.single_change: single_change_mutation,
@@ -759,9 +781,6 @@ simple_mutation_set = (
     MutationTypesEnum.single_change,
     MutationTypesEnum.single_drop,
     MutationTypesEnum.single_edge,
-    # join nodes
-    # flip edge
-    # cycle edge
 )
 
 
