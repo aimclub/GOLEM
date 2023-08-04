@@ -136,6 +136,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
                           f'worse than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
             final_graph = self.init_graph
             final_metric = self.init_metric
+            self.obtained_metric = final_metric
         self.log.message(f'Final graph: {graph_structure(final_graph)}')
         if final_metric is not None:
             self.log.message(f'Final metric: {abs(final_metric):.3f}')
