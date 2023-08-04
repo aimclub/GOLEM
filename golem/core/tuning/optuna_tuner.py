@@ -54,6 +54,9 @@ class OptunaTuner(BaseTuner):
             if init_parameters:
                 self.study.enqueue_trial(init_parameters)
 
+            verbosity_level = optuna.logging.INFO if show_progress else optuna.logging.WARNING
+            optuna.logging.set_verbosity(verbosity_level)
+
             self.study.optimize(predefined_objective,
                                 n_trials=self.iterations,
                                 n_jobs=self.n_jobs,
