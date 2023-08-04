@@ -110,7 +110,7 @@ def test_node_tuning(search_space, graph):
 
 
 @pytest.mark.parametrize('tuner_cls', [OptunaTuner])
-@pytest.mark.parametrize('graph, adapter, obj_eval',
+@pytest.mark.parametrize('init_graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
                                                             'prod_metric': ParamsProductMetric.get_value},
@@ -119,11 +119,12 @@ def test_node_tuning(search_space, graph):
                            ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
                                                         'prod_metric': ParamsProductMetric.get_value},
                                                        is_multi_objective=True)))])
-def test_multi_objective_tuning(search_space, tuner_cls, graph, adapter, obj_eval):
-    init_metric = obj_eval.evaluate(graph)
+def test_multi_objective_tuning(search_space, tuner_cls, init_graph, adapter, obj_eval):
+    init_metric = obj_eval.evaluate(init_graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, objectives_number=2)
-    tuned_graphs = tuner.tune(deepcopy(graph), show_progress=False)
+    tuned_graphs = tuner.tune(deepcopy(init_graph), show_progress=False)
     for graph in tuned_graphs:
+        assert type(graph) == type(init_graph)
         final_metric = obj_eval.evaluate(graph)
         assert final_metric is not None
         assert not init_metric.dominates(final_metric)
