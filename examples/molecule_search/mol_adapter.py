@@ -36,7 +36,7 @@ def store_edges_params_in_nodes(graph: nx.DiGraph, opt_graph: OptGraph) -> OptGr
         edges_params = {}
         for predecessor in graph.predecessors(node):
             edges_params.update({str(predecessor): graph.get_edge_data(predecessor, node)})
-        opt_graph.get_node_by_uid(str(node)).content.update({'edges_params': edges_params})
+        opt_graph.get_node_by_uid(str(node)).parameters.update({'edges_params': edges_params})
     return opt_graph
 
 
