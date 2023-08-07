@@ -1,10 +1,11 @@
 import networkx as nx
-from networkx import isolates, simple_cycles
+from networkx import isolates
 
 from golem.core.adapter import register_native
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
+from golem.core.dag.graph_utils import graph_has_cycle
 
 ERROR_PREFIX = 'Invalid graph configuration:'
 
@@ -23,9 +24,7 @@ def has_one_root(graph: Graph):
 
 @register_native
 def has_no_cycle(graph: Graph):
-    nx_graph, _ = graph_structure_as_nx_graph(graph)
-    cycled = list(simple_cycles(nx_graph))
-    if len(cycled) > 0:
+    if graph_has_cycle(graph):
         raise ValueError(f'{ERROR_PREFIX} Graph has cycles')
 
     return True

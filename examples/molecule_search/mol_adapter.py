@@ -25,20 +25,19 @@ class MolAdapter(BaseOptimizationAdapter):
     def _adapt(self, adaptee: MolGraph) -> OptGraph:
         nx_graph = adaptee.get_nx_graph()
         digraph = nx_to_directed(nx_graph)
-        digraph = store_edges_params_in_nodes(digraph)
-        return self.nx_adapter.adapt(digraph)
+        opt_graph = self.nx_adapter.adapt(digraph)
+        opt_graph = store_edges_params_in_nodes(digraph, opt_graph)
+        return opt_graph
 
 
-def store_edges_params_in_nodes(graph: nx.DiGraph) -> nx.DiGraph:
+def store_edges_params_in_nodes(graph: nx.DiGraph, opt_graph: OptGraph) -> OptGraph:
     graph = deepcopy(graph)
-    all_edges_params = {}
     for node in graph.nodes():
         edges_params = {}
         for predecessor in graph.predecessors(node):
-            edges_params.update({predecessor: graph.get_edge_data(predecessor, node)})
-        all_edges_params.update({node: edges_params})
-    nx.set_node_attributes(graph, all_edges_params, "edges_params")
-    return graph
+            edges_params.update({str(predecessor): graph.get_edge_data(predecessor, node)})
+        opt_graph.get_node_by_uid(str(node)).parameters.update({'edges_params': edges_params})
+    return opt_graph
 
 
 def restore_edges_params_from_nodes(graph: nx.DiGraph) -> nx.DiGraph:

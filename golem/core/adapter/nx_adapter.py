@@ -22,15 +22,20 @@ class BaseNetworkxAdapter(BaseOptimizationAdapter[nx.DiGraph]):
     def _node_restore(self, node: GraphNode) -> Dict:
         """Transforms GraphNode to dict of NetworkX node attributes.
         Override for custom behavior."""
-        if hasattr(node, 'content'):
-            return deepcopy(node.content)
+        if hasattr(node, 'parameters'):
+            parameters = node.parameters
+            if node.name:
+                parameters['name'] = node.name
+            return deepcopy(parameters)
         else:
             return {}
 
     def _node_adapt(self, data: Dict) -> OptNode:
         """Transforms a dict of NetworkX node attributes to GraphNode.
         Override for custom behavior."""
-        return OptNode(content=deepcopy(data))
+        data = deepcopy(data)
+        name = data.pop('name', None)
+        return OptNode(content={'name': name, 'params': data})
 
     def _adapt(self, adaptee: nx.DiGraph) -> OptGraph:
         mapped_nodes = {}
@@ -43,7 +48,7 @@ class BaseNetworkxAdapter(BaseOptimizationAdapter[nx.DiGraph]):
         for node_id, node_data in adaptee.nodes.items():
             # transform node
             node = self._node_adapt(node_data)
-            node.uid = node_id
+            node.uid = str(node_id)
             mapped_nodes[node_id] = node
 
         # map parent nodes

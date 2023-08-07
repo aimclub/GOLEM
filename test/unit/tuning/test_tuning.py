@@ -5,12 +5,13 @@ from hyperopt import hp
 
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.tuning.iopt_tuner import IOptTuner
+from golem.core.tuning.optuna_tuner import OptunaTuner
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultaneous import SimultaneousTuner
 from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
     opt_graph_with_params, MockNode, MockDomainStructure
-from test.unit.utils import CustomMetric
+from test.unit.utils import ParamsSumMetric, ParamsProductMetric
 
 
 def not_tunable_mock_graph():
@@ -70,12 +71,12 @@ def search_space():
     return SearchSpace(params_per_operation)
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner, IOptTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
-                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))),
                           (opt_graph_with_params(), None,
-                           ObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
+                           ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value})))])
 def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval):
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
     tuned_graph = tuner.tune(deepcopy(graph))
@@ -84,10 +85,10 @@ def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval
     assert tuner.init_metric > tuner.obtained_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner, IOptTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(not_tunable_mock_graph(), MockAdapter(),
-                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value})))])
 def test_tuner_with_no_tunable_params(search_space, tuner_cls, graph, adapter, obj_eval):
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
     tuned_graph = tuner.tune(deepcopy(graph))
@@ -98,7 +99,7 @@ def test_tuner_with_no_tunable_params(search_space, tuner_cls, graph, adapter, o
 
 @pytest.mark.parametrize('graph', [mock_graph_with_params(), opt_graph_with_params(), not_tunable_mock_graph()])
 def test_node_tuning(search_space, graph):
-    obj_eval = MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))
+    obj_eval = MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
     adapter = MockAdapter()
     for node_idx in range(graph.length):
         tuner = SequentialTuner(obj_eval, search_space, adapter, iterations=10)
@@ -106,3 +107,24 @@ def test_node_tuning(search_space, graph):
         assert tuned_graph is not None
         assert tuner.obtained_metric is not None
         assert tuner.init_metric >= tuner.obtained_metric
+
+
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner])
+@pytest.mark.parametrize('init_graph, adapter, obj_eval',
+                         [(mock_graph_with_params(), MockAdapter(),
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
+                                                            'prod_metric': ParamsProductMetric.get_value},
+                                                           is_multi_objective=True))),
+                          (opt_graph_with_params(), None,
+                           ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
+                                                        'prod_metric': ParamsProductMetric.get_value},
+                                                       is_multi_objective=True)))])
+def test_multi_objective_tuning(search_space, tuner_cls, init_graph, adapter, obj_eval):
+    init_metric = obj_eval.evaluate(init_graph)
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, objectives_number=2)
+    tuned_graphs = tuner.tune(deepcopy(init_graph), show_progress=False)
+    for graph in tuned_graphs:
+        assert type(graph) == type(init_graph)
+        final_metric = obj_eval.evaluate(graph)
+        assert final_metric is not None
+        assert not init_metric.dominates(final_metric)

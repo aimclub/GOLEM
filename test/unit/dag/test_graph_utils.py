@@ -1,10 +1,14 @@
 import pytest
 
-from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy
-from test.unit.dag.test_graph_operator import graph
-from test.unit.utils import graph_first
 from golem.core.dag.graph_utils import distance_to_primary_level
+from golem.core.dag.graph_utils import nodes_from_layer, distance_to_root_level, ordered_subnodes_hierarchy, \
+    graph_has_cycle, node_depth
 from golem.core.dag.linked_graph_node import LinkedGraphNode
+from test.unit.dag.test_graph_operator import graph
+from test.unit.utils import graph_first, simple_cycled_graph, branched_cycled_graph, graph_second, graph_third, \
+    graph_fifth, graph_with_multi_roots_first, joined_branches_graph
+
+_ = graph
 
 
 def get_nodes():
@@ -76,3 +80,20 @@ def test_ordered_subnodes_cycle():
 
     with pytest.raises(ValueError, match='cycle'):
         ordered_subnodes_hierarchy(root)
+
+
+def test_graph_has_cycle():
+    for cycled_graph in [simple_cycled_graph(), branched_cycled_graph()]:
+        assert graph_has_cycle(cycled_graph)
+    for not_cycled_graph in [graph_first(), graph_second(), graph_third()]:
+        assert not graph_has_cycle(not_cycled_graph)
+
+
+@pytest.mark.parametrize('graph, nodes_names, correct_depths', [(simple_cycled_graph(), ['c', 'd', 'e'], -1),
+                                                                (graph_fifth(), ['b', 'c', 'd'], 4),
+                                                                (graph_with_multi_roots_first(), ['16', '13', '14'], 3),
+                                                                (joined_branches_graph(), ['d', 'f', 'c'], 5)])
+def test_node_depth(graph, nodes_names, correct_depths):
+    nodes = [graph.get_nodes_by_name(name)[0] for name in nodes_names]
+    depths = node_depth(nodes)
+    assert depths == correct_depths

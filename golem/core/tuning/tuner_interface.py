@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import timedelta
-from typing import TypeVar, Generic, Optional
+from typing import TypeVar, Generic, Optional, Union, Sequence
 
 import numpy as np
 
@@ -10,9 +10,11 @@ from golem.core.adapter.adapter import IdentityAdapter
 from golem.core.constants import MAX_TUNING_METRIC_VALUE
 from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
+from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 DomainGraphForTune = TypeVar('DomainGraphForTune')
 
@@ -62,7 +64,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.log = default_log(self)
 
     @abstractmethod
-    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
+    def tune(self, graph: DomainGraphForTune) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         """
         Function for hyperparameters tuning on the graph
 
@@ -71,6 +73,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         Returns:
           Graph with optimized hyperparameters
+          or pareto front of optimized graphs in case of multi-objective optimization
         """
         raise NotImplementedError()
 
@@ -88,25 +91,33 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         self.init_metric = self.get_metric_value(graph=self.init_graph)
         self.log.message(f'Initial graph: {graph_structure(self.init_graph)} \n'
-                         f'Initial metric: {abs(self.init_metric):.3f}')
+                         f'Initial metric: '
+                         f'{list(map(lambda x: round(abs(x), 3), ensure_wrapped_in_sequence(self.init_metric)))}')
 
-    def final_check(self, tuned_graph: OptGraph) -> OptGraph:
+    def final_check(self, tuned_graphs: Union[OptGraph, Sequence[OptGraph]], multi_obj: bool = False) \
+            -> Union[OptGraph, Sequence[OptGraph]]:
         """
         Method propose final quality check after optimization process
 
         Args:
-          tuned_graph: Tuned graph to calculate objective
+          tuned_graphs: Tuned graph to calculate objective
+          multi_obj: If optimization was multi objective.
         """
-
-        self.obtained_metric = self.get_metric_value(graph=tuned_graph)
-
-        if self.obtained_metric == self._default_metric_value:
-            self.obtained_metric = None
-
         self.log.info('Hyperparameters optimization finished')
+
+        if multi_obj:
+            return self._multi_obj_final_check(tuned_graphs)
+        else:
+            return self._single_obj_final_check(tuned_graphs)
+
+    def _single_obj_final_check(self, tuned_graph: OptGraph):
+        self.obtained_metric = self.get_metric_value(graph=tuned_graph)
 
         prefix_tuned_phrase = 'Return tuned graph due to the fact that obtained metric'
         prefix_init_phrase = 'Return init graph due to the fact that obtained metric'
+
+        if np.isclose(self.obtained_metric, self._default_metric_value):
+            self.obtained_metric = None
 
         # 0.05% deviation is acceptable
         deviation_value = (self.init_metric / 100.0) * self.deviation
@@ -125,15 +136,36 @@ class BaseTuner(Generic[DomainGraphForTune]):
                           f'worse than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
             final_graph = self.init_graph
             final_metric = self.init_metric
+            self.obtained_metric = final_metric
         self.log.message(f'Final graph: {graph_structure(final_graph)}')
         if final_metric is not None:
             self.log.message(f'Final metric: {abs(final_metric):.3f}')
         else:
             self.log.message('Final metric is None')
-        self.obtained_metric = final_metric
         return final_graph
 
-    def get_metric_value(self, graph: OptGraph) -> float:
+    def _multi_obj_final_check(self, tuned_graphs: Sequence[OptGraph]) -> Sequence[OptGraph]:
+        self.obtained_metric = []
+        final_graphs = []
+        for tuned_graph in tuned_graphs:
+            obtained_metric = self.get_metric_value(graph=tuned_graph)
+            for e, value in enumerate(obtained_metric):
+                if np.isclose(value, self._default_metric_value):
+                    obtained_metric[e] = None
+            if not MultiObjFitness(self.init_metric).dominates(MultiObjFitness(obtained_metric)):
+                self.obtained_metric.append(obtained_metric)
+                final_graphs.append(tuned_graph)
+        if final_graphs:
+            metrics_formatted = [str([round(x, 3) for x in metrics]) for metrics in self.obtained_metric]
+            metrics_formatted = '\n'.join(metrics_formatted)
+            self.log.message('Return tuned graphs with obtained metrics \n'
+                             f'{metrics_formatted}')
+        else:
+            self.log.message('Initial metric dominates all found solutions. Return initial graph.')
+            final_graphs = self.init_graph
+        return final_graphs
+
+    def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
         """
         Method calculates metric for algorithm validation
 
@@ -144,10 +176,19 @@ class BaseTuner(Generic[DomainGraphForTune]):
           value of loss function
         """
         graph_fitness = self.objective_evaluate(graph)
-        metric_value = graph_fitness.value
-        if not graph_fitness.valid:
-            return self._default_metric_value
-        return metric_value
+
+        if isinstance(graph_fitness, SingleObjFitness):
+            metric_value = graph_fitness.value
+            if not graph_fitness.valid:
+                return self._default_metric_value
+            return metric_value
+
+        elif isinstance(graph_fitness, MultiObjFitness):
+            metric_values = graph_fitness.values
+            for e, value in enumerate(metric_values):
+                if value is None:
+                    metric_values[e] = self._default_metric_value
+            return metric_values
 
     @staticmethod
     def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:

@@ -4,30 +4,37 @@ from random import choice
 import numpy as np
 import pytest
 
+from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
+from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.graph import OptNode
 from test.unit.adapter.graph_data import get_graphs, graph_with_custom_parameters, get_complex_graph, get_adapters, \
-    get_optgraphs
+    get_optgraphs, networkx_graph_with_parameters
 from test.unit.mocks.common_mocks import MockNode, MockAdapter
 from test.unit.utils import find_first
 
 
-def test_adapters_params_correct():
+@pytest.mark.parametrize('adapter, graph_with_params', [(MockAdapter(), graph_with_custom_parameters),
+                                                        (BaseNetworkxAdapter(), networkx_graph_with_parameters)])
+def test_adapters_params_correct(adapter, graph_with_params):
     """ Checking the correct conversion of hyperparameters in nodes when nodes
     are passing through adapter
     """
     init_alpha = 12.1
-    graph = graph_with_custom_parameters(init_alpha)
+    graph = graph_with_params(init_alpha)
 
     # Convert into OptGraph object
-    adapter = MockAdapter()
     opt_graph = adapter.adapt(graph)
+    assert np.isclose(init_alpha, opt_graph.root_node.parameters['alpha'])
     # Get graph object back
     restored_graph = adapter.restore(opt_graph)
     # Get hyperparameter value after graph restoration
-    restored_alpha = restored_graph.root_node.content['params']['alpha']
+    if isinstance(graph, Graph):
+        restored_alpha = restored_graph.root_node.content['params']['alpha']
+    else:
+        restored_alpha = restored_graph.nodes['c']['alpha']
     assert np.isclose(init_alpha, restored_alpha)
 
 

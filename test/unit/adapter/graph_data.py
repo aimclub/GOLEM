@@ -1,3 +1,5 @@
+import networkx as nx
+
 from golem.core.adapter.nx_adapter import DumbNetworkxAdapter, BaseNetworkxAdapter
 from test.unit.mocks.common_mocks import MockNode, MockDomainStructure, MockAdapter
 
@@ -47,6 +49,15 @@ def graph_with_custom_parameters(alpha_value):
     node_final.content['params'] = {'alpha': alpha_value}
     graph = MockDomainStructure([node_final])
 
+    return graph
+
+
+def networkx_graph_with_parameters(alpha_value):
+    graph = nx.DiGraph()
+    graph.add_node('a')
+    graph.add_node('b')
+    graph.add_node('c', alpha=alpha_value)
+    graph.add_edges_from([('a', 'c'), ('b', 'c')])
     return graph
 
 
