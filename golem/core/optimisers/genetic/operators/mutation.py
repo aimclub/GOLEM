@@ -18,6 +18,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements, OptimizationParameters
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -70,10 +71,8 @@ class Mutation(Operator):
         return self._operator_agent
 
     def __call__(self, init_population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
-        if isinstance(init_population, Individual):
-            population = [init_population]
-        else:
-            population = init_population
+
+        population = ensure_wrapped_in_sequence(init_population)
 
         final_population, mutations_applied, application_attempts = tuple(zip(*map(self._mutation, population)))
 
