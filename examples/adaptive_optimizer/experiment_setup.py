@@ -55,7 +55,7 @@ def run_adaptive_mutations_with_context(
         objective: Objective,
         target: Optional[nx.DiGraph] = None,
         visualize: bool = True,
-        n_clusters: int = 2
+        n_clusters: int = 1
 ):
     """This experiment setup outputs graphic of relative action probabilities
     for given target/objective and given optimizer setup."""

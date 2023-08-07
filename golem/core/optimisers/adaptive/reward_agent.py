@@ -28,5 +28,6 @@ class RewardAgent:
 
     @staticmethod
     def get_fitness_rank_rate(decay_values: List[float]) -> List[float]:
-        total_decay_sum = abs(sum(decay_values))
+        decay_values_abs = [abs(i) for i in decay_values]
+        total_decay_sum = abs(sum(decay_values_abs))
         return [decay / total_decay_sum for decay in decay_values] if total_decay_sum != 0 else [0.]

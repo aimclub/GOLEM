@@ -20,7 +20,8 @@ class MultiArmedBanditAgent(OperatorAgent):
                  n_jobs: int = 1,
                  enable_logging: bool = True,
                  path_to_save: Optional[str] = None,
-                 decaying_factor: float = 1.0):
+                 decaying_factor: float = 1.0,
+                 is_initial_fit: bool = True):
         super().__init__(enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
@@ -29,7 +30,8 @@ class MultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=n_jobs)
         self._reward_agent = RewardAgent(decaying_factor=decaying_factor)
-        self._initial_fit()
+        if is_initial_fit:
+            self._initial_fit()
         self._path_to_save = path_to_save
 
     def _initial_fit(self):
@@ -63,7 +65,10 @@ class MultiArmedBanditAgent(OperatorAgent):
         """ Get experience from ExperienceBuffer, process rewards and log. """
         obs, actions, rewards = experience.retrieve_experience()
         arms = [self._arm_by_action[action] for action in actions]
-        processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
+        if self._reward_agent._decaying_factor == -1.0 or experience.window_size == -1:
+            processed_rewards = rewards
+        else:
+            processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
         self._dbg_log(obs, actions, processed_rewards)
         return obs, arms, processed_rewards
 
