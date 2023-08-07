@@ -69,16 +69,20 @@ class Mutation(Operator):
     def agent(self) -> OperatorAgent:
         return self._operator_agent
 
-    def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
-        if isinstance(population, Individual):
-            population = [population]
+    def __call__(self, init_population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
+        if isinstance(init_population, Individual):
+            population = [init_population]
+        else:
+            population = init_population
 
         final_population, mutations_applied, application_attempts = tuple(zip(*map(self._mutation, population)))
 
         # drop individuals to which mutations could not be applied
         final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)
                             if not attempt or ind.graph != init_ind.graph]
-        if len(population) == 1:
+        # to return the population of the same type as it was submitted (Individual -> Individual,
+        #                                                                PopulationT -> PopulationT)
+        if isinstance(init_population, Individual):
             return final_population[0] if final_population else final_population
 
         return final_population
