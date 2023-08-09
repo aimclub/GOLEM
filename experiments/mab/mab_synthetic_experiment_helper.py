@@ -7,7 +7,7 @@ from pprint import pprint
 import pandas as pd
 import seaborn as sns
 
-from typing import List, Callable, Sequence, Optional, Dict
+from typing import List, Callable, Sequence, Optional, Dict, Tuple
 
 import networkx as nx
 from matplotlib import pyplot as plt
@@ -23,6 +23,7 @@ from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import GraphOptimizer
@@ -35,32 +36,39 @@ class MABSyntheticExperimentHelper:
 
     def __init__(self, launch_num: int, timeout: float, bandits_to_compare: List[MutationAgentTypeEnum],
                  context_agent_types: List[ContextAgentTypeEnum], bandit_labels: List[str] = None,
-                 path_to_save: str = None, is_visualize: bool = False, n_clusters: Optional[int] = None):
+                 path_to_save: str = None, is_visualize: bool = False, n_clusters: Optional[int] = None,
+                 decaying_factors: List[float] = None, window_sizes: List[int] = None):
         self.launch_num = launch_num
         self.timeout = timeout
         self.bandits_to_compare = bandits_to_compare
         self.context_agent_types = context_agent_types
         self.bandit_labels = bandit_labels or [bandit.name for bandit in bandits_to_compare]
+        self.decaying_factors = decaying_factors or [1.0]*len(bandits_to_compare)
+        self.window_sizes = window_sizes or [5]*len(bandits_to_compare)
         self.bandit_metrics = dict.fromkeys(bandit for bandit in self.bandit_labels)
         self.path_to_save = path_to_save or os.path.join(project_root(), 'mab')
         self.is_visualize = is_visualize
         self.histories = dict.fromkeys([bandit for bandit in self.bandit_labels])
         self.cluster = MiniBatchKMeans(n_clusters=n_clusters)
 
-    def compare_bandits(self, setup_parameters: Callable, initial_population_func: Callable = None):
+    def compare_bandits(self, setup_parameters: Callable, initial_population_func: Callable = None) \
+            -> Tuple[dict, list]:
         results = dict()
         for i in range(self.launch_num):
             initial_graphs = initial_population_func()
             for j, bandit in enumerate(self.bandits_to_compare):
                 optimizer, objective = setup_parameters(initial_graphs=initial_graphs, bandit_type=bandit,
-                                                        context_agent_type=self.context_agent_types[j])
+                                                        context_agent_type=self.context_agent_types[j],
+                                                        decaying_factor=self.decaying_factors[j],
+                                                        window_size=self.window_sizes[j])
                 agent = optimizer.mutation.agent
                 result = self.launch_bandit(bandit_type=bandit, optimizer=optimizer, objective=objective, bandit_num=j)
-                if bandit_labels[j] not in results.keys():
-                    results[bandit_labels[j]] = []
-                results[bandit_labels[j]].append(result)
+                if self.bandit_labels[j] not in results.keys():
+                    results[self.bandit_labels[j]] = []
+                results[self.bandit_labels[j]].append(result)
         if self.is_visualize:
             self.show_average_action_probabilities(show_action_probabilities=results, actions=agent.actions)
+        return results, agent.actions
 
     def launch_bandit(self, bandit_type: MutationAgentTypeEnum, optimizer: GraphOptimizer, objective: Callable,
                       bandit_num: int):
@@ -152,15 +160,21 @@ class MABSyntheticExperimentHelper:
             for launch in show_action_probabilities[bandit]:
                 if not total_sum:
                     total_sum = launch
-                    continue
+                    break
                 for cluster in launch.keys():
-                    for i in range(len(total_sum[cluster])):
-                        for j in range(len(total_sum[cluster][i])):
-                            total_sum[cluster][i][j] += launch[cluster][i][j]
+                    for action_probabilities_list_idx in range(len(total_sum[cluster])):
+                        for action_probability_idx in range(len(total_sum[cluster][action_probabilities_list_idx])):
+                            if action_probabilities_list_idx >= len(launch[cluster]):
+                                continue
+                            if action_probability_idx >= len(launch[cluster][action_probabilities_list_idx]):
+                                continue
+                            total_sum[cluster][action_probabilities_list_idx][action_probability_idx] += \
+                                launch[cluster][action_probabilities_list_idx][action_probability_idx]
             for cluster in total_sum.keys():
-                for i in range(len(total_sum[cluster])):
-                    for j in range(len(total_sum[cluster][i])):
-                        total_sum[cluster][i][j] /= len(show_action_probabilities[bandit])
+                for action_probabilities_list_idx in range(len(total_sum[cluster])):
+                    for action_probability_idx in range(len(total_sum[cluster][action_probabilities_list_idx])):
+                        total_sum[cluster][action_probabilities_list_idx][action_probability_idx] /= \
+                            len(show_action_probabilities[bandit])
             self.show_action_probabilities(bandit_type=MutationAgentTypeEnum(self.bandits_to_compare[idx]),
                                            stats_action_value_log=total_sum,
                                            actions=actions,
@@ -178,7 +192,10 @@ class MABSyntheticExperimentHelper:
 
 def setup_parameters(initial_graphs: List[Graph], bandit_type: MutationAgentTypeEnum,
                      context_agent_type: ContextAgentTypeEnum,
-                     target_size: int, trial_timeout: float):
+                     target_size: int, trial_timeout: float,
+                     mutation_types: List[MutationTypesEnum] = None,
+                     decaying_factor: float = 1.0,
+                     window_size: int = 1):
     objective = Objective({'graph_size': lambda graph: abs(target_size -
                                                            graph.number_of_nodes())})
 
@@ -188,7 +205,10 @@ def setup_parameters(initial_graphs: List[Graph], bandit_type: MutationAgentType
         optimizer_cls=EvoGraphOptimizer,
         algorithm_parameters=get_graph_gp_params(objective=objective,
                                                  adaptive_mutation_type=bandit_type,
-                                                 context_agent_type=context_agent_type),
+                                                 context_agent_type=context_agent_type,
+                                                 decaying_factor=decaying_factor,
+                                                 window_size=window_size,
+                                                 mutation_types=mutation_types),
         timeout=timedelta(minutes=trial_timeout),
         num_iterations=target_size * 3,
         initial_graphs=initial_graphs
