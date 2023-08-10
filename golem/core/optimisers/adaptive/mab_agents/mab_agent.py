@@ -10,6 +10,7 @@ from scipy.special import softmax
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
+from golem.core.optimisers.adaptive.reward_agent import FitnessRateRankRewardTransformer
 from golem.core.paths import default_data_dir
 from golem.core.optimisers.adaptive.reward_agent import RewardAgent
 
@@ -29,7 +30,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=n_jobs)
-        self._reward_agent = RewardAgent(decaying_factor=decaying_factor)
+        self._reward_agent = FitnessRateRankRewardTransformer(decaying_factor=decaying_factor)
         if is_initial_fit:
             self._initial_fit()
         self._path_to_save = path_to_save

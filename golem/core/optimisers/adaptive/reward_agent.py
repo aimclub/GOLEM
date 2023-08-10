@@ -3,7 +3,7 @@ from typing import List, Tuple
 from golem.core.optimisers.adaptive.operator_agent import ObsType
 
 
-class RewardAgent:
+class FitnessRateRankRewardTransformer:
     """
     Agent to process raw fitness values.
     The original idea is that the use of raw fitness values as rewards affects algorithm's robustness,
@@ -13,13 +13,13 @@ class RewardAgent:
     def __init__(self, decaying_factor: float = 1.):
         self._decaying_factor = decaying_factor
 
-    def get_rewards_for_arms(self, obs: List[ObsType], arms: List[int]) -> List[float]:
-        unique_arms, decay_values = self.get_decay_values_for_arms(obs, arms)
+    def get_rewards_for_arms(self, rewards: List[float], arms: List[int]) -> List[float]:
+        unique_arms, decay_values = self.get_decay_values_for_arms(rewards, arms)
         frr_per_arm = self.get_fitness_rank_rate(decay_values)
         frr_values = [frr_per_arm[unique_arms.index(arm)] for arm in arms]
         return frr_values
 
-    def get_decay_values_for_arms(self, rewards: List[ObsType], arms: List[int]) -> Tuple[List[int], List[float]]:
+    def get_decay_values_for_arms(self, rewards: List[float], arms: List[int]) -> Tuple[List[int], List[float]]:
         decays = dict.fromkeys(set(arms), 0.0)
         for i, reward in enumerate(rewards):
             decays[arms[i]] += reward
