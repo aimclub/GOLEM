@@ -10,14 +10,15 @@ from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmPara
 # mutations which rewards are changing during the optimization process
 
 def fake_add_mutation(graph: OptGraph,
-                        requirements: GraphRequirements,
-                        graph_gen_params: GraphGenerationParams,
-                        parameters: AlgorithmParameters
-                        ) -> OptGraph:
+                      requirements: GraphRequirements,
+                      graph_gen_params: GraphGenerationParams,
+                      parameters: AlgorithmParameters) -> OptGraph:
     """
-    Add new node between two sequential existing modes
+    Fickle mutation for an experiment. The evolution process in experiment is split in 3 steps:
+    On the first step with the help of MAB the `fake_add_mutation` must be chosen,
+    since it gives the highest reward, then `fake_add_mutation2` and on the last step -- `fake_add_mutation3`.
 
-    :param graph: graph to mutate
+    On the first step of evolution this mutation gives reward=3, then reward=-1 and finally reward=1
     """
 
     if graph.depth >= requirements.max_depth:
@@ -48,14 +49,15 @@ def fake_add_mutation(graph: OptGraph,
 
 
 def fake_add_mutation2(graph: OptGraph,
-                      requirements: GraphRequirements,
-                      graph_gen_params: GraphGenerationParams,
-                      parameters: AlgorithmParameters
-                      ) -> OptGraph:
+                       requirements: GraphRequirements,
+                       graph_gen_params: GraphGenerationParams,
+                       parameters: AlgorithmParameters) -> OptGraph:
     """
-    Add new node between two sequential existing modes
+    Fickle mutation for an experiment. The evolution process in experiment is split in 3 steps:
+    On the first step with the help of MAB the `fake_add_mutation` must be chosen,
+    since it gives the highest reward, then `fake_add_mutation2` and on the last step -- `fake_add_mutation3`.
 
-    :param graph: graph to mutate
+    On the first step of evolution this mutation gives reward=-1, then reward=2 and finally reward=-1
     """
 
     if graph.depth >= requirements.max_depth:
@@ -89,12 +91,13 @@ def fake_add_mutation2(graph: OptGraph,
 def fake_add_mutation3(graph: OptGraph,
                        requirements: GraphRequirements,
                        graph_gen_params: GraphGenerationParams,
-                       parameters: AlgorithmParameters
-                       ) -> OptGraph:
+                       parameters: AlgorithmParameters) -> OptGraph:
     """
-    Add new node between two sequential existing modes
+    Fickle mutation for an experiment. The evolution process in experiment is split in 3 steps:
+    On the first step with the help of MAB the `fake_add_mutation` must be chosen,
+    since it gives the highest reward, then `fake_add_mutation2` and on the last step -- `fake_add_mutation3`.
 
-    :param graph: graph to mutate
+    On the first step of evolution this mutation gives reward=1, then reward=-3 and finally reward=2
     """
 
     if graph.depth >= requirements.max_depth:
