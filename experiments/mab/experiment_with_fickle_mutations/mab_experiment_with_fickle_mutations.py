@@ -2,10 +2,10 @@ from datetime import timedelta
 from functools import partial
 import random
 
-import networkx as nx
 from typing import List, Any
 
 from examples.adaptive_optimizer.mab_experiment_different_targets import get_graph_gp_params
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from experiments.mab.experiment_with_fickle_mutations.fickle_mutations import fake_add_mutation, fake_add_mutation2, \
     fake_add_mutation3
@@ -48,14 +48,9 @@ def setup_parameters(initial_graphs: List[Graph], bandit_type: MutationAgentType
 def initial_population_func(graph_size: List[int] = None, pop_size: int = None, initial_graphs: List[Graph] = None):
     if initial_graphs:
         return initial_graphs
-    initial_graphs = [nx.random_tree(graph_size[i], create_using=nx.DiGraph)
+    initial_graphs = [generate_labeled_graph('tree', graph_size[i], directed=True, node_labels=['x'])
                       for i in range(pop_size)]
-    initial_opt_graphs = []
-    for graph in initial_graphs:
-        opt_graph = BaseNetworkxAdapter().adapt(item=graph)
-        for node in opt_graph.nodes:
-            node.content['name'] = 'x'
-        initial_opt_graphs.append(opt_graph)
+    initial_opt_graphs = [BaseNetworkxAdapter().adapt(item=graph) for graph in initial_graphs]
     return initial_opt_graphs
 
 
