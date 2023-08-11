@@ -3,10 +3,15 @@ from enum import Enum
 from typing import List, Callable, Any
 
 import numpy as np
-from karateclub import FeatherGraph
 
+from golem.utilities.requirements_notificator import warn_requirement
 from golem.core.adapter.nx_adapter import BanditNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.individual import Individual
+
+try:
+    from karateclub import FeatherGraph
+except ModuleNotFoundError:
+    warn_requirement('karateclub', 'other_requirements/adaptive.txt')
 
 
 def adapter_func_to_networkx(func):
