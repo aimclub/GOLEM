@@ -16,7 +16,7 @@ from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveF
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
-
+from golem.core.utilities.random import RandomStateHandler
 
 STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
 
@@ -118,6 +118,8 @@ class GraphOptimizer:
         self._iteration_callback: IterationCallback = do_nothing_callback
         self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
+        # Log random state for reproducibility of runs
+        RandomStateHandler.log_random_state()
 
     @property
     def objective(self) -> Objective:
