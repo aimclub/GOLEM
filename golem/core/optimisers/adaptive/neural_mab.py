@@ -7,7 +7,7 @@ from golem.utilities.requirements_notificator import warn_requirement
 try:
     import torch
 except ModuleNotFoundError:
-    warn_requirement('torch', 'other_requirements/requirements_adaptive.txt')
+    warn_requirement('torch', 'other_requirements/adaptive.txt')
 
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
