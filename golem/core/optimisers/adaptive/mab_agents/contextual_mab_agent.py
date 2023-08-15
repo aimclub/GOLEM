@@ -25,7 +25,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
     """
 
     def __init__(self, actions: Sequence[ActType],
-                 context_agent: Union[ContextAgentTypeEnum, Callable],
+                 context_agent_type: Union[ContextAgentTypeEnum, Callable],
                  available_operations: List[str],
                  n_jobs: int = 1,
                  enable_logging: bool = True):
@@ -37,8 +37,8 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
-        self._context_agent = context_agent if isinstance(context_agent, Callable) else \
-            partial(ContextAgentsRepository.agent_class_by_id(context_agent),
+        self._context_agent = context_agent_type if isinstance(context_agent_type, Callable) else \
+            partial(ContextAgentsRepository.agent_class_by_id(context_agent_type),
                     available_operations=available_operations)
         self._is_fitted = False
 
