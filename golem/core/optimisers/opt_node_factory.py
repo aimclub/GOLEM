@@ -1,7 +1,7 @@
 import random
 from abc import abstractmethod, ABC
 from random import choice
-from typing import Optional, Iterable
+from typing import Optional, Iterable, List
 
 from golem.core.optimisers.graph import OptNode
 
@@ -34,6 +34,13 @@ class OptNodeFactory(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_all_available_operations(self) -> List[str]:
+        """
+        Returns all available models and data operations.
+        """
+        pass
+
 
 class DefaultOptNodeFactory(OptNodeFactory):
     """Default node factory that either randomly selects
@@ -46,6 +53,12 @@ class DefaultOptNodeFactory(OptNodeFactory):
                  num_node_types: Optional[int] = None):
         self.available_nodes = tuple(available_node_types) if available_node_types else None
         self._num_node_types = num_node_types or 1000
+
+    def get_all_available_operations(self) -> Optional[List[str]]:
+        """
+        Returns all available models and data operations.
+        """
+        return self.available_nodes
 
     def exchange_node(self, node: OptNode) -> OptNode:
         return self.get_node()
