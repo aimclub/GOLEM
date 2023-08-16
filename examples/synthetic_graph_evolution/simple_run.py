@@ -30,7 +30,7 @@ def run_graph_search(size=16, timeout=8, visualize=True):
     requirements = GraphRequirements(
         early_stopping_iterations=100,
         timeout=timedelta(minutes=timeout),
-        n_jobs=-1,
+        n_jobs=1,
     )
     gp_params = GPAlgorithmParameters(
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
