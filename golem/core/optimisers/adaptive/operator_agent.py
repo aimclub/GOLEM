@@ -102,8 +102,12 @@ class OperatorAgent(ABC):
                 msg += (f'avg={nonzero.mean()} std={nonzero.std()} '
                         f'min={nonzero.min()} max={nonzero.max()} ')
 
+            def get_name(obj):
+                return getattr(obj, '__name__', str(obj))
+
             self._log.info(msg)
-            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
+            action_strs = map(get_name, actions)
+            self._log.info(f'actions/rewards: {list(zip(action_strs, rr))}')
 
             action_values = list(map(self.get_action_values, obs))
             action_probs = list(map(self.get_action_probs, obs))
