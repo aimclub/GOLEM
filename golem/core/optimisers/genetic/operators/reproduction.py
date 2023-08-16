@@ -83,6 +83,9 @@ class ReproductionController:
         new_population = self.crossover(selected_individuals)
         new_population = ensure_wrapped_in_sequence(self.mutation(new_population))
         new_population = evaluator(new_population)
+        # Guard against None errors
+        if new_population is None:
+            new_population = []
         return new_population
 
     def reproduce(self,
