@@ -1,6 +1,6 @@
 import random
 from functools import partial
-from typing import Union, Sequence, Optional, List
+from typing import Union, Sequence, Optional, List, Callable
 
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy, NeighborhoodPolicy
@@ -14,10 +14,18 @@ from golem.core.optimisers.adaptive.operator_agent import ActType, ObsType, Expe
 
 class ContextualMultiArmedBanditAgent(OperatorAgent):
     """ Contextual Multi-Armed bandit. Observations can be encoded with simple context agent without
-    using NN to guarantee convergence. """
+    using NN to guarantee convergence.
+
+    :param actions: types of mutations
+    :param context_agent: function to convert observation to its embedding. Can be specified as
+    ContextAgentTypeEnum or as Callable function.
+    :param available_operations: available operations
+    :param n_jobs: n_jobs
+    :param enable_logging: bool logging flag
+    """
 
     def __init__(self, actions: Sequence[ActType],
-                 context_agent_type: ContextAgentTypeEnum,
+                 context_agent_type: Union[ContextAgentTypeEnum, Callable],
                  available_operations: List[str],
                  n_jobs: int = 1,
                  enable_logging: bool = True):
@@ -29,8 +37,9 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
-        self._context_agent = partial(ContextAgentsRepository.agent_class_by_id(context_agent_type),
-                                      available_operations=available_operations)
+        self._context_agent = context_agent_type if isinstance(context_agent_type, Callable) else \
+            partial(ContextAgentsRepository.agent_class_by_id(context_agent_type),
+                    available_operations=available_operations)
         self._is_fitted = False
 
     def _initial_fit(self, obs: ObsType):
