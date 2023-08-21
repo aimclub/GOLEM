@@ -81,6 +81,17 @@ class ReproductionController:
         #  It can be faster if it could.
         selected_individuals = self.selection(population, pop_size)
         new_population = self.crossover(selected_individuals)
+
+        # Adaptive agent experience collection & learning online after every mutation
+        mutated_population = []
+        for ind in new_population:
+            mutated_ind = self.mutation([ind])
+            if mutated_ind:
+                new_pop = evaluator([mutated_ind])
+                self.mutation.agent_experience.collect_results(new_pop)
+                self.mutation.agent.partial_fit(self.mutation.agent_experience)
+                mutated_population.append(mutated_ind)
+
         new_population = ensure_wrapped_in_sequence(self.mutation(new_population))
         new_population = evaluator(new_population)
         return new_population
