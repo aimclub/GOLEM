@@ -34,7 +34,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         self._indices = list(range(len(actions)))
         self._arm_by_action = dict(zip(actions, self._indices))
         self._agent = MAB(arms=self._indices,
-                          learning_policy=LearningPolicy.UCB1(alpha=1.25),
+                          learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.2),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
         self._context_agent = context_agent_type if isinstance(context_agent_type, Callable) else \
