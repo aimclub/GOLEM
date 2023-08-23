@@ -231,5 +231,4 @@ if __name__ == '__main__':
                    metrics=['qed_score', 'cl_score'],
                    visualize=True,
                    num_trials=5,
-                   pretrain_dir='results/evo_random_popsize50_min15_qed_score_cl_score'
                    )
