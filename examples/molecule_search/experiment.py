@@ -16,7 +16,7 @@ from examples.molecule_search.mol_metrics import normalized_sa_score, penalised_
     normalized_logp, CLScorer
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
     has_no_isolated_nodes
-from golem.core.optimisers.adaptive.agent_training import AgentLearner
+from golem.core.optimisers.adaptive.agent_trainer import AgentTrainer
 from golem.core.optimisers.adaptive.history_collector import HistoryReader
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -131,9 +131,9 @@ def visualize_results(molecules: Iterable[MolGraph],
         image.show()
 
 
-def pretrain_agent(optimizer, objective, results_dir='./results') -> AgentLearner:
+def pretrain_agent(optimizer, objective, results_dir='./results') -> AgentTrainer:
     agent = optimizer.mutation.agent
-    trainer = AgentLearner(objective, optimizer.mutation, agent)
+    trainer = AgentTrainer(objective, optimizer.mutation, agent)
     # load histories
     history_reader = HistoryReader(Path(results_dir))
     # train agent

@@ -14,6 +14,8 @@ from golem.core.utilities.data_structures import update_dataclass
 
 
 class HistoryCollector:
+    """Runs Optimizer with given parameters to collect histories."""
+
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Sequence[Union[Graph, Any]],
@@ -82,6 +84,8 @@ class HistoryCollector:
 
 
 class HistoryReader:
+    """Simplifies reading a bunch of histories from single directory."""
+
     def __init__(self, save_path: Optional[Path] = None):
         self.log = default_log(self)
         self.save_path = save_path or Path("results")

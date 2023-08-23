@@ -19,7 +19,7 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 from golem.core.utilities.data_structures import unzip
 
 
-class AgentLearner:
+class AgentTrainer:
     def __init__(self,
                  objective: Objective,
                  mutation_operator: Mutation,
