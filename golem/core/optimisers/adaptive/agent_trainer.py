@@ -20,6 +20,17 @@ from golem.core.utilities.data_structures import unzip
 
 
 class AgentTrainer:
+    """Utility class providing fit/validate logic for adaptive Mutation agents.
+    Works in tandem with `HistoryCollector` and `HistoryReader`.
+
+    How to use offline training:
+
+    1. Collect histories to some directory using `HistoryCollector`
+    2. Create optimizer & Pretrain mutation agent on these histories using `HistoryReader` and `AgentTrainer`
+    3. Optionally, validate the Agent on validation set of histories
+    4. Run optimization with pretrained agent
+    """
+
     def __init__(self,
                  objective: Objective,
                  mutation_operator: Mutation,
