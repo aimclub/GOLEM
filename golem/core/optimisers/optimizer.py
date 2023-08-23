@@ -1,3 +1,7 @@
+import os
+import dill as pickle
+# from deepdiff import DeepDiff
+
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Sequence, Union
@@ -118,6 +122,8 @@ class GraphOptimizer:
         self._iteration_callback: IterationCallback = do_nothing_callback
         self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
+        self._saved_state_path = 'saved_optimisation_state/'
+        self._saved_state_filename = 'intermediate_optimization_state.pickle'
 
     @property
     def objective(self) -> Objective:
@@ -148,6 +154,30 @@ class GraphOptimizer:
         """Set or reset (with None) post-evaluation callback
         that's called on each graph after its evaluation."""
         pass
+
+    def save(self, saved_state_path):
+        folder_path = os.path.dirname(os.path.abspath(saved_state_path))
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
+            self.log.info(f'Created directory for saving optimization state: {folder_path}')
+        # pickle.settings['recurse'] = True
+        with open(saved_state_path, 'wb') as f:
+            # pickle.dump(self.__dict__, f, 2)
+            # pickle.dump(self.__class__, f, 2)
+            pickle.dump(self, f, 2)
+
+    def load(self, saved_state_path):
+        with open(saved_state_path, 'rb') as f:
+            self.__dict__.update(pickle.load(f))
+            # self.__class__ = pickle.load(f)
+
+    # def compobj(self, pickleobj): #?? probably remove
+    #     dif_vars = []
+    #     for element in self.__dict__:
+    #         if self.__dict__[element] != pickleobj[element]:
+    #             dif_vars.append(element)
+    #     print(DeepDiff(self.__dict__, pickleobj))
+    #     print(dif_vars)
 
 
 IterationCallback = Callable[[PopulationT, GraphOptimizer], Any]

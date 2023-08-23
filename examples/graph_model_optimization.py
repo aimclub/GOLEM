@@ -106,7 +106,8 @@ def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, 
             initial_graphs=initial,
             requirements=requirements,
             graph_generation_params=graph_generation_params,
-            graph_optimizer_params=optimizer_parameters
+            graph_optimizer_params=optimizer_parameters,
+            use_saved_state=True
             )
 
     objective_eval = ObjectiveEvaluate(objective, data=data, visualisation=visualisation)
@@ -119,6 +120,7 @@ def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, 
 if __name__ == '__main__':
     visualisation = False
     timeout = datetime.timedelta(minutes=1)
-    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]
+    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]  # SurrogateEachNgenOptimizer
+    optimizers = [EvoGraphOptimizer]
     for optimizer_cls in optimizers:
         run_custom_example(optimizer_cls, timeout, visualisation)

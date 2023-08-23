@@ -1,3 +1,5 @@
+import glob
+import os
 from abc import abstractmethod
 from random import choice
 from typing import Any, Optional, Sequence, Dict
@@ -16,6 +18,9 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.utilities.grouped_condition import GroupedCondition
+from golem.core.paths import default_data_dir
+
+import dill as pickle
 
 
 class PopulationalOptimizer(GraphOptimizer):
@@ -40,11 +45,13 @@ class PopulationalOptimizer(GraphOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: Optional['AlgorithmParameters'] = None,
+                 use_saved_state: bool = False
                  ):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.population = None
         self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
+        self.use_saved_state = use_saved_state
 
         dispatcher_type = MultiprocessingDispatcher if self.requirements.parallelization_mode == 'populational' else \
             SequentialDispatcher
@@ -59,7 +66,8 @@ class PopulationalOptimizer(GraphOptimizer):
         max_stagnation_time = requirements.early_stopping_timeout or self.timer.timeout
         self.stop_optimization = \
             GroupedCondition(results_as_message=True).add_condition(
-                lambda: self.timer.is_time_limit_reached(self.current_generation_num),
+                lambda: self.current_generation_num > 100,
+                # lambda: self.timer.is_time_limit_reached(self.current_generation_num),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
                 lambda: (requirements.num_of_generations is not None and
@@ -86,12 +94,31 @@ class PopulationalOptimizer(GraphOptimizer):
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[Graph]:
 
+        def find_latest_file_in_dir(directory: str) -> str:
+            return max(glob.glob(os.path.join(directory, '*')), key=os.path.getmtime)
+
+        saved_state_path = os.path.join(default_data_dir(), self._saved_state_path, self._saved_state_filename)
+
         # eval_dispatcher defines how to evaluate objective on the whole population
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
 
         with self.timer, self._progressbar:
 
-            self._initial_population(evaluator)
+            if self.use_saved_state:
+                # add logging!!!!
+                print('USING SAVED STATE')
+                try:
+                    saved_state_file = find_latest_file_in_dir(os.path.dirname(saved_state_path))
+                except ValueError as e:
+                    # add logging
+                    raise SystemExit('ERROR: Could not restore saved optimisation state: '
+                                     f'file with saved state {saved_state_path} not found.')
+                self.load(saved_state_file)
+                # with open(saved_state_file, 'rb') as f:
+                #     self = pickle.load(f)
+                print('hello')
+            else:
+                self._initial_population(evaluator)
 
             while not self.stop_optimization():
                 try:
@@ -105,6 +132,8 @@ class PopulationalOptimizer(GraphOptimizer):
                     return [ind.graph for ind in self.best_individuals]
                 # Adding of new population to history
                 self._update_population(new_population)
+                self.save(saved_state_path)
+                print(saved_state_path)
         self._update_population(self.best_individuals, 'final_choices')
         return [ind.graph for ind in self.best_individuals]
 
