@@ -1,4 +1,7 @@
+import os
+import time
 from abc import abstractmethod
+from datetime import timedelta, datetime
 from random import choice
 from typing import Any, Optional, Sequence, Dict
 
@@ -13,6 +16,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
+from golem.core.paths import default_data_dir
 from golem.utilities.grouped_condition import GroupedCondition
 
 
@@ -40,25 +44,76 @@ class PopulationalOptimizer(GraphOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: Optional['AlgorithmParameters'] = None,
+                 use_saved_state: bool = False,
+                 saved_state_path: str = 'saved_optimisation_state/main/populational_optimiser',
+                 saved_state_file: str = None,
                  **custom_optimizer_params
                  ):
-        super().__init__(objective, initial_graphs, requirements,
-                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
-        self.population = None
-        self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
-        self.timer = OptimisationTimer(timeout=self.requirements.timeout)
 
-        dispatcher_type = MultiprocessingDispatcher if self.requirements.parallelization_mode == 'populational' else \
-            SequentialDispatcher
+        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params,
+                         saved_state_path, **custom_optimizer_params)
 
-        self.eval_dispatcher = dispatcher_type(adapter=graph_generation_params.adapter,
-                                               n_jobs=requirements.n_jobs,
-                                               graph_cleanup_fn=_try_unfit_graph,
-                                               delegate_evaluator=graph_generation_params.remote_evaluator)
+        # Restore state from previous run
+        if use_saved_state:
+            self.log.info('USING SAVED STATE')
+            if saved_state_file:
+                if os.path.isfile(saved_state_file):
+                    current_saved_state_path = saved_state_file
+                else:
+                    raise SystemExit('ERROR: Could not restore saved optimisation state: '
+                                     f'given file with saved state {saved_state_file} not found.')
+            else:
+                try:
+                    full_state_path = os.path.join(default_data_dir(), self._saved_state_path)
+                    current_saved_state_path = self._find_latest_file_in_dir(self._find_latest_dir(full_state_path))
+                except (ValueError, FileNotFoundError):
+                    raise SystemExit('ERROR: Could not restore saved optimisation state: '
+                                     f'path with saved state {full_state_path} not found.')
+            try:
+                self.load(current_saved_state_path)
+            except Exception as e:
+                raise SystemExit('ERROR: Could not restore saved optimisation state from {full_state_path}.'
+                                 f'If saved state file is broken remove it manually from the saved state dir or'
+                                 f'pass a valid saved state filepath.'
+                                 f'Full error message: {e}')
+
+            # Override optimisation params from the saved state file with new values
+            self.requirements.num_of_generations = requirements.num_of_generations
+            self.requirements.timeout = requirements.timeout
+
+            # Update all time parameters
+            saved_state_timestamp = datetime.fromtimestamp(os.path.getmtime(current_saved_state_path))
+            elapsed_time: timedelta = saved_state_timestamp - self.timer.start_time
+
+            timeout = self.requirements.timeout - elapsed_time
+            self.timer = OptimisationTimer(timeout=timeout)
+            self.requirements.timeout = self.requirements.timeout - timedelta(seconds=elapsed_time.total_seconds())
+            self.eval_dispatcher.timer = self.requirements.timeout
+
+            stag_time_delta = saved_state_timestamp - self.generations._stagnation_start_time
+            self.generations._stagnation_start_time = datetime.now() - stag_time_delta
+        else:
+            self.population = None
+            self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
+            self.timer = OptimisationTimer(timeout=self.requirements.timeout)
+
+            dispatcher_type = MultiprocessingDispatcher if self.requirements.parallelization_mode == 'populational' else \
+                SequentialDispatcher
+
+            self.eval_dispatcher = dispatcher_type(adapter=graph_generation_params.adapter,
+                                                   n_jobs=requirements.n_jobs,
+                                                   graph_cleanup_fn=_try_unfit_graph,
+                                                   delegate_evaluator=graph_generation_params.remote_evaluator)
+
+            # in how many generations structural diversity check should be performed
+            self.gen_structural_diversity_check = self.graph_optimizer_params.structural_diversity_frequency_check
+
+        self.use_saved_state = use_saved_state
 
         # early_stopping_iterations and early_stopping_timeout may be None, so use some obvious max number
         max_stagnation_length = requirements.early_stopping_iterations or requirements.num_of_generations
         max_stagnation_time = requirements.early_stopping_timeout or self.timer.timeout
+
         self.stop_optimization = \
             GroupedCondition(results_as_message=True).add_condition(
                 lambda: self.timer.is_time_limit_reached(self.current_generation_num - 1),
@@ -70,10 +125,10 @@ class PopulationalOptimizer(GraphOptimizer):
             ).add_condition(
                 lambda: (max_stagnation_length is not None and
                          self.generations.stagnation_iter_count >= max_stagnation_length),
-                'Optimisation finished: Early stopping iterations criteria was satisfied'
+                'Optimisation finished: Early stopping iterations criteria was satisfied (stagnation_iter_count)'
             ).add_condition(
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
-                'Optimisation finished: Early stopping timeout criteria was satisfied'
+                'Optimisation finished: Early stopping timeout criteria was satisfied (stagnation_time_duration)'
             )
         # in how many generations structural diversity check should be performed
         self.gen_structural_diversity_check = self.graph_optimizer_params.structural_diversity_frequency_check
@@ -86,14 +141,16 @@ class PopulationalOptimizer(GraphOptimizer):
         # Redirect callback to evaluation dispatcher
         self.eval_dispatcher.set_graph_evaluation_callback(callback)
 
-    def optimise(self, objective: ObjectiveFunction) -> Sequence[Graph]:
+    def optimise(self, objective: ObjectiveFunction, save_state_delta: int = 60) -> Sequence[Graph]:
 
-        # eval_dispatcher defines how to evaluate objective on the whole population
+        saved_state_path = os.path.join(default_data_dir(), self._saved_state_path, self._run_id)
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
+        last_write_time = datetime.now()
 
         with self.timer, self._progressbar as pbar:
 
-            self._initial_population(evaluator)
+            if not self.use_saved_state:
+                self._initial_population(evaluator)
 
             while not self.stop_optimization():
                 try:
@@ -108,7 +165,17 @@ class PopulationalOptimizer(GraphOptimizer):
                     break
                 # Adding of new population to history
                 self._update_population(new_population)
+                delta = datetime.now() - last_write_time
+                # Create new file with saved state every {save_state_delta} seconds
+                if delta.seconds >= save_state_delta:
+                    save_path = os.path.join(saved_state_path, f'{str(round(time.time()))}.pkl')
+                    self.save(save_path)
+                    self.log.info(f'State saved to {save_path}')
+                    last_write_time = datetime.now()
         pbar.close()
+        save_path = os.path.join(saved_state_path, f'{str(round(time.time()))}.pkl')
+        self.save(save_path)
+        self.log.info(save_path)
         self._update_population(self.best_individuals, 'final_choices')
         return [ind.graph for ind in self.best_individuals]
 

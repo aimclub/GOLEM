@@ -34,35 +34,42 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters,
+                 use_saved_state: bool = False,
+                 saved_state_path: str = 'saved_optimisation_state/main/evo_graph_optimiser',
+                 saved_state_file: str = None,
                  **custom_optimizer_params
                  ):
-        super().__init__(objective, initial_graphs, requirements,
-                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
-        # Define genetic operators
-        self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
-        self.selection = Selection(graph_optimizer_params)
-        self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
-        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
-        self.inheritance = Inheritance(graph_optimizer_params, self.selection)
-        self.elitism = Elitism(graph_optimizer_params)
-        self.operators = [self.regularization, self.selection, self.crossover,
-                          self.mutation, self.inheritance, self.elitism]
-        self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
+        super().__init__(objective, initial_graphs, requirements, graph_generation_params,
+                         graph_optimizer_params, use_saved_state, saved_state_path, saved_state_file,
+                         **custom_optimizer_params)
 
-        # Define adaptive parameters
-        self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
-        self._operators_prob = init_adaptive_operators_prob(graph_optimizer_params)
-        self._graph_depth = AdaptiveGraphDepth(self.generations,
-                                               start_depth=requirements.start_depth,
-                                               max_depth=requirements.max_depth,
-                                               max_stagnation_gens=graph_optimizer_params.adaptive_depth_max_stagnation,
-                                               adaptive=graph_optimizer_params.adaptive_depth)
+        if not use_saved_state:
+            # Define genetic operators
+            self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
+            self.selection = Selection(graph_optimizer_params)
+            self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
+            self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
+            self.inheritance = Inheritance(graph_optimizer_params, self.selection)
+            self.elitism = Elitism(graph_optimizer_params)
+            self.operators = [self.regularization, self.selection, self.crossover,
+                              self.mutation, self.inheritance, self.elitism]
+            self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
 
-        # Define initial parameters
-        self.requirements.max_depth = self._graph_depth.initial
-        self.graph_optimizer_params.pop_size = self._pop_size.initial
-        self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
-                                    for graph in self.initial_graphs]
+            # Define adaptive parameters
+            self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
+            self._operators_prob = init_adaptive_operators_prob(graph_optimizer_params)
+            self._graph_depth = AdaptiveGraphDepth(self.generations,
+                                                   start_depth=requirements.start_depth,
+                                                   max_depth=requirements.max_depth,
+                                                   max_stagnation_gens=graph_optimizer_params.adaptive_depth_max_stagnation,
+                                                   adaptive=graph_optimizer_params.adaptive_depth)
+
+            # Define initial parameters
+            self.requirements.max_depth = self._graph_depth.initial
+            self.graph_optimizer_params.pop_size = self._pop_size.initial
+            self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
+                                        for graph in self.initial_graphs]
+
 
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
