@@ -22,19 +22,13 @@ class BaseNetworkxAdapter(BaseOptimizationAdapter[nx.DiGraph]):
     def _node_restore(self, node: GraphNode) -> Dict:
         """Transforms GraphNode to dict of NetworkX node attributes.
         Override for custom behavior."""
-        parameters = {}
-        if hasattr(node, 'parameters') and len(node.parameters) > 0:
+        if hasattr(node, 'parameters'):
             parameters = node.parameters
-        elif hasattr(node, 'content'):
-            # for backward compatibility loading (restoring),
-            # on next `adapt` will save this dict as 'parameters'
-            parameters = node.content
-
-        parameters = deepcopy(parameters)
-        if node.name:
-            parameters['name'] = node.name
-
-        return parameters
+            if node.name:
+                parameters['name'] = node.name
+            return deepcopy(parameters)
+        else:
+            return {}
 
     def _node_adapt(self, data: Dict) -> OptNode:
         """Transforms a dict of NetworkX node attributes to GraphNode.
