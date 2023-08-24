@@ -147,11 +147,11 @@ class AgentTrainer:
         for mutation_id in self.agent.available_actions:
             try:
                 values = self._apply_action(mutation_id, ind)
+                candidates.append(values)
             except Exception as e:
                 self._log.warning(f'Eval error for mutation <{mutation_id}> '
                                   f'on graph: {ind.graph.descriptive_id}:\n{e}')
                 continue
-            candidates.append(values)
         best_step = max(candidates, key=lambda step: step[-1])
         return best_step
 
