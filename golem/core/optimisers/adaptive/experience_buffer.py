@@ -37,7 +37,7 @@ class ExperienceBuffer:
         source_ind = result.parent_operator.parent_individuals[0]
         action = result.parent_operator.operators[0]
         # we're minimising the fitness, that's why less is better
-        reward = source_ind.fitness.value - result.fitness.value if source_ind.fitness is not None else 0.
+        reward = source_ind.fitness.value - result.fitness.value if source_ind.fitness else 0.
         return source_ind, action, reward
 
     @staticmethod

@@ -110,7 +110,7 @@ class AgentTrainer:
         elif graphs:
             agent_steps = [self._make_action_step(Individual(g)) for g in graphs]
         else:
-            self._log.warning(f'Either graphs or history must not be None for validation!')
+            self._log.warning('Either graphs or history must not be None for validation!')
             return 0., 0.
         return self._validate_against_optimal(trajectories=[agent_steps])
 

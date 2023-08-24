@@ -102,6 +102,9 @@ class Fitness(Comparable):
                 self.valid and other.valid and
                 self.allclose(self.values, other.values))
 
+    def __bool__(self) -> bool:
+        return self.valid
+
     @staticmethod
     def allclose(values1, values2) -> bool:
         return np.allclose(values1, values2, rtol=1e-8, atol=1e-10)
