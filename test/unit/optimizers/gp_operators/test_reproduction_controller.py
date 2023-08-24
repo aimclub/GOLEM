@@ -83,7 +83,7 @@ def test_mean_success_rate(reproducer: ReproductionController, success_rate: flo
     assert np.isclose(reproducer.mean_success_rate, success_rate, rtol=0.1)
 
 
-@pytest.mark.parametrize('success_rate', [0.0, 0.1])
+@pytest.mark.parametrize('success_rate', [0.0, 0.04])
 def test_too_little_valid_evals(reproducer: ReproductionController, success_rate: float):
     evaluator = MockEvaluator(success_rate)
     pop = get_rand_population(reproducer.parameters.pop_size)
@@ -92,7 +92,7 @@ def test_too_little_valid_evals(reproducer: ReproductionController, success_rate
         reproducer.reproduce(pop, evaluator)
 
 
-@pytest.mark.parametrize('success_rate', [0.2])
+@pytest.mark.parametrize('success_rate', [0.15])
 def test_minimal_valid_evals(reproducer: ReproductionController, success_rate: float):
     parameters = reproducer.parameters
     evaluator = MockEvaluator(success_rate)
