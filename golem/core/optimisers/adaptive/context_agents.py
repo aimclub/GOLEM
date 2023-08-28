@@ -99,7 +99,7 @@ def adjacency_matrix(obs: Any, available_operations: List[str]) -> List[int]:
         for node_ in node.nodes_from:
             operation_child_idx = available_operations.index(node_.name)
             matrix[operation_parent_idx][operation_child_idx] += 1
-    return matrix.reshape(1, -1)[0].astype(int).tolist()
+    return matrix.reshape(1, -1)[0].astype(int)
 
 
 def none_encoding(obs: Any, available_operations: List[str]) -> List[int]:
