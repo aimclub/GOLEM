@@ -93,5 +93,8 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
             if isinstance(ob, list) or isinstance(ob, np.ndarray):
                 contexts.append(ob)
             else:
-                contexts.append(self._context_agent(ob))
+                context = np.array(self._context_agent(ob))
+                if context.ndim == 2:
+                    context = context[0]
+                contexts.append(context)
         return contexts
