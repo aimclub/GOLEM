@@ -2,14 +2,16 @@ import os
 from typing import Any
 
 import numpy as np
+import requests
 import torch
 from gensim.models import word2vec
 from mol2vec.features import mol2alt_sentence, MolSentence
 from rdkit.Chem import AllChem, RDKFingerprint
 
 from examples.molecule_search.mol_adapter import MolAdapter
-from examples.molecule_search.mol_transformer.load_data import ALPHABET_SIZE, EXTRA_CHARS
-from examples.molecule_search.mol_transformer.transformer import create_masks, Transformer
+from examples.molecule_search.mol_transformer.transformer import create_masks, Transformer, EXTRA_CHARS, ALPHABET_SIZE
+from examples.molecule_search.utils import download_from_github
+from golem.core.log import default_log
 from golem.core.paths import project_root
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
@@ -55,9 +57,15 @@ def RDKF(obs: Any):
 class Mol2Vec:
 
     PRETRAINED_WORD2VEC = 'examples/molecule_search/data/pretrained_models/model_300dim.pkl'
+    GITHUB_URL = 'https://github.com/samoturk/mol2vec/raw/master/examples/models/model_300dim.pkl'
 
     def __init__(self):
-        self.model = word2vec.Word2Vec.load(os.path.join(project_root(), Mol2Vec.PRETRAINED_WORD2VEC))
+        self.file_path = os.path.join(project_root(), Mol2Vec.PRETRAINED_WORD2VEC)
+        download_from_github(self.file_path,
+                             Mol2Vec.GITHUB_URL,
+                             message="Downloading pretrained model for molecules encoding...")
+
+        self.model = word2vec.Word2Vec.load(self.file_path)
 
     @adapter_method_to_molgraph
     def __call__(self, obs):
@@ -69,7 +77,18 @@ class Mol2Vec:
             embedding = embedding * 300
         return np.array(embedding).astype(float)
 
-    def sentences2vec(self, sentences, model, unseen=None):
+    def load_pretrained(self):
+        save_dir = os.path.dirname(self.file_path)
+        os.makedirs(save_dir, exist_ok=True)
+
+        if not os.path.exists(self.file_path):
+            self.log.message("Downloading pretrained model for molecules encoding...")
+            response = requests.get(Mol2Vec.GITHUB_URL)
+            with open(self.file_path, "wb") as new_file:
+                new_file.write(response.content)
+
+    @staticmethod
+    def sentences2vec(sentences, model, unseen=None):
         """Generate vectors for each sentence (list) in a list of sentences. Vector is simply a
         sum of vectors for individual words.
 
@@ -105,14 +124,23 @@ class Mol2Vec:
 
 
 class MoleculeTransformer:
+    """ Based on https://github.com/mpcrlab/MolecularTransformerEmbeddings """
 
     PRETRAINED_TRANSFORMER = 'examples/molecule_search/data/pretrained_models/pretrained.ckpt'
+    GITHUB_URL = 'https://github.com/mpcrlab/MolecularTransformerEmbeddings/releases/download/' \
+                 'checkpoints/pretrained.ckpt'
 
     def __init__(self, embedding_size=512, num_layers=6, max_length=256):
+        self.log = default_log(self)
+
+        self.file_path = os.path.join(project_root(), MoleculeTransformer.PRETRAINED_TRANSFORMER)
+        download_from_github(self.file_path,
+                             MoleculeTransformer.GITHUB_URL,
+                             message="Downloading pretrained model for molecules encoding...")
+
         model = Transformer(ALPHABET_SIZE, embedding_size, num_layers).eval()
         model = torch.nn.DataParallel(model)
-        checkpoint = torch.load(os.path.join(project_root(), MoleculeTransformer.PRETRAINED_TRANSFORMER),
-                                map_location=torch.device("cpu"))
+        checkpoint = torch.load(self.file_path, map_location=torch.device("cpu"))
         model.load_state_dict(checkpoint['state_dict'])
 
         self.model = model.module.cpu()

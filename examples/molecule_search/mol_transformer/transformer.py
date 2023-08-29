@@ -1,22 +1,16 @@
+import copy
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 from torch.autograd import Variable
-import math
-import copy
 
-from examples.molecule_search.mol_transformer.load_data import EXTRA_CHARS
+PRINTABLE_ASCII_CHARS = 95
 
-
-class OneHotEmbedding(nn.Module):
-    def __init__(self, alphabet_size):
-        super().__init__()
-        self.alphabet_size = alphabet_size
-        self.embedding = nn.Embedding.from_pretrained(torch.eye(alphabet_size))
-
-    def forward(self, x):
-        return self.embed(x)
+_extra_chars = ["seq_start", "seq_end", "pad"]
+EXTRA_CHARS = {key: chr(PRINTABLE_ASCII_CHARS + i) for i, key in enumerate(_extra_chars)}
+ALPHABET_SIZE = PRINTABLE_ASCII_CHARS + len(EXTRA_CHARS)
 
 
 class Embedding(nn.Module):
@@ -31,7 +25,7 @@ class Embedding(nn.Module):
 
 
 class PositionalEncoder(nn.Module):
-    def __init__(self, d_model, max_seq_len = 6000, dropout = 0.1):
+    def __init__(self, d_model, max_seq_len=6000, dropout=0.1):
         super().__init__()
         self.d_model = d_model
         self.dropout = nn.Dropout(p=dropout)
@@ -40,10 +34,8 @@ class PositionalEncoder(nn.Module):
         pe = torch.zeros(max_seq_len, d_model)
         for pos in range(max_seq_len):
             for i in range(0, d_model, 2):
-                pe[pos, i] = \
-                math.sin(pos / (10000 ** ((2 * i)/d_model)))
-                pe[pos, i + 1] = \
-                math.cos(pos / (10000 ** ((2 * (i + 1))/d_model)))
+                pe[pos, i] = math.sin(pos / (10000 ** ((2 * i)/d_model)))
+                pe[pos, i + 1] = math.cos(pos / (10000 ** ((2 * (i + 1))/d_model)))
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
@@ -52,8 +44,7 @@ class PositionalEncoder(nn.Module):
         x = x * math.sqrt(self.d_model)
         # add constant to embedding
         seq_len = x.size(1)
-        pe = self.pe[:,:seq_len]
-        pe = Variable(self.pe[:,:seq_len], requires_grad=False)
+        pe = Variable(self.pe[:, :seq_len], requires_grad=False)
         if x.is_cuda:
             pe.cuda()
         x = x + pe
@@ -65,7 +56,7 @@ class PositionalEncoder(nn.Module):
 
     
 class Norm(nn.Module):
-    def __init__(self, d_model, eps = 1e-6):
+    def __init__(self, d_model, eps=1e-6):
         super().__init__()
     
         self.size = d_model
@@ -77,14 +68,13 @@ class Norm(nn.Module):
         self.eps = eps
     
     def forward(self, x):
-        norm = self.alpha * (x - x.mean(dim=-1, keepdim=True)) \
-        / (x.std(dim=-1, keepdim=True) + self.eps) + self.bias
+        norm = self.alpha * (x - x.mean(dim=-1, keepdim=True)) / (x.std(dim=-1, keepdim=True) + self.eps) + self.bias
         return norm
 
 
 def attention(q, k, v, d_k, mask=None, dropout=None):
     
-    scores = torch.matmul(q, k.transpose(-2, -1)) /  math.sqrt(d_k)
+    scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(d_k)
     
     if mask is not None:
         mask = mask.unsqueeze(1)
@@ -100,7 +90,7 @@ def attention(q, k, v, d_k, mask=None, dropout=None):
 
     
 class MultiHeadAttention(nn.Module):
-    def __init__(self, heads, d_model, dropout = 0.1):
+    def __init__(self, heads, d_model, dropout=0.1):
         super().__init__()
         
         self.d_model = d_model
@@ -124,22 +114,21 @@ class MultiHeadAttention(nn.Module):
         v = self.v_linear(v).view(bs, -1, self.h, self.d_k)
         
         # transpose to get dimensions bs * N * sl * d_model
-        k = k.transpose(1,2)
-        q = q.transpose(1,2)
-        v = v.transpose(1,2)
+        k = k.transpose(1, 2)
+        q = q.transpose(1, 2)
+        v = v.transpose(1, 2)
 
         # calculate attention using function we will define next
         scores = attention(q, k, v, self.d_k, mask, self.dropout)
         # concatenate heads and put through final linear layer
-        concat = scores.transpose(1,2).contiguous()\
-        .view(bs, -1, self.d_model)
+        concat = scores.transpose(1, 2).contiguous().view(bs, -1, self.d_model)
         output = self.out(concat)
     
         return output
 
 
 class FeedForward(nn.Module):
-    def __init__(self, d_model, d_ff=2048, dropout = 0.1):
+    def __init__(self, d_model, d_ff=2048, dropout=0.1):
         super().__init__() 
     
         # We set d_ff as a default to 2048
@@ -165,7 +154,7 @@ class EncoderLayer(nn.Module):
         
     def forward(self, x, mask):
         x2 = self.norm_1(x)
-        x = x + self.dropout_1(self.attn(x2,x2,x2,mask))
+        x = x + self.dropout_1(self.attn(x2, x2, x2, mask))
         x2 = self.norm_2(x)
         x = x + self.dropout_2(self.ff(x2))
         return x
@@ -198,49 +187,49 @@ class DecoderLayer(nn.Module):
         return x
 
 
-def get_clones(module, N):
-    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
+def get_clones(module, n):
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(n)])
 
 
 class Encoder(nn.Module):
-    def __init__(self, alphabet_size, d_model, N, heads, dropout):
+    def __init__(self, alphabet_size, d_model, n, heads, dropout):
         super().__init__()
-        self.N = N
+        self.n = n
         self.embed = Embedding(alphabet_size, d_model)
         self.pe = PositionalEncoder(d_model, dropout=dropout)
-        self.layers = get_clones(EncoderLayer(d_model, heads, dropout), N)
+        self.layers = get_clones(EncoderLayer(d_model, heads, dropout), n)
         self.norm = Norm(d_model)
 
     def forward(self, src, mask):
         x = self.embed(src)
         x = self.pe(x)
-        for i in range(self.N):
+        for i in range(self.n):
             x = self.layers[i](x, mask)
         return self.norm(x)
 
 
 class Decoder(nn.Module):
-    def __init__(self, alphabet_size, d_model, N, heads, dropout):
+    def __init__(self, alphabet_size, d_model, n, heads, dropout):
         super().__init__()
-        self.N = N
+        self.n = n
         self.embed = Embedding(alphabet_size, d_model)
         self.pe = PositionalEncoder(d_model, dropout=dropout)
-        self.layers = get_clones(DecoderLayer(d_model, heads, dropout), N)
+        self.layers = get_clones(DecoderLayer(d_model, heads, dropout), n)
         self.norm = Norm(d_model)
 
     def forward(self, trg, e_outputs, src_mask, trg_mask):
         x = self.embed(trg)
         x = self.pe(x)
-        for i in range(self.N):
+        for i in range(self.n):
             x = self.layers[i](x, e_outputs, src_mask, trg_mask)
         return self.norm(x)
 
 
 class Transformer(nn.Module):
-    def __init__(self, alphabet_size, d_model, N, heads=8, dropout=0.1):
+    def __init__(self, alphabet_size, d_model, n, heads=8, dropout=0.1):
         super().__init__()
-        self.encoder = Encoder(alphabet_size, d_model, N, heads, dropout)
-        self.decoder = Decoder(alphabet_size, d_model, N, heads, dropout)
+        self.encoder = Encoder(alphabet_size, d_model, n, heads, dropout)
+        self.decoder = Decoder(alphabet_size, d_model, n, heads, dropout)
         self.out = nn.Linear(d_model, alphabet_size)
 
     def forward(self, src, trg, src_mask, trg_mask):
@@ -264,76 +253,9 @@ def create_masks(src, trg=None, pad_idx=ord(EXTRA_CHARS['pad']), device=None):
 
     if trg is not None:
         trg_mask = (trg != pad_idx).unsqueeze(-2)
-        size = trg.size(1) # get seq_len for matrix
+        size = trg.size(1)  # get seq_len for matrix
         np_mask = nopeak_mask(size, device)
         np_mask.to(device)
         trg_mask = trg_mask & np_mask
         return src_mask, trg_mask
     return src_mask
-
-
-class CosineWithRestarts(torch.optim.lr_scheduler._LRScheduler):
-    """
-    Cosine annealing with restarts.
-    Parameters
-    ----------
-    optimizer : torch.optim.Optimizer
-    T_max : int
-        The maximum number of iterations within the first cycle.
-    eta_min : float, optional (default: 0)
-        The minimum learning rate.
-    last_epoch : int, optional (default: -1)
-        The index of the last epoch.
-    """
-
-    def __init__(self,
-                 optimizer,
-                 T_max,
-                 eta_min = 0.,
-                 last_epoch = -1,
-                 factor = 1.):
-        # pylint: disable=invalid-name
-        self.T_max = T_max
-        self.eta_min = eta_min
-        self.factor = factor
-        self._last_restart = 0
-        self._cycle_counter = 0
-        self._cycle_factor = 1.
-        self._updated_cycle_len = T_max
-        self._initialized = False
-        super(CosineWithRestarts, self).__init__(optimizer, last_epoch)
-
-    def get_lr(self):
-        """Get updated learning rate."""
-        # HACK: We need to check if this is the first time get_lr() was called, since
-        # we want to start with step = 0, but _LRScheduler calls get_lr with
-        # last_epoch + 1 when initialized.
-        if not self._initialized:
-            self._initialized = True
-            return self.base_lrs
-
-        step = self.last_epoch + 1
-        self._cycle_counter = step - self._last_restart
-
-        lrs = [
-            (
-                self.eta_min + ((lr - self.eta_min) / 2) *
-                (
-                    np.cos(
-                        np.pi *
-                        ((self._cycle_counter) % self._updated_cycle_len) /
-                        self._updated_cycle_len
-                    ) + 1
-                )
-            ) for lr in self.base_lrs
-        ]
-
-        if self._cycle_counter % self._updated_cycle_len == 0:
-            # Adjust the cycle length.
-            self._cycle_factor *= self.factor
-            self._cycle_counter = 0
-            self._updated_cycle_len = int(self._cycle_factor * self.T_max)
-            self._last_restart = step
-
-        return lrs
-

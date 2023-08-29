@@ -1,12 +1,14 @@
-from copy import deepcopy
+import os
+from typing import Tuple, Set, Optional
 
 import networkx as nx
 from rdkit.Chem import GetPeriodicTable
 from rdkit.Chem.rdchem import Atom, RWMol
-from typing import Tuple, Set
+from sphinx.util import requests
 
 from examples.molecule_search.constants import SULFUR_DEFAULT_VALENCE
 from examples.molecule_search.mol_graph import MolGraph
+from golem.core.log import default_log
 
 
 def get_default_valence(atom_type: str) -> int:
@@ -39,3 +41,17 @@ def largest_ring_size(rw_molecule: RWMol) -> int:
     if cycle_list:
         largest_cycle_len = max(map(len, cycle_list))
     return largest_cycle_len
+
+
+def download_from_github(save_path: str, github_url: str, message: Optional[str] = None):
+    """ Checks if the file exists. If not downloads the file from specified url."""
+    save_dir = os.path.dirname(save_path)
+    os.makedirs(save_dir, exist_ok=True)
+
+    message = message or f"Downloading a file from {github_url} to {save_dir}..."
+
+    if not os.path.exists(save_path):
+        default_log().message(message)
+        response = requests.get(github_url)
+        with open(save_path, "wb") as new_file:
+            new_file.write(response.content)

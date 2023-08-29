@@ -1,18 +1,17 @@
 import os
 import pickle
 import sys
+from typing import Dict
 
-import requests
 from rdkit import RDConfig, Chem
 from rdkit.Chem import Descriptors, AllChem
 from rdkit.Chem.QED import qed
 from rdkit.Chem.rdchem import RWMol
-from typing import Dict
 
 from examples.molecule_search.constants import ZINC_LOGP_MEAN, ZINC_LOGP_STD, ZINC_SA_MEAN, ZINC_SA_STD, \
     ZINC_CYCLE_MEAN, ZINC_CYCLE_STD, MIN_LONG_CYCLE_SIZE
 from examples.molecule_search.mol_graph import MolGraph
-from examples.molecule_search.utils import largest_ring_size
+from examples.molecule_search.utils import largest_ring_size, download_from_github
 from golem.core.paths import project_root
 
 sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
@@ -160,13 +159,7 @@ class CLScorer:
         return -avg_score
 
     def load_shingles(self) -> Dict:
-        save_dir = os.path.dirname(self.file_path)
-        os.makedirs(save_dir, exist_ok=True)
-
-        if not os.path.exists(self.file_path):
-            response = requests.get(self.github_url)
-            with open(self.file_path, "wb") as new_file:
-                new_file.write(response.content)
+        download_from_github(self.file_path, self.github_url)
 
         with open(self.file_path, "rb") as pyc:
             db_shingles = pickle.load(pyc)

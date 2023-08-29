@@ -4,3 +4,4 @@ joblib>=0.12.5
 requests>=2.30.0
 mol2vec @ git+https://github.com/samoturk/mol2vec
 gensim
+torch
