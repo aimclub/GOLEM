@@ -162,5 +162,5 @@ class MoleculeTransformer:
         return ord(c) - 32
 
     def encode_smiles(self, string, start_char=EXTRA_CHARS['seq_start']):
-        return torch.tensor([ord(start_char)] + [self.encode_char(c) for c in string], dtype=torch.long)[
-               :self.max_length].unsqueeze(0)
+        return torch.tensor([ord(start_char)]
+                            + [self.encode_char(c) for c in string], dtype=torch.long)[:self.max_length].unsqueeze(0)
