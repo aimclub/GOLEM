@@ -62,7 +62,7 @@ class Norm(nn.Module):
         self.alpha = nn.Parameter(torch.ones(self.size))
         self.bias = nn.Parameter(torch.zeros(self.size))
         self.eps = eps
-    
+
     def forward(self, x):
         norm = self.alpha * (x - x.mean(dim=-1, keepdim=True)) / (x.std(dim=-1, keepdim=True) + self.eps) + self.bias
         return norm
@@ -107,7 +107,6 @@ class MultiHeadAttention(nn.Module):
         # concatenate heads and put through final linear layer
         concat = scores.transpose(1, 2).contiguous().view(bs, -1, self.d_model)
         output = self.out(concat)
-    
         return output
 
 
@@ -118,7 +117,7 @@ class FeedForward(nn.Module):
         self.linear_1 = nn.Linear(d_model, d_ff)
         self.dropout = nn.Dropout(dropout)
         self.linear_2 = nn.Linear(d_ff, d_model)
-    
+
     def forward(self, x):
         x = self.dropout(F.relu(self.linear_1(x)))
         x = self.linear_2(x)
@@ -134,7 +133,7 @@ class EncoderLayer(nn.Module):
         self.ff = FeedForward(d_model, dropout=dropout)
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
-        
+
     def forward(self, x, mask):
         x2 = self.norm_1(x)
         x = x + self.dropout_1(self.attn(x2, x2, x2, mask))
@@ -142,7 +141,7 @@ class EncoderLayer(nn.Module):
         x = x + self.dropout_2(self.ff(x2))
         return x
 
-    
+
 # build a decoder layer with two multi-head attention layers and
 # one feed-forward layer
 class DecoderLayer(nn.Module):
@@ -222,10 +221,9 @@ class Transformer(nn.Module):
         output = self.out(d_output)
         return output
 
-    
+
 def nopeak_mask(size, device):
     np_mask = torch.triu(torch.ones((size, size), dtype=torch.uint8), diagonal=1).unsqueeze(0)
-    
     np_mask = np_mask == 0
     np_mask = np_mask.to(device)
     return np_mask
