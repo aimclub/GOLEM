@@ -186,6 +186,9 @@ class EmptyProgressBar:
     def __exit__(self, exc_type, exc_val, exc_tb):
         return True
 
+    def close(self):
+        return
+
 
 class EvaluationAttemptsError(Exception):
     """ Number of evaluation attempts exceeded """
