@@ -189,6 +189,9 @@ class EmptyProgressBar:
     def close(self):
         return
 
+    def update(self):
+        return
+
 
 class EvaluationAttemptsError(Exception):
     """ Number of evaluation attempts exceeded """
