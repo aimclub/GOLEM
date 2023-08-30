@@ -2,6 +2,9 @@ import os
 
 from typing import Dict, List, Tuple
 
+import pandas as pd
+
+from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
 
@@ -22,6 +25,7 @@ class ExperimentAnalyzer:
 
     def __init__(self, path_to_root: str):
         self.path_to_root = path_to_root
+        self._log = default_log('ExperimentAnalyzer')
 
     def analyze_convergence(self, history_folder: str = 'history', is_raise: bool = False) \
             -> Dict[str, Dict[str, List[float]]]:
@@ -69,14 +73,41 @@ class ExperimentAnalyzer:
                 total_time_to_get_best_fitness += ind.metadata['computation_time_in_seconds']
         return total_time_to_get_best_fitness
 
-    def analyze_metrics(self):
-        pass
+    def analyze_metrics(self, metric_names: List[str], file_name: str, is_raise: bool = False):
+        """ Method to analyze specified metrics.
+        :param metric_names: names of metrics to analyze. e.g. ['f1', 'inference_time']
+        :param file_name: name of the file with metrics (e.g. 'metrics.csv')
+        :param is_raise: bool specifying if exception must be raised if there is no history folder
+        """
+        dict_with_metrics = dict()
+        for setup, dataset, path_to_launch in self._get_path_to_launch():
+
+            if file_name not in os.listdir(path_to_launch):
+                if is_raise:
+                    raise ValueError(f"There is no metric file with name {file_name}")
+                else:
+                    continue
+
+            df_metrics = pd.read_csv(os.path.join(path_to_launch, file_name))
+
+            for metric in metric_names:
+                if metric not in dict_with_metrics.keys():
+                    dict_with_metrics[metric] = dict()
+                dict_with_metrics[metric] = self._extend_result_dict(result_dict=dict_with_metrics[metric],
+                                                                     setup=setup, dataset=dataset)
+                if metric not in df_metrics.columns:
+                    self._log.warning(f"There is no column in {file_name} with {metric}")
+                dict_with_metrics[metric][setup][dataset].append(df_metrics[metric][0])
+        return dict_with_metrics
 
     def analyze_structural_complexity(self):
         pass
 
     def _get_path_to_launch(self) -> Tuple[str, str, str]:
-        """ Yields setup name, dataset name + paths to dirs with experiment results. """
+        """ Yields setup name, dataset name + paths to dirs with experiment results.
+        If experiment saving configuration/files structure somehow differs from the structure implied in this class
+        this method can be used externally to get paths to launches.
+        """
         for setup in os.listdir(self.path_to_root):
             path_to_setup = os.path.join(self.path_to_root, setup)
             for dataset in os.listdir(path_to_setup):
