@@ -94,6 +94,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
                 contexts.append(ob)
             else:
                 context = np.array(self._context_agent(ob))
+                # some external context agents can wrap context in an additional array
                 if context.ndim == 2:
                     context = context[0]
                 contexts.append(context)
