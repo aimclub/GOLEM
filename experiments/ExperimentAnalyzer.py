@@ -1,6 +1,6 @@
 import os
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
@@ -31,31 +31,25 @@ class ExperimentAnalyzer:
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         """
         convergence = dict()
-        for setup in os.listdir(self.path_to_root):
-            # add to result dict
-            if setup not in convergence.keys():
-                convergence[setup] = dict()
-            path_to_setup = os.path.join(self.path_to_root, setup)
-            for dataset in os.listdir(path_to_setup):
-                # add to result dict
-                if dataset not in convergence[setup].keys():
-                    convergence[setup][dataset] = []
-                path_to_dataset = os.path.join(path_to_setup, dataset)
-                for launch in os.listdir(path_to_dataset):
-                    path_to_launch = os.path.join(path_to_dataset, launch)
-                    if history_folder not in os.listdir(path_to_launch):
-                        if is_raise:
-                            raise ValueError(f"There is no history folder with name {history_folder}")
-                    path_to_history_folder = os.path.join(path_to_launch, history_folder)
-                    history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
+        for setup, dataset, path_to_launch in self._get_path_to_launch():
+            convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
 
-                    # if there is no history
-                    if len(history_files) == 0:
-                        continue
+            if history_folder not in os.listdir(path_to_launch):
+                if is_raise:
+                    raise ValueError(f"There is no history folder with name {history_folder}")
+                else:
+                    continue
 
-                    # load the first history in the folder
-                    history = OptHistory.load(os.path.join(path_to_history_folder, history_files[0]))
-                    convergence[setup][dataset].append(self._analyze_convergence(history=history))
+            path_to_history_folder = os.path.join(path_to_launch, history_folder)
+            history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
+
+            # if there is no history
+            if len(history_files) == 0:
+                continue
+
+            # load the first history in the folder
+            history = OptHistory.load(os.path.join(path_to_history_folder, history_files[0]))
+            convergence[setup][dataset].append(self._analyze_convergence(history=history))
         return convergence
 
     @staticmethod
@@ -80,3 +74,22 @@ class ExperimentAnalyzer:
 
     def analyze_structural_complexity(self):
         pass
+
+    def _get_path_to_launch(self) -> Tuple[str, str, str]:
+        """ Yields setup name, dataset name + paths to dirs with experiment results. """
+        for setup in os.listdir(self.path_to_root):
+            path_to_setup = os.path.join(self.path_to_root, setup)
+            for dataset in os.listdir(path_to_setup):
+                path_to_dataset = os.path.join(path_to_setup, dataset)
+                for launch in os.listdir(path_to_dataset):
+                    path_to_launch = os.path.join(path_to_dataset, launch)
+                    yield setup, dataset, path_to_launch
+
+    @staticmethod
+    def _extend_result_dict(result_dict: dict, setup: str, dataset: str) -> Dict[str, Dict[str, list]]:
+        """ Extends result dictionary with new setup and dataset name. """
+        if setup not in result_dict.keys():
+            result_dict[setup] = dict()
+        if dataset not in result_dict[setup].keys():
+            result_dict[setup][dataset] = []
+        return result_dict
