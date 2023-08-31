@@ -1,10 +1,9 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import pandas as pd
-from tqdm import tqdm
 
 from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
@@ -32,7 +31,7 @@ class ExperimentAnalyzer:
         self._folders_to_ignore = folders_to_ignore
         self._log = default_log('ExperimentAnalyzer')
 
-    def analyze_convergence(self, history_folder: str = 'history', is_mean: bool = True,
+    def analyze_convergence(self, history_folder: str = 'history', is_mean: bool = False,
                             path_to_save: str = None, is_raise: bool = False) \
             -> Dict[str, Dict[str, List[float]]]:
         """ Method to analyze convergence with the use of histories.
@@ -42,6 +41,7 @@ class ExperimentAnalyzer:
         :param path_to_save: path to save results.
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         """
+
         convergence = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
@@ -91,7 +91,7 @@ class ExperimentAnalyzer:
                 total_time_to_get_best_fitness += ind.metadata['computation_time_in_seconds']
         return total_time_to_get_best_fitness
 
-    def analyze_metrics(self, metric_names: List[str], file_name: str, is_mean: bool = True,
+    def analyze_metrics(self, metric_names: List[str], file_name: str, is_mean: bool = False,
                         path_to_save: str = None, is_raise: bool = False):
         """ Method to analyze specified metrics.
         :param metric_names: names of metrics to analyze. e.g. ['f1', 'inference_time']
@@ -171,8 +171,39 @@ class ExperimentAnalyzer:
             cur_path_to_save = os.path.join(path_to_save, f'{dataset}_convergence_without_confidence')
             multiple_fitness_plot.visualize(save_path=cur_path_to_save)
 
-    def analyze_structural_complexity(self):
-        pass
+    def analyze_structural_complexity(self, path_to_save: str, dir_name: str, class_to_load: Any,
+                                      is_raise: bool = False):
+        """ Method to save pictures of final graphs in directories to compare it visually.
+        :param path_to_save: root path to pictures per setup.
+        :param dir_name: name of directory in which final graph is saved.
+        :param class_to_load: class of objects to load
+        :param is_raise: bool specifying if exception must be raised if there is no history folder
+        """
+        for setup, dataset, path_to_launch in self._get_path_to_launch():
+            if dir_name not in os.listdir(path_to_launch):
+                if is_raise:
+                    raise ValueError(f"There is no folder with name {dir_name}")
+                else:
+                    continue
+
+            path_to_json = None
+            for address, dirs, files in os.walk(path_to_launch):
+                for name in files:
+                    if '.json' in name:
+                        path_to_json = os.path.join(address, name)
+                        break
+
+            # final result was not saved in this launch
+            if not path_to_json:
+                continue
+            final = class_to_load.load(path_to_json)
+            path_to_save = os.path.join(path_to_save, setup)
+
+            if not os.path.exists(path_to_save):
+                os.makedirs(path_to_save)
+            saved_results = [file_name.split("_")[0] for file_name in os.listdir(path_to_save)]
+            max_saved_num = max(saved_results) if saved_results else 0
+            final.show(os.path.join(path_to_save, f'{max_saved_num}_result.png'))
 
     def _get_path_to_launch(self) -> Tuple[str, str, str]:
         """ Yields setup name, dataset name + paths to dirs with experiment results.
