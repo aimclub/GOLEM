@@ -91,11 +91,10 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         contexts = []
         for ob in obs:
             if isinstance(ob, list) or isinstance(ob, np.ndarray):
-                contexts.append(ob)
+                # to unify type to list
+                contexts.append(list(ob))
             else:
                 context = np.array(self._context_agent(ob))
                 # some external context agents can wrap context in an additional array
-                if context.ndim == 2:
-                    context = context[0]
-                contexts.append(context)
+                contexts.append(context.flatten().tolist())
         return contexts
