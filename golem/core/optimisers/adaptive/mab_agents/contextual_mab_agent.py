@@ -17,7 +17,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
     using NN to guarantee convergence.
 
     :param actions: types of mutations
-    :param context_agent: function to convert observation to its embedding. Can be specified as
+    :param context_agent_type: function to convert observation to its embedding. Can be specified as
     ContextAgentTypeEnum or as Callable function.
     :param available_operations: available operations
     :param n_jobs: n_jobs
