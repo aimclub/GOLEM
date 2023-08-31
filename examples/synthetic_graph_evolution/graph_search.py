@@ -1,8 +1,11 @@
+import os
 from datetime import timedelta
 from functools import partial
+from pathlib import Path
 from typing import Type, Optional, Sequence, List
 
 import networkx as nx
+
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
@@ -14,9 +17,13 @@ from golem.core.optimisers.genetic.operators.base_mutations import MutationTypes
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
+from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
+from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 
 
 def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
@@ -54,8 +61,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size,
-        early_stopping_timeout=10,
-        early_stopping_iterations=num_iterations // 3 if num_iterations else None,
+        early_stopping_timeout=360,
+        early_stopping_iterations=num_iterations if num_iterations else None,
         keep_n_best=4,
         timeout=timeout,
         num_of_generations=num_iterations,
@@ -93,12 +100,14 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
 
 
 if __name__ == '__main__':
-    results_log = run_experiments(optimizer_setup=graph_search_setup,
-                                  optimizer_cls=EvoGraphOptimizer,
-                                  graph_names=['gnp'],
-                                  graph_sizes=[50],
-                                  num_trials=1,
-                                  trial_timeout=15,
-                                  trial_iterations=1000,
-                                  visualize=True)
+    optimizers = [EvoGraphOptimizer]
+    for optimizer in optimizers:
+        results_log = run_experiments(optimizer_setup=graph_search_setup,
+                                      optimizer_cls=optimizer,
+                                      graph_names=['gnp', 'tree', 'grid2d'],
+                                      graph_sizes=[20, 30, 50, 100],
+                                      num_trials=30,
+                                      trial_timeout=None,
+                                      trial_iterations=1000,
+                                      visualize=False)
     print(results_log)

@@ -42,12 +42,12 @@ def run_experiments(optimizer_setup: Callable,
                     trial_iterations: Optional[int] = None,
                     visualize: bool = False,
                     ):
-    Path("results").mkdir(exist_ok=True)
     log = StringIO()
     if not node_types:
         node_types = ['X']
     for graph_name, num_nodes in product(graph_names, graph_sizes):
         experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
+        file_name = f'{optimizer_cls.__name__[:-9]}_{graph_name}_n{num_nodes}_iter{trial_iterations}'
         trial_results = []
         for i in range(num_trials):
             start_time = datetime.now()
@@ -59,7 +59,7 @@ def run_experiments(optimizer_setup: Callable,
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,
                                                    node_types=node_types,
-                                                   timeout=timedelta(minutes=trial_timeout),
+                                                   timeout=timedelta(minutes=trial_timeout) if trial_timeout else None,
                                                    num_iterations=trial_iterations)
             found_graphs = optimizer.optimise(objective)
             found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
@@ -79,7 +79,9 @@ def run_experiments(optimizer_setup: Callable,
                 history.show.diversity_population(save_path=diversity_filename)
                 history.show.diversity_line(show=False)
                 history.show.fitness_line()
-            history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
+            result_dir = Path('results') / file_name
+            result_dir.mkdir(parents=True, exist_ok=True)
+            history.save(result_dir / f'history_trial_{i}.json')
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness

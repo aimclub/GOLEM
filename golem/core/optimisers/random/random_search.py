@@ -42,15 +42,17 @@ class RandomSearchOptimizer(GraphOptimizer):
 
         self.current_iteration_num = 0
 
-        with self.timer:
+        with self.timer, self._progressbar as pbar:
             self.best_individual = self._eval_initial_individual(evaluator)
             self._update_best_individual(self.best_individual, 'initial_assumptions')
             while not self.stop_optimization():
                 new_individual = self._generate_new_individual()
                 evaluator([new_individual])
-                self._update_best_individual(new_individual)
                 self.current_iteration_num += 1
+                self._update_best_individual(new_individual)
+                pbar.update()
         self._update_best_individual(self.best_individual, 'final_choices')
+        pbar.close()
         return [self.best_individual.graph]
 
     def _update_best_individual(self, new_individual: Individual, label: Optional[str] = None):
