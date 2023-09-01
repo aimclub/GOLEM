@@ -1,7 +1,7 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Callable
 
 import pandas as pd
 
@@ -71,7 +71,9 @@ class ExperimentAnalyzer:
         # save results per metric
         if path_to_save:
             df = pd.DataFrame(convergence)
-            df.to_csv(os.path.join(path_to_save, f'convergence_results.csv'))
+            path_to_save = os.path.join(path_to_save, f'convergence_results.csv')
+            df.to_csv(path_to_save)
+            self._log.info(f"Convergence table was saved to {path_to_save}")
         return convergence
 
     @staticmethod
@@ -130,7 +132,9 @@ class ExperimentAnalyzer:
         if path_to_save:
             for metric in dict_with_metrics.keys():
                 df = pd.DataFrame(dict_with_metrics[metric])
-                df.to_csv(os.path.join(path_to_save, f'{metric}_results.csv'))
+                path_to_save = os.path.join(path_to_save, f'{metric}_results.csv')
+                df.to_csv(path_to_save)
+                self._log.info(f"Metric table was saved to {path_to_save}")
         return dict_with_metrics
 
     def plot_convergence(self, path_to_save: str,
@@ -170,14 +174,16 @@ class ExperimentAnalyzer:
             multiple_fitness_plot = MultipleFitnessLines(histories_to_compare=histories_to_compare)
             cur_path_to_save = os.path.join(path_to_save, f'{dataset}_convergence_without_confidence')
             multiple_fitness_plot.visualize(save_path=cur_path_to_save)
+            self._log.info(f"Convergence plot for {dataset} dataset was saved to {cur_path_to_save}")
 
-    def analyze_structural_complexity(self, path_to_save: str, dir_name: str, class_to_load: Any,
-                                      is_raise: bool = False):
+    def analyze_structural_complexity(self, path_to_save: str, dir_name: str,
+                                      class_to_load: Any = None, load_func: Callable = None, is_raise: bool = False):
         """ Method to save pictures of final graphs in directories to compare it visually.
         :param path_to_save: root path to pictures per setup.
         :param dir_name: name of directory in which final graph is saved.
-        :param class_to_load: class of objects to load
-        :param is_raise: bool specifying if exception must be raised if there is no history folder
+        :param class_to_load: class of objects to load.
+        :param load_func: function that load object. Can be used in case method 'load' is not defined for the object.
+        :param is_raise: bool specifying if exception must be raised if there is no history folder.
         """
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             if dir_name not in os.listdir(path_to_launch):
@@ -196,14 +202,18 @@ class ExperimentAnalyzer:
             # final result was not saved in this launch
             if not path_to_json:
                 continue
-            final = class_to_load.load(path_to_json)
+
+            result = class_to_load.load(path_to_json) if class_to_load \
+                else load_func(path_to_json) if load_func else None
             path_to_save = os.path.join(path_to_save, setup)
 
             if not os.path.exists(path_to_save):
                 os.makedirs(path_to_save)
             saved_results = [file_name.split("_")[0] for file_name in os.listdir(path_to_save)]
             max_saved_num = max(saved_results) if saved_results else 0
-            final.show(os.path.join(path_to_save, f'{max_saved_num}_result.png'))
+            cur_path_to_save = os.path.join(path_to_save, f'{max_saved_num}_result.png')
+            result.show(cur_path_to_save)
+            self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
 
     def _get_path_to_launch(self) -> Tuple[str, str, str]:
         """ Yields setup name, dataset name + paths to dirs with experiment results.
