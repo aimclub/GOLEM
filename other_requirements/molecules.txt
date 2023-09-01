@@ -3,5 +3,5 @@ guacamol>=0.5.4
 joblib>=0.12.5
 requests>=2.30.0
 mol2vec @ git+https://github.com/samoturk/mol2vec
-gensim
-torch
+gensim>=4.3.2
+torch>=2.0.1
