@@ -132,9 +132,9 @@ class ExperimentAnalyzer:
         if path_to_save:
             for metric in dict_with_metrics.keys():
                 df = pd.DataFrame(dict_with_metrics[metric])
-                path_to_save = os.path.join(path_to_save, f'{metric}_results.csv')
-                df.to_csv(path_to_save)
-                self._log.info(f"Metric table was saved to {path_to_save}")
+                cur_path_to_save = os.path.join(path_to_save, f'{metric}_results.csv')
+                df.to_csv(cur_path_to_save)
+                self._log.info(f"Metric table was saved to {cur_path_to_save}")
         return dict_with_metrics
 
     def plot_convergence(self, path_to_save: str,
@@ -170,11 +170,52 @@ class ExperimentAnalyzer:
         # plot convergence pics
         for dataset in histories[list(histories.keys())[0]]:
             for setup in histories.keys():
-                histories_to_compare[setup] = histories[setup][dataset]
+                histories_to_compare[setup] = histories[setup][dataset] if dataset in histories[setup].keys() else []
             multiple_fitness_plot = MultipleFitnessLines(histories_to_compare=histories_to_compare)
             cur_path_to_save = os.path.join(path_to_save, f'{dataset}_convergence_without_confidence')
             multiple_fitness_plot.visualize(save_path=cur_path_to_save)
             self._log.info(f"Convergence plot for {dataset} dataset was saved to {cur_path_to_save}")
+
+    def analyze_statistical_significance(self, data_to_analyze: Dict[str, Dict[str, List[float]]],
+                                         stat_tests: List[Callable], path_to_save: str = None,
+                                         test_format: List[str] = None):
+        """ Method to perform statistical analysis of data. Metric data obtained with 'analyze_metrics' and
+        convergence data obtained with 'analyze_convergence' can be simply analyzed, for example.
+        :param data_to_analyze: data to analyze. NB! data must have the specified format
+        :param stat_tests: list of functions of statistical tests to perform.
+        :param path_to_save: path to save results
+        :param test_format: argument to specify what every test function must return. default: ['statistic', 'pvalue']
+        """
+        if not test_format:
+            test_format = ['statistic', 'pvalue']
+
+        stat_dict = dict.fromkeys(test_format, None)
+        datasets = list(data_to_analyze[list(data_to_analyze.keys())[0]].keys())
+        for dataset in datasets:
+            values_to_compare = []
+            for setup in data_to_analyze.keys():
+                values_to_compare.append(data_to_analyze[setup][dataset])
+            for test in stat_tests:
+                try:
+                    cur_test_result = test(*values_to_compare)
+                except Exception as e:
+                    self._log.critical(f"Statistical test ({test}) failed with exception: {e}")
+                    cur_test_result = [None]*len(test_format)
+                for i, arg in enumerate(test_format):
+                    if not stat_dict[arg]:
+                        stat_dict[arg] = dict.fromkeys([t.__name__ for t in stat_tests], None)
+                    if not stat_dict[arg][test.__name__]:
+                        stat_dict[arg][test.__name__] = dict.fromkeys(datasets, None)
+                    stat_dict[arg][test.__name__][dataset] = cur_test_result[i]
+
+        # save results for all tests
+        if path_to_save:
+            for arg in test_format:
+                df = pd.DataFrame(stat_dict[arg])
+                cur_path_to_save = os.path.join(path_to_save, f'stat_{arg}_results.csv')
+                df.to_csv(cur_path_to_save)
+                self._log.info(f"Stat test table for {arg} was saved to {cur_path_to_save}")
+        return stat_dict
 
     def analyze_structural_complexity(self, path_to_save: str, dir_name: str,
                                       class_to_load: Any = None, load_func: Callable = None, is_raise: bool = False):
