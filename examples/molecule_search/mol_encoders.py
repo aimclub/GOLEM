@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from gensim.models import word2vec
 from mol2vec.features import mol2alt_sentence, MolSentence
-from rdkit.Chem import AllChem, RDKFingerprint
+from rdkit.Chem import AllChem, RDKFingerprint, rdFingerprintGenerator
 from rdkit.ML.Descriptors.MoleculeDescriptors import MolecularDescriptorCalculator
 
 from examples.molecule_search.mol_adapter import MolAdapter
@@ -52,6 +52,22 @@ def RDKF(obs: Any):
     molecule = obs.get_rw_molecule()
     fingerprint_rdk = RDKFingerprint(molecule)
     return np.array(fingerprint_rdk)
+
+
+@adapter_func_to_molgraph
+def atom_pair(obs: Any):
+    """ Atom pair fingerprint """
+    molecule = obs.get_rw_molecule()
+    fingerprint = rdFingerprintGenerator.GetAtomPairGenerator(fpSize=1024).GetFingerprint(molecule)
+    return np.array(fingerprint)
+
+
+@adapter_func_to_molgraph
+def topological_torsion(obs: Any):
+    """ Topological Torsion fingerprint """
+    molecule = obs.get_rw_molecule()
+    fingerprint = rdFingerprintGenerator.GetTopologicalTorsionGenerator(fpSize=1024).GetFingerprint(molecule)
+    return np.array(fingerprint)
 
 
 @adapter_func_to_molgraph
