@@ -137,11 +137,12 @@ class ExperimentAnalyzer:
                 self._log.info(f"Metric table was saved to {cur_path_to_save}")
         return dict_with_metrics
 
-    def plot_convergence(self, path_to_save: str,
+    def plot_convergence(self, path_to_save: str, with_confidence: bool = True,
                          history_folder: str = 'history', is_raise: bool = False):
         """ Method to analyze convergence with the use of histories.
 
         :param path_to_save: path to save the results.
+        :param with_confidence: bool param specifying to use confidence interval or not.
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         """
@@ -172,8 +173,10 @@ class ExperimentAnalyzer:
             for setup in histories.keys():
                 histories_to_compare[setup] = histories[setup][dataset] if dataset in histories[setup].keys() else []
             multiple_fitness_plot = MultipleFitnessLines(histories_to_compare=histories_to_compare)
-            cur_path_to_save = os.path.join(path_to_save, f'{dataset}_convergence_without_confidence')
-            multiple_fitness_plot.visualize(save_path=cur_path_to_save)
+            file_name = f'{dataset}_convergence_with_confidence' if with_confidence \
+                else f'{dataset}_convergence_without_confidence'
+            cur_path_to_save = os.path.join(path_to_save, file_name)
+            multiple_fitness_plot.visualize(save_path=cur_path_to_save, with_confidence=with_confidence)
             self._log.info(f"Convergence plot for {dataset} dataset was saved to {cur_path_to_save}")
 
     def analyze_statistical_significance(self, data_to_analyze: Dict[str, Dict[str, List[float]]],
@@ -244,7 +247,7 @@ class ExperimentAnalyzer:
             if not path_to_json:
                 continue
 
-            result = class_to_load.load(path_to_json) if class_to_load \
+            result = class_to_load.load(path_to_json) if class_to_load is not None \
                 else load_func(path_to_json) if load_func else None
             path_to_save = os.path.join(path_to_save, setup)
 
