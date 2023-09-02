@@ -2,6 +2,7 @@ from random import choice
 from typing import Optional, Sequence
 
 from golem.core.dag.graph import Graph
+from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import SequentialDispatcher
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
@@ -24,6 +25,7 @@ class RandomSearchOptimizer(GraphOptimizer):
                  graph_optimizer_params: Optional[GPAlgorithmParameters] = None):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
+        self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.current_iteration_num = 0
         self.best_individual = None
         self.stop_optimization = \
@@ -56,15 +58,17 @@ class RandomSearchOptimizer(GraphOptimizer):
         return [self.best_individual.graph]
 
     def _update_best_individual(self, new_individual: Individual, label: Optional[str] = None):
-        if new_individual.fitness > self.best_individual.fitness:
+        if new_individual.fitness >= self.best_individual.fitness:
             self.best_individual = new_individual
+
+        self.generations.append([new_individual])
 
         self.log.info(f'Spent time: {round(self.timer.minutes_from_start, 1)} min')
         self.log.info(f'Iteration num {self.current_iteration_num}: '
-                      f'Best individual fitness {self._objective.format_fitness(self.best_individual.fitness)}')
+                      f'Best individuals fitness {str(self.generations)}')
 
         self.history.add_to_history([new_individual], label)
-        self.history.add_to_archive_history([self.best_individual])
+        self.history.add_to_archive_history(self.generations.best_individuals)
 
     def _eval_initial_individual(self, evaluator: EvaluationOperator) -> Individual:
         init_ind = Individual(choice(self.initial_graphs)) if self.initial_graphs else self._generate_new_individual()
