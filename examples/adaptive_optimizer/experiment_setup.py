@@ -2,7 +2,6 @@ from pprint import pprint
 from typing import List, Sequence, Optional, Dict
 
 import networkx as nx
-import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans
 
