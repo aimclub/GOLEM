@@ -12,6 +12,7 @@ from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 
 class ExperimentAnalyzer:
     """ Class to analyze results of experiment.
+    The example of usage can be found here: ~/GOLEM/examples/experiment_analyzer/
     To use this class folder hierarchy must be organized as following:
 
     setup (e.g. configuration of framework)
