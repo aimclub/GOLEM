@@ -4,7 +4,6 @@ from datetime import timedelta
 from functools import partial
 from pprint import pprint
 
-import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -76,7 +75,7 @@ class MABSyntheticExperimentHelper:
 
         def log_action_values_with_clusters(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
             obs_contexts = optimizer.mutation.agent.get_context(next_pop)
-            self.cluster.partial_fit(np.array(obs_contexts))
+            self.cluster.partial_fit(obs_contexts)
             centers = self.cluster.cluster_centers_
             for i, center in enumerate(centers):
                 values = optimizer.mutation.agent.get_action_values(obs=[center])

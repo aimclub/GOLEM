@@ -61,6 +61,9 @@ class Mutation(Operator):
             agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
                                                           context_agent_type=parameters.context_agent_type,
                                                           n_jobs=requirements.n_jobs)
+        # if agent was specified pretrained (with instance)
+        elif isinstance(parameters.adaptive_mutation_type, OperatorAgent):
+            agent = kind
         else:
             raise TypeError(f'Unknown parameter {kind}')
         return agent
