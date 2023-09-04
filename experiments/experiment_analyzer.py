@@ -1,8 +1,9 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple, Any, Callable
+from typing import Dict, List, Tuple, Any, Callable, Optional
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from golem.core.log import default_log
@@ -106,13 +107,9 @@ class ExperimentAnalyzer:
         dict_with_metrics = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
 
-            if file_name not in os.listdir(path_to_launch):
-                if is_raise:
-                    raise ValueError(f"There is no metric file with name {file_name}")
-                else:
-                    continue
-
-            df_metrics = pd.read_csv(os.path.join(path_to_launch, file_name))
+            df_metrics = self._get_metrics_df_from_path(path=path_to_launch, file_name=file_name, is_raise=is_raise)
+            if not df_metrics:
+                continue
 
             for metric in metric_names:
                 if metric not in dict_with_metrics.keys():
@@ -221,14 +218,17 @@ class ExperimentAnalyzer:
                 self._log.info(f"Stat test table for {arg} was saved to {cur_path_to_save}")
         return stat_dict
 
-    def analyze_structural_complexity(self, path_to_save: str, dir_name: str,
-                                      class_to_load: Any = None, load_func: Callable = None, is_raise: bool = False):
+    def analyze_structural_complexity(self, path_to_save: str, dir_name: str, class_to_load: Any = None,
+                                      load_func: Callable = None, is_raise: bool = False,
+                                      file_name: str = None, metrics_to_display: List[str] = None):
         """ Method to save pictures of final graphs in directories to compare it visually.
         :param path_to_save: root path to pictures per setup.
         :param dir_name: name of directory in which final graph is saved.
         :param class_to_load: class of objects to load.
         :param load_func: function that load object. Can be used in case method 'load' is not defined for the object.
         :param is_raise: bool specifying if exception must be raised if there is no history folder.
+        :param file_name: name of the file with metrics (e.g. 'metrics.csv')
+        :param metrics_to_display: list of metrics to display in the title of the picture with result.
         """
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             if dir_name not in os.listdir(path_to_launch):
@@ -250,6 +250,14 @@ class ExperimentAnalyzer:
 
             result = class_to_load.load(path_to_json) if class_to_load is not None \
                 else load_func(path_to_json) if load_func else None
+
+            # load metrics for title if specified
+            df_metrics = self._get_metrics_df_from_path(path=path_to_launch, file_name=file_name, is_raise=is_raise)
+            title = ''
+            for metric in metrics_to_display:
+                self._log.warning(f"There is no column in {file_name} with {metric}") \
+                    if metric not in df_metrics.columns else title += f'{metric}={df_metrics[metric][0]}'
+            title = 'Best metric for launch: ' + title
             path_to_save = os.path.join(path_to_save, setup)
 
             if not os.path.exists(path_to_save):
@@ -257,7 +265,7 @@ class ExperimentAnalyzer:
             saved_results = [file_name.split("_")[0] for file_name in os.listdir(path_to_save)]
             max_saved_num = max(saved_results) if saved_results else 0
             cur_path_to_save = os.path.join(path_to_save, f'{max_saved_num}_result.png')
-            result.show(cur_path_to_save)
+            result.show(cur_path_to_save, title=title)
             self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
 
     def _get_path_to_launch(self) -> Tuple[str, str, str]:
@@ -285,3 +293,14 @@ class ExperimentAnalyzer:
         if dataset not in result_dict[setup].keys():
             result_dict[setup][dataset] = []
         return result_dict
+
+    @staticmethod
+    def _get_metrics_df_from_path(path: str, file_name: str, is_raise: bool) -> Optional[pd.DataFrame]:
+        if file_name not in os.listdir(path):
+            if is_raise:
+                raise ValueError(f"There is no metric file with name {file_name}")
+            else:
+                return None
+
+        df_metrics = pd.read_csv(os.path.join(path, file_name))
+        return df_metrics

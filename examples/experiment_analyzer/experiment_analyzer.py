@@ -61,7 +61,7 @@ if __name__ == '__main__':
         for dataset in metrics_dict[metric][list(metrics_dict[metric].keys())[0]].keys():
             to_compare = dict()
             for setup in metrics_dict[metric].keys():
-                to_compare[setup] = [-1*i for i in metrics_dict[metric][setup][dataset]]
+                to_compare[setup] = [-1 * i for i in metrics_dict[metric][setup][dataset]]
             plt.boxplot(list(to_compare.values()), labels=list(to_compare.keys()))
             plt.title(f'{metric} on {dataset}')
             cur_path_to_save = os.path.join(path_to_save_metrics_boxplots, metric)
