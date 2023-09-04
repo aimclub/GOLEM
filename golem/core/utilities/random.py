@@ -3,9 +3,19 @@ from typing import Optional
 
 import numpy as np
 
+from golem.core.log import default_log
+
 
 class RandomStateHandler:
     MODEL_FITTING_SEED = 0
+
+    @staticmethod
+    def log_random_state():
+        py_state = random.getstate()
+        np_state = np.random.get_state()
+        log = default_log(RandomStateHandler.__class__.__name__)
+        log.debug(f'Random State: random.getstate() follows...\n{py_state}')
+        log.debug(f'Random State: numpy.random.get_state() follows...\n{np_state}')
 
     def __init__(self, seed: Optional[int] = None):
         if seed is None:

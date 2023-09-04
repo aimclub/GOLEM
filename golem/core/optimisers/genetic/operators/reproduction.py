@@ -10,6 +10,7 @@ from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class ReproductionController:
@@ -80,7 +81,7 @@ class ReproductionController:
         #  It can be faster if it could.
         selected_individuals = self.selection(population, pop_size)
         new_population = self.crossover(selected_individuals)
-        new_population = self.mutation(new_population)
+        new_population = ensure_wrapped_in_sequence(self.mutation(new_population))
         new_population = evaluator(new_population)
         return new_population
 
