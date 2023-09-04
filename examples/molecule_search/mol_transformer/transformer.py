@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+"""Code from https://github.com/mpcrlab/MolecularTransformerEmbeddings"""
+
 PRINTABLE_ASCII_CHARS = 95
 
 _extra_chars = ["seq_start", "seq_end", "pad"]
