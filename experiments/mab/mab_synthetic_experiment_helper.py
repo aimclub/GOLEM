@@ -76,7 +76,7 @@ class MABSyntheticExperimentHelper:
 
         def log_action_values_with_clusters(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
             obs_contexts = optimizer.mutation.agent.get_context(next_pop)
-            self.cluster.partial_fit(np.array(obs_contexts))
+            self.cluster.partial_fit(obs_contexts)
             centers = self.cluster.cluster_centers_
             for i, center in enumerate(centers):
                 values = optimizer.mutation.agent.get_action_values(obs=[center])
@@ -217,9 +217,9 @@ if __name__ == '__main__':
     # `bandits_to_compare`, `context_agent_types` and `bandit_labels` correlate one to one.
     # Context must be specified for each bandit: for contextual and neural bandits real context must be specified,
     # for simple bandits -- ContextAgentTypeEnum.none
-    bandits_to_compare = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
-    context_agent_types = [ContextAgentTypeEnum.none_encoding, ContextAgentTypeEnum.operations_quantity]
-    bandit_labels = ['simple_bandit', f'context_{context_agent_types[1].name}']
+    bandits_to_compare = [MutationAgentTypeEnum.contextual_bandit]
+    context_agent_types = [ContextAgentTypeEnum.nodes_num]
+    bandit_labels = [f'context_{context_agent_types[0].name}']
 
     setup_parameters_func = partial(setup_parameters, target_size=target_size, trial_timeout=timeout)
     initial_population_func = partial(initial_population_func,

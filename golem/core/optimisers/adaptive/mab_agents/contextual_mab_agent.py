@@ -50,14 +50,14 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         n = len(self._indices)
         uniform_rewards = [1. / n] * n
         contexts = self.get_context(obs=obs)
-        self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=contexts * n)
+        self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=np.tile(contexts, (n, 1)))
         self._is_fitted = True
 
     def choose_action(self, obs: ObsType) -> ActType:
         if not self._is_fitted:
             self._initial_fit(obs=obs)
         contexts = self.get_context(obs=obs)
-        arm = self._agent.predict(contexts=np.array(contexts).reshape(1, -1))
+        arm = self._agent.predict(contexts=contexts.reshape(1, -1))
         action = self.actions[arm]
         return action
 
@@ -65,7 +65,7 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         if not self._is_fitted:
             self._initial_fit(obs=obs)
         contexts = self.get_context(obs)
-        prob_dict = self._agent.predict_expectations(contexts=np.array(contexts).reshape(1, -1))
+        prob_dict = self._agent.predict_expectations(contexts=contexts.reshape(1, -1))
         prob_list = [prob_dict[i] for i in range(len(prob_dict))]
         return prob_list
 
@@ -84,17 +84,17 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
         contexts = self.get_context(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=rewards, contexts=contexts)
 
-    def get_context(self, obs: Union[List[ObsType], ObsType]) -> List[List[float]]:
+    def get_context(self, obs: Union[List[ObsType], ObsType]) -> np.array:
         """ Returns contexts based on specified context agent. """
         if not isinstance(obs, list):
-            return self._context_agent(obs)
+            return np.array(self._context_agent(obs)).flatten()
         contexts = []
         for ob in obs:
             if isinstance(ob, list) or isinstance(ob, np.ndarray):
                 # to unify type to list
-                contexts.append(list(ob))
+                contexts.append(np.array(ob).flatten())
             else:
                 context = np.array(self._context_agent(ob))
                 # some external context agents can wrap context in an additional array
-                contexts.append(context.flatten().tolist())
-        return contexts
+                contexts.append(context.flatten())
+        return np.array(contexts)
