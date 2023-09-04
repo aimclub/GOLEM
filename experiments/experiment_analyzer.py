@@ -3,7 +3,6 @@ from statistics import mean
 
 from typing import Dict, List, Tuple, Any, Callable, Optional
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from golem.core.log import default_log
@@ -258,15 +257,16 @@ class ExperimentAnalyzer:
                 if metric not in df_metrics.columns:
                     self._log.warning(f"There is no column in {file_name} with {metric}")
                 else:
-                    title += f'{metric}={df_metrics[metric][0]}'
-            title = 'Best metric for launch: ' + title
-            path_to_save = os.path.join(path_to_save, setup)
+                    title += f'{metric}={df_metrics[metric][0]} '
+            title = 'Best metrics for launch: ' + title
+            cur_path_to_save = os.path.join(path_to_save, setup)
 
-            if not os.path.exists(path_to_save):
-                os.makedirs(path_to_save)
-            saved_results = [file_name.split("_")[0] for file_name in os.listdir(path_to_save)]
+            if not os.path.exists(cur_path_to_save):
+                os.makedirs(cur_path_to_save)
+            saved_results = [int(cur_name.split("_")[0]) for cur_name in os.listdir(cur_path_to_save)
+                             if cur_name not in self._folders_to_ignore]
             max_saved_num = max(saved_results) if saved_results else 0
-            cur_path_to_save = os.path.join(path_to_save, f'{max_saved_num}_result.png')
+            cur_path_to_save = os.path.join(cur_path_to_save, f'{max_saved_num+1}_result.png')
             result.show(cur_path_to_save, title=title)
             self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
 
