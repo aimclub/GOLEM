@@ -255,8 +255,10 @@ class ExperimentAnalyzer:
             df_metrics = self._get_metrics_df_from_path(path=path_to_launch, file_name=file_name, is_raise=is_raise)
             title = ''
             for metric in metrics_to_display:
-                self._log.warning(f"There is no column in {file_name} with {metric}") \
-                    if metric not in df_metrics.columns else title += f'{metric}={df_metrics[metric][0]}'
+                if metric not in df_metrics.columns:
+                    self._log.warning(f"There is no column in {file_name} with {metric}")
+                else:
+                    title += f'{metric}={df_metrics[metric][0]}'
             title = 'Best metric for launch: ' + title
             path_to_save = os.path.join(path_to_save, setup)
 
