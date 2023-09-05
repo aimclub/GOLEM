@@ -13,7 +13,6 @@ from examples.molecule_search.mol_transformer.transformer import create_masks, T
 from examples.molecule_search.utils import download_from_github
 from golem.core.log import default_log
 from golem.core.paths import project_root
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 def adapter_func_to_molgraph(func):
