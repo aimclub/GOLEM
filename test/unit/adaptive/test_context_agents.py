@@ -32,4 +32,4 @@ def test_operations_encoding(context_agent_enum, result_encoding):
     repo = ContextAgentsRepository()
     context_agent = repo.agent_class_by_id(context_agent_enum)
     encoding = context_agent(obs=graph, available_operations=['1', '2', '3', '4', '5'])
-    assert np.all(encoding == result_encoding)
+    assert encoding == result_encoding
