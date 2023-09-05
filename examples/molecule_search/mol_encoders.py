@@ -1,9 +1,9 @@
 import os
-from typing import Any
+from typing import Any, List, Optional
 
 import numpy as np
 import torch
-from gensim.models import word2vec
+from gensim.models import word2vec, Word2Vec
 from mol2vec.features import mol2alt_sentence, MolSentence
 from rdkit.Chem import AllChem, RDKFingerprint, rdFingerprintGenerator
 from rdkit.ML.Descriptors.MoleculeDescriptors import MolecularDescriptorCalculator
@@ -127,17 +127,15 @@ class Mol2Vec:
         self.model = word2vec.Word2Vec.load(self.file_path)
 
     @adapter_method_to_molgraph
-    def __call__(self, obs):
+    def __call__(self, obs: Any):
         molecule = obs.get_rw_molecule()
         sentence = MolSentence(mol2alt_sentence(molecule, radius=1))
-        embedding = self.sentences2vec([sentence], self.model)[0]
+        embedding = self.sentences2vec([sentence], self.model, unseen='UNK')[0]
         embedding = ensure_wrapped_in_sequence(embedding)
-        if len(embedding) < 300:
-            embedding = embedding * 300
         return np.array(embedding).astype(float)
 
     @staticmethod
-    def sentences2vec(sentences, model, unseen=None):
+    def sentences2vec(sentences: List[MolSentence], model: Word2Vec, unseen: Optional[str] = None) -> np.array:
         """Generate vectors for each sentence (list) in a list of sentences. Vector is simply a
         sum of vectors for individual words.
 
@@ -179,25 +177,26 @@ class MoleculeTransformer:
     GITHUB_URL = 'https://github.com/mpcrlab/MolecularTransformerEmbeddings/releases/download/' \
                  'checkpoints/pretrained.ckpt'
 
-    def __init__(self, embedding_size=512, num_layers=6, max_length=256):
+    def __init__(self, embedding_size: int = 512, num_layers: int = 6, max_length: int = 256):
         self.log = default_log(self)
 
         self.file_path = os.path.join(project_root(), MoleculeTransformer.PRETRAINED_TRANSFORMER)
         download_from_github(self.file_path,
                              MoleculeTransformer.GITHUB_URL,
                              message="Downloading pretrained model for molecules encoding...")
+        self.model = self._model_setup(embedding_size, num_layers)
+        self.encoder = self.model.encoder.cpu()
+        self.max_length = max_length
 
+    def _model_setup(self, embedding_size: int, num_layers: int):
         model = Transformer(ALPHABET_SIZE, embedding_size, num_layers).eval()
         model = torch.nn.DataParallel(model)
         checkpoint = torch.load(self.file_path, map_location=torch.device("cpu"))
         model.load_state_dict(checkpoint['state_dict'])
-
-        self.model = model.module.cpu()
-        self.encoder = self.model.encoder.cpu()
-        self.max_length = max_length
+        return model.module.cpu()
 
     @adapter_method_to_molgraph
-    def __call__(self, obs):
+    def __call__(self, obs: Any):
         smiles = obs.get_smiles()
         with torch.no_grad():
             encoded = self.encode_smiles(smiles)
@@ -210,6 +209,6 @@ class MoleculeTransformer:
     def encode_char(c):
         return ord(c) - 32
 
-    def encode_smiles(self, string, start_char=EXTRA_CHARS['seq_start']):
+    def encode_smiles(self, string: str, start_char=EXTRA_CHARS['seq_start']):
         return torch.tensor([ord(start_char)] +
                             [self.encode_char(c) for c in string], dtype=torch.long)[:self.max_length].unsqueeze(0)

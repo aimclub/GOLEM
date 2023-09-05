@@ -49,10 +49,7 @@ class PositionalEncoder(nn.Module):
         if x.is_cuda:
             pe.cuda()
         x = x + pe
-        # print(x.mean(), x)
         x = self.dropout(x)
-        # x = F.dropout(x, p=0.1, training=self.training)
-        # print(x.mean(), x)
         return x
 
 
@@ -218,7 +215,6 @@ class Transformer(nn.Module):
 
     def forward(self, src, trg, src_mask, trg_mask):
         e_outputs = self.encoder(src, src_mask)
-        # print("DECODER")
         d_output = self.decoder(trg, e_outputs, src_mask, trg_mask)
         output = self.out(d_output)
         return output
