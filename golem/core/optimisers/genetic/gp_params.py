@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence, Union, Any
+from typing import Sequence, Union, Any, Callable
 
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import ContextAgentTypeEnum
@@ -76,7 +76,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     required_valid_ratio: float = 0.9
 
     adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
-    context_agent_type: ContextAgentTypeEnum = ContextAgentTypeEnum.nodes_num
+    context_agent_type: Union[ContextAgentTypeEnum, Callable] = ContextAgentTypeEnum.nodes_num
 
     selection_types: Sequence[SelectionTypesEnum] = \
         (SelectionTypesEnum.tournament,)
