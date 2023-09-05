@@ -297,7 +297,7 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         xlabel = 'Generation'
         self.plot_multiple_fitness_lines(ax, metric_id, with_confidence)
-        setup_fitness_plot(ax, xlabel)
+        setup_fitness_plot(ax, xlabel, title=f'Fitness lines for {self.get_metric_name(metric_id)}')
         plt.legend()
         show_or_save_figure(fig, save_path, dpi)
 
@@ -309,6 +309,11 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
+
+    def get_metric_name(self, metric_id: int = 0):
+        history = list(self.histories_to_compare.values())[0][0]
+        metric_name = history.objective.metric_names[metric_id]
+        return metric_name
 
 
 def plot_average_fitness_line_per_generations(
