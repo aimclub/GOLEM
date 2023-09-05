@@ -131,7 +131,6 @@ class Mol2Vec:
         molecule = obs.get_rw_molecule()
         sentence = MolSentence(mol2alt_sentence(molecule, radius=1))
         embedding = self.sentences2vec([sentence], self.model, unseen='UNK')[0]
-        embedding = ensure_wrapped_in_sequence(embedding)
         return np.array(embedding).astype(float)
 
     @staticmethod
