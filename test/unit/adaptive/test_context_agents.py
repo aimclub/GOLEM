@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 from golem.core.optimisers.adaptive.context_agents import ContextAgentsRepository, ContextAgentTypeEnum
