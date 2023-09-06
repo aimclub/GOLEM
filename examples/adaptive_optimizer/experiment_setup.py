@@ -2,7 +2,6 @@ from pprint import pprint
 from typing import List, Sequence, Optional, Dict
 
 import networkx as nx
-import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans
 
@@ -65,7 +64,7 @@ def run_adaptive_mutations_with_context(
 
     def log_action_values_with_clusters(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
         obs_contexts = optimizer.mutation.agent.get_context(next_pop)
-        cluster.fit(np.array(obs_contexts).reshape(-1, 1))
+        cluster.fit(obs_contexts.reshape(-1, 1))
         centers = cluster.cluster_centers_
         for i, center in enumerate(centers):
             values = optimizer.mutation.agent.get_action_values(obs=center)
