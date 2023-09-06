@@ -42,6 +42,8 @@ class ExperimentAnalyzer:
         :param path_to_save: path to save results.
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         """
+        if path_to_save:
+            os.makedirs(path_to_save, exist_ok=True)
 
         convergence = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
@@ -103,16 +105,18 @@ class ExperimentAnalyzer:
         :param path_to_save: path to save results
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         """
+        if path_to_save:
+            os.makedirs(path_to_save, exist_ok=True)
+
         dict_with_metrics = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
 
             df_metrics = self._get_metrics_df_from_path(path=path_to_launch, file_name=file_name, is_raise=is_raise)
-            if not df_metrics:
+            if df_metrics.empty:
                 continue
 
             for metric in metric_names:
-                if metric not in dict_with_metrics.keys():
-                    dict_with_metrics[metric] = dict()
+                dict_with_metrics.setdefault(metric, dict())
                 dict_with_metrics[metric] = self._extend_result_dict(result_dict=dict_with_metrics[metric],
                                                                      setup=setup, dataset=dataset)
                 if metric not in df_metrics.columns:
@@ -143,6 +147,9 @@ class ExperimentAnalyzer:
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         """
+        if path_to_save:
+            os.makedirs(path_to_save, exist_ok=True)
+
         histories = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             histories = self._extend_result_dict(result_dict=histories, setup=setup, dataset=dataset)
@@ -186,6 +193,9 @@ class ExperimentAnalyzer:
         :param path_to_save: path to save results
         :param test_format: argument to specify what every test function must return. default: ['statistic', 'pvalue']
         """
+        if path_to_save:
+            os.makedirs(path_to_save, exist_ok=True)
+
         if not test_format:
             test_format = ['statistic', 'pvalue']
 
@@ -229,6 +239,9 @@ class ExperimentAnalyzer:
         :param file_name: name of the file with metrics (e.g. 'metrics.csv')
         :param metrics_to_display: list of metrics to display in the title of the picture with result.
         """
+        if path_to_save:
+            os.makedirs(path_to_save, exist_ok=True)
+
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             if dir_name not in os.listdir(path_to_launch):
                 if is_raise:
@@ -271,7 +284,7 @@ class ExperimentAnalyzer:
             self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
 
     def _get_path_to_launch(self) -> Tuple[str, str, str]:
-        """ Yields setup name, dataset name + paths to dirs with experiment results.
+        """ Yields setup name, dataset name and paths to dirs with experiment results.
         If experiment saving configuration/files structure somehow differs from the structure implied in this class
         this method can be used externally to get paths to launches.
         """
@@ -290,19 +303,17 @@ class ExperimentAnalyzer:
     @staticmethod
     def _extend_result_dict(result_dict: dict, setup: str, dataset: str) -> Dict[str, Dict[str, list]]:
         """ Extends result dictionary with new setup and dataset name. """
-        if setup not in result_dict.keys():
-            result_dict[setup] = dict()
-        if dataset not in result_dict[setup].keys():
-            result_dict[setup][dataset] = []
+        result_dict.setdefault(setup, dict())
+        result_dict[setup].setdefault(dataset, list())
         return result_dict
 
     @staticmethod
-    def _get_metrics_df_from_path(path: str, file_name: str, is_raise: bool) -> Optional[pd.DataFrame]:
+    def _get_metrics_df_from_path(path: str, file_name: str, is_raise: bool) -> pd.DataFrame:
         if file_name not in os.listdir(path):
             if is_raise:
                 raise ValueError(f"There is no metric file with name {file_name}")
             else:
-                return None
+                return pd.DataFrame()
 
         df_metrics = pd.read_csv(os.path.join(path, file_name))
         return df_metrics
