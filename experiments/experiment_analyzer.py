@@ -49,11 +49,9 @@ class ExperimentAnalyzer:
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
 
-            if history_folder not in os.listdir(path_to_launch):
-                if is_raise:
-                    raise ValueError(f"There is no history folder with name {history_folder}")
-                else:
-                    continue
+            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
+                                                         is_raise=is_raise):
+                continue
 
             path_to_history_folder = os.path.join(path_to_launch, history_folder)
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
@@ -154,11 +152,9 @@ class ExperimentAnalyzer:
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             histories = self._extend_result_dict(result_dict=histories, setup=setup, dataset=dataset)
 
-            if history_folder not in os.listdir(path_to_launch):
-                if is_raise:
-                    raise ValueError(f"There is no history folder with name {history_folder}")
-                else:
-                    continue
+            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
+                                                         is_raise=is_raise):
+                continue
 
             path_to_history_folder = os.path.join(path_to_launch, history_folder)
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
@@ -188,8 +184,9 @@ class ExperimentAnalyzer:
                                          test_format: List[str] = None):
         """ Method to perform statistical analysis of data. Metric data obtained with 'analyze_metrics' and
         convergence data obtained with 'analyze_convergence' can be simply analyzed, for example.
-        :param data_to_analyze: data to analyze. NB! data must have the specified format
-        :param stat_tests: list of functions of statistical tests to perform.
+        :param data_to_analyze: data to analyze.
+        NB! data must have the specified format (Dict[str, Dict[str, List[float]]])
+        :param stat_tests: list of functions of statistical tests to perform. E.g. scipy.stats.kruskal
         :param path_to_save: path to save results
         :param test_format: argument to specify what every test function must return. default: ['statistic', 'pvalue']
         """
@@ -243,11 +240,9 @@ class ExperimentAnalyzer:
             os.makedirs(path_to_save, exist_ok=True)
 
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            if dir_name not in os.listdir(path_to_launch):
-                if is_raise:
-                    raise ValueError(f"There is no folder with name {dir_name}")
-                else:
-                    continue
+            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=dir_name,
+                                                         is_raise=is_raise):
+                continue
 
             path_to_json = None
             for address, dirs, files in os.walk(path_to_launch):
@@ -307,13 +302,18 @@ class ExperimentAnalyzer:
         result_dict[setup].setdefault(dataset, list())
         return result_dict
 
-    @staticmethod
-    def _get_metrics_df_from_path(path: str, file_name: str, is_raise: bool) -> pd.DataFrame:
-        if file_name not in os.listdir(path):
-            if is_raise:
-                raise ValueError(f"There is no metric file with name {file_name}")
-            else:
-                return pd.DataFrame()
+    def _get_metrics_df_from_path(self, path: str, file_name: str, is_raise: bool) -> pd.DataFrame:
+        if not self._check_if_file_or_folder_present(path, file_name, is_raise):
+            return pd.DataFrame()
 
         df_metrics = pd.read_csv(os.path.join(path, file_name))
         return df_metrics
+
+    @staticmethod
+    def _check_if_file_or_folder_present(path: str, folder_or_file_name: str, is_raise: bool) -> bool:
+        if folder_or_file_name not in os.listdir(path):
+            if is_raise:
+                raise ValueError(f"There is no folder/file with name {folder_or_file_name}")
+            else:
+                return False
+        return True
