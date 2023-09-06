@@ -1,0 +1,34 @@
+10:38:20,200 root Level 45 AssumptionsHandler - Memory consumption for fitting of the initial pipeline in main session: current 1.5 MiB, max: 4.9 MiB
+10:38:20,201 root CRITICAL ApiComposer - Initial pipeline was fitted in 0.6 sec.
+10:38:20,201 root CRITICAL AssumptionsHandler - Preset was changed to best_quality due to fit time estimation for initial model.
+10:38:20,206 root CRITICAL ApiComposer - AutoML configured. Parameters tuning: False. Time limit: 60 min. Set of candidate models: ['scaling', 'fast_ica', 'qda', 'rf', 'knn', 'dt', 'mlp', 'resample', 'poly_features', 'isolation_forest_class', 'bernb', 'logit', 'normalization', 'lgbm', 'pca'].
+10:38:20,210 root CRITICAL ApiComposer - Pipeline composition started.
+10:38:41,494 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+10:39:08,944 root CRITICAL MultiprocessingDispatcher - 21 individuals out of 21 in previous population were evaluated successfully.
+10:39:26,993 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+10:39:37,645 root CRITICAL MultiprocessingDispatcher - 4 individuals out of 4 in previous population were evaluated successfully.
+10:39:42,438 root CRITICAL MultiprocessingDispatcher - 1 individuals out of 1 in previous population were evaluated successfully.
+10:39:45,879 root CRITICAL MultiprocessingDispatcher - 2 individuals out of 2 in previous population were evaluated successfully.
+10:39:51,673 root CRITICAL MultiprocessingDispatcher - 2 individuals out of 2 in previous population were evaluated successfully.
+10:40:16,970 root CRITICAL MultiprocessingDispatcher - 8 individuals out of 8 in previous population were evaluated successfully.
+10:40:29,34 root CRITICAL MultiprocessingDispatcher - 8 individuals out of 8 in previous population were evaluated successfully.
+10:40:40,312 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+10:44:28,389 root CRITICAL MultiprocessingDispatcher - 13 individuals out of 13 in previous population were evaluated successfully.
+10:44:42,793 root CRITICAL MultiprocessingDispatcher - 11 individuals out of 11 in previous population were evaluated successfully.
+10:45:00,527 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+10:45:11,179 root CRITICAL MultiprocessingDispatcher - 4 individuals out of 4 in previous population were evaluated successfully.
+10:46:34,399 root CRITICAL MultiprocessingDispatcher - 18 individuals out of 18 in previous population were evaluated successfully.
+10:47:02,393 root CRITICAL MultiprocessingDispatcher - 22 individuals out of 22 in previous population were evaluated successfully.
+10:47:09,325 root CRITICAL MultiprocessingDispatcher - 8 individuals out of 8 in previous population were evaluated successfully.
+10:47:34,754 root CRITICAL MultiprocessingDispatcher - 5 individuals out of 5 in previous population were evaluated successfully.
+10:47:34,797 root CRITICAL MultiprocessingDispatcher - 51 individuals out of 51 in previous population were evaluated successfully.
+10:50:28,235 root CRITICAL MultiprocessingDispatcher - 33 individuals out of 33 in previous population were evaluated successfully.
+10:51:02,832 root CRITICAL MultiprocessingDispatcher - 20 individuals out of 20 in previous population were evaluated successfully.
+10:51:02,944 root CRITICAL GroupedCondition - Optimisation finished: Early stopping timeout criteria was satisfied
+10:51:03,287 root CRITICAL ApiComposer - Model generation finished
+10:51:07,398 root CRITICAL FEDOT logger - Final pipeline was fitted
+10:51:07,398 root CRITICAL FEDOT logger - Final pipeline: {'depth': 1, 'length': 1, 'nodes': [catboost]}
+catboost - {'allow_writing_files': False, 'verbose': False}
+10:51:07,398 root Level 45 MemoryAnalytics - Memory consumption for finish in main session: current 2.4 MiB, max: 5.2 MiB
+10:51:41,358 root WARNING OptHistory - "OptHistory.individuals" is deprecated and will be removed later. Please, use "OptHistory.generations" to access generations.
+10:51:41,358 root WARNING OptHistory - "OptHistory.individuals" is deprecated and will be removed later. Please, use "OptHistory.generations" to access generations.

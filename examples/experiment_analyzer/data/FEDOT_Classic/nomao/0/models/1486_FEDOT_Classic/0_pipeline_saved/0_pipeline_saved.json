@@ -1,0 +1,31 @@
+{
+    "total_pipeline_operations": [
+        "catboost"
+    ],
+    "depth": 1,
+    "nodes": [
+        {
+            "operation_id": 0,
+            "operation_type": "catboost",
+            "operation_name": null,
+            "custom_params": {
+                "allow_writing_files": false,
+                "verbose": false,
+                "max_depth": 4,
+                "learning_rate": 0.07115808711241632,
+                "min_data_in_leaf": 3.0,
+                "border_count": 250,
+                "l2_leaf_reg": 9.523559643952549e-05
+            },
+            "params": {},
+            "nodes_from": [],
+            "fitted_operation_path": null,
+            "rating": null
+        }
+    ],
+    "preprocessing": [
+        "preprocessing",
+        "data_preprocessor.pkl"
+    ],
+    "descriptive_id": "/n_catboost_{'allow_writing_files': False, 'verbose': False, 'max_depth': 4, 'learning_rate': 0.07115808711241632, 'min_data_in_leaf': 3.0, 'border_count': 250, 'l2_leaf_reg': 9.523559643952549e-05}"
+}

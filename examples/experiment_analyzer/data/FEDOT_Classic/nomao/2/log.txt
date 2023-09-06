@@ -1,0 +1,17 @@
+22:40:34,877 root Level 45 AssumptionsHandler - Memory consumption for fitting of the initial pipeline in main session: current 164.5 MiB, max: 356.3 MiB
+22:40:34,914 root CRITICAL ApiComposer - Initial pipeline was fitted in 11.1 sec.
+22:40:34,914 root CRITICAL AssumptionsHandler - Preset was changed to best_quality due to fit time estimation for initial model.
+22:40:34,919 root CRITICAL ApiComposer - AutoML configured. Parameters tuning: False. Time limit: 60 min. Set of candidate models: ['logit', 'resample', 'qda', 'scaling', 'lgbm', 'poly_features', 'mlp', 'dt', 'normalization', 'fast_ica', 'knn', 'pca', 'rf', 'isolation_forest_class', 'bernb'].
+22:40:34,924 root CRITICAL ApiComposer - Pipeline composition started.
+22:41:38,302 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+22:47:00,785 root CRITICAL MultiprocessingDispatcher - 21 individuals out of 21 in previous population were evaluated successfully.
+22:55:19,694 root CRITICAL MultiprocessingDispatcher - 9 individuals out of 9 in previous population were evaluated successfully.
+22:59:36,69 root CRITICAL MultiprocessingDispatcher - 4 individuals out of 4 in previous population were evaluated successfully.
+22:59:36,145 root CRITICAL GroupedCondition - Optimisation finished: Early stopping timeout criteria was satisfied
+22:59:37,285 root CRITICAL ApiComposer - Model generation finished
+23:00:03,784 root CRITICAL FEDOT logger - Final pipeline was fitted
+23:00:03,784 root CRITICAL FEDOT logger - Final pipeline: {'depth': 1, 'length': 1, 'nodes': [catboost]}
+catboost - {'allow_writing_files': False, 'verbose': False}
+23:00:03,784 root Level 45 MemoryAnalytics - Memory consumption for finish in main session: current 203.4 MiB, max: 407.9 MiB
+23:01:06,947 root WARNING OptHistory - "OptHistory.individuals" is deprecated and will be removed later. Please, use "OptHistory.generations" to access generations.
+23:01:06,947 root WARNING OptHistory - "OptHistory.individuals" is deprecated and will be removed later. Please, use "OptHistory.generations" to access generations.

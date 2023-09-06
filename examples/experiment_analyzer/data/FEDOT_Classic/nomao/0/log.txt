@@ -1,0 +1,34 @@
+20:16:52,396 root Level 45 AssumptionsHandler - Memory consumption for fitting of the initial pipeline in main session: current 164.5 MiB, max: 356.3 MiB
+20:16:52,434 root CRITICAL ApiComposer - Initial pipeline was fitted in 11.5 sec.
+20:16:52,434 root CRITICAL AssumptionsHandler - Preset was changed to best_quality due to fit time estimation for initial model.
+20:16:52,443 root CRITICAL ApiComposer - AutoML configured. Parameters tuning: False. Time limit: 60 min. Set of candidate models: ['logit', 'resample', 'qda', 'scaling', 'lgbm', 'poly_features', 'mlp', 'dt', 'normalization', 'fast_ica', 'knn', 'pca', 'rf', 'isolation_forest_class', 'bernb'].
+20:16:52,449 root CRITICAL ApiComposer - Pipeline composition started.
+20:17:56,200 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+20:24:30,263 root CRITICAL MultiprocessingDispatcher - 21 individuals out of 21 in previous population were evaluated successfully.
+20:27:41,355 root CRITICAL MultiprocessingDispatcher - 4 individuals out of 4 in previous population were evaluated successfully.
+20:28:27,32 root CRITICAL MultiprocessingDispatcher - 1 individuals out of 1 in previous population were evaluated successfully.
+20:39:51,529 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+20:43:39,223 root CRITICAL MultiprocessingDispatcher - 1 individuals out of 1 in previous population were evaluated successfully.
+20:44:08,798 root CRITICAL MultiprocessingDispatcher - 1 individuals out of 1 in previous population were evaluated successfully.
+20:44:08,799 root WARNING ReproductionController - Could not achieve required population size: have 10, required 13!
+Check objective, constraints and evo operators. Possibly they return too few valid individuals.
+20:47:28,5 root CRITICAL MultiprocessingDispatcher - 6 individuals out of 6 in previous population were evaluated successfully.
+20:49:30,433 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+20:49:36,964 root WARNING MultiprocessingDispatcher - 0 individuals out of 0 in previous population were evaluated successfully. 0% is a fairly small percentage of successful evaluation.
+20:50:13,700 root CRITICAL MultiprocessingDispatcher - 2 individuals out of 2 in previous population were evaluated successfully.
+20:53:05,824 root CRITICAL MultiprocessingDispatcher - 1 individuals out of 1 in previous population were evaluated successfully.
+21:05:17,587 root CRITICAL MultiprocessingDispatcher - 5 individuals out of 5 in previous population were evaluated successfully.
+21:07:01,430 root CRITICAL MultiprocessingDispatcher - 4 individuals out of 4 in previous population were evaluated successfully.
+21:59:42,667 root CRITICAL MultiprocessingDispatcher - 3 individuals out of 3 in previous population were evaluated successfully.
+21:59:57,594 root WARNING MultiprocessingDispatcher - 0 individuals out of 5 in previous population were evaluated successfully. 0.0% is a fairly small percentage of successful evaluation.
+22:01:01,619 root WARNING MultiprocessingDispatcher - 0 individuals out of 4 in previous population were evaluated successfully. 0.0% is a fairly small percentage of successful evaluation.
+22:01:45,864 root WARNING ReproductionController - Could not achieve required population size: have 14, required 21!
+Check objective, constraints and evo operators. Possibly they return too few valid individuals.
+22:01:45,890 root CRITICAL GroupedCondition - Optimisation stopped: Time limit is reached
+22:01:46,125 root CRITICAL ApiComposer - Model generation finished
+22:02:08,708 root CRITICAL FEDOT logger - Final pipeline was fitted
+22:02:08,708 root CRITICAL FEDOT logger - Final pipeline: {'depth': 1, 'length': 1, 'nodes': [catboost]}
+catboost - {'allow_writing_files': False, 'verbose': False, 'max_depth': 4, 'learning_rate': 0.07115808711241632, 'min_data_in_leaf': 3.0, 'border_count': 250, 'l2_leaf_reg': 9.523559643952549e-05}
+22:02:08,708 root Level 45 MemoryAnalytics - Memory consumption for finish in main session: current 203.8 MiB, max: 408.4 MiB
+22:03:00,242 root WARNING OptHistory - "OptHistory.individuals" is deprecated and will be removed later. Please, use "OptHistory.generations" to access generations.
+22:03:00,243 root WARNING OptHistory - "OptHistory.individuals" is deprecated and will be removed later. Please, use "OptHistory.generations" to access generations.
