@@ -49,10 +49,13 @@ class MolChangeAdvisor(DefaultChangeAdvisor):
         Proposes atoms that can be removed - any atom, which deletion will not increase the number of connected
         components of the molecule.
         """
-        nx_graph = mol_graph.get_nx_graph()
-        art_points_ids = nx.articulation_points(nx_graph)
-        atom_ids = np.arange(mol_graph.heavy_atoms_number)
-        return list(set(atom_ids) - set(art_points_ids))
+        if mol_graph.heavy_atoms_number > 1:
+            nx_graph = mol_graph.get_nx_graph()
+            art_points_ids = nx.articulation_points(nx_graph)
+            atom_ids = np.arange(mol_graph.heavy_atoms_number)
+            return list(set(atom_ids) - set(art_points_ids))
+        else:
+            return []
 
     @staticmethod
     def propose_connection(mol_graph: MolGraph) -> Sequence[Tuple[int, int]]:
