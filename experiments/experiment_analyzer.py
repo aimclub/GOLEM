@@ -98,7 +98,8 @@ class ExperimentAnalyzer:
                         path_to_save: str = None, is_raise: bool = False):
         """ Method to analyze specified metrics.
         :param metric_names: names of metrics to analyze. e.g. ['f1', 'inference_time']
-        :param file_name: name of the file with metrics (e.g. 'metrics.csv')
+        :param file_name: name of the file with metrics (e.g. 'metrics.csv').
+        The file with metrics must have metric names in columns.
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
         :param path_to_save: path to save results
         :param is_raise: bool specifying if exception must be raised if there is no history folder
