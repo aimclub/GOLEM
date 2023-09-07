@@ -72,6 +72,7 @@ class MABSyntheticExperimentHelper:
             if 0 not in stats_action_value_log.keys():
                 stats_action_value_log[0] = []
             stats_action_value_log[0].append(list(values))
+            optimizer.mutation.agent.save()
 
         def log_action_values_with_clusters(next_pop: PopulationT, optimizer: EvoGraphOptimizer):
             obs_contexts = optimizer.mutation.agent.get_context(next_pop)

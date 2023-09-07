@@ -1,3 +1,5 @@
+import os.path
+import pickle
 import random
 from typing import Union, Sequence, Optional
 
@@ -7,13 +9,15 @@ from scipy.special import softmax
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
+from golem.serializers.serializer import default_save
 
 
 class MultiArmedBanditAgent(OperatorAgent):
     def __init__(self,
                  actions: Sequence[ActType],
                  n_jobs: int = 1,
-                 enable_logging: bool = True):
+                 enable_logging: bool = True,
+                 path_to_save: Optional[str] = None):
         super().__init__(enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
@@ -22,6 +26,7 @@ class MultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=n_jobs)
         self._initial_fit()
+        self._path_to_save = path_to_save
 
     def _initial_fit(self):
         n = len(self.actions)
@@ -51,3 +56,25 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._dbg_log(obs, actions, rewards)
         arms = [self._arm_by_action[action] for action in actions]
         self._agent.partial_fit(decisions=arms, rewards=rewards)
+
+    def save(self):
+        """ Saves bandit to specified file. """
+        path_to_save = os.path.join(self._path_to_save, 'MAB')
+        os.makedirs(path_to_save, exist_ok=True)
+        # to get file name
+        mabs_num = [int(e.split('_')[0]) for e in os.listdir(path_to_save) if e.split('_')[0].isdigit()]
+        if not mabs_num:
+            max_saved_mab = 0
+        else:
+            max_saved_mab = max(mabs_num) + 1
+        path_to_file = os.path.join(path_to_save, f'{max_saved_mab}_mab.pkl')
+        with open(path_to_file, 'wb') as f:
+            pickle.dump(self, f)
+        self._log.info(f"MAB was save to {self._path_to_save}")
+
+    @staticmethod
+    def load(path: str):
+        """ Loads bandit from the specified file. """
+        with open(path, 'rb') as f:
+            mab = pickle.load(f)
+        return mab

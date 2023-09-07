@@ -1,5 +1,6 @@
 import dataclasses
 import datetime
+import os.path
 from dataclasses import dataclass, field
 from numbers import Number
 from typing import Optional
@@ -64,6 +65,7 @@ class OptimizationParameters:
 
     keep_history: bool = True
     history_dir: Optional[str] = field(default_factory=default_data_dir)
+    agent_dir: Optional[str] = field(default_factory=default_data_dir)
 
 
 @dataclass
