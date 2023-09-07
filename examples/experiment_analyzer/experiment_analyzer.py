@@ -1,4 +1,5 @@
 import os
+import tarfile
 
 import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu, kruskal, ttest_ind
@@ -8,8 +9,17 @@ from golem.core.paths import project_root
 
 
 if __name__ == '__main__':
+    """ The result of analysis can be seen without running the script in 
+    '~/GOLEM/examples/experiment_analyzer/result_analysis.tar.gz' """
 
     path_to_root = os.path.join(project_root(), 'examples', 'experiment_analyzer')
+
+    # extract data if there is an archive
+    if 'data.tar.gz' in os.listdir(path_to_root):
+        tar = tarfile.open(os.path.join(path_to_root, 'data.tar.gz'), "r:gz")
+        tar.extractall()
+        tar.close()
+
     path_to_experiment_data = os.path.join(path_to_root, 'data')
     path_to_save = os.path.join(path_to_root, 'result_analysis')
 
