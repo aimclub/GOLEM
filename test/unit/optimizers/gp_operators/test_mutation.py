@@ -184,7 +184,7 @@ def test_mutation_with_max_prob():
 
     ind = Individual(adapter.adapt(graph_with_single_node()))
     new_ind = mutation(ind)
-    assert new_ind is None
+    assert new_ind == []
 
     population = [ind, ind]
     new_population = mutation(population)
