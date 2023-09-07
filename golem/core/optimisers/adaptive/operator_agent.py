@@ -25,10 +25,13 @@ class MutationAgentTypeEnum(Enum):
 
 
 class ExperienceBuffer:
-    """Buffer for learning experience of ``OperatorAgent``.
-    Keeps (State, Action, Reward) lists until retrieval."""
+    """
+    Buffer for learning experience of ``OperatorAgent``.
+    Keeps (State, Action, Reward) lists until retrieval.
+    Can be used with window_size for actualizing experience.
+    """
 
-    def __init__(self, window_size: int = 5):
+    def __init__(self, window_size: Optional[int] = None):
         self.window_size = window_size
         self._observations = deque(maxlen=self.window_size)
         self._actions = deque(maxlen=self.window_size)
@@ -41,6 +44,12 @@ class ExperienceBuffer:
         self._current_rewards = []
         self._prev_pop = set()
         self._next_pop = set()
+
+        # if window size was not specified than there is no need to store these values for reuse
+        if self.window_size is None:
+            self._observations = []
+            self._actions = []
+            self._rewards = []
 
     def collect_results(self, results: Sequence[Individual]):
         for ind in results:

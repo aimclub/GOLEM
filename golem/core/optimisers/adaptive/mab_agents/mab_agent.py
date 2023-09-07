@@ -66,10 +66,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         """ Get experience from ExperienceBuffer, process rewards and log. """
         obs, actions, rewards = experience.retrieve_experience()
         arms = [self._arm_by_action[action] for action in actions]
-        if self._reward_agent._decaying_factor == -1.0 or experience.window_size == -1:
-            processed_rewards = rewards
-        else:
-            processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
+        processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
         self._dbg_log(obs, actions, processed_rewards)
         return obs, arms, processed_rewards
 

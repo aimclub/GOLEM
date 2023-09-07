@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence, Union, Any, Callable
+from typing import Sequence, Union, Any, Optional, Callable
 
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import ContextAgentTypeEnum
@@ -93,7 +93,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     genetic_scheme_type: GeneticSchemeTypesEnum = GeneticSchemeTypesEnum.generational
 
     decaying_factor: float = 1.0
-    window_size: int = 5
+    window_size: Optional[int] = None
 
     def __post_init__(self):
         if self.multi_objective:
