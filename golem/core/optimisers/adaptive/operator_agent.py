@@ -85,9 +85,9 @@ class ExperienceBuffer:
         next_pop = self._next_pop
         self.reset()
         self._prev_pop = next_pop
-        return list(chain.from_iterable(observations)), \
-            list(chain.from_iterable(actions)), \
-            list(chain.from_iterable(rewards))
+        return list(observations), \
+            list(actions), \
+            list(rewards)
 
 
 class OperatorAgent(ABC):
