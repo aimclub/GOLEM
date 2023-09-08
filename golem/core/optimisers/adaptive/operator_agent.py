@@ -33,9 +33,7 @@ class ExperienceBuffer:
 
     def __init__(self, window_size: Optional[int] = None):
         self.window_size = window_size
-        self._observations = deque(maxlen=self.window_size)
-        self._actions = deque(maxlen=self.window_size)
-        self._rewards = deque(maxlen=self.window_size)
+        self._reset_main_storages()
         self.reset()
 
     def reset(self):
@@ -47,16 +45,19 @@ class ExperienceBuffer:
 
         # if window size was not specified than there is no need to store these values for reuse
         if self.window_size is None:
-            self._observations = []
-            self._actions = []
-            self._rewards = []
+            self._reset_main_storages()
+
+    def _reset_main_storages(self):
+        self._observations = deque(maxlen=self.window_size)
+        self._actions = deque(maxlen=self.window_size)
+        self._rewards = deque(maxlen=self.window_size)
 
     def collect_results(self, results: Sequence[Individual]):
         for ind in results:
             self.collect_result(ind)
-        self._observations.append(self._current_observations)
-        self._actions.append(self._current_actions)
-        self._rewards.append(self._current_rewards)
+        self._observations += self._current_observations
+        self._actions += self._current_actions
+        self._rewards += self._current_rewards
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
