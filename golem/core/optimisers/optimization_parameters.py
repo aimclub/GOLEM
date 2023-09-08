@@ -1,6 +1,5 @@
 import dataclasses
 import datetime
-import os.path
 from dataclasses import dataclass, field
 from numbers import Number
 from typing import Optional

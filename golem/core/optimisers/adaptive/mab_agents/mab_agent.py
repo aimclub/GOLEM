@@ -1,7 +1,6 @@
 import os.path
 import pickle
 import random
-from pathlib import Path
 from typing import Union, Sequence, Optional
 
 from mabwiser.mab import MAB, LearningPolicy
