@@ -9,6 +9,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmPara
 
 # mutations which rewards are changing during the optimization process
 
+
 def fake_add_mutation(graph: OptGraph,
                       requirements: GraphRequirements,
                       graph_gen_params: GraphGenerationParams,
@@ -32,20 +33,8 @@ def fake_add_mutation(graph: OptGraph,
     else:
         nodes_to_add_num = 1
 
-    if nodes_to_add_num < 0:
-        for _ in range(abs(nodes_to_add_num)):
-            graph = single_drop_mutation(graph, requirements, graph_gen_params, parameters)
-    else:
-        for _ in range(nodes_to_add_num):
-            node_to_mutate = choice(graph.nodes)
-
-            single_add_strategies = [add_as_child, add_separate_parent_node]
-            if node_to_mutate.nodes_from:
-                single_add_strategies.append(add_intermediate_node)
-            strategy = choice(single_add_strategies)
-            graph = strategy(graph, node_to_mutate, graph_gen_params.node_factory)
-
-    return graph
+    return _apply_mutation(graph=graph, nodes_to_add_num=nodes_to_add_num, requirements=requirements,
+                           graph_gen_params=graph_gen_params, parameters=parameters)
 
 
 def fake_add_mutation2(graph: OptGraph,
@@ -71,21 +60,8 @@ def fake_add_mutation2(graph: OptGraph,
     else:
         nodes_to_add_num = -1
 
-    if nodes_to_add_num < 0:
-        for _ in range(abs(nodes_to_add_num)):
-            graph = single_drop_mutation(graph, requirements, graph_gen_params, parameters)
-    else:
-        for _ in range(nodes_to_add_num):
-            node_to_mutate = choice(graph.nodes)
-
-            single_add_strategies = [add_as_child, add_separate_parent_node]
-            if node_to_mutate.nodes_from:
-                single_add_strategies.append(add_intermediate_node)
-            strategy = choice(single_add_strategies)
-
-            graph = strategy(graph, node_to_mutate, graph_gen_params.node_factory)
-
-    return graph
+    return _apply_mutation(graph=graph, nodes_to_add_num=nodes_to_add_num, requirements=requirements,
+                           graph_gen_params=graph_gen_params, parameters=parameters)
 
 
 def fake_add_mutation3(graph: OptGraph,
@@ -111,6 +87,13 @@ def fake_add_mutation3(graph: OptGraph,
     else:
         nodes_to_add_num = 2
 
+    return _apply_mutation(graph=graph, nodes_to_add_num=nodes_to_add_num, requirements=requirements,
+                           graph_gen_params=graph_gen_params, parameters=parameters)
+
+
+def _apply_mutation(graph: OptGraph, nodes_to_add_num: int, requirements: GraphRequirements,
+                    graph_gen_params: GraphGenerationParams, parameters: AlgorithmParameters):
+    """ Adds or deletes nodes according to specified number. """
     if nodes_to_add_num < 0:
         for _ in range(nodes_to_add_num):
             graph = single_drop_mutation(graph, requirements, graph_gen_params, parameters)
