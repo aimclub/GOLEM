@@ -1,6 +1,7 @@
 import os.path
 import pickle
 import random
+from pathlib import Path
 from typing import Union, Sequence, Optional
 
 from mabwiser.mab import MAB, LearningPolicy
@@ -58,18 +59,21 @@ class MultiArmedBanditAgent(OperatorAgent):
 
     def save(self):
         """ Saves bandit to specified file. """
-        path_to_save = os.path.join(self._path_to_save, 'MAB')
-        os.makedirs(path_to_save, exist_ok=True)
         # to get file name
-        mabs_num = [int(e.split('_')[0]) for e in os.listdir(path_to_save) if e.split('_')[0].isdigit()]
-        if not mabs_num:
-            max_saved_mab = 0
+        if not self._path_to_save.endswith('.pkl'):
+            path_to_save = os.path.join(self._path_to_save, 'MAB')
+            os.makedirs(path_to_save, exist_ok=True)
+            mabs_num = [int(e.split('_')[0]) for e in os.listdir(path_to_save) if e.split('_')[0].isdigit()]
+            if not mabs_num:
+                max_saved_mab = 0
+            else:
+                max_saved_mab = max(mabs_num) + 1
+            path_to_file = os.path.join(path_to_save, f'{max_saved_mab}_mab.pkl')
         else:
-            max_saved_mab = max(mabs_num) + 1
-        path_to_file = os.path.join(path_to_save, f'{max_saved_mab}_mab.pkl')
+            path_to_file = self._path_to_save
         with open(path_to_file, 'wb') as f:
             pickle.dump(self, f)
-        self._log.info(f"MAB was save to {self._path_to_save}")
+        self._log.info(f"MAB was saved to {self._path_to_save}")
 
     @staticmethod
     def load(path: str):
