@@ -2,6 +2,7 @@ import os.path
 from pathlib import Path
 
 import pytest
+from mabwiser.mab import MAB
 
 from golem.core.optimisers.adaptive.mab_agents.mab_agent import MultiArmedBanditAgent
 
@@ -29,6 +30,13 @@ def test_load_mab():
                                 path_to_save=path_to_load)
     mab.save()
 
-    mab = MultiArmedBanditAgent.load(path=path_to_load)
-    assert isinstance(mab, MultiArmedBanditAgent)
+    loaded_mab = MultiArmedBanditAgent.load(path=path_to_load)
+    assert isinstance(loaded_mab, MultiArmedBanditAgent)
+
+    assert isinstance(loaded_mab._agent, MAB)
+    assert loaded_mab.__eq__(mab)
+    assert loaded_mab.actions == mab.actions
+    assert loaded_mab._enable_logging == mab._enable_logging
+    assert loaded_mab._path_to_save == mab._path_to_save
+
     os.remove(path_to_load)

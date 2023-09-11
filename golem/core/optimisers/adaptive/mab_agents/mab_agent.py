@@ -79,12 +79,12 @@ class MultiArmedBanditAgent(OperatorAgent):
                 max_saved_mab = max(mabs_num) + 1
             path_to_file = os.path.join(path_to_save, f'{max_saved_mab}_mab.pkl')
         else:
-            path_to_dir, _ = ntpath.split(path_to_save)
+            path_to_dir = os.path.dirname(path_to_save)
             os.makedirs(path_to_dir, exist_ok=True)
             path_to_file = path_to_save
         with open(path_to_file, 'wb') as f:
             pickle.dump(self, f)
-        self._log.info(f"MAB was saved to {self._path_to_save}")
+        self._log.info(f"MAB was saved to {path_to_file}")
 
     @staticmethod
     def load(path: str):
