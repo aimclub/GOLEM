@@ -1,6 +1,5 @@
-import ntpath
 import os.path
-import pickle
+import _pickle as pickle
 import random
 import re
 from typing import Union, Sequence, Optional
