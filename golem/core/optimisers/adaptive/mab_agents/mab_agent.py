@@ -1,3 +1,4 @@
+import ntpath
 import os.path
 import pickle
 import random
@@ -61,11 +62,14 @@ class MultiArmedBanditAgent(OperatorAgent):
     def save(self, path_to_save: Optional[str] = None):
         """ Saves bandit to specified file. """
 
-        # if path was not specified
-        if not self._path_to_save and not path_to_save:
+        if not path_to_save:
+            path_to_save = self._path_to_save
+
+        # if path was not specified at all
+        if not path_to_save:
             path_to_save = os.path.join(default_data_dir(), 'MAB')
 
-        if not self._path_to_save.endswith('.pkl'):
+        if not path_to_save.endswith('.pkl'):
             os.makedirs(path_to_save, exist_ok=True)
             mabs_num = [int(name.split('_')[0]) for name in os.listdir(path_to_save)
                         if re.fullmatch(r'\d_mab.pkl', name)]
@@ -75,7 +79,9 @@ class MultiArmedBanditAgent(OperatorAgent):
                 max_saved_mab = max(mabs_num) + 1
             path_to_file = os.path.join(path_to_save, f'{max_saved_mab}_mab.pkl')
         else:
-            path_to_file = self._path_to_save
+            path_to_dir, _ = ntpath.split(path_to_save)
+            os.makedirs(path_to_dir, exist_ok=True)
+            path_to_file = path_to_save
         with open(path_to_file, 'wb') as f:
             pickle.dump(self, f)
         self._log.info(f"MAB was saved to {self._path_to_save}")
