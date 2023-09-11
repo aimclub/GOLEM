@@ -1,6 +1,7 @@
 import os.path
 import pickle
 import random
+import re
 from typing import Union, Sequence, Optional
 
 from mabwiser.mab import MAB, LearningPolicy
@@ -9,6 +10,7 @@ from scipy.special import softmax
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
+from golem.core.paths import default_data_dir
 
 
 class MultiArmedBanditAgent(OperatorAgent):
@@ -56,13 +58,17 @@ class MultiArmedBanditAgent(OperatorAgent):
         arms = [self._arm_by_action[action] for action in actions]
         self._agent.partial_fit(decisions=arms, rewards=rewards)
 
-    def save(self):
+    def save(self, path_to_save: Optional[str] = None):
         """ Saves bandit to specified file. """
-        # to get file name
+
+        # if path was not specified
+        if not self._path_to_save and not path_to_save:
+            path_to_save = os.path.join(default_data_dir(), 'MAB')
+
         if not self._path_to_save.endswith('.pkl'):
-            path_to_save = os.path.join(self._path_to_save, 'MAB')
             os.makedirs(path_to_save, exist_ok=True)
-            mabs_num = [int(e.split('_')[0]) for e in os.listdir(path_to_save) if e.split('_')[0].isdigit()]
+            mabs_num = [int(name.split('_')[0]) for name in os.listdir(path_to_save)
+                        if re.fullmatch(r'\d_mab.pkl', name)]
             if not mabs_num:
                 max_saved_mab = 0
             else:
