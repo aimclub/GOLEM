@@ -1,7 +1,7 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple, Any, Callable, Optional
+from typing import Dict, List, Tuple, Any, Callable, Optional, Union
 
 import pandas as pd
 
@@ -34,7 +34,7 @@ class ExperimentAnalyzer:
 
     def analyze_convergence(self, history_folder: str = 'history', is_mean: bool = False,
                             path_to_save: str = None, is_raise: bool = False) \
-            -> Dict[str, Dict[str, List[float]]]:
+            -> Dict[str, Dict[str, Union[List[float], float]]]:
         """ Method to analyze convergence with the use of histories.
 
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
@@ -95,7 +95,8 @@ class ExperimentAnalyzer:
         return total_time_to_get_best_fitness
 
     def analyze_metrics(self, metric_names: List[str], file_name: str, is_mean: bool = False,
-                        path_to_save: str = None, is_raise: bool = False):
+                        path_to_save: str = None, is_raise: bool = False) \
+            -> Dict[str, Dict[str, Dict[str, Union[List[float], float]]]]:
         """ Method to analyze specified metrics.
         :param metric_names: names of metrics to analyze. e.g. ['f1', 'inference_time']
         :param file_name: name of the file with metrics (e.g. 'metrics.csv').
@@ -182,11 +183,12 @@ class ExperimentAnalyzer:
 
     def analyze_statistical_significance(self, data_to_analyze: Dict[str, Dict[str, List[float]]],
                                          stat_tests: List[Callable], path_to_save: str = None,
-                                         test_format: List[str] = None):
+                                         test_format: List[str] = None) -> Dict[str, Dict[str, Dict[str, float]]]:
         """ Method to perform statistical analysis of data. Metric data obtained with 'analyze_metrics' and
         convergence data obtained with 'analyze_convergence' can be simply analyzed, for example.
         :param data_to_analyze: data to analyze.
-        NB! data must have the specified format (Dict[str, Dict[str, List[float]]])
+        NB! data must have the specified format Dict[str, Dict[str, float]]:
+        first key -- framework/setup name, second -- dataset name and then list of metric values
         :param stat_tests: list of functions of statistical tests to perform. E.g. scipy.stats.kruskal
         :param path_to_save: path to save results
         :param test_format: argument to specify what every test function must return. default: ['statistic', 'pvalue']
