@@ -1,7 +1,7 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple, Any, Callable, Optional, Union
+from typing import Dict, List, Tuple, Any, Callable, Union
 
 import pandas as pd
 
@@ -72,7 +72,7 @@ class ExperimentAnalyzer:
         # save results per metric
         if path_to_save:
             df = pd.DataFrame(convergence)
-            path_to_save = os.path.join(path_to_save, f'convergence_results.csv')
+            path_to_save = os.path.join(path_to_save, 'convergence_results.csv')
             df.to_csv(path_to_save)
             self._log.info(f"Convergence table was saved to {path_to_save}")
         return convergence
@@ -210,7 +210,7 @@ class ExperimentAnalyzer:
                     cur_test_result = test(*values_to_compare)
                 except Exception as e:
                     self._log.critical(f"Statistical test ({test}) failed with exception: {e}")
-                    cur_test_result = [None]*len(test_format)
+                    cur_test_result = [None] * len(test_format)
                 for i, arg in enumerate(test_format):
                     if not stat_dict[arg]:
                         stat_dict[arg] = dict.fromkeys([t.__name__ for t in stat_tests], None)
