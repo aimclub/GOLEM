@@ -85,7 +85,7 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     def get_context(self, obs: Union[List[ObsType], ObsType]) -> np.array:
         """ Returns contexts based on specified context agent. """
         if not isinstance(obs, list):
-            return np.array(self._context_agent(obs)).flatten()
+            obs = [obs]
         contexts = []
         for ob in obs:
             if isinstance(ob, list) or isinstance(ob, np.ndarray):

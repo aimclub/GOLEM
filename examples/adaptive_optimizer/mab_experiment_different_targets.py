@@ -59,6 +59,7 @@ def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAg
 
 
 def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
+                            context_agent_type: ContextAgentTypeEnum = None,
                             target_sizes: Sequence[int] = (50, 400),
                             trial_timeout: int = 15,
                             run_func: Callable = run_adaptive_mutations):
@@ -72,7 +73,8 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
             algorithm_parameters=get_graph_gp_params(objective=objective,
-                                                     adaptive_mutation_type=adaptive_mutation_type),
+                                                     adaptive_mutation_type=adaptive_mutation_type,
+                                                     context_agent_type=context_agent_type),
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3
         )
@@ -80,6 +82,7 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
 
 
 def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
+                            context_agent_type: ContextAgentTypeEnum = None,
                             target_sizes: Sequence[int] = (100, 400),
                             trial_timeout: int = 15,
                             run_func: Callable = run_adaptive_mutations):
@@ -93,7 +96,8 @@ def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
             algorithm_parameters=get_graph_gp_params(objective=objective,
-                                                     adaptive_mutation_type=adaptive_mutation_type),
+                                                     adaptive_mutation_type=adaptive_mutation_type,
+                                                     context_agent_type=context_agent_type),
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=target_size * 3,
         )
@@ -101,6 +105,7 @@ def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
 
 
 def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgentTypeEnum,
+                                            context_agent_type: ContextAgentTypeEnum = None,
                                             trial_timeout: int = 15,
                                             trial_iterations: Optional[int] = 500,
                                             run_func: Callable = run_adaptive_mutations):
@@ -127,7 +132,8 @@ def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgen
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
             algorithm_parameters=get_graph_gp_params(objective=objective,
-                                                     adaptive_mutation_type=adaptive_mutation_type),
+                                                     adaptive_mutation_type=adaptive_mutation_type,
+                                                     context_agent_type=context_agent_type),
             node_types=node_types,
             timeout=timedelta(minutes=trial_timeout),
             num_iterations=trial_iterations,
@@ -137,6 +143,7 @@ def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgen
 
 
 def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
+                         context_agent_type: ContextAgentTypeEnum = None,
                          trial_timeout: int = 15,
                          trial_iterations: Optional[int] = 500,
                          run_func: Callable = run_adaptive_mutations):
@@ -157,6 +164,7 @@ def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
             ],
             crossover_types=[CrossoverTypesEnum.none],
             adaptive_mutation_type=adaptive_mutation_type,
+            context_agent_type=context_agent_type
         )
 
         # Build the optimizer
