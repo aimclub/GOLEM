@@ -31,8 +31,8 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
                  n_jobs: int = 1,
                  enable_logging: bool = True,
                  decaying_factor: float = 1.0):
-        super().__init__(actions, n_jobs, enable_logging, decaying_factor,
-                         is_initial_fit=False)
+        super().__init__(actions=actions, n_jobs=n_jobs, enable_logging=enable_logging,
+                         decaying_factor=decaying_factor, is_initial_fit=False)
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),

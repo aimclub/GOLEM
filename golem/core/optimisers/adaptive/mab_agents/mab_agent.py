@@ -12,7 +12,6 @@ from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
 from golem.core.optimisers.adaptive.reward_agent import FitnessRateRankRewardTransformer
 from golem.core.paths import default_data_dir
-from golem.core.optimisers.adaptive.reward_agent import RewardAgent
 
 
 class MultiArmedBanditAgent(OperatorAgent):
@@ -20,8 +19,8 @@ class MultiArmedBanditAgent(OperatorAgent):
                  actions: Sequence[ActType],
                  n_jobs: int = 1,
                  enable_logging: bool = True,
-                 path_to_save: Optional[str] = None,
                  decaying_factor: float = 1.0,
+                 path_to_save: Optional[str] = None,
                  is_initial_fit: bool = True):
         super().__init__(enable_logging)
         self.actions = list(actions)
