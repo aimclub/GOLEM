@@ -59,7 +59,7 @@ def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAg
 
 
 def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
-                            context_agent_type: ContextAgentTypeEnum = None,
+                            context_agent_type: Optional[ContextAgentTypeEnum] = None,
                             target_sizes: Sequence[int] = (50, 400),
                             trial_timeout: int = 15,
                             run_func: Callable = run_adaptive_mutations):
@@ -82,7 +82,7 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
 
 
 def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
-                            context_agent_type: ContextAgentTypeEnum = None,
+                            context_agent_type: Optional[ContextAgentTypeEnum] = None,
                             target_sizes: Sequence[int] = (100, 400),
                             trial_timeout: int = 15,
                             run_func: Callable = run_adaptive_mutations):
@@ -105,7 +105,7 @@ def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
 
 
 def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgentTypeEnum,
-                                            context_agent_type: ContextAgentTypeEnum = None,
+                                            context_agent_type: Optional[ContextAgentTypeEnum] = None,
                                             trial_timeout: int = 15,
                                             trial_iterations: Optional[int] = 500,
                                             run_func: Callable = run_adaptive_mutations):
@@ -143,7 +143,7 @@ def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgen
 
 
 def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
-                         context_agent_type: ContextAgentTypeEnum = None,
+                         context_agent_type: Optional[ContextAgentTypeEnum] = None,
                          trial_timeout: int = 15,
                          trial_iterations: Optional[int] = 500,
                          run_func: Callable = run_adaptive_mutations):
