@@ -9,8 +9,8 @@ from golem.core.paths import project_root
 
 
 if __name__ == '__main__':
-    """ The result of analysis can be seen without running the script in 
-    '~/GOLEM/examples/experiment_analyzer/result_analysis.tar.gz' """
+    """ The result of analysis can be seen without running the script in
+    '~/GOLEM/examples/experiment_analyzer/result_analysis.tar.gz'. """
 
     path_to_root = os.path.join(project_root(), 'examples', 'experiment_analyzer')
 
