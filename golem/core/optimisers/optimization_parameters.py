@@ -64,6 +64,7 @@ class OptimizationParameters:
 
     keep_history: bool = True
     history_dir: Optional[str] = field(default_factory=default_data_dir)
+    agent_dir: Optional[str] = field(default_factory=default_data_dir)
 
 
 @dataclass

@@ -1,4 +1,7 @@
+import os.path
+import _pickle as pickle
 import random
+import re
 from typing import Union, Sequence, Optional
 
 from mabwiser.mab import MAB, LearningPolicy
@@ -7,13 +10,15 @@ from scipy.special import softmax
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
+from golem.core.paths import default_data_dir
 
 
 class MultiArmedBanditAgent(OperatorAgent):
     def __init__(self,
                  actions: Sequence[ActType],
                  n_jobs: int = 1,
-                 enable_logging: bool = True):
+                 enable_logging: bool = True,
+                 path_to_save: Optional[str] = None):
         super().__init__(enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
@@ -22,6 +27,7 @@ class MultiArmedBanditAgent(OperatorAgent):
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           n_jobs=n_jobs)
         self._initial_fit()
+        self._path_to_save = path_to_save
 
     def _initial_fit(self):
         n = len(self.actions)
@@ -51,3 +57,37 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._dbg_log(obs, actions, rewards)
         arms = [self._arm_by_action[action] for action in actions]
         self._agent.partial_fit(decisions=arms, rewards=rewards)
+
+    def save(self, path_to_save: Optional[str] = None):
+        """ Saves bandit to specified file. """
+
+        if not path_to_save:
+            path_to_save = self._path_to_save
+
+        # if path was not specified at all
+        if not path_to_save:
+            path_to_save = os.path.join(default_data_dir(), 'MAB')
+
+        if not path_to_save.endswith('.pkl'):
+            os.makedirs(path_to_save, exist_ok=True)
+            mabs_num = [int(name.split('_')[0]) for name in os.listdir(path_to_save)
+                        if re.fullmatch(r'\d_mab.pkl', name)]
+            if not mabs_num:
+                max_saved_mab = 0
+            else:
+                max_saved_mab = max(mabs_num) + 1
+            path_to_file = os.path.join(path_to_save, f'{max_saved_mab}_mab.pkl')
+        else:
+            path_to_dir = os.path.dirname(path_to_save)
+            os.makedirs(path_to_dir, exist_ok=True)
+            path_to_file = path_to_save
+        with open(path_to_file, 'wb') as f:
+            pickle.dump(self, f)
+        self._log.info(f"MAB was saved to {path_to_file}")
+
+    @staticmethod
+    def load(path: str):
+        """ Loads bandit from the specified file. """
+        with open(path, 'rb') as f:
+            mab = pickle.load(f)
+        return mab
