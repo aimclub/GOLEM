@@ -57,6 +57,7 @@ class GraphVisualizer:
                   node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
                   node_size_scale: Optional[float] = None,
                   font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
+                  title: Optional[str] = None,
                   nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         engine = engine or self.get_predefined_value('engine')
 
@@ -67,7 +68,7 @@ class GraphVisualizer:
             self.__draw_with_networkx(save_path=save_path, node_color=node_color, dpi=dpi,
                                       node_size_scale=node_size_scale, font_size_scale=font_size_scale,
                                       edge_curvature_scale=edge_curvature_scale,
-                                      nodes_labels=nodes_labels, edges_labels=edges_labels)
+                                      title=title, nodes_labels=nodes_labels, edges_labels=edges_labels)
         elif engine == 'pyvis':
             self.__draw_with_pyvis(save_path, node_color)
         elif engine == 'graphviz':
@@ -166,7 +167,7 @@ class GraphVisualizer:
                              node_color: Optional[NodeColorType] = None,
                              dpi: Optional[int] = None, node_size_scale: Optional[float] = None,
                              font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
-                             graph_to_nx_convert_func: Optional[Callable] = None,
+                             graph_to_nx_convert_func: Optional[Callable] = None, title: Optional[str] = None,
                              nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         save_path = save_path or self.get_predefined_value('save_path')
         node_color = node_color or self.get_predefined_value('node_color')
@@ -180,6 +181,7 @@ class GraphVisualizer:
         fig, ax = plt.subplots(figsize=(7, 7))
         fig.set_dpi(dpi)
 
+        plt.title(title)
         self.draw_nx_dag(ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
                          graph_to_nx_convert_func, nodes_labels, edges_labels)
         if not save_path:
