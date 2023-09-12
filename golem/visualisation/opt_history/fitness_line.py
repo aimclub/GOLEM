@@ -281,11 +281,13 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
     def visualize(self,
                   save_path: Optional[Union[os.PathLike, str]] = None,
+                  with_confidence: bool = True,
                   metric_id: int = 0,
                   dpi: Optional[int] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
         :param save_path: path to save the visualization. If set, then the image will be saved,
             and if not, it will be displayed.
+        :param with_confidence: bool param specifying to use confidence interval or not.
         :param metric_id: numeric index of the metric to visualize (for multi-objective opt-n).
         :param dpi: DPI of the output figure.
         """
@@ -294,7 +296,7 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         xlabel = 'Generation'
-        self.plot_multiple_fitness_lines(ax, metric_id)
+        self.plot_multiple_fitness_lines(ax, metric_id, with_confidence)
         setup_fitness_plot(ax, xlabel)
         plt.legend()
         show_or_save_figure(fig, save_path, dpi)
