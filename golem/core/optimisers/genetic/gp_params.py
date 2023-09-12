@@ -66,10 +66,10 @@ class GPAlgorithmParameters(AlgorithmParameters):
     probabilities decrease. That is, the algorithm choose a more stable and conservative
     mode when optimization seems to converge.
 
-    :param decaying_factor: decaying factor for Multi-Armed Bandits for managing the profit from operators.
-    The smaller the value of decaying_factor, the larger the influence for the best operator.
+    :param decaying_factor: decaying factor for Multi-Armed Bandits for managing the profit from operators
+        The smaller the value of decaying_factor, the larger the influence for the best operator.
     :param window_size: the size of sliding window for Multi-Armed Bandits to decrease variance.
-    The window size is measured by the number of individuals to consider.
+        The window size is measured by the number of individuals to consider.
     """
 
     crossover_prob: float = 0.8
