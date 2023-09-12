@@ -126,7 +126,7 @@ class OperatorAgent(ABC):
                         f'min={nonzero.min()} max={nonzero.max()} ')
 
             self._log.info(msg)
-            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
+            self._log.info(f'actions/rewards: {list(zip([action.name for action in actions], rr))}')
 
             action_values = list(map(self.get_action_values, obs))
             action_probs = list(map(self.get_action_probs, obs))
