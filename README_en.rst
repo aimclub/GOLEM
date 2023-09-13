@@ -56,7 +56,7 @@ define a data-flow or inference process (e.g. bayesian networks that can be fitt
 Examples of GOLEM applications:
 
 - Automatic Machine Learning (AutoML) with optimal ML pipelines search in `FEDOT framework <https://github.com/aimclub/FEDOT>`_
-- Bayesian network structure search in `BAMT framework <https://github.com/ITMO-NSS-team/BAMT>`_
+- Bayesian network structure search in `BAMT framework <https://github.com/aimclub/BAMT>`_
 - Differential equation discovery for physical models in `EPDE framework <https://github.com/ITMO-NSS-team/EPDE>`_
 - Geometric design of physical objects in `GEFEST framework <https://github.com/aimclub/GEFEST>`_
 - `Neural architecture search <https://github.com/ITMO-NSS-team/nas-fedot>`_
@@ -225,11 +225,11 @@ There are various cases solved with GOLEM's algorithms:
 .. |rus| image:: https://img.shields.io/badge/lang-ru-yellow.svg
             :target: /README.rst
 
-.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
+.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
    :alt: Acknowledgement to ITMO
    :target: https://en.itmo.ru/en/
 
-.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 

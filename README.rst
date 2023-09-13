@@ -57,7 +57,7 @@ GOLEM потенциально применим к любой структуре
 Примеры применения GOLEM:
 
 - Автоматическое машинное обучение (AutoML) для поиска оптимальных пайплайнов машинного обучения в `фреймворке FEDOT <https://github.com/aimclub/FEDOT>`_
-- Поиск структуры при помощи байесовской сети в `фреймворке BAMT <https://github.com/ITMO-NSS-team/BAMT>`_
+- Поиск структуры при помощи байесовской сети в `фреймворке BAMT <https://github.com/aimclub/BAMT>`_
 - Поиск дифференциальных уравнений для физических моделей в рамках `фреймворка EPDE <https://github.com/ITMO-NSS-team/EPDE>`_
 - Геометрический дизайн физических объектов в рамках `фреймворка GEFEST <https://github.com/aimclub/GEFEST>`_
 - `Поиск архитектуры нейронных сетей <https://github.com/ITMO-NSS-team/nas-fedot>`_
@@ -226,11 +226,11 @@ GOLEM можно установить с помощью ``pip``:
 .. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
             :target: /README_en.rst
 
-.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
+.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
    :alt: Acknowledgement to ITMO
    :target: https://itmo.ru
 
-.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
