@@ -3,7 +3,7 @@ from itertools import chain
 from math import ceil
 from random import choice, random, sample
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
-
+from functools import partial
 from golem.core.adapter import register_native
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
@@ -21,6 +21,10 @@ if TYPE_CHECKING:
 
 class CrossoverTypesEnum(Enum):
     subtree = 'subtree'
+    subgraph_5 = 'subgraph_5'
+    subgraph_10 = 'subgraph_10'
+    subgraph_15 = 'subgraph_15'
+    subgraph_20 = 'subgraph_20'
     one_point = "one_point"
     none = 'none'
     exchange_edges = 'exchange_edges'
@@ -61,8 +65,8 @@ class Crossover(Operator):
                 first_object = deepcopy(ind_first.graph)
                 second_object = deepcopy(ind_second.graph)
                 new_graphs = crossover_func(first_object, second_object, max_depth=self.requirements.max_depth)
-                are_correct = all(self.graph_generation_params.verifier(new_graph) for new_graph in new_graphs)
-                if are_correct:
+               # are_correct = all(self.graph_generation_params.verifier(new_graph) for new_graph in new_graphs)
+                if True:
                     parent_individuals = (ind_first, ind_second)
                     new_individuals = self._get_individuals(new_graphs, parent_individuals, crossover_type)
                     return new_individuals
@@ -85,7 +89,11 @@ class Crossover(Operator):
             CrossoverTypesEnum.one_point: one_point_crossover,
             CrossoverTypesEnum.exchange_edges: exchange_edges_crossover,
             CrossoverTypesEnum.exchange_parents_one: exchange_parents_one_crossover,
-            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover
+            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover,
+            CrossoverTypesEnum.subgraph_5: subgraph_crossover_5,
+            CrossoverTypesEnum.subgraph_10: subgraph_crossover_10,
+            CrossoverTypesEnum.subgraph_15: subgraph_crossover_15,
+            CrossoverTypesEnum.subgraph_20: subgraph_crossover_20
         }
         if crossover_type in crossovers:
             return crossovers[crossover_type]
@@ -130,6 +138,62 @@ def subtree_crossover(graph_1: OptGraph, graph_2: OptGraph,
                      random_layer_in_graph_first, random_layer_in_graph_second, max_depth)
 
     return graph_1, graph_2
+@register_native
+def subgraph_crossover(graph_1: OptGraph, graph_2: OptGraph,
+                      max_depth: int, inplace: bool = True, num_nodes= 5) -> Tuple[OptGraph, OptGraph]:
+    """Performed by the replacement of random subtree
+    in first selected parent to random subtree from the second parent"""
+
+    if not inplace:
+        graph_1 = deepcopy(graph_1)
+        graph_2 = deepcopy(graph_2)
+    else:
+        graph_1 = graph_1
+        graph_2 = graph_2
+
+    nodes_1 = sample(graph_1.nodes, num_nodes)
+    nodes_2 = sample(graph_2.nodes, num_nodes)
+    mapping_1_node_to_i = {}
+    mapping_1_i_to_node = {}
+    mapping_2_node_to_i = {}
+    mapping_2_i_to_node = {}
+
+    for i, node in enumerate(nodes_1):
+        mapping_1_node_to_i[node] = i
+        mapping_1_i_to_node[i] = node
+        mapping_2_node_to_i[nodes_2[i]] = i
+        mapping_2_i_to_node[i] = nodes_2[i]
+
+    edges_1 = []
+    for node in nodes_1:
+        parents = node.nodes_from
+        nodes_target = list(set(parents).intersection(nodes_1))
+        edges_1+=list(zip([node]*len(nodes_target), nodes_target))
+
+    for edge in edges_1:
+        graph_1.disconnect_nodes(edge[0],edge[1])
+        graph_2.connect_nodes(mapping_2_i_to_node[mapping_1_node_to_i[edge[0]]] , mapping_2_i_to_node[mapping_1_node_to_i[edge[1]]])
+
+
+    edges_2 = []
+    for node in nodes_2:
+        parents = node.nodes_from
+        nodes_target = list(set(parents).intersection(nodes_2))
+        edges_2+=list(zip([node]*len(nodes_target), nodes_target))
+    #print('edges 2',edges_2)
+
+    for edge in edges_2:
+        graph_2.disconnect_nodes(edge[0],edge[1])
+        graph_1.connect_nodes(mapping_1_i_to_node[mapping_2_node_to_i[edge[0]]] , mapping_1_i_to_node[mapping_2_node_to_i[edge[1]]])
+
+   # print('in the end of crossover')
+    return graph_1, graph_2
+
+
+subgraph_crossover_10 = partial(subgraph_crossover, num_nodes=10)
+subgraph_crossover_5 = partial(subgraph_crossover, num_nodes=5)
+subgraph_crossover_15 = partial(subgraph_crossover, num_nodes=15)
+subgraph_crossover_20 = partial(subgraph_crossover, num_nodes=20)
 
 
 @register_native

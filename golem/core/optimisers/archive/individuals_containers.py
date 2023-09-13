@@ -159,7 +159,7 @@ class ParetoFront(HallOfFame):
                 elif ind.fitness.dominates(hof_member.fitness):
                     dominates_one = True
                     to_remove.append(i)
-                elif ind.fitness == hof_member.fitness and self.similar(ind, hof_member):
+                elif ind.fitness == hof_member.fitness: # and self.similar(ind, hof_member):
                     has_twin = True
                     break
 

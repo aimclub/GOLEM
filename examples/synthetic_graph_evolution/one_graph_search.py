@@ -14,7 +14,7 @@ from golem.core.dag.linked_graph_node import LinkedGraphNode
 
 import matplotlib.pyplot as plt
 import networkx as nx
-from random import choice, random,randint, sample
+from random import choice, random,randint, sample, choices
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -126,24 +126,56 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         d = nx.average_clustering(G_new.to_undirected())
         return (d - des_cl) * (d - des_cl)
 
+    def normalize(weights):
+        total = sum(weights)
+        return [w/total for w in weights]
+    distributions = [
+        lambda: [1/des_num_nodes]*des_num_nodes,
+       # lambda: [(2**(-i)/sum([2**(-j) for j in range(des_num_nodes)])) for i in range(des_num_nodes)],
+        lambda: normalize([i**2 for i in range(des_num_nodes)]),
+        lambda: normalize([i for i in range(des_num_nodes)]),
+        lambda: normalize([np.log(i+1) for i in range(des_num_nodes)]),
+        lambda: normalize([1/(i+1) for i in range(des_num_nodes)]),
+        lambda: normalize(list(np.random.normal(des_num_nodes//2, des_num_nodes//4, des_num_nodes))),
+        lambda: normalize(list(np.random.normal(des_num_nodes*3//4, des_num_nodes//4, des_num_nodes))),
+        lambda: normalize([np.sin(np.pi * i/des_num_nodes) for i in range(des_num_nodes)]),
+        lambda: normalize([i for i in range(des_num_nodes//2)] + [des_num_nodes//2 - i for i in range(des_num_nodes//2)]),
+        lambda: normalize([des_num_nodes//2 - i for i in range(des_num_nodes//2)] + [i for i in range(des_num_nodes//2)]),
+        lambda: normalize(list(np.random.poisson(des_num_nodes//2, des_num_nodes))),
+        lambda: normalize([1 if i < des_num_nodes/2 else 0 for i in range(des_num_nodes)]),
+        lambda: normalize(list(np.random.normal(des_num_nodes//4, des_num_nodes//8, des_num_nodes) + np.random.normal(3*des_num_nodes//4, des_num_nodes//8, des_num_nodes))),
+        lambda: normalize([1/(i+2) for i in range(des_num_nodes)]),
+        lambda: normalize([1 / (i + 3) for i in range(des_num_nodes)]),
+        lambda: normalize([1 / (i + 4) for i in range(des_num_nodes)]),
+        lambda: normalize([1 / (i + 5) for i in range(des_num_nodes)])
+
+    ]
+
     # Generate initial population with random graphs
     initial_graphs = []
-    for _ in range(20):
+    print('all my distributions')
+    print(distributions)
+    for dist_func in distributions:
+        print('making a graph')
         Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
                                                    content={'name': vertex,
                                                             'label': random.choices([0, 1], weights = [0.5+0.5*des_label_assort, 0.5-0.5*des_label_assort],k=1)})
                                      for vertex in range(des_num_nodes)])
-
+        probs = dist_func()
+        print(probs,sum(probs))
         init_edges = []
+
         i = 0
         while i < (int(des_degree*des_num_nodes/2)):
-            node_1, node_2 = sample(Init2.nodes, 2)
+            #print(i)
+            node_1, node_2 = choices(Init2.nodes, weights = probs, k=2)
             if (node_1, node_2) not in init_edges and (node_2,node_1) not in init_edges and node_1!=node_2:
                 init_edges.append((node_1, node_2))
                 Init2.connect_nodes(node_1, node_2)
                 i +=1
 
         initial_graphs.append(Init2)
+        print('ended making graph')
 
     print('avg degree of random graph: {} vs des:{}'.format( np.mean(list(dict(Init2.degree()).values())),des_degree))
 
@@ -190,6 +222,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                       MutationTypesEnum.batch_edge_45,
                       MutationTypesEnum.batch_edge_50,
                       MutationTypesEnum.batch_edge_55,
+
                       MutationTypesEnum.star_edge_5,
                       MutationTypesEnum.star_edge_10,
                       MutationTypesEnum.star_edge_15,
@@ -201,6 +234,42 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                       MutationTypesEnum.star_edge_45,
                       MutationTypesEnum.star_edge_50,
                       MutationTypesEnum.star_edge_55,
+
+                      MutationTypesEnum.path_edge_5,
+                      MutationTypesEnum.path_edge_10,
+                      MutationTypesEnum.path_edge_15,
+                      MutationTypesEnum.path_edge_20,
+                      MutationTypesEnum.path_edge_25,
+                      MutationTypesEnum.path_edge_30,
+                      MutationTypesEnum.path_edge_35,
+                      MutationTypesEnum.path_edge_40,
+                      MutationTypesEnum.path_edge_45,
+                      MutationTypesEnum.path_edge_50,
+                      MutationTypesEnum.path_edge_55,
+
+                      MutationTypesEnum.cycle_edge_5,
+                      MutationTypesEnum.cycle_edge_10,
+                      MutationTypesEnum.cycle_edge_15,
+                      MutationTypesEnum.cycle_edge_20,
+                      MutationTypesEnum.cycle_edge_25,
+                      MutationTypesEnum.cycle_edge_30,
+                      MutationTypesEnum.cycle_edge_35,
+                      MutationTypesEnum.cycle_edge_40,
+                      MutationTypesEnum.cycle_edge_45,
+                      MutationTypesEnum.cycle_edge_50,
+                      MutationTypesEnum.cycle_edge_55,
+
+                      MutationTypesEnum.dense_edge_5,
+                      MutationTypesEnum.dense_edge_10,
+                      MutationTypesEnum.dense_edge_15,
+                      MutationTypesEnum.dense_edge_20,
+                      MutationTypesEnum.dense_edge_25,
+                      MutationTypesEnum.dense_edge_30,
+                      MutationTypesEnum.dense_edge_35,
+                      MutationTypesEnum.dense_edge_40,
+                      MutationTypesEnum.dense_edge_45,
+                      MutationTypesEnum.dense_edge_50,
+                      MutationTypesEnum.dense_edge_55
 
                       ]
     if dense:
@@ -219,9 +288,9 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         multi_objective=objective.is_multi_objective,
         mutation_types=mutation_types,
-        adaptive_mutation_type = MutationAgentTypeEnum.neural_bandit,
-        context_agent_type = ContextAgentTypeEnum.none_encoding,
-        crossover_types=[CrossoverTypesEnum.none]
+        adaptive_mutation_type = MutationAgentTypeEnum.bandit,
+        #context_agent_type = ContextAgentTypeEnum.adjacency_matrix,
+        crossover_types=[CrossoverTypesEnum.subgraph_5]
     )
 
     graph_gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter())
@@ -263,3 +332,59 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         return G_new
 
 
+'''                      MutationTypesEnum.batch_edge_20,
+                      MutationTypesEnum.batch_edge_25,
+                      MutationTypesEnum.batch_edge_30,
+                      MutationTypesEnum.batch_edge_35,
+                      MutationTypesEnum.batch_edge_40,
+                      MutationTypesEnum.batch_edge_45,
+                      MutationTypesEnum.batch_edge_50,
+                      MutationTypesEnum.batch_edge_55,
+                      
+                      MutationTypesEnum.star_edge_5,
+                      MutationTypesEnum.star_edge_10,
+                      MutationTypesEnum.star_edge_15,
+                      MutationTypesEnum.star_edge_20,
+                      MutationTypesEnum.star_edge_25,
+                      MutationTypesEnum.star_edge_30,
+                      MutationTypesEnum.star_edge_35,
+                      MutationTypesEnum.star_edge_40,
+                      MutationTypesEnum.star_edge_45,
+                      MutationTypesEnum.star_edge_50,
+                      MutationTypesEnum.star_edge_55,
+
+                      MutationTypesEnum.path_edge_5,
+                      MutationTypesEnum.path_edge_10,
+                      MutationTypesEnum.path_edge_15,
+                      MutationTypesEnum.path_edge_20,
+                      MutationTypesEnum.path_edge_25,
+                      MutationTypesEnum.path_edge_30,
+                      MutationTypesEnum.path_edge_35,
+                      MutationTypesEnum.path_edge_40,
+                      MutationTypesEnum.path_edge_45,
+                      MutationTypesEnum.path_edge_50,
+                      MutationTypesEnum.path_edge_55,
+
+                      MutationTypesEnum.cycle_edge_5,
+                      MutationTypesEnum.cycle_edge_10,
+                      MutationTypesEnum.cycle_edge_15,
+                      MutationTypesEnum.cycle_edge_20,
+                      MutationTypesEnum.cycle_edge_25,
+                      MutationTypesEnum.cycle_edge_30,
+                      MutationTypesEnum.cycle_edge_35,
+                      MutationTypesEnum.cycle_edge_40,
+                      MutationTypesEnum.cycle_edge_45,
+                      MutationTypesEnum.cycle_edge_50,
+                      MutationTypesEnum.cycle_edge_55,
+
+                      MutationTypesEnum.dense_edge_5,
+                      MutationTypesEnum.dense_edge_10,
+                      MutationTypesEnum.dense_edge_15,
+                      MutationTypesEnum.dense_edge_20,
+                      MutationTypesEnum.dense_edge_25,
+                      MutationTypesEnum.dense_edge_30,
+                      MutationTypesEnum.dense_edge_35,
+                      MutationTypesEnum.dense_edge_40,
+                      MutationTypesEnum.dense_edge_45,
+                      MutationTypesEnum.dense_edge_50,
+                      MutationTypesEnum.dense_edge_55,'''

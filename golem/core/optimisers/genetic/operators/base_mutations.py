@@ -73,6 +73,44 @@ class MutationTypesEnum(Enum):
     star_edge_50='star_edge_50'
     star_edge_55='star_edge_55'
 
+    cycle_edge_5='cycle_edge_5'
+    cycle_edge_10='cycle_edge_10'
+    cycle_edge_15='cycle_edge_15'
+    cycle_edge_20='cycle_edge_20'
+    cycle_edge_25='cycle_edge_25'
+    cycle_edge_30='cycle_edge_30'
+    cycle_edge_35='cycle_edge_35'
+    cycle_edge_40='cycle_edge_40'
+    cycle_edge_45='cycle_edge_45'
+    cycle_edge_50='cycle_edge_50'
+    cycle_edge_55='cycle_edge_55'
+
+
+
+    path_edge_5='path_edge_5'
+    path_edge_10='path_edge_10'
+    path_edge_15='path_edge_15'
+    path_edge_20='path_edge_20'
+    path_edge_25='path_edge_25'
+    path_edge_30='path_edge_30'
+    path_edge_35='path_edge_35'
+    path_edge_40='path_edge_40'
+    path_edge_45='path_edge_45'
+    path_edge_50='path_edge_50'
+    path_edge_55='path_edge_55'
+
+    dense_edge_5='dense_edge_5'
+    dense_edge_10='dense_edge_10'
+    dense_edge_15='dense_edge_15'
+    dense_edge_20='dense_edge_20'
+    dense_edge_25='dense_edge_25'
+    dense_edge_30='dense_edge_30'
+    dense_edge_35='dense_edge_35'
+    dense_edge_40='dense_edge_40'
+    dense_edge_45='dense_edge_45'
+    dense_edge_50='dense_edge_50'
+    dense_edge_55='dense_edge_55'
+
     dense_edge='dense_edge'
     batch_edge_del = 'batch_edge_delete'
 
@@ -284,14 +322,14 @@ star_edge_55_mutation = partial(star_edge_mutation, num_edges=55)
 def cycle_edge_mutation(graph: OptGraph,
                        requirements: GraphRequirements,
                        graph_gen_params: GraphGenerationParams,
-                       parameters: 'GPAlgorithmParameters',
+                       parameters: 'GPAlgorithmParameters', num_edges
                        ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
 
     :param graph: graph to mutate
     """
-    num_edges = requirements.num_edges
+    num_edges = num_edges#requirements.num_edges
     num_nodes = num_edges
     old_graph = deepcopy(graph)
 
@@ -328,19 +366,29 @@ def cycle_edge_mutation(graph: OptGraph,
 #    if graph.depth > requirements.max_depth:
  #       return old_graph
     return graph
-
+cycle_edge_5_mutation = partial(cycle_edge_mutation, num_edges=5)
+cycle_edge_10_mutation = partial(cycle_edge_mutation, num_edges=10)
+cycle_edge_15_mutation = partial(cycle_edge_mutation, num_edges=15)
+cycle_edge_20_mutation = partial(cycle_edge_mutation, num_edges=20)
+cycle_edge_25_mutation = partial(cycle_edge_mutation, num_edges=25)
+cycle_edge_30_mutation = partial(cycle_edge_mutation, num_edges=30)
+cycle_edge_35_mutation = partial(cycle_edge_mutation, num_edges=35)
+cycle_edge_40_mutation = partial(cycle_edge_mutation, num_edges=40)
+cycle_edge_45_mutation = partial(cycle_edge_mutation, num_edges=45)
+cycle_edge_50_mutation = partial(cycle_edge_mutation, num_edges=50)
+cycle_edge_55_mutation = partial(cycle_edge_mutation, num_edges=55)
 @register_native
 def path_edge_mutation(graph: OptGraph,
                        requirements: GraphRequirements,
                        graph_gen_params: GraphGenerationParams,
-                       parameters: 'GPAlgorithmParameters',
+                       parameters: 'GPAlgorithmParameters',num_edges
                        ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
 
     :param graph: graph to mutate
     """
-    num_edges = requirements.num_edges
+    num_edges = num_edges#requirements.num_edges
     num_nodes = num_edges + 1
 
     old_graph = deepcopy(graph)
@@ -376,20 +424,30 @@ def path_edge_mutation(graph: OptGraph,
   #      return old_graph
     return graph
 
-
+path_edge_5_mutation = partial(path_edge_mutation, num_edges=5)
+path_edge_10_mutation = partial(path_edge_mutation, num_edges=10)
+path_edge_15_mutation = partial(path_edge_mutation, num_edges=15)
+path_edge_20_mutation = partial(path_edge_mutation, num_edges=20)
+path_edge_25_mutation = partial(path_edge_mutation, num_edges=25)
+path_edge_30_mutation = partial(path_edge_mutation, num_edges=30)
+path_edge_35_mutation = partial(path_edge_mutation, num_edges=35)
+path_edge_40_mutation = partial(path_edge_mutation, num_edges=40)
+path_edge_45_mutation = partial(path_edge_mutation, num_edges=45)
+path_edge_50_mutation = partial(path_edge_mutation, num_edges=50)
+path_edge_55_mutation = partial(path_edge_mutation, num_edges=55)
 
 @register_native
 def dense_edge_mutation(graph: OptGraph,
                        requirements: GraphRequirements,
                        graph_gen_params: GraphGenerationParams,
-                       parameters: 'GPAlgorithmParameters',
+                       parameters: 'GPAlgorithmParameters', num_edges
                        ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
 
     :param graph: graph to mutate
     """
-    num_edges = requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
+    num_edges = num_edges# requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
     num_nodes = int((1 + math.sqrt(1+8*num_edges))/2)#num_nodes*(num_nodes-1)/2
     old_graph = deepcopy(graph)
     for o in range(parameters.max_num_of_operator_attempts):
@@ -423,7 +481,17 @@ def dense_edge_mutation(graph: OptGraph,
     #    return old_graph
     return graph
 
-
+dense_edge_5_mutation = partial(dense_edge_mutation, num_edges=5)
+dense_edge_10_mutation = partial(dense_edge_mutation, num_edges=10)
+dense_edge_15_mutation = partial(dense_edge_mutation, num_edges=15)
+dense_edge_20_mutation = partial(dense_edge_mutation, num_edges=20)
+dense_edge_25_mutation = partial(dense_edge_mutation, num_edges=25)
+dense_edge_30_mutation = partial(dense_edge_mutation, num_edges=30)
+dense_edge_35_mutation = partial(dense_edge_mutation, num_edges=35)
+dense_edge_40_mutation = partial(dense_edge_mutation, num_edges=40)
+dense_edge_45_mutation = partial(dense_edge_mutation, num_edges=45)
+dense_edge_50_mutation = partial(dense_edge_mutation, num_edges=50)
+dense_edge_55_mutation = partial(dense_edge_mutation, num_edges=55)
 
 @register_native
 def add_intermediate_node(graph: OptGraph,
@@ -751,9 +819,45 @@ base_mutations_repo = {
     MutationTypesEnum.star_edge_50: star_edge_50_mutation,
     MutationTypesEnum.star_edge_55: star_edge_55_mutation,
 
-    MutationTypesEnum.dense_edge: dense_edge_mutation,
-    MutationTypesEnum.path_edge: path_edge_mutation,
-    MutationTypesEnum.cycle_edge: cycle_edge_mutation,
+    MutationTypesEnum.dense_edge_5: dense_edge_5_mutation,
+MutationTypesEnum.dense_edge_10: dense_edge_10_mutation,
+MutationTypesEnum.dense_edge_15: dense_edge_15_mutation,
+MutationTypesEnum.dense_edge_20: dense_edge_20_mutation,
+MutationTypesEnum.dense_edge_25: dense_edge_25_mutation,
+MutationTypesEnum.dense_edge_30: dense_edge_30_mutation,
+MutationTypesEnum.dense_edge_35: dense_edge_35_mutation,
+MutationTypesEnum.dense_edge_40: dense_edge_40_mutation,
+MutationTypesEnum.dense_edge_45: dense_edge_45_mutation,
+MutationTypesEnum.dense_edge_50: dense_edge_50_mutation,
+MutationTypesEnum.dense_edge_55: dense_edge_55_mutation,
+
+    MutationTypesEnum.path_edge_5: path_edge_5_mutation,
+MutationTypesEnum.path_edge_10: path_edge_10_mutation,
+MutationTypesEnum.path_edge_15: path_edge_15_mutation,
+MutationTypesEnum.path_edge_20: path_edge_20_mutation,
+MutationTypesEnum.path_edge_25: path_edge_25_mutation,
+MutationTypesEnum.path_edge_30: path_edge_30_mutation,
+MutationTypesEnum.path_edge_35: path_edge_35_mutation,
+MutationTypesEnum.path_edge_40: path_edge_40_mutation,
+MutationTypesEnum.path_edge_45: path_edge_45_mutation,
+MutationTypesEnum.path_edge_50: path_edge_50_mutation,
+MutationTypesEnum.path_edge_50: path_edge_50_mutation,
+
+    MutationTypesEnum.cycle_edge_5: cycle_edge_5_mutation,
+MutationTypesEnum.cycle_edge_10: cycle_edge_10_mutation,
+MutationTypesEnum.cycle_edge_15: cycle_edge_15_mutation,
+MutationTypesEnum.cycle_edge_20: cycle_edge_20_mutation,
+MutationTypesEnum.cycle_edge_25: cycle_edge_25_mutation,
+MutationTypesEnum.cycle_edge_30: cycle_edge_30_mutation,
+MutationTypesEnum.cycle_edge_35: cycle_edge_35_mutation,
+MutationTypesEnum.cycle_edge_40: cycle_edge_40_mutation,
+MutationTypesEnum.cycle_edge_45: cycle_edge_45_mutation,
+MutationTypesEnum.cycle_edge_50: cycle_edge_50_mutation,
+MutationTypesEnum.cycle_edge_55: cycle_edge_55_mutation,
+
+
+
+
     MutationTypesEnum.batch_edge_5: batch_edge_5_mutation,
     MutationTypesEnum.batch_edge_10: batch_edge_10_mutation,
     MutationTypesEnum.batch_edge_15: batch_edge_15_mutation,
