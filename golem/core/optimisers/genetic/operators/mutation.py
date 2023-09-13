@@ -39,7 +39,7 @@ class Mutation(Operator):
         self.parameters = parameters
         self._mutations_repo = mutations_repo or base_mutations_repo
         self._operator_agent = self._init_operator_agent(graph_gen_params, parameters, requirements)
-        self.agent_experience = ExperienceBuffer()
+        self.agent_experience = ExperienceBuffer(window_size=parameters.window_size)
 
     @staticmethod
     def _init_operator_agent(graph_gen_params: GraphGenerationParams,
@@ -51,17 +51,21 @@ class Mutation(Operator):
         elif kind == MutationAgentTypeEnum.bandit:
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs,
-                                          path_to_save=requirements.agent_dir)
+                                          path_to_save=requirements.agent_dir,
+                                          decaying_factor=parameters.decaying_factor)
         elif kind == MutationAgentTypeEnum.contextual_bandit:
             agent = ContextualMultiArmedBanditAgent(
                 actions=parameters.mutation_types,
                 context_agent_type=parameters.context_agent_type,
                 available_operations=graph_gen_params.node_factory.get_all_available_operations(),
-                n_jobs=requirements.n_jobs)
+                n_jobs=requirements.n_jobs,
+                decaying_factor=parameters.decaying_factor)
         elif kind == MutationAgentTypeEnum.neural_bandit:
-            agent = NeuralContextualMultiArmedBanditAgent(actions=parameters.mutation_types,
-                                                          context_agent_type=parameters.context_agent_type,
-                                                          n_jobs=requirements.n_jobs)
+            agent = NeuralContextualMultiArmedBanditAgent(
+                actions=parameters.mutation_types,
+                context_agent_type=parameters.context_agent_type,
+                available_operations=graph_gen_params.node_factory.available_nodes,
+                n_jobs=requirements.n_jobs)
         # if agent was specified pretrained (with instance)
         elif isinstance(parameters.adaptive_mutation_type, OperatorAgent):
             agent = kind
@@ -82,6 +86,7 @@ class Mutation(Operator):
         # drop individuals to which mutations could not be applied
         final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)
                             if not attempt or ind.graph != init_ind.graph]
+
         if len(population) == 1:
             return final_population[0] if final_population else final_population
 

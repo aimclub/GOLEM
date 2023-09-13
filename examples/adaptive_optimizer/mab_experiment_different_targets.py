@@ -1,6 +1,6 @@
 from datetime import timedelta
 from functools import partial
-from typing import Optional, Sequence, Callable
+from typing import Optional, Sequence, Callable, List
 import networkx as nx
 
 from examples.adaptive_optimizer.experiment_setup import run_adaptive_mutations
@@ -39,19 +39,22 @@ def generate_trees(graph_sizes: Sequence[int], node_types: Sequence[str] = ('x',
 
 
 def get_graph_gp_params(objective: Objective, adaptive_mutation_type: MutationAgentTypeEnum,
-                        context_agent_type: ContextAgentTypeEnum = None, pop_size: int = None):
+                        context_agent_type: ContextAgentTypeEnum = None,
+                        mutation_types: List[MutationTypesEnum] = None, pop_size: int = None,
+                        decaying_factor: float = 1.0, window_size: int = 5):
+    mutation_types = mutation_types or [MutationTypesEnum.single_change,
+                                        MutationTypesEnum.single_add,
+                                        MutationTypesEnum.single_drop]
     return GPAlgorithmParameters(
         adaptive_mutation_type=adaptive_mutation_type,
         context_agent_type=context_agent_type,
         pop_size=pop_size or 21,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
-        mutation_types=[
-            MutationTypesEnum.single_drop,
-            MutationTypesEnum.single_edge,
-            MutationTypesEnum.single_add
-        ],
-        crossover_types=[CrossoverTypesEnum.none]
+        mutation_types=mutation_types,
+        crossover_types=[CrossoverTypesEnum.none],
+        decaying_factor=decaying_factor,
+        window_size=window_size
     )
 
 
@@ -71,7 +74,7 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
             algorithm_parameters=get_graph_gp_params(objective=objective,
                                                      adaptive_mutation_type=adaptive_mutation_type),
             timeout=timedelta(minutes=trial_timeout),
-            num_iterations=target_size * 3,
+            num_iterations=target_size * 3
         )
         run_func(optimizer, objective, visualize=True)
 

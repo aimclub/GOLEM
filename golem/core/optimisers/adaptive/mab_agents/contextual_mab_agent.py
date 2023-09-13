@@ -9,10 +9,11 @@ from scipy.special import softmax
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.context_agents import ContextAgentsRepository, ContextAgentTypeEnum
-from golem.core.optimisers.adaptive.operator_agent import ActType, ObsType, ExperienceBuffer, OperatorAgent
+from golem.core.optimisers.adaptive.mab_agents.mab_agent import MultiArmedBanditAgent
+from golem.core.optimisers.adaptive.operator_agent import ActType, ObsType, ExperienceBuffer
 
 
-class ContextualMultiArmedBanditAgent(OperatorAgent):
+class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     """ Contextual Multi-Armed bandit. Observations can be encoded with simple context agent without
     using NN to guarantee convergence.
 
@@ -28,11 +29,10 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
                  context_agent_type: Union[ContextAgentTypeEnum, Callable],
                  available_operations: List[str],
                  n_jobs: int = 1,
-                 enable_logging: bool = True):
-        super().__init__(enable_logging)
-        self.actions = list(actions)
-        self._indices = list(range(len(actions)))
-        self._arm_by_action = dict(zip(actions, self._indices))
+                 enable_logging: bool = True,
+                 decaying_factor: float = 1.0):
+        super().__init__(actions=actions, n_jobs=n_jobs, enable_logging=enable_logging,
+                         decaying_factor=decaying_factor, is_initial_fit=False)
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
@@ -78,11 +78,9 @@ class ContextualMultiArmedBanditAgent(OperatorAgent):
 
     def partial_fit(self, experience: ExperienceBuffer):
         """Continues learning of underlying agent with new experience."""
-        obs, actions, rewards = experience.retrieve_experience()
-        self._dbg_log(obs, actions, rewards)
-        arms = [self._arm_by_action[action] for action in actions]
+        obs, arms, processed_rewards = self._get_experience(experience)
         contexts = self.get_context(obs=obs)
-        self._agent.partial_fit(decisions=arms, rewards=rewards, contexts=contexts)
+        self._agent.partial_fit(decisions=arms, rewards=processed_rewards, contexts=contexts)
 
     def get_context(self, obs: Union[List[ObsType], ObsType]) -> np.array:
         """ Returns contexts based on specified context agent. """
