@@ -841,7 +841,7 @@ MutationTypesEnum.path_edge_35: path_edge_35_mutation,
 MutationTypesEnum.path_edge_40: path_edge_40_mutation,
 MutationTypesEnum.path_edge_45: path_edge_45_mutation,
 MutationTypesEnum.path_edge_50: path_edge_50_mutation,
-MutationTypesEnum.path_edge_50: path_edge_50_mutation,
+MutationTypesEnum.path_edge_55: path_edge_55_mutation,
 
     MutationTypesEnum.cycle_edge_5: cycle_edge_5_mutation,
 MutationTypesEnum.cycle_edge_10: cycle_edge_10_mutation,
