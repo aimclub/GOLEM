@@ -57,9 +57,9 @@ Examples of GOLEM applications:
 
 - Automatic Machine Learning (AutoML) with optimal ML pipelines search in `FEDOT framework <https://github.com/aimclub/FEDOT>`_
 - Bayesian network structure search in `BAMT framework <https://github.com/aimclub/BAMT>`_
-- Differential equation discovery for physical models in `EPDE framework <https://github.com/aimclub/EPDE>`_
+- Differential equation discovery for physical models in `EPDE framework <https://github.com/ITMO-NSS-team/EPDE>`_
 - Geometric design of physical objects in `GEFEST framework <https://github.com/aimclub/GEFEST>`_
-- `Neural architecture search <https://github.com/aimclub/nas-fedot>`_
+- `Neural architecture search <https://github.com/ITMO-NSS-team/nas-fedot>`_
 
 As GOLEM is a general-purpose framework, it's easy to imagine potential applications, for example, finite state automata search
 for robotics control or molecular graph learning for drug discovery, and more.
