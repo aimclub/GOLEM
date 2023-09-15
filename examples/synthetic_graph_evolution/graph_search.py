@@ -100,12 +100,13 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
 
 
 if __name__ == '__main__':
-    optimizers = [EvoGraphOptimizer]
+    optimizers = [EvoGraphOptimizer, RandomMutationSearchOptimizer]
+
     for optimizer in optimizers:
         results_log = run_experiments(optimizer_setup=graph_search_setup,
                                       optimizer_cls=optimizer,
                                       graph_names=['gnp', 'tree', 'grid2d'],
-                                      graph_sizes=[20, 30, 50, 100],
+                                      graph_sizes=[20, 50, 100],
                                       num_trials=30,
                                       trial_timeout=None,
                                       trial_iterations=1000,
