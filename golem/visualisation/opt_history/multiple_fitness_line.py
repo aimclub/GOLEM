@@ -1,16 +1,15 @@
 import os
 from pathlib import Path
 from statistics import mean, stdev
-from typing import Any, Dict, List, Optional, Union, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Union, Sequence
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from golem.core.log import default_log
-from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.opt_history.arg_constraint_wrapper import ArgConstraintWrapper
-from golem.visualisation.opt_history.fitness_line import setup_fitness_plot
+from golem.visualisation.opt_history.fitness_line import setup_fitness_plot, find_best_running_fitness
 from golem.visualisation.opt_history.utils import show_or_save_figure
 
 
@@ -123,22 +122,3 @@ def plot_average_fitness_line_per_generations(
     axis.plot(xs, average_fitness_per_gen, label=label)
     if with_confidence:
         axis.fill_between(xs, (ys - ci), (ys + ci), alpha=.2)
-
-
-def find_best_running_fitness(fitnesses: Sequence[Sequence[Union[float, Sequence[float]]]],
-                              metric_id: int = 0,
-                              ) -> List[float]:
-    """For each trial history per each generation find the best fitness *seen so far*.
-    Returns tuple:
-    - list of best seen metric up to that generation
-    """
-    best_metric = np.inf  # Assuming metric minimization
-    best_metrics = []
-
-    for gen_num, gen_fitnesses in enumerate(fitnesses[metric_id]):
-        target_metric = min(np.abs(gen_fitnesses))
-        if target_metric <= best_metric:
-            best_metric = target_metric
-        best_metrics.append(best_metric)
-
-    return best_metrics

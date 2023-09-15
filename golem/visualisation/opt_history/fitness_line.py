@@ -2,7 +2,7 @@ import functools
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING, Sequence
 
 import matplotlib as mpl
 import numpy as np
@@ -14,7 +14,6 @@ from golem.core.optimisers.fitness import null_fitness
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.paths import default_data_dir
 from golem.visualisation.opt_history.history_visualization import HistoryVisualization
-from golem.visualisation.opt_history.multiple_fitness_line import find_best_running_fitness
 from golem.visualisation.opt_history.utils import show_or_save_figure
 
 
@@ -227,3 +226,22 @@ class FitnessLineInteractive(HistoryVisualization):
             b_prev.on_clicked(callback.prev)
 
         show_or_save_figure(fig, save_path, dpi)
+
+
+def find_best_running_fitness(fitnesses: Sequence[Sequence[Union[float, Sequence[float]]]],
+                              metric_id: int = 0,
+                              ) -> List[float]:
+    """For each trial history per each generation find the best fitness *seen so far*.
+    Returns tuple:
+    - list of best seen metric up to that generation
+    """
+    best_metric = np.inf  # Assuming metric minimization
+    best_metrics = []
+
+    for gen_num, gen_fitnesses in enumerate(fitnesses[metric_id]):
+        target_metric = min(np.abs(gen_fitnesses))
+        if target_metric <= best_metric:
+            best_metric = target_metric
+        best_metrics.append(best_metric)
+
+    return best_metrics
