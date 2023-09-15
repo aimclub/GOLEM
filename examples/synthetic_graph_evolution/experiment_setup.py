@@ -43,7 +43,7 @@ def run_experiments(optimizer_setup: Callable,
                     graph_sizes: Sequence[int] = (30, 100, 300),
                     num_trials: int = 1,
                     trial_timeout: Optional[int] = None,
-                    trial_iterations: Optional[int] = None,
+                    trial_iteration: Optional[int] = None,
                     visualize: bool = False,
                     ):
     Path("results").mkdir(exist_ok=True)
@@ -61,13 +61,17 @@ def run_experiments(optimizer_setup: Callable,
             # Generate random target graph and run the optimizer
             target_graph = generate_labeled_graph(graph_name, num_nodes, node_types)
             # Run optimizer setup
-
+            # if num_nodes == 20:
+            #     trial_iteration = 200
+            # else:
+            #     trial_iteration = 500
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,
                                                    node_types=node_types,
-                                                   num_iterations=trial_iterations,
+                                                   num_iterations=trial_iteration,
                                                    graph_name=graph_name,
-                                                   path_to_save_agent=os.path.join(cur_path_to_save, 'agent'))
+                                                   path_to_save_agent=os.path.join(cur_path_to_save, 'agent'),
+                                                   )
             found_graphs = optimizer.optimise(objective)
             found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
             history = optimizer.history
@@ -85,13 +89,7 @@ def run_experiments(optimizer_setup: Callable,
             if visualize:
                 path_to_pics = os.path.join(cur_path_to_save, 'pics')
                 os.makedirs(path_to_pics, exist_ok=True)
-                # draw_graphs_subplots(target_graph, found_nx_graph,
-                #                      titles=['Target Graph', 'Found Graph'], show=False)
                 diversity_filename = (f'diversity_hist_{graph_name}_n{num_nodes}.gif')
-                # history.show.diversity_population(save_path=os.path.join(path_to_pics, diversity_filename))
-                # history.show.diversity_line(os.path.join(path_to_pics, 'diversity_line.png'), show=False)
-                # history.show.fitness_line(os.path.join(path_to_pics, 'fitness_line.png'))
-            # history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness
@@ -125,13 +123,13 @@ def run_trial(target_graph: nx.DiGraph,
 
 def _save_experiment_results(path_to_save: str, optimizer):
     os.makedirs(path_to_save, exist_ok=True)
-    path_for_pics = os.path.join(path_to_save, 'pics')
-    os.makedirs(path_for_pics, exist_ok=True)
+    # path_for_pics = os.path.join(path_to_save, 'pics')
+    # os.makedirs(path_for_pics, exist_ok=True)
 
     # save final graphs
-    for i, ind in enumerate(optimizer.best_individuals):
-        # ind.save(os.path.join(path_to_save, f'{i}_ind.json'))
-        ind.graph.show(os.path.join(path_for_pics, f'{i}_ind.png'))
+    # for i, ind in enumerate(optimizer.best_individuals):
+    #     # ind.save(os.path.join(path_to_save, f'{i}_ind.json'))
+    #     ind.graph.show(os.path.join(path_for_pics, f'{i}_ind.png'))
 
     # save metrics
     obj_names = optimizer.objective.metric_names

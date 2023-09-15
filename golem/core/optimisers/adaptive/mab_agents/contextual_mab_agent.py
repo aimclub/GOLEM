@@ -30,9 +30,10 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
                  available_operations: List[str],
                  n_jobs: int = 1,
                  enable_logging: bool = True,
-                 decaying_factor: float = 1.0):
+                 decaying_factor: float = 1.0,
+                 path_to_save: Optional[str] = None):
         super().__init__(actions=actions, n_jobs=n_jobs, enable_logging=enable_logging,
-                         decaying_factor=decaying_factor, is_initial_fit=False)
+                         decaying_factor=decaying_factor, is_initial_fit=False, path_to_save=path_to_save)
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.UCB1(alpha=1.25),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
@@ -85,7 +86,7 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     def get_context(self, obs: Union[List[ObsType], ObsType]) -> np.array:
         """ Returns contexts based on specified context agent. """
         if not isinstance(obs, list):
-            return np.array(self._context_agent(obs)).flatten()
+            obs = [obs]
         contexts = []
         for ob in obs:
             if isinstance(ob, list) or isinstance(ob, np.ndarray):

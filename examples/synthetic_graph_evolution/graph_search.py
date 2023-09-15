@@ -33,8 +33,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
                        timeout: Optional[timedelta] = None,
                        num_iterations: Optional[int] = None,
                        initial_graph_sizes: Optional[List[int]] = None,
+                       graph_name: Optional[str] = None,
                        initial_graphs: List[Graph] = None,
-                       graph_name: str = None,
                        pop_size: int = None,
                        path_to_save_agent: str = None):
     if target_graph is not None and objective is not None:
@@ -62,12 +62,11 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size,
-        early_stopping_timeout=10,
-        early_stopping_iterations=3,
+        early_stopping_iterations=num_iterations//4,
         keep_n_best=4,
         timeout=timeout,
         num_of_generations=num_iterations,
-        n_jobs=1,
+        n_jobs=-1,
         history_dir=None,
         agent_dir=path_to_save_agent
     )
@@ -92,13 +91,14 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
         available_node_types=node_types,
     )
 
-    # # Generate simple initial population with line graphs
-    # if not initial_graphs:
-    #     if not initial_graph_sizes:
-    #         initial_graph_sizes = [7] * gp_params.pop_size
-    #     initial_graphs = [nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph)
-    #                       for i in range(gp_params.pop_size)]
-    initial_graphs = [generate_labeled_graph(graph_name, 5, node_types) for _ in range(10)]
+    # Generate simple initial population with line graphs
+    if not initial_graphs:
+        # if not initial_graph_sizes:
+        #     initial_graph_sizes = [7] * gp_params.pop_size
+        # initial_graphs = [nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph)
+        #                   for i in range(gp_params.pop_size)]
+        initial_graphs = [generate_labeled_graph(graph_name, 7, node_types)
+                          for _ in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                                   adaptive_mutation_type=MutationAgentTypeEnum.bandit)
     graph_search_context_bandit = partial(graph_search_setup,
                                           adaptive_mutation_type=MutationAgentTypeEnum.contextual_bandit,
-                                          context_agent_type=ContextAgentTypeEnum.adjacency_matrix)
+                                          context_agent_type=ContextAgentTypeEnum.adjacency_matrix_by_nodes)
 
     graph_searches = [graph_search_random, graph_search_bandit, graph_search_context_bandit]
     graph_setup_names = ['random', 'bandit', 'context_bandit']
@@ -122,9 +122,9 @@ if __name__ == '__main__':
                                       optimizer_cls=EvoGraphOptimizer,
                                       setup_name=graph_setup_names[i],
                                       graph_names=['gnp', 'tree', 'grid2d'],
-                                      graph_sizes=[20, 50, 100],
-                                      num_trials=15,
-                                      trial_iterations=1000,
+                                      graph_sizes=[20],
+                                      num_trials=2,
+                                      trial_iteration=2,
                                       visualize=True,
                                       path_to_save=path_to_save)
         print(results_log)
