@@ -1,0 +1,13 @@
+common_params:
+  timeout: 1
+  launch_num: 1
+
+random:
+  adaptive_mutation_type: random
+
+bandit:
+  adaptive_mutation_type: bandit
+
+
+contextual_bandit:
+  adaptive_mutation_type: contextual_bandit

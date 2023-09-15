@@ -51,12 +51,13 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
     return encoded
 
 
-@adapter_func_to_networkx
+# @adapter_func_to_networkx
 def feather_graph(obs: Any, available_operations: List[str]) -> List[float]:
     """ Returns embedding based on an implementation of `"FEATHER-G" <https://arxiv.org/abs/2005.07959>`_.
     The procedure uses characteristic functions of node features with random walk weights to describe
     node neighborhoods. These node level features are pooled by mean pooling to
     create graph level statistics. """
+    obs = BanditNetworkxAdapter().restore(obs)
     descriptor = FeatherGraph()
     descriptor.fit([obs])
     emb = descriptor.get_embedding().reshape(-1, 1)
@@ -64,15 +65,23 @@ def feather_graph(obs: Any, available_operations: List[str]) -> List[float]:
     return embd
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def nodes_num(obs: Any, available_operations: List[str]) -> List[int]:
     """ Returns number of nodes in graph. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     return [len(obs.nodes)]
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graph with its edges with nodes labels. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     operations = []
     for node in obs.nodes:
         for node_ in node.nodes_from:
@@ -81,18 +90,26 @@ def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
     return encode_operations(operations=operations, available_operations=available_operations)
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def operations_quantity(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graphs as vectors with quantity of each operation. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     encoding = [0] * len(available_operations)
     for node in obs.nodes:
         encoding[available_operations.index(node.name)] += 1
     return encoding
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def adjacency_matrix(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graphs as flattened adjacency matrix. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     matrix = np.zeros((len(available_operations), len(available_operations)))
     for node in obs.nodes:
         operation_parent_idx = available_operations.index(node.name)

@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from functools import partial
 from io import StringIO
@@ -7,6 +8,7 @@ from typing import Sequence, Type, Callable, Optional, List
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph, graph_kinds
 from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
@@ -33,6 +35,8 @@ def get_all_quality_metrics(target_graph):
 
 
 def run_experiments(optimizer_setup: Callable,
+                    path_to_save: str,
+                    setup_name: str,
                     optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
                     node_types: Optional[Sequence[str]] = None,
                     graph_names: Sequence[str] = graph_kinds,
@@ -50,17 +54,20 @@ def run_experiments(optimizer_setup: Callable,
         experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
         trial_results = []
         for i in range(num_trials):
+            cur_path_to_save = os.path.join(path_to_save, setup_name, f'{graph_name}_{num_nodes}', str(i))
             start_time = datetime.now()
             print(f'\nTrial #{i} of {experiment_id} started at {start_time}', file=log)
 
             # Generate random target graph and run the optimizer
             target_graph = generate_labeled_graph(graph_name, num_nodes, node_types)
             # Run optimizer setup
+
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,
                                                    node_types=node_types,
-                                                   timeout=timedelta(minutes=trial_timeout),
-                                                   num_iterations=trial_iterations)
+                                                   num_iterations=trial_iterations,
+                                                   graph_name=graph_name,
+                                                   path_to_save_agent=os.path.join(cur_path_to_save, 'agent'))
             found_graphs = optimizer.optimise(objective)
             found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
             history = optimizer.history
@@ -72,14 +79,19 @@ def run_experiments(optimizer_setup: Callable,
             print(f'Trial #{i} finished, spent time: {duration}', file=log)
             print('target graph stats: ', nxgraph_stats(target_graph), file=log)
             print('found graph stats: ', nxgraph_stats(found_nx_graph), file=log)
+
+            _save_experiment_results(path_to_save=cur_path_to_save, optimizer=optimizer)
+
             if visualize:
-                draw_graphs_subplots(target_graph, found_nx_graph,
-                                     titles=['Target Graph', 'Found Graph'], show=False)
-                diversity_filename = (f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif')
-                history.show.diversity_population(save_path=diversity_filename)
-                history.show.diversity_line(show=False)
-                history.show.fitness_line()
-            history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
+                path_to_pics = os.path.join(cur_path_to_save, 'pics')
+                os.makedirs(path_to_pics, exist_ok=True)
+                # draw_graphs_subplots(target_graph, found_nx_graph,
+                #                      titles=['Target Graph', 'Found Graph'], show=False)
+                diversity_filename = (f'diversity_hist_{graph_name}_n{num_nodes}.gif')
+                # history.show.diversity_population(save_path=os.path.join(path_to_pics, diversity_filename))
+                # history.show.diversity_line(os.path.join(path_to_pics, 'diversity_line.png'), show=False)
+                # history.show.fitness_line(os.path.join(path_to_pics, 'fitness_line.png'))
+            # history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness
@@ -109,3 +121,30 @@ def run_trial(target_graph: nx.DiGraph,
     found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
     history = optimizer.history
     return found_graph, history
+
+
+def _save_experiment_results(path_to_save: str, optimizer):
+    os.makedirs(path_to_save, exist_ok=True)
+    path_for_pics = os.path.join(path_to_save, 'pics')
+    os.makedirs(path_for_pics, exist_ok=True)
+
+    # save final graphs
+    for i, ind in enumerate(optimizer.best_individuals):
+        # ind.save(os.path.join(path_to_save, f'{i}_ind.json'))
+        ind.graph.show(os.path.join(path_for_pics, f'{i}_ind.png'))
+
+    # save metrics
+    obj_names = optimizer.objective.metric_names
+    fitness = dict.fromkeys(obj_names)
+    for ind in optimizer.best_individuals:
+        for j, metric in enumerate(obj_names):
+            if not fitness[metric]:
+                fitness[metric] = []
+            fitness[metric].append(ind.fitness.values[j])
+    df_metrics = pd.DataFrame(fitness)
+    df_metrics.to_csv(os.path.join(path_to_save, 'metrics.csv'))
+
+    # save history
+    history = optimizer.history
+    os.makedirs(path_to_save, exist_ok=True)
+    history.save(os.path.join(path_to_save, 'history.json'))

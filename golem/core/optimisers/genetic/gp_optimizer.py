@@ -139,3 +139,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # update requirements in operators
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
+
+    def _log_agent(self):
+        """ Logs the state of agent and all the related information. """
+        if self.requirements.agent_dir:
+            self.mutation.agent.save()

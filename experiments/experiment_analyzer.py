@@ -1,7 +1,7 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple, Any, Callable, Union
+from typing import Dict, List, Tuple, Any, Callable, Union, Optional
 
 import pandas as pd
 
@@ -32,12 +32,13 @@ class ExperimentAnalyzer:
         self._folders_to_ignore = folders_to_ignore
         self._log = default_log('ExperimentAnalyzer')
 
-    def analyze_convergence(self, history_folder: str = 'history', is_mean: bool = False,
+    def analyze_convergence(self, history_folder: Optional[str] = 'history', is_mean: bool = False,
                             path_to_save: str = None, is_raise: bool = False) \
             -> Dict[str, Dict[str, Union[List[float], float]]]:
         """ Method to analyze convergence with the use of histories.
 
-        :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
+        :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories').
+        If history is not in separate folder than it must be specified as None.
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
         :param path_to_save: path to save results.
         :param is_raise: bool specifying if exception must be raised if there is no history folder
@@ -49,11 +50,17 @@ class ExperimentAnalyzer:
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
 
-            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
-                                                         is_raise=is_raise):
+            if history_folder is None:
+                pass
+            elif not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
+                                                           is_raise=is_raise):
                 continue
 
-            path_to_history_folder = os.path.join(path_to_launch, history_folder)
+            if history_folder is None:
+                path_to_history_folder = path_to_launch
+            else:
+                path_to_history_folder = os.path.join(path_to_launch, history_folder)
+
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
 
             # if there is no history
