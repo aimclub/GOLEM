@@ -1,6 +1,8 @@
 import random
 from abc import ABC, abstractmethod
+from collections import deque
 from enum import Enum
+from itertools import chain
 from typing import Union, Sequence, Hashable, Tuple, Optional, List
 
 import numpy as np
@@ -23,22 +25,39 @@ class MutationAgentTypeEnum(Enum):
 
 
 class ExperienceBuffer:
-    """Buffer for learning experience of ``OperatorAgent``.
-    Keeps (State, Action, Reward) lists until retrieval."""
+    """
+    Buffer for learning experience of ``OperatorAgent``.
+    Keeps (State, Action, Reward) lists until retrieval.
+    Can be used with window_size for actualizing experience.
+    """
 
-    def __init__(self):
+    def __init__(self, window_size: Optional[int] = None):
+        self.window_size = window_size
+        self._reset_main_storages()
         self.reset()
 
     def reset(self):
-        self._observations = []
-        self._actions = []
-        self._rewards = []
+        self._current_observations = []
+        self._current_actions = []
+        self._current_rewards = []
         self._prev_pop = set()
         self._next_pop = set()
+
+        # if window size was not specified than there is no need to store these values for reuse
+        if self.window_size is None:
+            self._reset_main_storages()
+
+    def _reset_main_storages(self):
+        self._observations = deque(maxlen=self.window_size)
+        self._actions = deque(maxlen=self.window_size)
+        self._rewards = deque(maxlen=self.window_size)
 
     def collect_results(self, results: Sequence[Individual]):
         for ind in results:
             self.collect_result(ind)
+        self._observations += self._current_observations
+        self._actions += self._current_actions
+        self._rewards += self._current_rewards
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
@@ -50,13 +69,15 @@ class ExperienceBuffer:
         action = result.parent_operator.operators[0]
         prev_fitness = result.parent_operator.parent_individuals[0].fitness.value
         # we're minimising the fitness, that's why less is better
-        reward = prev_fitness - result.fitness.value if prev_fitness is not None else 0.
+        # reward is defined as fitness improvement rate (FIR) to stabilize the algorithm
+        reward = (prev_fitness - result.fitness.value) / abs(prev_fitness) \
+            if prev_fitness is not None and prev_fitness != 0 else 0.
         self.collect_experience(obs, action, reward)
 
     def collect_experience(self, obs: ObsType, action: ActType, reward: float):
-        self._observations.append(obs)
-        self._actions.append(action)
-        self._rewards.append(reward)
+        self._current_observations.append(obs)
+        self._current_actions.append(action)
+        self._current_rewards.append(reward)
 
     def retrieve_experience(self) -> Tuple[List[ObsType], List[ActType], List[float]]:
         """Get all collected experience and clear the experience buffer."""
@@ -64,7 +85,9 @@ class ExperienceBuffer:
         next_pop = self._next_pop
         self.reset()
         self._prev_pop = next_pop
-        return observations, actions, rewards
+        return list(observations), \
+            list(actions), \
+            list(rewards)
 
 
 class OperatorAgent(ABC):

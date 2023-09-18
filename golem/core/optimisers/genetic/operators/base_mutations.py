@@ -159,16 +159,15 @@ def add_separate_parent_node(graph: OptGraph,
                              node_to_mutate: OptNode,
                              node_factory: OptNodeFactory) -> OptGraph:
     # add as separate parent
-    for iter_num in range(randint(1, 3)):
-        new_node = node_factory.get_parent_node(node_to_mutate, is_primary=True)
-        if not new_node:
-            # there is no possible operators
-            break
-        if node_to_mutate.nodes_from:
-            node_to_mutate.nodes_from.append(new_node)
-        else:
-            node_to_mutate.nodes_from = [new_node]
-        graph.nodes.append(new_node)
+    new_node = node_factory.get_parent_node(node_to_mutate, is_primary=True)
+    if not new_node:
+        # there is no possible operators
+        return graph
+    if node_to_mutate.nodes_from:
+        node_to_mutate.nodes_from.append(new_node)
+    else:
+        node_to_mutate.nodes_from = [new_node]
+    graph.nodes.append(new_node)
     return graph
 
 
@@ -378,7 +377,7 @@ base_mutations_repo = {
     MutationTypesEnum.single_add: single_add_mutation,
     MutationTypesEnum.single_edge: single_edge_mutation,
     MutationTypesEnum.single_drop: single_drop_mutation,
-    MutationTypesEnum.single_change: single_change_mutation,
+    MutationTypesEnum.single_change: single_change_mutation
 }
 
 simple_mutation_set = (
