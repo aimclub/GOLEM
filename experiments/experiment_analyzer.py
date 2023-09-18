@@ -292,8 +292,9 @@ class ExperimentAnalyzer:
             self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
 
     def plot_agent_mutation_probs_and_expectations(self, path_to_save: str, agent_class: type(OperatorAgent),
-                                                   mutation_names: List[str], gen_to_save_agent: int = 5, dir_name: str = 'agent',
-                                                   is_raise: bool = False, obs: Optional[ObsType] = None):
+                                                   mutation_names: List[str], gen_to_save_agent: int = 5,
+                                                   dir_name: str = 'agent', is_raise: bool = False,
+                                                   obs: Optional[ObsType] = None):
         """ Analyzes agent mutation probabilities and actions expectations through the evolution process.
         Useful for simple MAB and contextual MABs.
         :param path_to_save:
