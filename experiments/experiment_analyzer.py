@@ -1,11 +1,14 @@
 import os
 from statistics import mean
 
-from typing import Dict, List, Tuple, Any, Callable, Union
+from typing import Dict, List, Tuple, Any, Callable, Union, Optional
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
+from examples.adaptive_optimizer.utils import plot_action_values
 from golem.core.log import default_log
+from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ObsType
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 
@@ -32,12 +35,13 @@ class ExperimentAnalyzer:
         self._folders_to_ignore = folders_to_ignore
         self._log = default_log('ExperimentAnalyzer')
 
-    def analyze_convergence(self, history_folder: str = 'history', is_mean: bool = False,
+    def analyze_convergence(self, history_folder: Optional[str] = 'history', is_mean: bool = False,
                             path_to_save: str = None, is_raise: bool = False) \
             -> Dict[str, Dict[str, Union[List[float], float]]]:
         """ Method to analyze convergence with the use of histories.
 
-        :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
+        :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories').
+        If history is not in separate folder than it must be specified as None.
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
         :param path_to_save: path to save results.
         :param is_raise: bool specifying if exception must be raised if there is no history folder
@@ -47,13 +51,19 @@ class ExperimentAnalyzer:
 
         convergence = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
-
-            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
-                                                         is_raise=is_raise):
+            if history_folder is None:
+                pass
+            elif not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
+                                                           is_raise=is_raise):
                 continue
 
-            path_to_history_folder = os.path.join(path_to_launch, history_folder)
+            convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
+
+            if history_folder is None:
+                path_to_history_folder = path_to_launch
+            else:
+                path_to_history_folder = os.path.join(path_to_launch, history_folder)
+
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
 
             # if there is no history
@@ -152,11 +162,11 @@ class ExperimentAnalyzer:
 
         histories = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            histories = self._extend_result_dict(result_dict=histories, setup=setup, dataset=dataset)
-
             if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
                                                          is_raise=is_raise):
                 continue
+
+            histories = self._extend_result_dict(result_dict=histories, setup=setup, dataset=dataset)
 
             path_to_history_folder = os.path.join(path_to_launch, history_folder)
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
@@ -280,6 +290,78 @@ class ExperimentAnalyzer:
             cur_path_to_save = os.path.join(cur_path_to_save, f'{max_saved_num+1}_result.png')
             result.show(cur_path_to_save, title=title)
             self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
+
+    def plot_agent_mutation_probs_and_expectations(self, path_to_save: str, agent_class: type(OperatorAgent),
+                                                   mutation_names: List[str], gen_to_save_agent: int = 5, dir_name: str = 'agent',
+                                                   is_raise: bool = False, obs: Optional[ObsType] = None):
+        """ Analyzes agent mutation probabilities and actions expectations through the evolution process.
+        Useful for simple MAB and contextual MABs.
+        :param path_to_save:
+        :param agent_class: class of agent to load
+        :param mutation_names: mutations that were applied by agent
+        :param gen_to_save_agent: the agent is saved every generation which % gen_to_save_agent == 0.
+        Originally, the agent is saved every 5th generation to not overload memory.
+        :param dir_name: name of directory in which agent are saved.
+        :param is_raise: bool specifying if exception must be raised if there is no history folder.
+        :param obs: observation to throw to agent. E.g. ContextualMultiArmedBanditAgent needs an
+        observation to predict action probabilities. If the specified agent does not need observation,
+        can be left as None.
+        """
+        if path_to_save:
+            os.makedirs(path_to_save, exist_ok=True)
+
+        probs_dict = dict()
+        for setup, dataset, path_to_launch in self._get_path_to_launch():
+            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=dir_name,
+                                                         is_raise=is_raise):
+                continue
+
+            probs_dict = self._extend_result_dict(result_dict=probs_dict, setup=setup, dataset=dataset)
+
+            path_to_agents = os.path.join(path_to_launch, dir_name)
+            cur_probabilities_list = []
+            for agent_num in os.listdir(path_to_agents):
+                path_cur_agent = os.path.join(path_to_agents, agent_num)
+                agent = agent_class.load(path_cur_agent)
+                probs = agent.get_action_values(obs)
+                cur_probabilities_list.append(probs)
+            probs_dict[setup][dataset].append(cur_probabilities_list)
+            self._log.info(f"Agents for {setup} {dataset} were analyzed")
+
+        # Average out probabilities per generation
+        num_mutations = len(mutation_names)
+        average_probabilities = {}
+        for setup in probs_dict.keys():
+            for dataset in probs_dict[setup].keys():
+                average_probs = []
+                all_probabilities = probs_dict[setup][dataset]
+                max_gen = max([len(agent) for agent in all_probabilities])
+                for gen in range(max_gen):
+                    all_probs_per_gen = []
+                    for i in range(num_mutations):
+                        all_probs_per_gen.append([])
+                    for agent in all_probabilities:
+                        for mutation_num in range(num_mutations):
+                            # extend mutations as if all launches are of the same length
+                            if gen >= len(agent):
+                                all_probs_per_gen[mutation_num].append(agent[-1][mutation_num])
+                            else:
+                                all_probs_per_gen[mutation_num].append(agent[gen][mutation_num])
+                    average_probs_per_gen = []
+                    for probs_list in all_probs_per_gen:
+                        average_probs_per_gen.append(mean(probs_list))
+
+                    for i in range(gen_to_save_agent):
+                        average_probs.append(average_probs_per_gen)
+                average_probabilities = self._extend_result_dict(result_dict=average_probabilities,
+                                                                 setup=setup, dataset=dataset)
+                average_probabilities[setup][dataset] = average_probs
+
+                plot_action_values(stats=average_probabilities[setup][dataset], action_tags=mutation_names,
+                                   titles=['Average action Expectation Values', 'Average action Probabilities'])
+                cur_path_to_save = os.path.join(path_to_save, f'{setup}_{dataset}_probs.png')
+                plt.savefig(cur_path_to_save)
+                self._log.info(f"Plot of action expectations and mutation probabilities was saved: {cur_path_to_save}")
 
     def _get_path_to_launch(self) -> Tuple[str, str, str]:
         """ Yields setup name, dataset name and paths to dirs with experiment results.
