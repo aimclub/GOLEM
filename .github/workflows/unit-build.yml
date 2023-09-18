@@ -3,6 +3,9 @@
 
 name: Build
 
+build:
+  os: ubuntu-22.04
+
 on:
   push:
     branches: [ main ]
@@ -11,7 +14,7 @@ on:
 
 jobs:
   build:
-    os: ubuntu-latest
+    os: ubuntu-22.04
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
