@@ -4,6 +4,8 @@ from math import ceil
 from random import choice, random, sample
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
+from joblib import Parallel, delayed
+
 from golem.core.adapter import register_native
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
@@ -40,13 +42,12 @@ class Crossover(Operator):
         self.graph_generation_params = graph_generation_params
 
     def __call__(self, population: PopulationT) -> PopulationT:
-        if len(population) == 1:
-            new_population = population
-        else:
-            new_population = []
-            for ind_1, ind_2 in Crossover.crossover_parents_selection(population):
-                new_population += self._crossover(ind_1, ind_2)
-        return new_population
+        if len(population) > 1:
+            parallel = Parallel(n_jobs=self.requirements.n_jobs, prefer='processes')
+            population = parallel(delayed(self._crossover)(ind_1, ind_2)
+                                  for ind_1, ind_2 in Crossover.crossover_parents_selection(population))
+            population = list(chain(*population))
+        return population
 
     @staticmethod
     def crossover_parents_selection(population: PopulationT) -> Iterable[Tuple[Individual, Individual]]:

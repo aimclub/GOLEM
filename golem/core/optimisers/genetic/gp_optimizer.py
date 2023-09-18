@@ -1,6 +1,9 @@
+import time
 from copy import deepcopy
 from random import choice
 from typing import Sequence, Union, Any
+
+from joblib import Parallel, delayed
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -73,25 +76,26 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
 
     def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
-        verifier = self.graph_generation_params.verifier
-        extended_pop = list(pop)
-        pop_graphs = [ind.graph for ind in extended_pop]
-
         # Set mutation probabilities to 1.0
         initial_req = deepcopy(self.requirements)
         initial_req.mutation_prob = 1.0
         self.mutation.update_requirements(requirements=initial_req)
 
-        for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
-            if len(extended_pop) == target_pop_size:
-                break
-            new_ind = self.mutation(choice(pop))
-            if new_ind:
-                new_graph = new_ind.graph
-                if new_graph not in pop_graphs and verifier(new_graph):
+        extended_pop = list(pop)
+        pop_graphs = [ind.graph for ind in extended_pop]
+        verifier = self.graph_generation_params.verifier
+        with Parallel(n_jobs=self.requirements.n_jobs, prefer='processes', return_as='generator') as parallel:
+            new_ind_generator = parallel(delayed(lambda ind: self.mutation(ind))(ind)
+                                                  for ind in (choice(pop) for _ in range(MAX_GRAPH_GEN_ATTEMPTS)))
+
+            for new_ind in new_ind_generator:
+                if new_ind and new_ind.graph not in pop_graphs and verifier(new_ind.graph):
                     extended_pop.append(new_ind)
-                    pop_graphs.append(new_graph)
-        else:
+                    pop_graphs.append(new_ind.graph)
+                    if len(extended_pop) == target_pop_size:
+                        break
+
+        if len(extended_pop) != target_pop_size:
             self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
                              f'Current size {len(pop)}, required {target_pop_size} graphs.')
 

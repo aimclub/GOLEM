@@ -3,6 +3,7 @@ from random import random
 from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
 import numpy as np
+from joblib import Parallel, delayed
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import ContextualMultiArmedBanditAgent
@@ -79,9 +80,12 @@ class Mutation(Operator):
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
+            mutation_result = [[x] for x in self._mutation(population)]
             population = [population]
-
-        final_population, mutations_applied, application_attempts = tuple(zip(*map(self._mutation, population)))
+        else:
+            parallel = Parallel(n_jobs=self.requirements.n_jobs, prefer='processes')
+            mutation_result = tuple(zip(*parallel(delayed(self._mutation)(ind) for ind in population)))
+        final_population, mutations_applied, application_attempts = mutation_result
 
         # drop individuals to which mutations could not be applied
         final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)

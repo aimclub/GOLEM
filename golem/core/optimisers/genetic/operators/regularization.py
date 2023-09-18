@@ -34,6 +34,7 @@ class Regularization(Operator):
             raise ValueError(f'Required regularization type not found: {regularization_type}')
 
     def _decremental_regularization(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
+        # TODO: do it in parallel if it can be done
         size = self.parameters.pop_size
         additional_inds = []
         prev_nodes_ids = set()
