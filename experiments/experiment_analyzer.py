@@ -3,11 +3,12 @@ from statistics import mean
 
 from typing import Dict, List, Tuple, Any, Callable, Union, Optional
 
+import numpy as np
 import pandas as pd
 
 from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
+from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnessLines
 
 
 class ExperimentAnalyzer:
@@ -33,8 +34,9 @@ class ExperimentAnalyzer:
         self._log = default_log('ExperimentAnalyzer')
 
     def analyze_convergence(self, history_folder: Optional[str] = 'history', is_mean: bool = False,
-                            path_to_save: str = None, is_raise: bool = False) \
-            -> Dict[str, Dict[str, Union[List[float], float]]]:
+                            path_to_save: str = None, is_raise: bool = False,
+                            metrics_names: Optional[List[str]] = None) \
+            -> Dict[str, Dict[str, Dict[str, List[float]]]]:
         """ Method to analyze convergence with the use of histories.
 
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories').
@@ -42,14 +44,23 @@ class ExperimentAnalyzer:
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
         :param path_to_save: path to save results.
         :param is_raise: bool specifying if exception must be raised if there is no history folder
+        :param metrics_names: names of metrics to consider. Useful in case of multimodal optimization.
         """
         if path_to_save:
             os.makedirs(path_to_save, exist_ok=True)
 
+        if metrics_names is None:
+            metrics_names = ['metric']
+
         convergence = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            convergence = self._extend_result_dict(result_dict=convergence, setup=setup, dataset=dataset)
 
+            for metric in metrics_names:
+                convergence.setdefault(metric, dict())
+                convergence[metric] = \
+                    self._extend_result_dict(result_dict=convergence[metric], setup=setup, dataset=dataset)
+
+            # history is not attached to a folder
             if history_folder is None:
                 pass
             elif not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
@@ -69,40 +80,55 @@ class ExperimentAnalyzer:
 
             # load the first history in the folder
             history = OptHistory.load(os.path.join(path_to_history_folder, history_files[0]))
-            convergence[setup][dataset].append(self._analyze_convergence(history=history))
+
+            convergence_per_metric = self._analyze_convergence(history=history,
+                                                               metrics_num=len(metrics_names))
+            for i, metric in enumerate(metrics_names):
+                convergence[metric][setup][dataset].append(convergence_per_metric[i])
 
         if is_mean:
-            for setup in convergence.keys():
-                for dataset in convergence[setup].keys():
-                    convergence[setup][dataset] = mean(convergence[setup][dataset])
+            for metric in convergence.keys():
+                for setup in convergence[metric].keys():
+                    for dataset in convergence[metric][setup].keys():
+                        convergence[metric][setup][dataset] = mean(convergence[metric][setup][dataset])
 
         # save results per metric
         if path_to_save:
-            df = pd.DataFrame(convergence)
-            path_to_save = os.path.join(path_to_save, 'convergence_results.csv')
-            df.to_csv(path_to_save)
-            self._log.info(f"Convergence table was saved to {path_to_save}")
+            for metric in metrics_names:
+                df = pd.DataFrame(convergence[metric])
+                path_to_save = os.path.join(path_to_save, f'convergence_results_{metric}.csv')
+                df.to_csv(path_to_save)
+                self._log.info(f"Convergence table was saved to {path_to_save}")
         return convergence
 
     @staticmethod
-    def _analyze_convergence(history: OptHistory) -> float:
+    def _analyze_convergence(history: OptHistory, metrics_num: int) -> List[float]:
         """ Method to get time in what individual with the best fitness was firstly obtained. """
-        best_fitness = history.final_choices.data[0].fitness
-        first_gen_with_best_fitness = history.generations_count
-        for i, gen_fitnesses in enumerate(history.historical_fitness):
-            if best_fitness in gen_fitnesses:
-                first_gen_with_best_fitness = i
-                break
-        total_time_to_get_best_fitness = 0
-        for i, gen in enumerate(history.individuals):
-            if i == first_gen_with_best_fitness:
-                break
-            for ind in gen.data:
-                total_time_to_get_best_fitness += ind.metadata['computation_time_in_seconds']
-        return total_time_to_get_best_fitness
+        # find best final metric for each objective
+        best_fitness_per_objective = [None] * metrics_num
+        for i in range(metrics_num):
+            for ind in history.final_choices.data:
+                if best_fitness_per_objective[i] is None or ind.fitness.values[i] < best_fitness_per_objective[i]:
+                    best_fitness_per_objective[i] = ind.fitness.values[i]
+
+        total_time_to_get_best_fitness_per_objective = []
+        for j, best_fitness in enumerate(best_fitness_per_objective):
+            first_gen_with_best_fitness = history.generations_count
+            for i, gen_fitnesses in enumerate(history.historical_fitness[j]):
+                if best_fitness in gen_fitnesses:
+                    first_gen_with_best_fitness = i
+                    break
+            total_time_to_get_best_fitness = 0
+            for i, gen in enumerate(history.individuals):
+                if i == first_gen_with_best_fitness:
+                    break
+                for ind in gen.data:
+                    total_time_to_get_best_fitness += ind.metadata['computation_time_in_seconds']
+            total_time_to_get_best_fitness_per_objective.append(total_time_to_get_best_fitness)
+        return total_time_to_get_best_fitness_per_objective
 
     def analyze_metrics(self, metric_names: List[str], file_name: str, is_mean: bool = False,
-                        path_to_save: str = None, is_raise: bool = False) \
+                        path_to_save: str = None, is_raise: bool = False, keen_n_best: Optional[int] = 1) \
             -> Dict[str, Dict[str, Dict[str, Union[List[float], float]]]]:
         """ Method to analyze specified metrics.
         :param metric_names: names of metrics to analyze. e.g. ['f1', 'inference_time']
@@ -111,6 +137,8 @@ class ExperimentAnalyzer:
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
         :param path_to_save: path to save results
         :param is_raise: bool specifying if exception must be raised if there is no history folder
+        :param keen_n_best: number of result to consider when calculating metric.
+        Must be > 1 when there were > 1 metric considered during the experiment.
         """
         if path_to_save:
             os.makedirs(path_to_save, exist_ok=True)
@@ -128,7 +156,11 @@ class ExperimentAnalyzer:
                                                                      setup=setup, dataset=dataset)
                 if metric not in df_metrics.columns:
                     self._log.warning(f"There is no column in {file_name} with {metric}")
-                dict_with_metrics[metric][setup][dataset].append(df_metrics[metric][0])
+
+                # if there were multiple metrics in experiment or not
+                all_metrics = list(df_metrics[metric])
+                all_metrics.sort()
+                dict_with_metrics[metric][setup][dataset].append(mean(all_metrics[:keen_n_best]))
 
         if is_mean:
             for metric in metric_names:
@@ -146,26 +178,34 @@ class ExperimentAnalyzer:
         return dict_with_metrics
 
     def plot_convergence(self, path_to_save: str, with_confidence: bool = True,
-                         history_folder: str = 'history', is_raise: bool = False):
+                         history_folder: str = 'history', is_raise: bool = False,
+                         metrics_names: Optional[List[str]] = None):
         """ Method to analyze convergence with the use of histories.
 
         :param path_to_save: path to save the results.
         :param with_confidence: bool param specifying to use confidence interval or not.
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
-        :param is_raise: bool specifying if exception must be raised if there is no history folder
+        :param is_raise: bool specifying if exception must be raised if there is no history folder.
+        :param metrics_names: names of metrics to consider. Useful in case of multimodal optimization.
         """
         if path_to_save:
             os.makedirs(path_to_save, exist_ok=True)
+
+        if not metrics_names:
+            metrics_names = ['metric']
 
         histories = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             histories = self._extend_result_dict(result_dict=histories, setup=setup, dataset=dataset)
 
-            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
-                                                         is_raise=is_raise):
-                continue
+            if history_folder is None:
+                path_to_history_folder = path_to_launch
+            else:
+                if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
+                                                             is_raise=is_raise):
+                    continue
+                path_to_history_folder = os.path.join(path_to_launch, history_folder)
 
-            path_to_history_folder = os.path.join(path_to_launch, history_folder)
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
 
             # if there is no history
@@ -174,19 +214,23 @@ class ExperimentAnalyzer:
 
             # load the first history in the folder
             history = OptHistory.load(os.path.join(path_to_history_folder, history_files[0]))
-            histories[setup][dataset].append(history)
+            self._log.info(f"Loaded {history_files[0]} history for {setup} and {dataset} dataset")
+            histories[setup][dataset].append(history.historical_fitness)
 
         histories_to_compare = dict()
         # plot convergence pics
         for dataset in histories[list(histories.keys())[0]]:
             for setup in histories.keys():
                 histories_to_compare[setup] = histories[setup][dataset] if dataset in histories[setup].keys() else []
-            multiple_fitness_plot = MultipleFitnessLines(histories_to_compare=histories_to_compare)
-            file_name = f'{dataset}_convergence_with_confidence' if with_confidence \
-                else f'{dataset}_convergence_without_confidence'
-            cur_path_to_save = os.path.join(path_to_save, file_name)
-            multiple_fitness_plot.visualize(save_path=cur_path_to_save, with_confidence=with_confidence)
-            self._log.info(f"Convergence plot for {dataset} dataset was saved to {cur_path_to_save}")
+            multiple_fitness_plot = MultipleFitnessLines(historical_fitnesses=histories_to_compare,
+                                                         metric_names=metrics_names)
+            for i, metric in enumerate(metrics_names):
+                file_name = f'{dataset}_convergence_with_confidence_for_{metric}' if with_confidence \
+                    else f'{dataset}_convergence_without_confidence_for_{metric}'
+                cur_path_to_save = os.path.join(path_to_save, file_name)
+                multiple_fitness_plot.visualize(save_path=cur_path_to_save,
+                                                with_confidence=with_confidence, metric_id=i)
+                self._log.info(f"Convergence plot for {dataset} dataset for {metric} was saved to {cur_path_to_save}")
 
     def analyze_statistical_significance(self, data_to_analyze: Dict[str, Dict[str, List[float]]],
                                          stat_tests: List[Callable], path_to_save: str = None,
@@ -209,6 +253,8 @@ class ExperimentAnalyzer:
         stat_dict = dict.fromkeys(test_format, None)
         datasets = list(data_to_analyze[list(data_to_analyze.keys())[0]].keys())
         for dataset in datasets:
+            if dataset != 'tree_100':
+                continue
             values_to_compare = []
             for setup in data_to_analyze.keys():
                 values_to_compare.append(data_to_analyze[setup][dataset])
