@@ -175,7 +175,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         helpful_msg = ('Check objective, constraints and evo operators. '
                        'Possibly they return too few valid individuals.')
-        if len(new_population) != target_pop_size:
+        if 0 < len(new_population) < target_pop_size:
             self._log.warning(f'Could not achieve required population size: '
                               f'have {len(new_population)},'
                               f' required {target_pop_size}!\n' + helpful_msg)
