@@ -6,6 +6,7 @@ from joblib import Parallel, delayed
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
 from golem.core.dag.graph import Graph
+from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
@@ -36,6 +37,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+        self._log = default_log(self)
         # Define genetic operators
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)
@@ -131,15 +133,14 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         new_population = self.crossover(selected_individuals)
         new_population = self._mutation_n_evaluation_in_parallel(population=new_population,
                                                                  evaluator=evaluator,
-                                                                 include_population=False)
-        # TODO: are there need for log?
-        # self._log.info(f'Reproduction achieved pop size {len(new_population)}')
+                                                                 include_population_to_new_population=False)
+        self._log.info(f'Reproduction achieved pop size {len(new_population)}')
         return new_population
 
     def _mutation_n_evaluation_in_parallel(self,
                                            population: PopulationT,
                                            evaluator: EvaluationOperator,
-                                           include_population: bool = True) -> PopulationT:
+                                           include_population_to_new_population: bool = True) -> PopulationT:
         target_pop_size = self.graph_optimizer_params.pop_size
         max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
         verifier = self.graph_generation_params.verifier
@@ -156,14 +157,14 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                     return individuals[0]
 
         new_population, pop_graphs = [], []
-        if include_population:
+        if include_population_to_new_population:
             new_population, pop_graphs = population, [ind.graph for ind in population]
 
         with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
             new_ind_generator = parallel(delayed(mutation_n_evaluation)(ind) for ind in _population)
             # TODO: `new_ind.graph not in pop_graphs` in cycle has complexity ~N^2 (right?)
-            #        maybe the right way is to calculate and compare
-            #        graph hash (not by the `__hash__`, by any appropriate func) with set of hashes?
+            #        maybe the right way is to calculate and compare graph hash with set of hashes?
+            #        not by the `__hash__`, by any appropriate func
             #        does graph have hash? are there way to do it for random operation?
             for new_ind in new_ind_generator:
                 if new_ind and new_ind.graph not in pop_graphs:
@@ -172,9 +173,13 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                     if len(new_population) == target_pop_size:
                         break
 
+        helpful_msg = ('Check objective, constraints and evo operators. '
+                       'Possibly they return too few valid individuals.')
+        if len(new_population) != target_pop_size:
+            self._log.warning(f'Could not achieve required population size: '
+                              f'have {len(new_population)},'
+                              f' required {target_pop_size}!\n' + helpful_msg)
         if len(new_population) == 0:
-            helpful_msg = ('Check objective, constraints and evo operators. '
-                           'Possibly they return too few valid individuals.')
             raise EvaluationAttemptsError('Could not collect valid individuals'
                                           ' for population.' + helpful_msg)
         return new_population
