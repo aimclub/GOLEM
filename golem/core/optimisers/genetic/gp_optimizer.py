@@ -1,8 +1,6 @@
-import time
 from copy import deepcopy
-from itertools import cycle
-from random import choice
 from typing import Sequence, Union, Any
+from math import ceil
 
 from joblib import Parallel, delayed
 
@@ -70,16 +68,17 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         pop_size = self.graph_optimizer_params.pop_size
 
         if len(self.initial_individuals) < pop_size:
-            self.initial_individuals = self._extend_population(self.initial_individuals, pop_size, evaluator)
+            self.initial_individuals = self._extend_population(self.initial_individuals, evaluator)
             # Adding of extended population to history
             self._update_population(self.initial_individuals, 'extended_initial_assumptions')
 
-    def _extend_population(self, pop: PopulationT, target_pop_size: int, evaluator: EvaluationOperator) -> PopulationT:
+    def _extend_population(self, pop: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         # Set mutation probabilities to 1.0
         initial_req = deepcopy(self.requirements)
         initial_req.mutation_prob = 1.0
         self.mutation.update_requirements(requirements=initial_req)
 
+        # Make mutations
         extended_pop = self._mutation_n_evaluation_in_parallel(population=list(pop), evaluator=evaluator)
 
         # Reset mutation probabilities to default
@@ -133,7 +132,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         new_population = self._mutation_n_evaluation_in_parallel(population=new_population,
                                                                  evaluator=evaluator,
                                                                  include_population=False)
-
+        # TODO: are there need for log?
         # self._log.info(f'Reproduction achieved pop size {len(new_population)}')
         return new_population
 
@@ -141,19 +140,20 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                                            population: PopulationT,
                                            evaluator: EvaluationOperator,
                                            include_population: bool = True) -> PopulationT:
-        def mutation_n_evaluation(individual: Individual):
-            individual = self.mutation(individual)
+        target_pop_size = self.graph_optimizer_params.pop_size
+        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+        verifier = self.graph_generation_params.verifier
+        _population = (list(population) * ceil(max_tries / len(population)))[:max_tries]
+
+        def mutation_n_evaluation(individual: Individual,
+                                  mutation=self.mutation,
+                                  verifier=verifier,
+                                  evaluator=evaluator):
+            individual = mutation(individual)
             if individual and verifier(individual.graph):
                 individuals = evaluator([individual])
                 if individuals:
                     return individuals[0]
-
-        target_pop_size = self.graph_optimizer_params.pop_size
-        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
-        verifier = self.graph_generation_params.verifier
-
-        _population = cycle(population)
-        _population = [next(_population) for _ in range(max_tries)]
 
         new_population, pop_graphs = [], []
         if include_population:
@@ -162,8 +162,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
             new_ind_generator = parallel(delayed(mutation_n_evaluation)(ind) for ind in _population)
             # TODO: `new_ind.graph not in pop_graphs` in cycle has complexity ~N^2 (right?)
-            #        maybe the right way is to calculate and compare hash for set?
-            #        does graph have hash?
+            #        maybe the right way is to calculate and compare
+            #        graph hash (not by the `__hash__`, by any appropriate func) with set of hashes?
+            #        does graph have hash? are there way to do it for random operation?
             for new_ind in new_ind_generator:
                 if new_ind and new_ind.graph not in pop_graphs:
                     new_population.append(new_ind)
