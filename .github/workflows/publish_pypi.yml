@@ -1,8 +1,5 @@
 name: Build and publish package to PyPi
 
-build:
-  os: ubuntu-22.04
-
 on:
   push:
     branches: [ release ]
@@ -10,7 +7,6 @@ on:
 
 jobs:
   build_and_publish:
-    os: ubuntu-22.04
     runs-on: ubuntu-latest
     strategy:
       matrix:
