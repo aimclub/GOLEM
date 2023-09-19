@@ -104,7 +104,6 @@ class PopulationalOptimizer(GraphOptimizer):
                     break
                 # Adding of new population to history
                 self._update_population(new_population)
-        pbar.update()
         pbar.close()
         self._update_population(self.best_individuals, 'final_choices')
         return [ind.graph for ind in self.best_individuals]
