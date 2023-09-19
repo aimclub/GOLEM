@@ -130,7 +130,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
     def _reproduce(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         selected_individuals = self.selection(population, self.graph_optimizer_params.pop_size)
         new_population = self.crossover(selected_individuals)
-
         new_population = self._mutation_n_evaluation_in_parallel(population=new_population,
                                                                  evaluator=evaluator,
                                                                  include_population=False)
@@ -144,11 +143,10 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                                            include_population: bool = True) -> PopulationT:
         def mutation_n_evaluation(individual: Individual):
             individual = self.mutation(individual)
-            if individual:
+            if individual and verifier(new_ind.graph):
                 individuals = evaluator([individual])
                 if individuals:
-                    individual = individuals[0]
-            return individual
+                    return individuals[0]
 
         target_pop_size = self.graph_optimizer_params.pop_size
         max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
@@ -157,15 +155,17 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         _population = cycle(population)
         _population = [next(_population) for _ in range(max_tries)]
 
+        new_population, pop_graphs = [], []
         if include_population:
             new_population, pop_graphs = population, [ind.graph for ind in population]
-        else:
-            new_population, pop_graphs = [], []
 
-        with Parallel(n_jobs=self.mutation.requirements.n_jobs, prefer='processes', return_as='generator') as parallel:
+        with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
             new_ind_generator = parallel(delayed(mutation_n_evaluation)(ind) for ind in _population)
+            # TODO: `new_ind.graph not in pop_graphs` in cycle has complexity ~N^2 (right?)
+            #        maybe the right way is to calculate and compare hash for set?
+            #        does graph have hash?
             for new_ind in new_ind_generator:
-                if new_ind and new_ind.graph not in pop_graphs and verifier(new_ind.graph):
+                if new_ind and new_ind.graph not in pop_graphs:
                     new_population.append(new_ind)
                     pop_graphs.append(new_ind.graph)
                     if len(new_population) == target_pop_size:

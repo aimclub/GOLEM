@@ -83,8 +83,8 @@ class Mutation(Operator):
             mutation_result = [[x] for x in self._mutation(population)]
             population = [population]
         else:
-            parallel = Parallel(n_jobs=self.requirements.n_jobs, prefer='processes')
-            mutation_result = tuple(zip(*parallel(delayed(self._mutation)(ind) for ind in population)))
+            with Parallel(n_jobs=self.requirements.n_jobs) as parallel:
+                mutation_result = tuple(zip(*parallel(delayed(self._mutation)(ind) for ind in population)))
         final_population, mutations_applied, application_attempts = mutation_result
 
         # drop individuals to which mutations could not be applied

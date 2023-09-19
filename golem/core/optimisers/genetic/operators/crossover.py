@@ -43,10 +43,10 @@ class Crossover(Operator):
 
     def __call__(self, population: PopulationT) -> PopulationT:
         if len(population) > 1:
-            parallel = Parallel(n_jobs=self.requirements.n_jobs, prefer='processes')
-            population = parallel(delayed(self._crossover)(ind_1, ind_2)
-                                  for ind_1, ind_2 in Crossover.crossover_parents_selection(population))
-            population = list(chain(*population))
+            with Parallel(n_jobs=self.requirements.n_jobs) as parallel:
+                population = parallel(delayed(self._crossover)(ind_1, ind_2)
+                                      for ind_1, ind_2 in Crossover.crossover_parents_selection(population))
+                population = list(chain(*population))
         return population
 
     @staticmethod
