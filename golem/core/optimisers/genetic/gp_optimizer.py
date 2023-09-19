@@ -134,7 +134,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                                                                  evaluator=evaluator,
                                                                  include_population=False)
 
-        self._log.info(f'Reproduction achieved pop size {len(new_population)}')
+        # self._log.info(f'Reproduction achieved pop size {len(new_population)}')
         return new_population
 
     def _mutation_n_evaluation_in_parallel(self,
