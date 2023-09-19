@@ -143,7 +143,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                                            include_population: bool = True) -> PopulationT:
         def mutation_n_evaluation(individual: Individual):
             individual = self.mutation(individual)
-            if individual and verifier(new_ind.graph):
+            if individual and verifier(individual.graph):
                 individuals = evaluator([individual])
                 if individuals:
                     return individuals[0]
