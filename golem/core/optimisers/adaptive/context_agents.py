@@ -51,12 +51,13 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
     return encoded
 
 
-@adapter_func_to_networkx
+# @adapter_func_to_networkx
 def feather_graph(obs: Any, available_operations: List[str]) -> List[float]:
     """ Returns embedding based on an implementation of `"FEATHER-G" <https://arxiv.org/abs/2005.07959>`_.
     The procedure uses characteristic functions of node features with random walk weights to describe
     node neighborhoods. These node level features are pooled by mean pooling to
     create graph level statistics. """
+    obs = BanditNetworkxAdapter().restore(obs)
     descriptor = FeatherGraph()
     descriptor.fit([obs])
     emb = descriptor.get_embedding().reshape(-1, 1)
@@ -64,15 +65,23 @@ def feather_graph(obs: Any, available_operations: List[str]) -> List[float]:
     return embd
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def nodes_num(obs: Any, available_operations: List[str]) -> List[int]:
     """ Returns number of nodes in graph. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     return [len(obs.nodes)]
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graph with its edges with nodes labels. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     operations = []
     for node in obs.nodes:
         for node_ in node.nodes_from:
@@ -81,23 +90,65 @@ def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
     return encode_operations(operations=operations, available_operations=available_operations)
 
 
-@adapter_func_to_graph
+def labeled_edges_as_idxs(obs: Any, available_operations: List[str]) -> List[int]:
+    """ Encodes graph with its edges with nodes labels. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
+    operations = []
+    for node in obs.nodes:
+        for node_ in node.nodes_from:
+            operations.append(obs.nodes.index(node_))
+            operations.append(obs.nodes.index(node))
+    return operations
+
+
+# @adapter_func_to_graph
 def operations_quantity(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graphs as vectors with quantity of each operation. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     encoding = [0] * len(available_operations)
     for node in obs.nodes:
         encoding[available_operations.index(node.name)] += 1
     return encoding
 
 
-@adapter_func_to_graph
+# @adapter_func_to_graph
 def adjacency_matrix(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graphs as flattened adjacency matrix. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
     matrix = np.zeros((len(available_operations), len(available_operations)))
     for node in obs.nodes:
         operation_parent_idx = available_operations.index(node.name)
         for node_ in node.nodes_from:
             operation_child_idx = available_operations.index(node_.name)
+            matrix[operation_parent_idx][operation_child_idx] += 1
+    return matrix.reshape(1, -1)[0].astype(int).tolist()
+
+
+def adjacency_matrix_by_nodes(obs: Any, available_operations: List[str]) -> List[int]:
+    """ Encodes graphs as adjacency matrix, on x and y scales -- all nodes operations even if it is repeated. """
+    if isinstance(obs, Individual):
+        obs = obs.graph
+    else:
+        obs = obs
+    matrix_size = 105
+    matrix = np.zeros((matrix_size, matrix_size))
+    for node in obs.nodes:
+        operation_parent_idx = obs.nodes.index(node)
+        if operation_parent_idx > matrix_size:
+            operation_parent_idx = matrix_size - 1
+        for node_ in node.nodes_from:
+            operation_child_idx = obs.nodes.index(node_)
+            if operation_child_idx > matrix_size:
+                operation_child_idx = matrix_size - 1
             matrix[operation_parent_idx][operation_child_idx] += 1
     return matrix.reshape(1, -1)[0].astype(int).tolist()
 
@@ -114,6 +165,8 @@ class ContextAgentTypeEnum(Enum):
     operations_quantity = 'operations_quantity'
     adjacency_matrix = 'adjacency_matrix'
     none_encoding = 'none_encoding'
+    labeled_edges_as_idxs = 'labeled_edges_as_idxs'
+    adjacency_matrix_by_nodes = 'adjacency_matrix_by_nodes'
 
 
 class ContextAgentsRepository:
@@ -124,7 +177,9 @@ class ContextAgentsRepository:
         ContextAgentTypeEnum.labeled_edges: labeled_edges,
         ContextAgentTypeEnum.operations_quantity: operations_quantity,
         ContextAgentTypeEnum.adjacency_matrix: adjacency_matrix,
-        ContextAgentTypeEnum.none_encoding: none_encoding
+        ContextAgentTypeEnum.none_encoding: none_encoding,
+        ContextAgentTypeEnum.labeled_edges_as_idxs: labeled_edges_as_idxs,
+        ContextAgentTypeEnum.adjacency_matrix_by_nodes: adjacency_matrix_by_nodes
     }
 
     @staticmethod

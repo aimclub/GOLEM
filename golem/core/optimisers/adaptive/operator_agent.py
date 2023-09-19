@@ -136,6 +136,14 @@ class OperatorAgent(ABC):
             self._log.info(f'exp={action_values} '
                            f'probs={action_probs}')
 
+    def save(self, **kwargs):
+        """ Saves the state Agent. """
+        raise NotImplementedError()
+
+    def load(self, **kwargs) -> 'OperatorAgent':
+        """ Loads the state of Agent. """
+        raise NotImplementedError()
+
 
 class RandomAgent(OperatorAgent):
     def __init__(self,
@@ -163,3 +171,11 @@ class RandomAgent(OperatorAgent):
 
     def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:
         return self._probs
+
+    def save(self, **kwargs):
+        """ Saves the state RandomAgent. """
+        pass
+
+    def load(self, **kwargs) -> 'RandomAgent':
+        """ Loads the state of RandomAgent. """
+        pass

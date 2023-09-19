@@ -1,5 +1,5 @@
 import os.path
-import _pickle as pickle
+import pickle
 import random
 import re
 from typing import Union, Sequence, Optional
@@ -66,8 +66,8 @@ class MultiArmedBanditAgent(OperatorAgent):
         obs, actions, rewards = experience.retrieve_experience()
         arms = [self._arm_by_action[action] for action in actions]
         processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
-        self._dbg_log(obs, actions, processed_rewards)
-        return obs, arms, processed_rewards
+        self._dbg_log(obs, actions, rewards)
+        return obs, arms, rewards
 
     def save(self, path_to_save: Optional[str] = None):
         """ Saves bandit to specified file. """
@@ -82,7 +82,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         if not path_to_save.endswith('.pkl'):
             os.makedirs(path_to_save, exist_ok=True)
             mabs_num = [int(name.split('_')[0]) for name in os.listdir(path_to_save)
-                        if re.fullmatch(r'\d_mab.pkl', name)]
+                        if re.fullmatch(r'\d{1,5}_mab.pkl', name)]
             if not mabs_num:
                 max_saved_mab = 0
             else:

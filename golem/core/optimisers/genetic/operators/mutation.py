@@ -59,7 +59,8 @@ class Mutation(Operator):
                 context_agent_type=parameters.context_agent_type,
                 available_operations=graph_gen_params.node_factory.get_all_available_operations(),
                 n_jobs=requirements.n_jobs,
-                decaying_factor=parameters.decaying_factor)
+                decaying_factor=parameters.decaying_factor,
+                path_to_save=requirements.agent_dir,)
         elif kind == MutationAgentTypeEnum.neural_bandit:
             agent = NeuralContextualMultiArmedBanditAgent(
                 actions=parameters.mutation_types,

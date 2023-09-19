@@ -45,6 +45,8 @@ class OptimizationParameters:
         If the path is relative, then save relative to `default_data_dir`.
         If absolute -- then save directly by specified path.
         If None -- do not save the history to disk and keep it only in-memory.
+
+    :param agent_dir: directory for saving agent, optional.
     """
 
     num_of_generations: Optional[int] = None

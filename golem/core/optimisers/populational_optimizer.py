@@ -135,6 +135,7 @@ class PopulationalOptimizer(GraphOptimizer):
                            metadata: Optional[Dict[str, Any]] = None):
         self.generations.append(next_population)
         self._log_to_history(next_population, label, metadata)
+        self._log_agent()
         self._iteration_callback(next_population, self)
         self.population = next_population
 
@@ -150,6 +151,10 @@ class PopulationalOptimizer(GraphOptimizer):
         self.history.add_to_archive_history(self.generations.best_individuals)
         if self.requirements.history_dir:
             self.history.save_current_results(self.requirements.history_dir)
+
+    def _log_agent(self):
+        """ Logs the state of agent and all thr related information. """
+        raise NotImplementedError()
 
     def get_structure_unique_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
