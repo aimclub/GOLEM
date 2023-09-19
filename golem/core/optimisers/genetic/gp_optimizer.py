@@ -179,7 +179,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             self._log.warning(f'Could not achieve required population size: '
                               f'have {len(new_population)},'
                               f' required {target_pop_size}!\n' + helpful_msg)
-        if len(new_population) == 0:
+        elif len(new_population) == 0:
             raise EvaluationAttemptsError('Could not collect valid individuals'
                                           ' for population.' + helpful_msg)
         return new_population
