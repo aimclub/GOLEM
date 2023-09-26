@@ -65,6 +65,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
                                     for graph in self.initial_graphs]
 
+        # All individuals graphs
+        self._graphs = set()
+
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
         # Adding of initial assumptions to history as zero generation
@@ -75,6 +78,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             self.initial_individuals = self._extend_population(self.initial_individuals, evaluator)
             # Adding of extended population to history
             self._update_population(self.initial_individuals, 'extended_initial_assumptions')
+        # Save graphs
+        self._save_graphs(self.initial_individuals)
 
     def _extend_population(self, pop: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         # Set mutation probabilities to 1.0
@@ -110,7 +115,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # Use some part of previous pop in the next pop
         new_population = self.inheritance(self.population, new_population)
         new_population = self.elitism(self.generations.best_individuals, new_population)
-
+        # Save graphs
+        self._save_graphs(new_population)
         return new_population
 
     def _update_requirements(self):
@@ -157,18 +163,18 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
         _population = (list(population) * ceil(max_tries / len(population) + 1))
 
-        new_population, pop_graphs = [], []
+        new_population, pop_graphs = [], set()
         if include_population_to_new_population:
-            new_population, pop_graphs = population[:], [ind.graph.descriptive_id for ind in population]
+            new_population, pop_graphs = population[:], set([ind.graph.descriptive_id for ind in population])
 
         with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
             new_ind_generator = parallel(delayed(mutation_n_evaluation)(ind) for ind in _population)
             for try_num, new_ind in enumerate(new_ind_generator):
                 if new_ind:
                     descriptive_id = new_ind.graph.descriptive_id
-                    if descriptive_id not in pop_graphs:
+                    if descriptive_id not in pop_graphs and descriptive_id not in self._graphs:
                         new_population.append(new_ind)
-                        pop_graphs.append(descriptive_id)
+                        pop_graphs.add(descriptive_id)
                         if len(new_population) >= target_pop_size:
                             break
                 if try_num >= max_tries:
@@ -184,3 +190,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             raise EvaluationAttemptsError('Could not collect valid individuals'
                                           ' for population.' + helpful_msg)
         return new_population
+
+    def _save_graphs(self, population: PopulationT):
+        self._graphs |= set(ind.graph.descriptive_id for ind in population)
