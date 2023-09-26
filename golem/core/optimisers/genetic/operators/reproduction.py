@@ -82,6 +82,7 @@ class ReproductionController:
         selected_individuals = self.selection(population, pop_size)
         new_population = self.crossover(selected_individuals)
         new_population = ensure_wrapped_in_sequence(self.mutation(new_population))
+        new_population = [ind for ind in new_population if self.mutation.graph_generation_params.verifier(ind.graph)]
         new_population = evaluator(new_population)
         return new_population
 

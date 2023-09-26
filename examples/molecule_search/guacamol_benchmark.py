@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Optional, List
 
 import joblib
@@ -16,6 +17,7 @@ from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import CHEMICAL_MUTATIONS
+from golem.core.log import Log
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -28,7 +30,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 
 def load_init_population(scoring_function: ScoringFunction,
                          n_jobs: int = -1,
-                         path=".\\data\\guacamol_v1_all.smiles"):
+                         path=r"C:\Users\admin\PycharmProjects\GOLEM\examples\molecule_search\data\guacamol_v1_all.smiles", number_of_molecules=100):
     """ Original code:
      https://github.com/BenevolentAI/guacamol_baselines/blob/master/graph_ga/goal_directed_generation.py"""
     with open(path, "r") as f:
@@ -37,7 +39,7 @@ def load_init_population(scoring_function: ScoringFunction,
     scores = joblib.Parallel(n_jobs=n_jobs)(joblist)
     scored_smiles = list(zip(scores, smiles_list))
     scored_smiles = sorted(scored_smiles, key=lambda x: x[0], reverse=True)
-    best_smiles = [smile for score, smile in scored_smiles][:100]
+    best_smiles = [smile for score, smile in scored_smiles][:number_of_molecules]
     init_pop = [MolGraph.from_smiles(smile) for smile in best_smiles]
     return init_pop
 
@@ -47,16 +49,17 @@ class GolemMoleculeGenerator(GoalDirectedGenerator):
     def __init__(self,
                  requirements: Optional[MolGraphRequirements] = None,
                  graph_gen_params: Optional[GraphGenerationParams] = None,
-                 gp_params: Optional[GPAlgorithmParameters] = None):
+                 gp_params: Optional[GPAlgorithmParameters] = None,
+                 trial: int = 0):
         self.requirements = requirements or MolGraphRequirements(
             max_heavy_atoms=50,
             available_atom_types=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'],
             bond_types=(BondType.SINGLE, BondType.DOUBLE, BondType.TRIPLE),
             early_stopping_timeout=np.inf,
-            early_stopping_iterations=50,
+            early_stopping_iterations=700,
             keep_n_best=4,
             timeout=None,
-            num_of_generations=500,
+            num_of_generations=3000,
             keep_history=True,
             n_jobs=-1,
             history_dir=None)
@@ -66,14 +69,17 @@ class GolemMoleculeGenerator(GoalDirectedGenerator):
             advisor=MolChangeAdvisor())
 
         self.gp_params = gp_params or GPAlgorithmParameters(
-            pop_size=2,
-            max_pop_size=2,
+            pop_size=50,
+            max_pop_size=50,
             multi_objective=False,
             genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
             elitism_type=ElitismTypesEnum.replace_worst,
             mutation_types=CHEMICAL_MUTATIONS,
             crossover_types=[CrossoverTypesEnum.none],
             adaptive_mutation_type=MutationAgentTypeEnum.bandit)
+        self.trial = trial
+        self.task_num = 0
+        Log().reset_logging_level(40)
 
     def generate_optimized_molecules(self, scoring_function: ScoringFunction, number_molecules: int,
                                      starting_population: Optional[List[str]] = None) -> List[str]:
@@ -81,10 +87,10 @@ class GolemMoleculeGenerator(GoalDirectedGenerator):
             quality_metrics=lambda mol: -scoring_function.score(mol.get_smiles(aromatic=True)),
             is_multi_objective=False
         )
-        self.gp_params.pop_size = max(number_molecules // 2, 100)
-        self.gp_params.max_pop_size = min(self.gp_params.pop_size * 10, 1000)
+        self.gp_params.pop_size = max(number_molecules, 100)
+        self.gp_params.max_pop_size = self.gp_params.pop_size
 
-        initial_graphs = load_init_population(scoring_function)
+        initial_graphs = load_init_population(scoring_function, number_of_molecules=self.gp_params.pop_size)
         initial_graphs = self.graph_gen_params.adapter.adapt(initial_graphs)
 
         # Build the optimizer
@@ -95,6 +101,8 @@ class GolemMoleculeGenerator(GoalDirectedGenerator):
                                       self.gp_params)
         optimiser.optimise(objective)
         history = optimiser.history
+        history.save(os.path.join(os.curdir, f'history_trial_{self.trial}_task{self.task_num}.json'))
+        self.task_num += 1
 
         # Take only the first graph's appearance in history
         individuals \
@@ -159,9 +167,9 @@ def get_launch_statistics(paths: List[str]):
 
 if __name__ == '__main__':
     # one launch takes more than 24h
-    for launch in range(10):
+    for launch in range(1):
         print(f'\nLaunch_num {launch}\n')
-        assess_goal_directed_generation(GolemMoleculeGenerator(),
+        assess_goal_directed_generation(GolemMoleculeGenerator(trial=launch),
                                         benchmark_version='v2',
                                         json_output_file=f'output_goal_directed_{launch}.json')
     visualize('output_goal_directed_1.json')

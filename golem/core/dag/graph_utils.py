@@ -1,5 +1,8 @@
 from typing import Sequence, List, TYPE_CHECKING, Callable, Union
 
+from networkx import find_cycle, NetworkXNoCycle
+
+from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
@@ -178,25 +181,44 @@ def graph_structure(graph: 'Graph') -> str:
 
 def graph_has_cycle(graph: 'Graph') -> bool:
     """ Returns True if the graph contains a cycle and False otherwise. Implements Depth-First Search."""
+    try:
+        find_cycle(graph_structure_as_nx_graph(graph)[0])
+        return True
+    except NetworkXNoCycle:
+        return False
 
-    visited = {node.uid: False for node in graph.nodes}
-    stack = []
-    on_stack = {node.uid: False for node in graph.nodes}
-    for node in graph.nodes:
-        if visited[node.uid]:
-            continue
-        stack.append(node)
-        while len(stack) > 0:
-            cur_node = stack[-1]
-            if not visited[cur_node.uid]:
-                visited[cur_node.uid] = True
-                on_stack[cur_node.uid] = True
-            else:
-                on_stack[cur_node.uid] = False
-                stack.pop()
-            for parent in cur_node.nodes_from:
-                if not visited[parent.uid]:
-                    stack.append(parent)
-                elif on_stack[parent.uid]:
-                    return True
-    return False
+    # visited = {node.uid: False for node in graph.nodes}
+    # stack = []
+    # on_stack = {node.uid: False for node in graph.nodes}
+    # for node in graph.nodes:
+    #     if visited[node.uid]:
+    #         continue
+    #     stack.append(node)
+    #     while len(stack) > 0:
+    #         cur_node = stack[-1]
+    #         if not visited[cur_node.uid]:
+    #             visited[cur_node.uid] = True
+    #             on_stack[cur_node.uid] = True
+    #         else:
+    #             on_stack[cur_node.uid] = False
+    #             stack.pop()
+    #         for parent in cur_node.nodes_from:
+    #             if not visited[parent.uid]:
+    #                 stack.append(parent)
+    #             elif on_stack[parent.uid]:
+    #                 return True
+    # return False
+    # path = set()
+    # g = {node: node.nodes_from for node in graph.nodes}
+    #
+    # def visit(vertex):
+    #     path.add(vertex)
+    #     for neighbour in g.get(vertex, ()):
+    #         if neighbour in path or visit(neighbour):
+    #             return True
+    #     path.remove(vertex)
+    #     return False
+    # res = any(visit(v) for v in g)
+    # if not res:
+    #     s=0
+    # return res

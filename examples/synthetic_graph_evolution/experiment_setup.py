@@ -55,6 +55,7 @@ def run_experiments(optimizer_setup: Callable,
 
             # Generate random target graph and run the optimizer
             target_graph = generate_labeled_graph(graph_name, num_nodes, node_types)
+            target_graph = target_graph.reverse()
             # Run optimizer setup
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,
@@ -81,7 +82,7 @@ def run_experiments(optimizer_setup: Callable,
                 history.show.fitness_line()
             result_dir = Path('results') / file_name
             result_dir.mkdir(parents=True, exist_ok=True)
-            history.save(result_dir / f'history_trial_{i}.json')
+            history.save(result_dir / f'history_trial_{i+3}.json')
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness

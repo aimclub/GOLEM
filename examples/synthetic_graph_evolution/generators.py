@@ -1,3 +1,4 @@
+import random
 from typing import Dict, Callable, Collection, Sequence, Optional
 
 import networkx as nx
@@ -13,6 +14,7 @@ graph_generators: Dict[str, DiGraphGenerator] = {
     'line': lambda n: nx.path_graph(n, create_using=nx.DiGraph),
     'tree': lambda n: nx.random_tree(n, create_using=nx.DiGraph),
     'gnp': lambda n: nx.gnp_random_graph(n, p=0.1),
+    'dag': lambda n: generate_dag(n),
     'star': nx.star_graph,
     '2ring': nx.circular_ladder_graph,
     'grid2d': lambda n: nx.grid_2d_graph(int(np.sqrt(n)), int(np.sqrt(n))),
@@ -20,6 +22,12 @@ graph_generators: Dict[str, DiGraphGenerator] = {
 }
 
 graph_kinds: Sequence[str] = tuple(graph_generators.keys())
+
+
+def generate_dag(n):
+    g = nx.gnp_random_graph(n, p=0.5, directed=True)
+    g = nx.DiGraph([(u, v) for (u, v) in g.edges() if u < v])
+    return g
 
 
 def nx_to_directed(graph: nx.Graph) -> nx.DiGraph:

@@ -1,7 +1,5 @@
-import os
 from datetime import timedelta
 from functools import partial
-from pathlib import Path
 from typing import Type, Optional, Sequence, List
 
 import networkx as nx
@@ -10,6 +8,7 @@ from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
+from golem.core.log import Log
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -17,13 +16,10 @@ from golem.core.optimisers.genetic.operators.base_mutations import MutationTypes
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
-from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
-from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
-from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
 
 
 def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
@@ -62,7 +58,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
         max_arity=max_graph_size,
         max_depth=max_graph_size,
         early_stopping_timeout=360,
-        early_stopping_iterations=num_iterations if num_iterations else None,
+        early_stopping_iterations=num_iterations // 4 if num_iterations else None,
         keep_n_best=4,
         timeout=timeout,
         num_of_generations=num_iterations,
@@ -71,7 +67,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     )
     default_gp_params = GPAlgorithmParameters(
         adaptive_mutation_type=MutationAgentTypeEnum.random,
-        pop_size=pop_size or 21,
+        pop_size=50,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
@@ -79,7 +75,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
             MutationTypesEnum.single_edge,
             MutationTypesEnum.single_drop
         ],
-        crossover_types=[CrossoverTypesEnum.none]
+        crossover_types=[CrossoverTypesEnum.one_point]
     )
     gp_params = algorithm_parameters or default_gp_params
     graph_gen_params = GraphGenerationParams(
@@ -92,23 +88,25 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     if not initial_graphs:
         if not initial_graph_sizes:
             initial_graph_sizes = [7] * gp_params.pop_size
-        initial_graphs = [nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph)
-                          for i in range(gp_params.pop_size)]
+        initial_graphs = []
+        for i in range(gp_params.pop_size):
+            new_graph = nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph).reverse()
+            initial_graphs.append(new_graph)
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective
 
 
 if __name__ == '__main__':
-    optimizers = [EvoGraphOptimizer, RandomMutationSearchOptimizer]
-
+    optimizers = [RandomMutationSearchOptimizer]
+    Log().reset_logging_level(40)
     for optimizer in optimizers:
         results_log = run_experiments(optimizer_setup=graph_search_setup,
                                       optimizer_cls=optimizer,
-                                      graph_names=['gnp', 'tree', 'grid2d'],
-                                      graph_sizes=[20, 50, 100],
-                                      num_trials=30,
+                                      graph_names=['dag'],
+                                      graph_sizes=[50, 100],
+                                      num_trials=15,
                                       trial_timeout=None,
-                                      trial_iterations=1000,
+                                      trial_iterations=350,
                                       visualize=False)
     print(results_log)
