@@ -2,8 +2,10 @@ import random
 from typing import Optional
 
 import numpy as np
+from mabwiser.utils import Constants
 
 from golem.core.log import default_log
+from golem.utilities.requirements_notificator import warn_requirement
 
 
 class RandomStateHandler:
@@ -34,3 +36,17 @@ class RandomStateHandler:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         np.random.set_state(self._old_np_state)
         random.setstate(self._old_state)
+
+
+def set_random_seed(seed: Optional[int]):
+    """ Sets random seed for evaluation of models"""
+    if seed is not None:
+        np.random.seed(seed)
+        random.seed(seed)
+        RandomStateHandler.MODEL_FITTING_SEED = seed
+        Constants.default_seed = seed
+        try:
+            import torch
+            torch.manual_seed(seed)
+        except ModuleNotFoundError:
+            warn_requirement('torch', 'other_requirements/adaptive.txt')

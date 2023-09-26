@@ -45,7 +45,8 @@ class NeuralMAB(MAB):
         self._mab = MAB(arms=self._indices,
                         learning_policy=learning_policy,
                         neighborhood_policy=neighborhood_policy,
-                        n_jobs=n_jobs)
+                        n_jobs=n_jobs,
+                        seed=self.seed)
         self.is_fitted = False
 
     def _initial_fit_mab(self, context: Any):
