@@ -1,4 +1,5 @@
 from copy import deepcopy
+from time import perf_counter
 from typing import Sequence, Union, Any
 from math import ceil
 
@@ -6,6 +7,7 @@ from joblib import Parallel, delayed
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
 from golem.core.dag.graph import Graph
+from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
@@ -141,37 +143,36 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                                            population: PopulationT,
                                            evaluator: EvaluationOperator,
                                            include_population_to_new_population: bool = True) -> PopulationT:
-        target_pop_size = self.graph_optimizer_params.pop_size
-        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
-        verifier = self.graph_generation_params.verifier
-        _population = (list(population) * ceil(max_tries / len(population)))[:max_tries]
-
         def mutation_n_evaluation(individual: Individual,
-                                  mutation=self.mutation,
-                                  verifier=verifier,
-                                  evaluator=evaluator):
+                                  mutation: Mutation = self.mutation,
+                                  verifier: GraphVerifier = self.graph_generation_params.verifier,
+                                  evaluator: callable = evaluator):
             individual = mutation(individual)
             if individual and verifier(individual.graph):
                 individuals = evaluator([individual])
                 if individuals:
                     return individuals[0]
 
+        target_pop_size = self.graph_optimizer_params.pop_size
+        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+        _population = (list(population) * ceil(max_tries / len(population) + 1))
+
         new_population, pop_graphs = [], []
         if include_population_to_new_population:
-            new_population, pop_graphs = population, [ind.graph for ind in population]
+            new_population, pop_graphs = population[:], [ind.graph.descriptive_id for ind in population]
 
         with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
             new_ind_generator = parallel(delayed(mutation_n_evaluation)(ind) for ind in _population)
-            # TODO: `new_ind.graph not in pop_graphs` in cycle has complexity ~N^2 (right?)
-            #        maybe the right way is to calculate and compare graph hash with set of hashes?
-            #        not by the `__hash__`, by any appropriate func
-            #        does graph have hash? are there way to do it for random operation?
-            for new_ind in new_ind_generator:
-                if new_ind and new_ind.graph not in pop_graphs:
-                    new_population.append(new_ind)
-                    pop_graphs.append(new_ind.graph)
-                    if len(new_population) == target_pop_size:
-                        break
+            for try_num, new_ind in enumerate(new_ind_generator):
+                if new_ind:
+                    descriptive_id = new_ind.graph.descriptive_id
+                    if descriptive_id not in pop_graphs:
+                        new_population.append(new_ind)
+                        pop_graphs.append(descriptive_id)
+                        if len(new_population) >= target_pop_size:
+                            break
+                if try_num >= max_tries:
+                    break
 
         helpful_msg = ('Check objective, constraints and evo operators. '
                        'Possibly they return too few valid individuals.')
