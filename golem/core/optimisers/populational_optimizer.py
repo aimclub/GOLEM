@@ -100,7 +100,7 @@ class PopulationalOptimizer(GraphOptimizer):
         # eval_dispatcher defines how to evaluate objective on the whole population
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
 
-        with self.timer, self._progressbar as pbar:
+        with self.timer, self._progressbar:
 
             self._initial_population(evaluator)
 
@@ -108,20 +108,11 @@ class PopulationalOptimizer(GraphOptimizer):
                 try:
                    # print(self.best_individuals[0].fitness.getValues())
                     new_population = self._evolve_population(evaluator)
-
-                    if self.gen_structural_diversity_check != -1 \
-                            and self.generations.generation_num % self.gen_structural_diversity_check == 0 \
-                            and self.generations.generation_num != 0:
-                        new_population = self.get_structure_unique_population(new_population, evaluator)
-                    pbar.update()
-
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
                     return [ind.graph for ind in self.best_individuals]
                 # Adding of new population to history
                 self._update_population(new_population)
-
-        pbar.close()
 
         self._update_population(self.best_individuals, 'final_choices')
         return [ind.graph for ind in self.best_individuals]
@@ -163,7 +154,8 @@ class PopulationalOptimizer(GraphOptimizer):
     @property
     def _progressbar(self):
         if self.requirements.show_progress:
-            bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
+            bar = tqdm(total=self.requirements.num_of_generations,
+                       desc='Generations', unit='gen', initial=1)
         else:
             # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
             # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
@@ -183,12 +175,6 @@ class EmptyProgressBar:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return True
-
-    def close(self):
-        return
-
-    def update(self):
-        return
 
 
 class EvaluationAttemptsError(Exception):

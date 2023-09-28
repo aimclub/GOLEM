@@ -40,6 +40,7 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
     :param available_operations: list of all available operations
     :param mode: mode of encoding. Available type: 'OHE' and 'label', default -- 'label'
     """
+
     encoded = []
     for operation in operations:
         if mode == 'label':
@@ -73,6 +74,7 @@ def nodes_num(obs: Any, available_operations: List[str]) -> List[int]:
 @adapter_func_to_graph
 def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
     """ Encodes graph with its edges with nodes labels. """
+
     operations = []
     for node in obs.nodes:
         for node_ in node.nodes_from:

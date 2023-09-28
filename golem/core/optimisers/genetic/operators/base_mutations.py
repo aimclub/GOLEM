@@ -73,6 +73,54 @@ class MutationTypesEnum(Enum):
     star_edge_50='star_edge_50'
     star_edge_55='star_edge_55'
 
+    change_label_5='change_label_5'
+    change_label_10='change_label_10'
+    change_label_15='change_label_15'
+    change_label_20='change_label_20'
+    change_label_25='change_label_25'
+    change_label_30='change_label_30'
+    change_label_35='change_label_35'
+    change_label_40='change_label_40'
+    change_label_45='change_label_45'
+    change_label_50='change_label_50'
+    change_label_55='change_label_55'
+
+    change_label_ones_5='change_label_ones_5'
+    change_label_ones_10='change_label_ones_10'
+    change_label_ones_15='change_label_ones_15'
+    change_label_ones_20='change_label_ones_20'
+    change_label_ones_25='change_label_ones_25'
+    change_label_ones_30='change_label_ones_30'
+    change_label_ones_35='change_label_ones_35'
+    change_label_ones_40='change_label_ones_40'
+    change_label_ones_45='change_label_ones_45'
+    change_label_ones_50='change_label_ones_50'
+    change_label_ones_55='change_label_ones_55'
+
+    change_label_zeros_5='change_label_zeros_5'
+    change_label_zeros_10='change_label_zeros_10'
+    change_label_zeros_15='change_label_zeros_15'
+    change_label_zeros_20='change_label_zeros_20'
+    change_label_zeros_25='change_label_zeros_25'
+    change_label_zeros_30='change_label_zeros_30'
+    change_label_zeros_35='change_label_zeros_35'
+    change_label_zeros_40='change_label_zeros_40'
+    change_label_zeros_45='change_label_zeros_45'
+    change_label_zeros_50='change_label_zeros_50'
+    change_label_zeros_55='change_label_zeros_55'
+
+    change_label_diff_5='change_label_diff_5'
+    change_label_diff_10='change_label_diff_10'
+    change_label_diff_15='change_label_diff_15'
+    change_label_diff_20='change_label_diff_20'
+    change_label_diff_25='change_label_diff_25'
+    change_label_diff_30='change_label_diff_30'
+    change_label_diff_35='change_label_diff_35'
+    change_label_diff_40='change_label_diff_40'
+    change_label_diff_45='change_label_diff_45'
+    change_label_diff_50='change_label_diff_50'
+    change_label_diff_55='change_label_diff_55'
+
     cycle_edge_5='cycle_edge_5'
     cycle_edge_10='cycle_edge_10'
     cycle_edge_15='cycle_edge_15'
@@ -510,70 +558,108 @@ def add_intermediate_node(graph: OptGraph,
     graph.add_node(new_node)
     return graph
 
+
 @register_native
 def change_label(graph: OptGraph,requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+                         parameters: 'GPAlgorithmParameters', num_edges) -> OptGraph:
     node = choice(graph.nodes)
-    print('before change label')
-    new_label = randint(0,1)
-    ind = randint(0,len(graph.nodes)-1)
-    graph.nodes[ind].content['label']=new_label
-    print('after change label')
+    for i in range(num_edges):
+        new_label = randint(0,1)
+        ind = randint(0,len(graph.nodes)-1)
+        graph.nodes[ind].content['label']=new_label
     return graph
 
-@register_native
-def change_label_to_1(graph: OptGraph,requirements: GraphRequirements,
-                         graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters') -> OptGraph:
-    num_nodes = 9
-    num_edges = int((num_nodes*(num_nodes-1))/4)
+change_label_5_mutation = partial(change_label, num_edges=5)
+change_label_10_mutation = partial(change_label, num_edges=10)
+change_label_15_mutation = partial(change_label, num_edges=15)
+change_label_20_mutation = partial(change_label, num_edges=20)
+change_label_25_mutation = partial(change_label, num_edges=25)
+change_label_30_mutation = partial(change_label, num_edges=30)
+change_label_35_mutation = partial(change_label, num_edges=35)
+change_label_40_mutation = partial(change_label, num_edges=40)
+change_label_45_mutation = partial(change_label, num_edges=45)
+change_label_50_mutation = partial(change_label, num_edges=50)
+change_label_55_mutation = partial(change_label, num_edges=55)
 
+@register_native
+def change_label_ones(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters', num_edges) -> OptGraph:
     for _ in range(num_edges):
         for _ in range(parameters.max_num_of_operator_attempts):
             if len(graph.get_edges()) ==0:
                 return graph
             source_node, target_node = sample(graph.get_edges(), 1)[0]
-            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 1
-            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 1
+
+            graph.nodes[int(str(source_node))].content['label'] = 1
+            graph.nodes[int(str(target_node))].content['label'] = 1
             break
     return graph
-
+change_label_ones_5_mutation = partial(change_label_ones, num_edges=5)
+change_label_ones_10_mutation = partial(change_label_ones, num_edges=10)
+change_label_ones_15_mutation = partial(change_label_ones, num_edges=15)
+change_label_ones_20_mutation = partial(change_label_ones, num_edges=20)
+change_label_ones_25_mutation = partial(change_label_ones, num_edges=25)
+change_label_ones_30_mutation = partial(change_label_ones, num_edges=30)
+change_label_ones_35_mutation = partial(change_label_ones, num_edges=35)
+change_label_ones_40_mutation = partial(change_label_ones, num_edges=40)
+change_label_ones_45_mutation = partial(change_label_ones, num_edges=45)
+change_label_ones_50_mutation = partial(change_label_ones, num_edges=50)
+change_label_ones_55_mutation = partial(change_label_ones, num_edges=55)
 @register_native
-def change_label_to_0(graph: OptGraph,requirements: GraphRequirements,
+def change_label_zeros(graph: OptGraph,requirements: GraphRequirements,
                       graph_gen_params: GraphGenerationParams,
-                      parameters: 'GPAlgorithmParameters') -> OptGraph:
-    num_nodes = 9
-    num_edges = int((num_nodes * (num_nodes - 1)) / 4)
-
+                      parameters: 'GPAlgorithmParameters', num_edges) -> OptGraph:
     for _ in range(num_edges):
         for _ in range(parameters.max_num_of_operator_attempts):
             if len(graph.get_edges()) == 0:
                 return graph
             source_node, target_node = sample(graph.get_edges(), 1)[0]
+
             #print(source_node.descriptive_id, (source_node.descriptive_id.split('_')[-1]))
-            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 0
-            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 0
+
+            graph.nodes[int(str(source_node))].content['label'] = 0
+            graph.nodes[int(str(target_node))].content['label'] = 0
             break
     return graph
+change_label_zeros_5_mutation = partial(change_label_zeros, num_edges=5)
+change_label_zeros_10_mutation = partial(change_label_zeros, num_edges=10)
+change_label_zeros_15_mutation = partial(change_label_zeros, num_edges=15)
+change_label_zeros_20_mutation = partial(change_label_zeros, num_edges=20)
+change_label_zeros_25_mutation = partial(change_label_zeros, num_edges=25)
+change_label_zeros_30_mutation = partial(change_label_zeros, num_edges=30)
+change_label_zeros_35_mutation = partial(change_label_zeros, num_edges=35)
+change_label_zeros_40_mutation = partial(change_label_zeros, num_edges=40)
+change_label_zeros_45_mutation = partial(change_label_zeros, num_edges=45)
+change_label_zeros_50_mutation = partial(change_label_zeros, num_edges=50)
+change_label_zeros_55_mutation = partial(change_label_zeros, num_edges=55)
 
 @register_native
-def change_label_to_diff(graph: OptGraph,requirements: GraphRequirements,
+def change_label_diff(graph: OptGraph,requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
-                         parameters: 'GPAlgorithmParameters') -> OptGraph:
-    num_nodes = 9
-    num_edges = int((num_nodes * (num_nodes - 1)) / 4)
-
+                         parameters: 'GPAlgorithmParameters',num_edges) -> OptGraph:
     for _ in range(num_edges):
         for _ in range(parameters.max_num_of_operator_attempts):
             if len(graph.get_edges()) == 0:
                 return graph
             source_node, target_node = sample(graph.get_edges(), 1)[0]
-            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 0
-            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 1
+
+            graph.nodes[int(str(source_node))].content['label'] = 0
+            graph.nodes[int(str(target_node))].content['label'] = 1
             break
     return graph
-
+change_label_diff_5_mutation = partial(change_label_diff, num_edges=5)
+change_label_diff_10_mutation = partial(change_label_diff, num_edges=10)
+change_label_diff_15_mutation = partial(change_label_diff, num_edges=15)
+change_label_diff_20_mutation = partial(change_label_diff, num_edges=20)
+change_label_diff_25_mutation = partial(change_label_diff, num_edges=25)
+change_label_diff_30_mutation = partial(change_label_diff, num_edges=30)
+change_label_diff_35_mutation = partial(change_label_diff, num_edges=35)
+change_label_diff_40_mutation = partial(change_label_diff, num_edges=40)
+change_label_diff_45_mutation = partial(change_label_diff, num_edges=45)
+change_label_diff_50_mutation = partial(change_label_diff, num_edges=50)
+change_label_diff_55_mutation = partial(change_label_diff, num_edges=55)
 def node_parents(graph, node: GraphNode):
     nodes = []
     for other_node in graph.nodes:
@@ -798,6 +884,7 @@ def no_mutation(graph: OptGraph, *args, **kwargs) -> OptGraph:
 
 
 base_mutations_repo = {
+
     MutationTypesEnum.none: no_mutation,
     MutationTypesEnum.simple: simple_mutation,
     MutationTypesEnum.growth: partial(growth_mutation, local_growth=False),
@@ -818,6 +905,54 @@ base_mutations_repo = {
     MutationTypesEnum.star_edge_45: star_edge_45_mutation,
     MutationTypesEnum.star_edge_50: star_edge_50_mutation,
     MutationTypesEnum.star_edge_55: star_edge_55_mutation,
+
+    MutationTypesEnum.change_label_5: change_label_5_mutation,
+    MutationTypesEnum.change_label_10: change_label_10_mutation,
+    MutationTypesEnum.change_label_15: change_label_15_mutation,
+    MutationTypesEnum.change_label_20: change_label_20_mutation,
+    MutationTypesEnum.change_label_25: change_label_25_mutation,
+    MutationTypesEnum.change_label_30: change_label_30_mutation,
+    MutationTypesEnum.change_label_35: change_label_35_mutation,
+    MutationTypesEnum.change_label_40: change_label_40_mutation,
+    MutationTypesEnum.change_label_45: change_label_45_mutation,
+    MutationTypesEnum.change_label_50: change_label_50_mutation,
+    MutationTypesEnum.change_label_55: change_label_55_mutation,
+
+    MutationTypesEnum.change_label_ones_5: change_label_ones_5_mutation,
+    MutationTypesEnum.change_label_ones_10: change_label_ones_10_mutation,
+    MutationTypesEnum.change_label_ones_15: change_label_ones_15_mutation,
+    MutationTypesEnum.change_label_ones_20: change_label_ones_20_mutation,
+    MutationTypesEnum.change_label_ones_25: change_label_ones_25_mutation,
+    MutationTypesEnum.change_label_ones_30: change_label_ones_30_mutation,
+    MutationTypesEnum.change_label_ones_35: change_label_ones_35_mutation,
+    MutationTypesEnum.change_label_ones_40: change_label_ones_40_mutation,
+    MutationTypesEnum.change_label_ones_45: change_label_ones_45_mutation,
+    MutationTypesEnum.change_label_ones_50: change_label_ones_50_mutation,
+    MutationTypesEnum.change_label_ones_55: change_label_ones_55_mutation,
+
+    MutationTypesEnum.change_label_zeros_5: change_label_zeros_5_mutation,
+    MutationTypesEnum.change_label_zeros_10: change_label_zeros_10_mutation,
+    MutationTypesEnum.change_label_zeros_15: change_label_zeros_15_mutation,
+    MutationTypesEnum.change_label_zeros_20: change_label_zeros_20_mutation,
+    MutationTypesEnum.change_label_zeros_25: change_label_zeros_25_mutation,
+    MutationTypesEnum.change_label_zeros_30: change_label_zeros_30_mutation,
+    MutationTypesEnum.change_label_zeros_35: change_label_zeros_35_mutation,
+    MutationTypesEnum.change_label_zeros_40: change_label_zeros_40_mutation,
+    MutationTypesEnum.change_label_zeros_45: change_label_zeros_45_mutation,
+    MutationTypesEnum.change_label_zeros_50: change_label_zeros_50_mutation,
+    MutationTypesEnum.change_label_zeros_55: change_label_zeros_55_mutation,
+
+    MutationTypesEnum.change_label_diff_5: change_label_diff_5_mutation,
+    MutationTypesEnum.change_label_diff_10: change_label_diff_10_mutation,
+    MutationTypesEnum.change_label_diff_15: change_label_diff_15_mutation,
+    MutationTypesEnum.change_label_diff_20: change_label_diff_20_mutation,
+    MutationTypesEnum.change_label_diff_25: change_label_diff_25_mutation,
+    MutationTypesEnum.change_label_diff_30: change_label_diff_30_mutation,
+    MutationTypesEnum.change_label_diff_35: change_label_diff_35_mutation,
+    MutationTypesEnum.change_label_diff_40: change_label_diff_40_mutation,
+    MutationTypesEnum.change_label_diff_45: change_label_diff_45_mutation,
+    MutationTypesEnum.change_label_diff_50: change_label_diff_50_mutation,
+    MutationTypesEnum.change_label_diff_55: change_label_diff_55_mutation,
 
     MutationTypesEnum.dense_edge_5: dense_edge_5_mutation,
 MutationTypesEnum.dense_edge_10: dense_edge_10_mutation,
@@ -873,9 +1008,9 @@ MutationTypesEnum.cycle_edge_55: cycle_edge_55_mutation,
 
     MutationTypesEnum.single_change: single_change_mutation,
     MutationTypesEnum.change_label: change_label,
-MutationTypesEnum.change_label_to_1: change_label_to_1,
-MutationTypesEnum.change_label_to_0: change_label_to_0,
-MutationTypesEnum.change_label_to_diff: change_label_to_diff,
+#MutationTypesEnum.change_label_to_1: change_label_to_1,
+#MutationTypesEnum.change_label_to_0: change_label_to_0,
+#MutationTypesEnum.change_label_to_diff: change_label_to_diff,
 }
 
 

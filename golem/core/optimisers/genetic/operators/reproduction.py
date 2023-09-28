@@ -79,9 +79,11 @@ class ReproductionController:
 
         # TODO: it can't choose more than len(population)!
         #  It can be faster if it could.
+
         selected_individuals = self.selection(population, pop_size)
         new_population = self.crossover(selected_individuals)
-        new_population = ensure_wrapped_in_sequence(self.mutation(new_population))
+        x = self.mutation(new_population)
+        new_population = ensure_wrapped_in_sequence(x)
         new_population = evaluator(new_population)
         return new_population
 
@@ -93,6 +95,7 @@ class ReproductionController:
         Implements additional checks on population to ensure that population size
         follows required population size.
         """
+
         total_target_size = self.parameters.pop_size  # next population size
         collected_next_population = {}
         for i in range(EVALUATION_ATTEMPTS_NUMBER):
@@ -105,9 +108,10 @@ class ReproductionController:
 
             # Reproduce the required number of individuals that equals residual size
             partial_next_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
+            print('partial_next_population')
             # Avoid duplicate individuals that can come unchanged from previous population
             collected_next_population.update({ind.uid: ind for ind in partial_next_population})
-
+            print('collected_next_population')
             # Keep running average of transform success rate (if sample is big enough)
             if len(partial_next_population) >= MIN_POP_SIZE:
                 valid_ratio = len(partial_next_population) / residual_size

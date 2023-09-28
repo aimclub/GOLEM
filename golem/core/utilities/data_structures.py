@@ -123,6 +123,7 @@ def ensure_wrapped_in_sequence(
     :return: the same object if it's of type sequence (or None)
         or ``obj`` wrapped in type provided by ``sequence_factory``
     """
+
     if obj is None:
         return obj
     elif isinstance(obj, str) or not isinstance(obj, collections.abc.Iterable):

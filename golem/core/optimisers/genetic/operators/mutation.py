@@ -43,13 +43,13 @@ class Mutation(Operator):
         self.agent_experience = ExperienceBuffer(window_size=parameters.window_size)
 
     @staticmethod
-    def _init_operator_agent(parameters: 'GPAlgorithmParameters',
+    def _init_operator_agent(graph_gen_params: GraphGenerationParams,
+                             parameters: 'GPAlgorithmParameters',
                              requirements: OptimizationParameters):
         kind = parameters.adaptive_mutation_type
         if kind == MutationAgentTypeEnum.default or kind == MutationAgentTypeEnum.random:
             agent = RandomAgent(actions=parameters.mutation_types)
         elif kind == MutationAgentTypeEnum.bandit:
-
             agent = MultiArmedBanditAgent(actions=parameters.mutation_types,
                                           n_jobs=requirements.n_jobs,
                                           path_to_save=requirements.agent_dir,
@@ -61,16 +61,6 @@ class Mutation(Operator):
                 available_operations=graph_gen_params.node_factory.get_all_available_operations(),
                 n_jobs=requirements.n_jobs,
                 decaying_factor=parameters.decaying_factor)
-        elif kind == MutationAgentTypeEnum.neural_bandit:
-            agent = NeuralContextualMultiArmedBanditAgent(
-                actions=parameters.mutation_types,
-                context_agent_type=parameters.context_agent_type,
-                available_operations=graph_gen_params.node_factory.available_nodes,
-                n_jobs=requirements.n_jobs)
-        # if agent was specified pretrained (with instance)
-        elif isinstance(parameters.adaptive_mutation_type, OperatorAgent):
-            agent = kind
-
         else:
             raise TypeError(f'Unknown parameter {kind}')
         return agent
@@ -81,26 +71,21 @@ class Mutation(Operator):
 
     def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
-            return self._mutation(population)[0]
-      #  print('whole population',population)
-        mutated_population, mutations_applied = unzip(map(self._mutation, population))
-        return mutated_population
-
-
-        final_population, mutations_applied, application_attempts = tuple(zip(*map(self._mutation, population)))
-
-        # drop individuals to which mutations could not be applied
-        final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)
-                            if not attempt or ind.graph != init_ind.graph]
+            population = [population]
+        #mutated_population, mutations_applied = unzip(map(self._mutation, population))
+        final_population, mutations_applied,application_attempts = unzip(map(self._mutation, population))
+        #final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)
+         #                   if not attempt or ind.graph != init_ind.graph]
 
         if len(population) == 1:
             return final_population[0] if final_population else final_population
 
         return final_population
 
-    def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType], bool]:
 
+    def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
         """ Function applies mutation operator to graph """
+        application_attempt = False
         mutation_applied = None
         for o in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
@@ -108,6 +93,7 @@ class Mutation(Operator):
             new_graph, mutation_applied = self._apply_mutations(new_graph)
             if mutation_applied is None:
                 continue
+            application_attempt = True
             #is_correct_graph = self.graph_generation_params.verifier(new_graph)
             #print('is correct', is_correct_graph, datetime.now())
             if True:#is_correct_graph:
@@ -123,7 +109,7 @@ class Mutation(Operator):
         else:
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')
-        return individual, mutation_applied
+        return individual, mutation_applied,application_attempt
 
     def _sample_num_of_mutations(self) -> int:
         # most of the time returns 1 or rarely several mutations

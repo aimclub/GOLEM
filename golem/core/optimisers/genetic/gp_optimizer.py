@@ -88,7 +88,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             new_ind = self.mutation(choice(pop))
             if new_ind:
                 new_graph = new_ind.graph
-                if new_graph not in pop_graphs and verifier(new_graph):
+                if new_graph not in pop_graphs: # and verifier(new_graph):
                     extended_pop.append(new_ind)
                     pop_graphs.append(new_graph)
         else:
@@ -104,9 +104,12 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         # Defines adaptive changes to algorithm parameters
         #  like pop_size and operator probabilities
+
         self._update_requirements()
 
+
         # Regularize previous population
+
         individuals_to_select = self.regularization(self.population, evaluator)
         # Reproduce from previous pop to get next population
         new_population = self.reproducer.reproduce(individuals_to_select, evaluator)
@@ -116,11 +119,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         experience = self.mutation.agent_experience
         experience.collect_results(new_population)
         self.mutation.agent.partial_fit(experience)
-
         # Use some part of previous pop in the next pop
         new_population = self.inheritance(self.population, new_population)
         new_population = self.elitism(self.generations.best_individuals, new_population)
-
         return new_population
 
     def _update_requirements(self):

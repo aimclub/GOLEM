@@ -40,8 +40,10 @@ class MultiArmedBanditAgent(OperatorAgent):
         self._agent.fit(decisions=self._indices, rewards=uniform_rewards)
 
     def choose_action(self, obs: ObsType) -> ActType:
+
         arm = self._agent.predict()
         action = self.actions[arm]
+
         return action
 
     def get_action_values(self, obs: Optional[ObsType] = None) -> Sequence[float]:

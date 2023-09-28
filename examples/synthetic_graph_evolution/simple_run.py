@@ -7,10 +7,10 @@ if __name__ == '__main__':
     des_num_nodes = max_graph_size = 310
     des_degree = 50
     num_edges = 5
-    des_cluster = 0.1
+    des_cluster = 0.2
+    des_asp  = 3
 
-
-    des_label_assort = 1
+    des_label_assort = 0.8
     cycle = False
     path = False
     dense = False
@@ -18,5 +18,5 @@ if __name__ == '__main__':
 
     G_new = run_graph_search(dense=dense,cycle=cycle,path=path,star=star, size=16, num_edges=num_edges, des_degree=des_degree,
                                                                               des_cluster=des_cluster, des_num_nodes=des_num_nodes,
-                                                                              des_label_assort=des_label_assort, visualize=True)
+                                                                              des_label_assort=des_label_assort,des_asp=des_asp, visualize=True)
    # pickle.dump(G_new.to_undirected(), open('G_40_8.pickle', 'wb'))

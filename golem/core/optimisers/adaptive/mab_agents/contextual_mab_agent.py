@@ -50,6 +50,7 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         n = len(self._indices)
         uniform_rewards = [1. / n] * n
         contexts = self.get_context(obs=obs)
+
         self._agent.fit(decisions=self._indices, rewards=uniform_rewards, contexts=np.tile(contexts, (n, 1)))
         self._is_fitted = True
 

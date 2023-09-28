@@ -12,9 +12,10 @@ import time
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 
+import igraph as ig
 import matplotlib.pyplot as plt
 import networkx as nx
-from random import choice, random,randint, sample, choices
+from random import choice, random, randint, sample, choices
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -31,10 +32,15 @@ import numpy as np
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 import random
 import pickle
+from functools import partial
+
+
 class GeneratorModel(GraphDelegate):
     def __init__(self, nodes: Optional[Union[LinkedGraphNode, List[LinkedGraphNode]]] = None):
         super().__init__(nodes)
         self.unique_pipeline_id = 1
+    def number_of_nodes(self):
+        return len(self.nodes)
 
     def degree(self):
         edges = self.get_edges()
@@ -57,10 +63,10 @@ class GeneratorModel(GraphDelegate):
 
 class GeneratorNode(LinkedGraphNode):
     def __str__(self):
-
         return self.content["name"]
 
-def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_cluster,des_num_nodes, des_label_assort, timeout=15, visualize=True):
+
+def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_cluster,des_num_nodes, des_label_assort,des_asp, timeout=15, visualize=True):
     # Generate target graph that will be sought by optimizer
 
     def overall_mape(des_values, fact_values):
@@ -68,6 +74,31 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         for i, value in enumerate(des_values):
             mape += np.abs(value - fact_values[i]) / value
         return mape / len(des_values)
+
+
+    def shortes_paths(G, id, changed_nodes):
+        G = ig.Graph.from_networkx(G)
+        connected_components = ig.count_components(G)
+        matrix_of_shortest_paths = pd.load()
+        ig.get_all_shortest_paths(v, to=None)
+
+
+        avg_shortes_path = 0
+        for nodes in nx.connected_components(G):
+            g = G.graph.subgraph(nodes)
+            g_ig = ig.Graph.from_networkx(g)
+            num_nodes = g.number_of_nodes()
+
+            avg = 0
+            for shortes_paths in g_ig.shortest_paths():
+                for sp in shortes_paths:
+                    avg += sp
+            if num_nodes != 1:
+                avg_shortes_path += avg / (num_nodes * num_nodes - num_nodes)
+            else:
+                avg_shortes_path = avg
+
+        avg_s_p = avg_shortes_path / connected_components
 
     def label_assortativity(G):
         label_assort = 0
@@ -112,6 +143,11 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     def lab_assort_count(des_label_assort, G):
         fact_label = label_assortativity(G)
         return (des_label_assort - fact_label) * (des_label_assort - fact_label)
+
+    def asp_count(des_shortest_paths, G):
+        fact_asp = shortes_paths(G)
+        return (des_shortest_paths - fact_asp) * (des_shortest_paths - fact_asp)
+
 
     def avg_deg_count(des_d, G):
         d = np.mean(list(G.degree().values()))
@@ -195,8 +231,8 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     print('clustering coefficient of random graph: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()), des_cluster))
 
     objective = Objective({'avg degree': partial(avg_deg_count, des_degree),
-                           'cluster coef': partial(avg_cluster_count, des_cluster)}, is_multi_objective=True)
-#, 'label assort': partial(lab_assort_count,des_label_assort)
+                           'cluster coef': partial(avg_cluster_count, des_cluster) , 'label assort': partial(lab_assort_count,des_label_assort), 'shortest paths': partial(asp_count,des_asp)}, is_multi_objective=True)
+
 
     # Setup optimization parameters
     max_graph_size=des_num_nodes
@@ -222,6 +258,8 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                       MutationTypesEnum.batch_edge_45,
                       MutationTypesEnum.batch_edge_50,
                       MutationTypesEnum.batch_edge_55,
+
+
 
                       MutationTypesEnum.star_edge_5,
                       MutationTypesEnum.star_edge_10,
@@ -288,9 +326,9 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
         multi_objective=objective.is_multi_objective,
         mutation_types=mutation_types,
-        adaptive_mutation_type = MutationAgentTypeEnum.bandit,
-        #context_agent_type = ContextAgentTypeEnum.adjacency_matrix,
-        crossover_types=[CrossoverTypesEnum.subgraph_5]
+        adaptive_mutation_type = MutationAgentTypeEnum.default,
+        context_agent_type = ContextAgentTypeEnum.adjacency_matrix,
+        crossover_types=[CrossoverTypesEnum.none]
     )
 
     graph_gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter())
@@ -323,10 +361,10 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         print('clustering coefficient real: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()),des_cluster))
         print('label assortativity real: {} vs des: {} '.format(label_assortativity(found_graphs[0]), des_label_assort) )
 
-        des_values = [des_degree, des_cluster, des_label_assort]
-        fact_values = [np.mean(list(dict(found_graph.degree()).values())), nx.average_clustering(G_new.to_undirected()), label_assortativity(found_graphs[0])]
-        print(nx.degree(G_new), len(G_new.edges()), len(G_new.edges()), 'mape', overall_mape(des_values, fact_values))
-        print(found_graph.degree())
+        #des_values = [des_degree, des_cluster, des_label_assort]
+        #fact_values = [np.mean(list(dict(found_graph.degree()).values())), nx.average_clustering(G_new.to_undirected()), label_assortativity(found_graphs[0])]
+        #print(nx.degree(G_new), len(G_new.edges()), len(G_new.edges()), 'mape', overall_mape(des_values, fact_values))
+        #print(found_graph.degree())
         #nx.draw(G_new,node_color = colors)
         #plt.show()
         return G_new
@@ -387,4 +425,53 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                       MutationTypesEnum.dense_edge_40,
                       MutationTypesEnum.dense_edge_45,
                       MutationTypesEnum.dense_edge_50,
-                      MutationTypesEnum.dense_edge_55,'''
+                      MutationTypesEnum.dense_edge_55,
+                      
+                           MutationTypesEnum.change_label_5,
+                      MutationTypesEnum.change_label_10,
+                      MutationTypesEnum.change_label_15,
+                      MutationTypesEnum.change_label_20,
+                      MutationTypesEnum.change_label_25,
+                      MutationTypesEnum.change_label_30,
+                      MutationTypesEnum.change_label_35,
+                      MutationTypesEnum.change_label_40,
+                      MutationTypesEnum.change_label_45,
+                      MutationTypesEnum.change_label_50,
+                      MutationTypesEnum.change_label_55,
+
+                      MutationTypesEnum.change_label_ones_5,
+                      MutationTypesEnum.change_label_ones_10,
+                      MutationTypesEnum.change_label_ones_15,
+                      MutationTypesEnum.change_label_ones_20,
+                      MutationTypesEnum.change_label_ones_25,
+                      MutationTypesEnum.change_label_ones_30,
+                      MutationTypesEnum.change_label_ones_35,
+                      MutationTypesEnum.change_label_ones_40,
+                      MutationTypesEnum.change_label_ones_45,
+                      MutationTypesEnum.change_label_ones_50,
+                      MutationTypesEnum.change_label_ones_55,
+
+                      MutationTypesEnum.change_label_zeros_5,
+                      MutationTypesEnum.change_label_zeros_10,
+                      MutationTypesEnum.change_label_zeros_15,
+                      MutationTypesEnum.change_label_zeros_20,
+                      MutationTypesEnum.change_label_zeros_25,
+                      MutationTypesEnum.change_label_zeros_30,
+                      MutationTypesEnum.change_label_zeros_35,
+                      MutationTypesEnum.change_label_zeros_40,
+                      MutationTypesEnum.change_label_zeros_45,
+                      MutationTypesEnum.change_label_zeros_50,
+                      MutationTypesEnum.change_label_zeros_55,
+
+                      MutationTypesEnum.change_label_diff_5,
+                      MutationTypesEnum.change_label_diff_10,
+                      MutationTypesEnum.change_label_diff_15,
+                      MutationTypesEnum.change_label_diff_20,
+                      MutationTypesEnum.change_label_diff_25,
+                      MutationTypesEnum.change_label_diff_30,
+                      MutationTypesEnum.change_label_diff_35,
+                      MutationTypesEnum.change_label_diff_40,
+                      MutationTypesEnum.change_label_diff_45,
+                      MutationTypesEnum.change_label_diff_50,
+                      MutationTypesEnum.change_label_diff_55,
+                      '''

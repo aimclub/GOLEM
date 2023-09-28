@@ -156,6 +156,8 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.__eq__)
     def __eq__(self, other_graph: Graph) -> bool:
         print('roots', len(self.root_nodes()), len(other_graph.root_nodes()))
+        print([rn for rn in self.root_nodes()])
+        print([rn for rn in other_graph.root_nodes()])
         return \
             set(rn.descriptive_id for rn in self.root_nodes()) == \
             set(rn.descriptive_id for rn in other_graph.root_nodes())
