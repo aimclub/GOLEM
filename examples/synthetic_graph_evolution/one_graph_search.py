@@ -12,16 +12,20 @@ import time
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 
+
 import igraph as ig
 import matplotlib.pyplot as plt
 import networkx as nx
 from random import choice, random, randint, sample, choices
+
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
+
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
@@ -31,16 +35,20 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 import numpy as np
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes
 import random
+
 import pickle
 from functools import partial
+
 
 
 class GeneratorModel(GraphDelegate):
     def __init__(self, nodes: Optional[Union[LinkedGraphNode, List[LinkedGraphNode]]] = None):
         super().__init__(nodes)
         self.unique_pipeline_id = 1
+
     def number_of_nodes(self):
         return len(self.nodes)
+
 
     def degree(self):
         edges = self.get_edges()
@@ -63,10 +71,12 @@ class GeneratorModel(GraphDelegate):
 
 class GeneratorNode(LinkedGraphNode):
     def __str__(self):
+
         return self.content["name"]
 
 
 def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_cluster,des_num_nodes, des_label_assort,des_asp, timeout=15, visualize=True):
+
     # Generate target graph that will be sought by optimizer
 
     def overall_mape(des_values, fact_values):
@@ -99,6 +109,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                 avg_shortes_path = avg
 
         avg_s_p = avg_shortes_path / connected_components
+
 
     def label_assortativity(G):
         label_assort = 0
@@ -144,6 +155,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         fact_label = label_assortativity(G)
         return (des_label_assort - fact_label) * (des_label_assort - fact_label)
 
+
     def asp_count(des_shortest_paths, G):
         fact_asp = shortes_paths(G)
         return (des_shortest_paths - fact_asp) * (des_shortest_paths - fact_asp)
@@ -161,6 +173,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
         d = nx.average_clustering(G_new.to_undirected())
         return (d - des_cl) * (d - des_cl)
+
 
     def normalize(weights):
         total = sum(weights)
@@ -193,10 +206,12 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     print(distributions)
     for dist_func in distributions:
         print('making a graph')
+
         Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
                                                    content={'name': vertex,
                                                             'label': random.choices([0, 1], weights = [0.5+0.5*des_label_assort, 0.5-0.5*des_label_assort],k=1)})
                                      for vertex in range(des_num_nodes)])
+
         probs = dist_func()
         print(probs,sum(probs))
         init_edges = []
@@ -205,13 +220,16 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         while i < (int(des_degree*des_num_nodes/2)):
             #print(i)
             node_1, node_2 = choices(Init2.nodes, weights = probs, k=2)
+
             if (node_1, node_2) not in init_edges and (node_2,node_1) not in init_edges and node_1!=node_2:
                 init_edges.append((node_1, node_2))
                 Init2.connect_nodes(node_1, node_2)
                 i +=1
 
         initial_graphs.append(Init2)
+
         print('ended making graph')
+
 
     print('avg degree of random graph: {} vs des:{}'.format( np.mean(list(dict(Init2.degree()).values())),des_degree))
 
@@ -235,17 +253,21 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
 #, 'shortest paths': partial(asp_count,des_asp)
     
+
     # Setup optimization parameters
     max_graph_size=des_num_nodes
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size*10000,
+
         num_of_generations = 600,
+
         early_stopping_iterations=100,
         timeout=timedelta(minutes=timeout),
         n_jobs=-1,
         num_edges = num_edges
     )
+
 
     mutation_types = [MutationTypesEnum.single_edge,
                       MutationTypesEnum.batch_edge_5,
@@ -311,6 +333,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                       MutationTypesEnum.dense_edge_55
 
                       ]
+
     if dense:
         mutation_types.append(MutationTypesEnum.dense_edge)
     if star:
@@ -329,6 +352,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         mutation_types=mutation_types,
         adaptive_mutation_type = MutationAgentTypeEnum.default,
         context_agent_type = ContextAgentTypeEnum.adjacency_matrix,
+
         crossover_types=[CrossoverTypesEnum.none]
     )
 
@@ -361,6 +385,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
         print('clustering coefficient real: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()),des_cluster))
         print('label assortativity real: {} vs des: {} '.format(label_assortativity(found_graphs[0]), des_label_assort) )
+
 
         #des_values = [des_degree, des_cluster, des_label_assort]
         #fact_values = [np.mean(list(dict(found_graph.degree()).values())), nx.average_clustering(G_new.to_undirected()), label_assortativity(found_graphs[0])]

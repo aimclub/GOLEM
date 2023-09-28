@@ -1,4 +1,5 @@
 from one_graph_search import run_graph_search
+
 import pickle
 
 if __name__ == '__main__':
@@ -11,10 +12,12 @@ if __name__ == '__main__':
     des_asp  = 3
 
     des_label_assort = 0.8
+
     cycle = False
     path = False
     dense = False
     star = False
+
 
     G_new = run_graph_search(dense=dense,cycle=cycle,path=path,star=star, size=16, num_edges=num_edges, des_degree=des_degree,
                                                                               des_cluster=des_cluster, des_num_nodes=des_num_nodes,

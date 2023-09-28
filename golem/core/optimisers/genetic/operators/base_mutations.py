@@ -48,6 +48,7 @@ class MutationTypesEnum(Enum):
     path_edge='path_edge'
     cycle_edge='cycle_edge'
 
+
     batch_edge_5='batch_edge_5'
     batch_edge_10='batch_edge_10'
     batch_edge_15='batch_edge_15'
@@ -159,6 +160,7 @@ class MutationTypesEnum(Enum):
     dense_edge_50='dense_edge_50'
     dense_edge_55='dense_edge_55'
 
+
     dense_edge='dense_edge'
     batch_edge_del = 'batch_edge_delete'
 
@@ -259,7 +261,9 @@ def single_edge_mutation(graph: OptGraph,
 def batch_edge_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
                          graph_gen_params: GraphGenerationParams,
+
                          parameters: 'GPAlgorithmParameters',num_edges
+
                          ) -> OptGraph:
     """
     This mutation adds new edge between two random nodes in graph.
@@ -267,7 +271,7 @@ def batch_edge_mutation(graph: OptGraph,
     :param graph: graph to mutate
     """
 
-   # num_edges = 5 #requirements.num_edges#int((num_nodes*(num_nodes-1))/4)
+
    # print('num nodes',num_edges)
     old_graph = deepcopy(graph)
     for _ in range(num_edges):
@@ -293,6 +297,7 @@ def batch_edge_mutation(graph: OptGraph,
 
       #  if graph.depth > requirements.max_depth:
        #     return old_graph
+
     return graph
 
 batch_edge_5_mutation = partial(batch_edge_mutation, num_edges=5)
@@ -557,6 +562,78 @@ def add_intermediate_node(graph: OptGraph,
     # add new node to graph
     graph.add_node(new_node)
     return graph
+
+@register_native
+def change_label(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+    node = choice(graph.nodes)
+    print('before change label')
+    new_label = randint(0,1)
+    ind = randint(0,len(graph.nodes)-1)
+    graph.nodes[ind].content['label']=new_label
+    print('after change label')
+    return graph
+
+@register_native
+def change_label_to_1(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+    num_nodes = 9
+    num_edges = int((num_nodes*(num_nodes-1))/4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) ==0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 1
+            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 1
+            break
+    return graph
+
+@register_native
+def change_label_to_0(graph: OptGraph,requirements: GraphRequirements,
+                      graph_gen_params: GraphGenerationParams,
+                      parameters: 'GPAlgorithmParameters') -> OptGraph:
+    num_nodes = 9
+    num_edges = int((num_nodes * (num_nodes - 1)) / 4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) == 0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+            #print(source_node.descriptive_id, (source_node.descriptive_id.split('_')[-1]))
+            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 0
+            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 0
+            break
+    return graph
+
+@register_native
+def change_label_to_diff(graph: OptGraph,requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters') -> OptGraph:
+    num_nodes = 9
+    num_edges = int((num_nodes * (num_nodes - 1)) / 4)
+
+    for _ in range(num_edges):
+        for _ in range(parameters.max_num_of_operator_attempts):
+            if len(graph.get_edges()) == 0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+            graph.nodes[int(source_node.descriptive_id.split('_')[-1])].content['label'] = 0
+            graph.nodes[int(target_node.descriptive_id.split('_')[-1])].content['label'] = 1
+            break
+    return graph
+
+def node_parents(graph, node: GraphNode):
+    nodes = []
+    for other_node in graph.nodes:
+        if other_node in node.nodes_from:
+            nodes.append(other_node)
+    return nodes
+
 
 
 @register_native
@@ -894,6 +971,7 @@ base_mutations_repo = {
     MutationTypesEnum.single_add: single_add_mutation,
     MutationTypesEnum.single_edge: single_edge_mutation,
 
+
     MutationTypesEnum.star_edge_5: star_edge_5_mutation,
     MutationTypesEnum.star_edge_10: star_edge_10_mutation,
     MutationTypesEnum.star_edge_15: star_edge_15_mutation,
@@ -1004,13 +1082,16 @@ MutationTypesEnum.cycle_edge_55: cycle_edge_55_mutation,
     MutationTypesEnum.batch_edge_45: batch_edge_45_mutation,
     MutationTypesEnum.batch_edge_50: batch_edge_50_mutation,
     MutationTypesEnum.batch_edge_55: batch_edge_55_mutation,
+
     MutationTypesEnum.single_drop: single_drop_mutation,
 
     MutationTypesEnum.single_change: single_change_mutation,
     MutationTypesEnum.change_label: change_label,
+
 #MutationTypesEnum.change_label_to_1: change_label_to_1,
 #MutationTypesEnum.change_label_to_0: change_label_to_0,
 #MutationTypesEnum.change_label_to_diff: change_label_to_diff,
+
 }
 
 
