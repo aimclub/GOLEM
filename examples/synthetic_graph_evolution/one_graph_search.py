@@ -231,9 +231,10 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     print('clustering coefficient of random graph: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()), des_cluster))
 
     objective = Objective({'avg degree': partial(avg_deg_count, des_degree),
-                           'cluster coef': partial(avg_cluster_count, des_cluster) , 'label assort': partial(lab_assort_count,des_label_assort), 'shortest paths': partial(asp_count,des_asp)}, is_multi_objective=True)
+                           'cluster coef': partial(avg_cluster_count, des_cluster) , 'label assort': partial(lab_assort_count,des_label_assort)}, is_multi_objective=True)
 
-
+#, 'shortest paths': partial(asp_count,des_asp)
+    
     # Setup optimization parameters
     max_graph_size=des_num_nodes
     requirements = GraphRequirements(
