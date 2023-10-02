@@ -34,7 +34,7 @@ class RandomSearchOptimizer(GraphOptimizer):
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
                 lambda: requirements.num_of_generations is not None and
-                        self.current_iteration_num >= requirements.num_of_generations,
+                self.current_iteration_num >= requirements.num_of_generations,
                 'Optimisation stopped: Max number of iterations reached')
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
