@@ -29,10 +29,10 @@ class FitnessBox(HistoryVisualization):
         # Get color palette by mean fitness per generation
         fitness = df_history.groupby('generation')['fitness'].mean()
         fitness = (fitness - min(fitness)) / (max(fitness) - min(fitness))
-        colormap = sns.color_palette('YlOrRd', as_cmap=True)
+        colors = plt.cm.YlOrRd(fitness)
 
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
-        sns.boxplot(data=df_history, x='generation', y='fitness', palette=fitness.map(colormap), ax=ax)
+        sns.boxplot(data=df_history, x='generation', y='fitness', palette=colors, ax=ax)
         fig.set_dpi(dpi)
         fig.set_facecolor('w')
 

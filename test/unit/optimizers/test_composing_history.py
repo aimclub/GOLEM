@@ -1,6 +1,7 @@
 import itertools
 import os
 from pathlib import Path
+from random import random
 
 import numpy as np
 import pytest
@@ -31,7 +32,7 @@ def create_mock_graph_individual():
     node_3 = MockNode(content={'name': 'knn'})
     mock_graph = MockDomainStructure([node_1, node_2, node_3])
     individual = Individual(graph=mock_graph)
-    individual.set_evaluation_result(MultiObjFitness([1, 1]))
+    individual.set_evaluation_result(MultiObjFitness([random(), random()]))
     return individual
 
 
@@ -43,7 +44,7 @@ def create_individual(evaluated=True):
 
     individual = Individual(graph=OptGraph(final))
     if evaluated:
-        individual.set_evaluation_result(MultiObjFitness([1, 1]))
+        individual.set_evaluation_result(MultiObjFitness([random(), random()]))
     return individual
 
 
