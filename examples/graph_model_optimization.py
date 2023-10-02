@@ -19,7 +19,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_mutation_optimizer import PopulationalRandomMutationOptimizer
 from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.core.paths import project_root
 
@@ -119,6 +119,6 @@ def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, 
 if __name__ == '__main__':
     visualisation = False
     timeout = datetime.timedelta(minutes=1)
-    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]
+    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, PopulationalRandomMutationOptimizer]
     for optimizer_cls in optimizers:
         run_custom_example(optimizer_cls, timeout, visualisation)

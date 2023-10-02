@@ -76,13 +76,13 @@ def run_experiments(optimizer_setup: Callable,
             if visualize:
                 draw_graphs_subplots(target_graph, found_nx_graph,
                                      titles=['Target Graph', 'Found Graph'], show=False)
-                diversity_filename = (f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif')
+                diversity_filename = f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif'
                 history.show.diversity_population(save_path=diversity_filename)
                 history.show.diversity_line(show=False)
                 history.show.fitness_line()
             result_dir = Path('results') / file_name
             result_dir.mkdir(parents=True, exist_ok=True)
-            history.save(result_dir / f'history_trial_{i+3}.json')
+            history.save(result_dir / f'history_trial_{i}.json')
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness

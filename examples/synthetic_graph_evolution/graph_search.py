@@ -18,7 +18,7 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
-from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_mutation_optimizer import PopulationalRandomMutationOptimizer
 from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
 
 
@@ -57,8 +57,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size,
-        early_stopping_timeout=360,
-        early_stopping_iterations=num_iterations // 4 if num_iterations else None,
+        early_stopping_timeout=10,
+        early_stopping_iterations=num_iterations // 3 if num_iterations else None,
         keep_n_best=4,
         timeout=timeout,
         num_of_generations=num_iterations,
@@ -98,15 +98,12 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
 
 
 if __name__ == '__main__':
-    optimizers = [RandomMutationSearchOptimizer]
-    Log().reset_logging_level(40)
-    for optimizer in optimizers:
-        results_log = run_experiments(optimizer_setup=graph_search_setup,
-                                      optimizer_cls=optimizer,
-                                      graph_names=['dag'],
-                                      graph_sizes=[50, 100],
-                                      num_trials=15,
-                                      trial_timeout=None,
-                                      trial_iterations=350,
-                                      visualize=False)
+    results_log = run_experiments(optimizer_setup=graph_search_setup,
+                                  optimizer_cls=EvoGraphOptimizer,
+                                  graph_names=['gnp'],
+                                  graph_sizes=[50],
+                                  num_trials=1,
+                                  trial_timeout=15,
+                                  trial_iterations=1000,
+                                  visualize=True)
     print(results_log)

@@ -14,9 +14,9 @@ from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 
-class RandomMutationSearchOptimizer(PopulationalOptimizer):
+class PopulationalRandomMutationOptimizer(PopulationalOptimizer):
     """
-    Random search-based graph models optimizer
+    Populational random search-based graph models optimizer
     """
 
     def __init__(self,
@@ -45,3 +45,23 @@ class RandomMutationSearchOptimizer(PopulationalOptimizer):
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
             # Adding of extended population to history
             self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+
+
+class RandomMutationOptimizer(RandomSearchOptimizer):
+    """
+    Random search-based graph models optimizer
+    """
+
+    def __init__(self,
+                 objective: Objective,
+                 initial_graphs: Union[Graph, Sequence[Graph]],
+                 requirements: Optional[GraphRequirements] = None,
+                 graph_generation_params: Optional[GraphGenerationParams] = None,
+                 graph_optimizer_params: Optional[GPAlgorithmParameters] = None):
+        requirements = requirements or GraphRequirements()
+        graph_optimizer_params = graph_optimizer_params or GPAlgorithmParameters()
+        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+        self.mutation = Mutation(self.graph_optimizer_params, self.requirements, self.graph_generation_params)
+
+    def _generate_new_individual(self) -> Individual:
+        return self.mutation(self.best_individual)
