@@ -16,7 +16,6 @@ sphinx:
   fail_on_warning: true
 
 python:
-  version: 3.8
   install:
     - requirements: requirements.txt
     - requirements: other_requirements/docs.txt
