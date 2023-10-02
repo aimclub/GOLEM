@@ -15,7 +15,7 @@ from golem.visualisation.opt_history.utils import show_or_save_figure
 
 class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
     """ Class to compare fitness changes during optimization process.
-    :param histories_to_compare: dictionary with labels to display as keys and list of best finte as values. """
+    :param historical_fitnesses: dictionary with labels to display as keys and list of fintess values as dict values."""
 
     def __init__(self,
                  historical_fitnesses: Dict[str, Sequence[Sequence[Union[float, Sequence[float]]]]],
@@ -27,10 +27,16 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
         self.log = default_log(self)
 
     @staticmethod
-    def from_saved_histories(experiment_ids: List[str], root_path: os.PathLike):
+    def from_saved_histories(experiment_folders: List[str], root_path: os.PathLike):
+        """ Loads histories from specified folders extracting only fitness values
+         to not store whole histories in memory.
+         Args:
+            experiment_folders: names of folders with histories for experiment launches.
+            root_path: path to the folder with experiments results
+        """
         root = Path(root_path)
         historical_fitnesses = {}
-        for exp_name in experiment_ids:
+        for exp_name in experiment_folders:
             trials = []
             for history_filename in os.listdir(root / exp_name):
                 if history_filename.startswith('history'):
@@ -45,11 +51,15 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
     @staticmethod
     def from_histories(histories_to_compare: Dict[str, Sequence['OptHistory']]):
+        """
+        Args:
+            histories_to_compare: dictionary with labels to display as keys and histories as values."""
+        historical_fitnesses = {}
         for key, histories in histories_to_compare.items():
-            histories_to_compare.update({key: [history.historical_fitness for history in histories]})
+            historical_fitnesses.update({key: [history.historical_fitness for history in histories]})
         metric_names = list(histories_to_compare.values())[0][0].objective.metric_names
 
-        return MultipleFitnessLines(histories_to_compare, metric_names)
+        return MultipleFitnessLines(historical_fitnesses, metric_names)
 
     def visualize(self,
                   save_path: Optional[Union[os.PathLike, str]] = None,
@@ -108,6 +118,7 @@ def plot_average_fitness_line_per_generations(
             if i < len(fitnesses):
                 all_fitness_gen.append(fitnesses[i])
             else:
+                # if history is too short - repeat the best obtained fitness
                 all_fitness_gen.append(fitnesses[-1])
         average_fitness_per_gen.append(mean(all_fitness_gen))
         confidence = stdev(all_fitness_gen) / np.sqrt(len(all_fitness_gen)) \

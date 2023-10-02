@@ -239,7 +239,7 @@ def find_best_running_fitness(fitnesses: Sequence[Sequence[Union[float, Sequence
     best_metrics = []
 
     for gen_num, gen_fitnesses in enumerate(fitnesses[metric_id]):
-        target_metric = min(np.abs(gen_fitnesses))
+        target_metric = min(gen_fitnesses)
         if target_metric <= best_metric:
             best_metric = target_metric
         best_metrics.append(best_metric)

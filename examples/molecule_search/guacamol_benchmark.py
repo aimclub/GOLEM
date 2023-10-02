@@ -163,6 +163,7 @@ def get_launch_statistics(paths: List[str]):
         df = pd.concat([df, bench_result], ignore_index=True, axis=0)
     pd.set_option('display.max_columns', None)
     print(df)
+    df.to_csv('results.csv')
 
 
 if __name__ == '__main__':
