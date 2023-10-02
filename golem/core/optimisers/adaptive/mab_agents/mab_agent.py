@@ -66,8 +66,8 @@ class MultiArmedBanditAgent(OperatorAgent):
         obs, actions, rewards = experience.retrieve_experience()
         arms = [self._arm_by_action[action] for action in actions]
         processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
-        self._dbg_log(obs, actions, rewards)
-        return obs, arms, rewards
+        self._dbg_log(obs, actions, processed_rewards)
+        return obs, arms, processed_rewards
 
     def save(self, path_to_save: Optional[str] = None):
         """ Saves bandit to specified file. """

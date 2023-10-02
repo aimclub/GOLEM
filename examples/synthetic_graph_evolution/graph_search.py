@@ -67,7 +67,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     )
     default_gp_params = GPAlgorithmParameters(
         adaptive_mutation_type=MutationAgentTypeEnum.random,
-        pop_size=50,
+        pop_size=pop_size or 21,
         multi_objective=objective.is_multi_objective,
         genetic_scheme_type=GeneticSchemeTypesEnum.generational,
         mutation_types=[
@@ -75,7 +75,7 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
             MutationTypesEnum.single_edge,
             MutationTypesEnum.single_drop
         ],
-        crossover_types=[CrossoverTypesEnum.one_point]
+        crossover_types=[CrossoverTypesEnum.none]
     )
     gp_params = algorithm_parameters or default_gp_params
     graph_gen_params = GraphGenerationParams(
@@ -88,10 +88,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     if not initial_graphs:
         if not initial_graph_sizes:
             initial_graph_sizes = [7] * gp_params.pop_size
-        initial_graphs = []
-        for i in range(gp_params.pop_size):
-            new_graph = nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph).reverse()
-            initial_graphs.append(new_graph)
+        initial_graphs = [nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph)
+                          for i in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     return optimiser, objective

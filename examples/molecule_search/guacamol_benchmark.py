@@ -30,7 +30,8 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 
 def load_init_population(scoring_function: ScoringFunction,
                          n_jobs: int = -1,
-                         path=r"C:\Users\admin\PycharmProjects\GOLEM\examples\molecule_search\data\guacamol_v1_all.smiles", number_of_molecules=100):
+                         path=".\\data\\guacamol_v1_all.smiles",
+                         number_of_molecules=100):
     """ Original code:
      https://github.com/BenevolentAI/guacamol_baselines/blob/master/graph_ga/goal_directed_generation.py"""
     with open(path, "r") as f:
@@ -79,7 +80,6 @@ class GolemMoleculeGenerator(GoalDirectedGenerator):
             adaptive_mutation_type=MutationAgentTypeEnum.bandit)
         self.trial = trial
         self.task_num = 0
-        Log().reset_logging_level(40)
 
     def generate_optimized_molecules(self, scoring_function: ScoringFunction, number_molecules: int,
                                      starting_population: Optional[List[str]] = None) -> List[str]:
