@@ -102,12 +102,11 @@ def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, 
     objective = Objective({'custom': custom_metric})
 
     optimizer = optimizer_cls(
-            objective=objective,
-            initial_graphs=initial,
-            requirements=requirements,
-            graph_generation_params=graph_generation_params,
-            graph_optimizer_params=optimizer_parameters
-            )
+        objective=objective,
+        initial_graphs=initial,
+        requirements=requirements,
+        graph_generation_params=graph_generation_params,
+        graph_optimizer_params=optimizer_parameters)
 
     objective_eval = ObjectiveEvaluate(objective, data=data, visualisation=visualisation)
     optimized_graphs = optimizer.optimise(objective_eval)
