@@ -2,7 +2,7 @@ import functools
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING, Sequence
+from typing import Any, Dict, List, Optional, Union, Sequence, Tuple
 
 import matplotlib as mpl
 import numpy as np
@@ -228,20 +228,36 @@ class FitnessLineInteractive(HistoryVisualization):
         show_or_save_figure(fig, save_path, dpi)
 
 
-def find_best_running_fitness(fitnesses: Sequence[Sequence[Union[float, Sequence[float]]]],
+def find_best_running_fitness(generations: Sequence[Sequence[Individual]],
                               metric_id: int = 0,
-                              ) -> List[float]:
+                              ) -> Tuple[List[float], List[int], Dict[int, Individual]]:
     """For each trial history per each generation find the best fitness *seen so far*.
     Returns tuple:
-    - list of best seen metric up to that generation
+    - list of best seen metric up to that generation,
+    - list of indices where current best individual belongs.
+    - dict mapping of best index to best individuals
     """
     best_metric = np.inf  # Assuming metric minimization
-    best_metrics = []
+    best_individuals = {}
 
-    for gen_num, gen_fitnesses in enumerate(fitnesses[metric_id]):
-        target_metric = min(gen_fitnesses)
-        if target_metric <= best_metric:
-            best_metric = target_metric
-        best_metrics.append(best_metric)
+    # Core logic
+    for gen_num, gen in enumerate(generations):
+        for ind in gen:
+            if ind.native_generation != gen_num:
+                continue
+            target_metric = ind.fitness.values[metric_id]
+            if target_metric <= best_metric:
+                best_individuals[gen_num] = ind
+                best_metric = target_metric
 
-    return best_metrics
+    # Additional unwrapping of the data for simpler plotting
+    best_generations, best_metrics = np.transpose(
+        [(gen_num, abs(individual.fitness.values[metric_id]))
+         for gen_num, individual in best_individuals.items()])
+    best_generations = list(best_generations)
+    best_metrics = list(best_metrics)
+    if best_generations[-1] != len(generations) - 1:
+        best_metrics.append(abs(best_metric))
+        best_generations.append(len(generations) - 1)
+
+    return best_metrics, best_generations, best_individuals

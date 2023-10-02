@@ -1,4 +1,3 @@
-import random
 from typing import Dict, Callable, Collection, Sequence, Optional
 
 import networkx as nx

@@ -8,7 +8,6 @@ from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
-from golem.core.log import Log
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -18,7 +17,6 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
-from golem.core.optimisers.random.random_mutation_optimizer import PopulationalRandomMutationOptimizer
 from golem.metrics.graph_metrics import spectral_dist, size_diff, degree_distance
 
 

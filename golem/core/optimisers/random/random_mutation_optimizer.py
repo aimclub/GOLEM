@@ -1,4 +1,3 @@
-from random import choice
 from typing import Union, Optional, Sequence
 
 from golem.core.dag.graph import Graph

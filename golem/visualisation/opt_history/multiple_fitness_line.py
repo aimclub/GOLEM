@@ -8,8 +8,9 @@ from matplotlib import pyplot as plt
 
 from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
+from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 from golem.visualisation.opt_history.arg_constraint_wrapper import ArgConstraintWrapper
-from golem.visualisation.opt_history.fitness_line import setup_fitness_plot, find_best_running_fitness
+from golem.visualisation.opt_history.fitness_line import setup_fitness_plot
 from golem.visualisation.opt_history.utils import show_or_save_figure
 
 
@@ -105,7 +106,7 @@ def plot_average_fitness_line_per_generations(
 
     trial_fitnesses: List[List[float]] = []
     for fitnesses in historical_fitnesses:
-        best_fitnesses = find_best_running_fitness(fitnesses, metric_id)
+        best_fitnesses = get_best_fitness_per_generation(fitnesses, metric_id)
         trial_fitnesses.append(best_fitnesses)
 
     # Get average fitness value with confidence values
@@ -133,3 +134,22 @@ def plot_average_fitness_line_per_generations(
     axis.plot(xs, average_fitness_per_gen, label=label)
     if with_confidence:
         axis.fill_between(xs, (ys - ci), (ys + ci), alpha=.2)
+
+
+def get_best_fitness_per_generation(fitnesses: Sequence[Sequence[Union[float, Sequence[float]]]],
+                                    metric_id: int = 0,
+                                    ) -> List[float]:
+    """Per each generation find the best fitness *seen so far*.
+    Returns tuple:
+    - list of best seen metric up to that generation
+    """
+    best_metric = np.inf  # Assuming metric minimization
+    best_metrics = []
+
+    for gen_num, gen_fitnesses in enumerate(fitnesses[metric_id]):
+        target_metric = min(ensure_wrapped_in_sequence(gen_fitnesses))
+        if target_metric <= best_metric:
+            best_metric = target_metric
+        best_metrics.append(best_metric)
+
+    return best_metrics

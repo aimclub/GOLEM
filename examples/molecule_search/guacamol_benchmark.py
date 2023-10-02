@@ -17,7 +17,6 @@ from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
 from examples.molecule_search.mol_mutations import CHEMICAL_MUTATIONS
-from golem.core.log import Log
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters

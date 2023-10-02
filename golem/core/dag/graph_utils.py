@@ -1,8 +1,5 @@
 from typing import Sequence, List, TYPE_CHECKING, Callable, Union
 
-from networkx import find_cycle, NetworkXNoCycle
-
-from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
