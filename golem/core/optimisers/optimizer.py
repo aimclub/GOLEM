@@ -2,6 +2,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Sequence, Union
 
+from tqdm import tqdm
+
 from golem.core.adapter import BaseOptimizationAdapter, IdentityAdapter
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_verifier import GraphVerifier, VerifierRuleType
@@ -151,5 +153,29 @@ class GraphOptimizer:
         that's called on each graph after its evaluation."""
         pass
 
+    @property
+    def _progressbar(self):
+        if self.requirements.show_progress:
+            bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
+        else:
+            # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
+            # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
+            bar = EmptyProgressBar()
+        return bar
+
 
 IterationCallback = Callable[[PopulationT, GraphOptimizer], Any]
+
+
+class EmptyProgressBar:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return True
+
+    def close(self):
+        return
+
+    def update(self):
+        return

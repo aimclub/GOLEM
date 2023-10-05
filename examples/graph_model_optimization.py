@@ -1,10 +1,10 @@
 import datetime
 import os
 import random
+from typing import Type
 
 import numpy as np
 import pandas as pd
-from typing import Type
 
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.convert import graph_structure_as_nx_graph
@@ -19,7 +19,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationSearchOptimizer
+from golem.core.optimisers.random.random_mutation_optimizer import RandomMutationOptimizer
 from golem.core.optimisers.random.random_search import RandomSearchOptimizer
 from golem.core.paths import project_root
 
@@ -102,12 +102,11 @@ def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, 
     objective = Objective({'custom': custom_metric})
 
     optimizer = optimizer_cls(
-            objective=objective,
-            initial_graphs=initial,
-            requirements=requirements,
-            graph_generation_params=graph_generation_params,
-            graph_optimizer_params=optimizer_parameters
-            )
+        objective=objective,
+        initial_graphs=initial,
+        requirements=requirements,
+        graph_generation_params=graph_generation_params,
+        graph_optimizer_params=optimizer_parameters)
 
     objective_eval = ObjectiveEvaluate(objective, data=data, visualisation=visualisation)
     optimized_graphs = optimizer.optimise(objective_eval)
@@ -119,6 +118,6 @@ def run_custom_example(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, 
 if __name__ == '__main__':
     visualisation = False
     timeout = datetime.timedelta(minutes=1)
-    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationSearchOptimizer]
+    optimizers = [EvoGraphOptimizer, RandomSearchOptimizer, RandomMutationOptimizer]
     for optimizer_cls in optimizers:
         run_custom_example(optimizer_cls, timeout, visualisation)
