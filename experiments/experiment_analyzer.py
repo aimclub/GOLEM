@@ -3,6 +3,7 @@ from statistics import mean
 
 from typing import Dict, List, Tuple, Any, Callable, Union, Optional
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -36,7 +37,7 @@ class ExperimentAnalyzer:
         self._log = default_log('ExperimentAnalyzer')
 
     def analyze_convergence(self, history_folder: Optional[str] = 'history', is_mean: bool = False,
-                            path_to_save: str = None, is_raise: bool = False,
+                            path_to_save: Optional[str] = None, is_raise: bool = False,
                             metrics_names: Optional[List[str]] = None) \
             -> Dict[str, Dict[str, Dict[str, List[float]]]]:
         """ Method to analyze convergence with the use of histories.
@@ -44,7 +45,7 @@ class ExperimentAnalyzer:
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories').
         If history is not in separate folder than it must be specified as None.
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
-        :param path_to_save: path to save results.
+        :param path_to_save: path to dir where to save results
         :param is_raise: bool specifying if exception must be raised if there is no history folder
         :param metrics_names: names of metrics to consider. Useful in case of multimodal optimization.
         """
@@ -62,17 +63,9 @@ class ExperimentAnalyzer:
                 convergence[metric] = \
                     self._extend_result_dict(result_dict=convergence[metric], setup=setup, dataset=dataset)
 
-            # history is not attached to a folder
-            if history_folder is None:
-                pass
-            elif not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
-                                                           is_raise=is_raise):
+            path_to_history_folder = os.path.join(path_to_launch, history_folder) if history_folder else path_to_launch
+            if not self._check_if_file_or_folder_present(path=path_to_history_folder, is_raise=is_raise):
                 continue
-
-            if history_folder is None:
-                path_to_history_folder = path_to_launch
-            else:
-                path_to_history_folder = os.path.join(path_to_launch, history_folder)
 
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
 
@@ -107,10 +100,10 @@ class ExperimentAnalyzer:
     def _analyze_convergence(history: OptHistory, metrics_num: int) -> List[float]:
         """ Method to get time in what individual with the best fitness was firstly obtained. """
         # find best final metric for each objective
-        best_fitness_per_objective = [None] * metrics_num
+        best_fitness_per_objective = [np.inf] * metrics_num
         for i in range(metrics_num):
             for ind in history.final_choices.data:
-                if best_fitness_per_objective[i] is None or ind.fitness.values[i] < best_fitness_per_objective[i]:
+                if ind.fitness.values[i] < best_fitness_per_objective[i]:
                     best_fitness_per_objective[i] = ind.fitness.values[i]
 
         total_time_to_get_best_fitness_per_objective = []
@@ -130,17 +123,16 @@ class ExperimentAnalyzer:
         return total_time_to_get_best_fitness_per_objective
 
     def analyze_metrics(self, metric_names: List[str], file_name: str, is_mean: bool = False,
-                        path_to_save: str = None, is_raise: bool = False, keen_n_best: Optional[int] = 1) \
+                        path_to_save: Optional[str] = None, is_raise: bool = False, keep_n_best: Optional[int] = 1) \
             -> Dict[str, Dict[str, Dict[str, Union[List[float], float]]]]:
         """ Method to analyze specified metrics.
         :param metric_names: names of metrics to analyze. e.g. ['f1', 'inference_time']
         :param file_name: name of the file with metrics (e.g. 'metrics.csv').
         The file with metrics must have metric names in columns.
         :param is_mean: bool flag to specify just storing all the results or calculating mean values
-        :param path_to_save: path to save results
+        :param path_to_save: path to dir where to save results
         :param is_raise: bool specifying if exception must be raised if there is no history folder
-        :param keen_n_best: number of result to consider when calculating metric.
-        Must be > 1 when there were > 1 metric considered during the experiment.
+        :param keep_n_best: number of result to consider when calculating metric.
         """
         if path_to_save:
             os.makedirs(path_to_save, exist_ok=True)
@@ -160,9 +152,9 @@ class ExperimentAnalyzer:
                     self._log.warning(f"There is no column in {file_name} with {metric}")
 
                 # if there were multiple metrics in experiment or not
-                all_metrics = list(df_metrics[metric])
-                all_metrics.sort()
-                dict_with_metrics[metric][setup][dataset].append(mean(all_metrics[:keen_n_best]))
+                all_metric_values = list(df_metrics[metric])
+                all_metric_values.sort()
+                dict_with_metrics[metric][setup][dataset].append(mean(all_metric_values[:keep_n_best]))
 
         if is_mean:
             for metric in metric_names:
@@ -184,7 +176,7 @@ class ExperimentAnalyzer:
                          metrics_names: Optional[List[str]] = None):
         """ Method to analyze convergence with the use of histories.
 
-        :param path_to_save: path to save the results.
+        :param path_to_save: path to dir where to save results
         :param with_confidence: bool param specifying to use confidence interval or not.
         :param history_folder: name of the history folder in experiment result folder (e.g. 'history', 'histories')
         :param is_raise: bool specifying if exception must be raised if there is no history folder.
@@ -200,13 +192,9 @@ class ExperimentAnalyzer:
         for setup, dataset, path_to_launch in self._get_path_to_launch():
             histories = self._extend_result_dict(result_dict=histories, setup=setup, dataset=dataset)
 
-            if history_folder is None:
-                path_to_history_folder = path_to_launch
-            else:
-                if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=history_folder,
-                                                             is_raise=is_raise):
-                    continue
-                path_to_history_folder = os.path.join(path_to_launch, history_folder)
+            path_to_history_folder = os.path.join(path_to_launch, history_folder)
+            if not self._check_if_file_or_folder_present(path=path_to_history_folder, is_raise=is_raise):
+                continue
 
             history_files = [file for file in os.listdir(path_to_history_folder) if file.endswith('.json')]
 
@@ -235,15 +223,15 @@ class ExperimentAnalyzer:
                 self._log.info(f"Convergence plot for {dataset} dataset for {metric} was saved to {cur_path_to_save}")
 
     def analyze_statistical_significance(self, data_to_analyze: Dict[str, Dict[str, List[float]]],
-                                         stat_tests: List[Callable], path_to_save: str = None,
-                                         test_format: List[str] = None) -> Dict[str, Dict[str, Dict[str, float]]]:
+                                         stat_tests: List[Callable], path_to_save: Optional[str] = None,
+                                         test_format: Optional[List[str]] = None) -> Dict[str, Dict[str, Dict[str, float]]]:
         """ Method to perform statistical analysis of data. Metric data obtained with 'analyze_metrics' and
         convergence data obtained with 'analyze_convergence' can be simply analyzed, for example.
         :param data_to_analyze: data to analyze.
         NB! data must have the specified format Dict[str, Dict[str, float]]:
         first key -- framework/setup name, second -- dataset name and then list of metric values
         :param stat_tests: list of functions of statistical tests to perform. E.g. scipy.stats.kruskal
-        :param path_to_save: path to save results
+        :param path_to_save: path to dir where to save results
         :param test_format: argument to specify what every test function must return. default: ['statistic', 'pvalue']
         """
         if path_to_save:
@@ -255,8 +243,6 @@ class ExperimentAnalyzer:
         stat_dict = dict.fromkeys(test_format, None)
         datasets = list(data_to_analyze[list(data_to_analyze.keys())[0]].keys())
         for dataset in datasets:
-            if dataset != 'tree_100':
-                continue
             values_to_compare = []
             for setup in data_to_analyze.keys():
                 values_to_compare.append(data_to_analyze[setup][dataset])
@@ -283,8 +269,8 @@ class ExperimentAnalyzer:
         return stat_dict
 
     def analyze_structural_complexity(self, path_to_save: str, dir_name: str, class_to_load: Any = None,
-                                      load_func: Callable = None, is_raise: bool = False,
-                                      file_name: str = None, metrics_to_display: List[str] = None):
+                                      load_func: Optional[Callable] = None, is_raise: bool = False,
+                                      file_name: Optional[str] = None, metrics_to_display: List[str] = None):
         """ Method to save pictures of final graphs in directories to compare it visually.
         :param path_to_save: root path to pictures per setup.
         :param dir_name: name of directory in which final graph is saved.
@@ -298,8 +284,7 @@ class ExperimentAnalyzer:
             os.makedirs(path_to_save, exist_ok=True)
 
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=dir_name,
-                                                         is_raise=is_raise):
+            if not self._check_if_file_or_folder_present(path=os.path.join(path_to_launch, dir_name), is_raise=is_raise):
                 continue
 
             path_to_json = None
@@ -358,7 +343,7 @@ class ExperimentAnalyzer:
 
         probs_dict = dict()
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            if not self._check_if_file_or_folder_present(path=path_to_launch, folder_or_file_name=dir_name,
+            if not self._check_if_file_or_folder_present(path=os.path.join(path_to_launch, dir_name),
                                                          is_raise=is_raise):
                 continue
 
@@ -434,17 +419,18 @@ class ExperimentAnalyzer:
         return result_dict
 
     def _get_metrics_df_from_path(self, path: str, file_name: str, is_raise: bool) -> pd.DataFrame:
-        if not self._check_if_file_or_folder_present(path, file_name, is_raise):
+        path_to_df = os.path.join(path, file_name)
+        if not self._check_if_file_or_folder_present(path_to_df, is_raise):
             return pd.DataFrame()
 
-        df_metrics = pd.read_csv(os.path.join(path, file_name))
+        df_metrics = pd.read_csv(path_to_df)
         return df_metrics
 
     @staticmethod
-    def _check_if_file_or_folder_present(path: str, folder_or_file_name: str, is_raise: bool) -> bool:
-        if folder_or_file_name not in os.listdir(path):
+    def _check_if_file_or_folder_present(path: str, is_raise: bool) -> bool:
+        if not (os.path.isdir(path) or os.path.isfile(path)):
             if is_raise:
-                raise ValueError(f"There is no folder/file with name {folder_or_file_name}")
+                raise ValueError(f"There is no folder/file with name {os.path.split(path)[-1]}")
             else:
                 return False
         return True
