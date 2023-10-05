@@ -24,6 +24,7 @@ graph_kinds: Sequence[str] = tuple(graph_generators.keys())
 
 
 def generate_dag(n):
+    """ Works good for small graphs (up to 100000) """
     g = nx.gnp_random_graph(n, p=0.5, directed=True)
     g = nx.DiGraph([(u, v) for (u, v) in g.edges() if u < v])
     return g

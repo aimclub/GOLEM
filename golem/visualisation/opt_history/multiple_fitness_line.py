@@ -20,7 +20,7 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
     def __init__(self,
                  historical_fitnesses: Dict[str, Sequence[Sequence[Union[float, Sequence[float]]]]],
-                 metric_names,
+                 metric_names: List[str],
                  visuals_params: Dict[str, Any] = None):
         self.historical_fitnesses = historical_fitnesses
         self.metric_names = metric_names
@@ -28,7 +28,7 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
         self.log = default_log(self)
 
     @staticmethod
-    def from_saved_histories(experiment_folders: List[str], root_path: os.PathLike):
+    def from_saved_histories(experiment_folders: List[str], root_path: os.PathLike) -> 'MultipleFitnessLines':
         """ Loads histories from specified folders extracting only fitness values
          to not store whole histories in memory.
          Args:
@@ -51,7 +51,7 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
         return MultipleFitnessLines(historical_fitnesses, metric_names)
 
     @staticmethod
-    def from_histories(histories_to_compare: Dict[str, Sequence['OptHistory']]):
+    def from_histories(histories_to_compare: Dict[str, Sequence['OptHistory']]) -> 'MultipleFitnessLines':
         """
         Args:
             histories_to_compare: dictionary with labels to display as keys and histories as values."""

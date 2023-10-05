@@ -15,7 +15,8 @@ from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 class PopulationalRandomMutationOptimizer(PopulationalOptimizer):
     """
-    Populational random search-based graph models optimizer
+    Populational random search-based graph models optimizer.
+    Implemented as a baseline to compare with evolutionary algorithm.
     """
 
     def __init__(self,
