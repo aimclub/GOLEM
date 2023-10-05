@@ -2,8 +2,6 @@ from abc import abstractmethod
 from random import choice
 from typing import Any, Optional, Sequence, Dict
 
-from tqdm import tqdm
-
 from golem.core.constants import MIN_POP_SIZE
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
@@ -162,35 +160,11 @@ class PopulationalOptimizer(GraphOptimizer):
             unique_population = self._extend_population(pop=unique_population, target_pop_size=MIN_POP_SIZE)
         return evaluator(unique_population)
 
-    @property
-    def _progressbar(self):
-        if self.requirements.show_progress:
-            bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
-        else:
-            # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
-            # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
-            bar = EmptyProgressBar()
-        return bar
-
 
 # TODO: remove this hack (e.g. provide smth like FitGraph with fit/unfit interface)
 def _try_unfit_graph(graph: Any):
     if hasattr(graph, 'unfit'):
         graph.unfit()
-
-
-class EmptyProgressBar:
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return True
-
-    def close(self):
-        return
-
-    def update(self):
-        return
 
 
 class EvaluationAttemptsError(Exception):

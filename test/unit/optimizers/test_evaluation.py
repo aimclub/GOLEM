@@ -2,12 +2,13 @@ import datetime
 from functools import partial
 
 import pytest
+from joblib import cpu_count
 
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.fitness import Fitness, null_fitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher, \
-    ObjectiveEvaluationDispatcher
+    ObjectiveEvaluationDispatcher, determine_n_jobs
 from golem.core.optimisers.meta.surrogate_evaluator import SurrogateDispatcher
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -88,3 +89,15 @@ def test_dispatcher_with_timeout(dispatcher: ObjectiveEvaluationDispatcher):
     fitness = [x.fitness for x in evaluated_population]
     assert all(x.valid for x in fitness), "At least one fitness value is invalid"
     assert len(population) == len(evaluated_population), "Not all graphs was evaluated"
+
+
+def test_n_jobs_for_dispatcher():
+    for n_jobs in range(-cpu_count(), cpu_count() + 5):
+        if n_jobs != 0:
+            correct_n_jobs = min(n_jobs, cpu_count()) if n_jobs > 0 else cpu_count() + 1 + n_jobs
+            assert determine_n_jobs(n_jobs) == correct_n_jobs
+
+    # check uncorrect values
+    for n_jobs in (0, -cpu_count() - 1, -cpu_count() - 2):
+        with pytest.raises(ValueError):
+            _ = determine_n_jobs(n_jobs)

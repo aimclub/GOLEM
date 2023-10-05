@@ -3,6 +3,7 @@ from functools import partial
 from typing import Type, Optional, Sequence, List
 
 import networkx as nx
+
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
