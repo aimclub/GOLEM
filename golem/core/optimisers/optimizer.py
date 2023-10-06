@@ -113,7 +113,9 @@ class GraphOptimizer:
                  graph_optimizer_params: Optional[AlgorithmParameters] = None):
         self.log = default_log(self)
         self._objective = objective
-        self.initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
+        initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
+        self.initial_graphs = [graph for graph in initial_graphs if graph_generation_params.verifier(graph)] \
+            if initial_graphs else None
         self.requirements = requirements or OptimizationParameters()
         self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()

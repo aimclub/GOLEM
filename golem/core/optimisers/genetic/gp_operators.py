@@ -67,7 +67,7 @@ def filter_duplicates(archive, population) -> List[Any]:
     return filtered_archive
 
 
-def structural_equivalent_nodes(node_first: Any, node_second: Any, recursive_ids: dict = None) -> List[Tuple[Any, Any]]:
+def structural_equivalent_nodes(node_first: Any, node_second: Any, recursive_ids: dict = None, seen=None) -> List[Tuple[Any, Any]]:
     """ Returns the list of nodes from which subtrees are structurally equivalent.
     :param node_first: node from first graph from which to start the search.
     :param node_second: node from second graph from which to start the search.
@@ -77,6 +77,11 @@ def structural_equivalent_nodes(node_first: Any, node_second: Any, recursive_ids
 
     nodes = []
     is_same_type = type(node_first) == type(node_second)
+    seen = seen or []
+    if node_first in seen or node_second in seen:
+        return []
+    seen.append(node_first)
+    seen.append(node_second)
     # check if both nodes are primary or secondary
     if hasattr(node_first, 'is_primary') and hasattr(node_second, 'is_primary'):
         is_same_graph_node_type = node_first.is_primary == node_second.is_primary
@@ -84,7 +89,7 @@ def structural_equivalent_nodes(node_first: Any, node_second: Any, recursive_ids
 
     for node1_child, node2_child in itertools.product(node_first.nodes_from, node_second.nodes_from):
         nodes_set = structural_equivalent_nodes(node_first=node1_child, node_second=node2_child,
-                                                recursive_ids=recursive_ids)
+                                                recursive_ids=recursive_ids, seen=seen)
         nodes.extend(nodes_set)
     if is_same_type and len(node_first.nodes_from) == len(node_second.nodes_from) \
             and are_subtrees_the_same(match_set=nodes,
