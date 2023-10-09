@@ -25,7 +25,7 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
-from golem.visualisation.opt_history.fitness_line import MultipleFitnessLines
+from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnessLines
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
 
@@ -202,7 +202,7 @@ def plot_experiment_comparison(experiment_ids: Sequence[str], metric_id: int = 0
         histories[exp_name] = trials
         print(f'Loaded {len(trials)} trial histories for experiment: {exp_name}')
     # Visualize
-    MultipleFitnessLines(histories).visualize(metric_id=metric_id)
+    MultipleFitnessLines.from_histories(histories).visualize(metric_id=metric_id)
     return histories
 
 
