@@ -2,7 +2,6 @@ import random
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum
-from itertools import chain
 from typing import Union, Sequence, Hashable, Tuple, Optional, List
 
 import numpy as np
