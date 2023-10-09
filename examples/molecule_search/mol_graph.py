@@ -61,6 +61,7 @@ class MolGraph:
 
         for atom in self._rw_molecule.GetAtoms():
             graph.add_node(atom.GetIdx(),
+                           nxid=str(atom.GetIdx()),
                            name=atom.GetSymbol(),
                            atomic_num=atom.GetAtomicNum(),
                            formal_charge=atom.GetFormalCharge(),
