@@ -111,9 +111,11 @@ def opt_history_from_json(cls: Type[OptHistory], json_obj: Dict[str, Any]) -> Op
     # to `Individual` instances.
     _deserialize_generations_list(history.generations, uid_to_individual_map)
     _deserialize_generations_list(history.archive_history, uid_to_individual_map)
-    # Process older histories to wrap generations into the new class.
-    if isinstance(history.generations[0], list):
-        history.generations = [Generation(gen, gen_num) for gen_num, gen in enumerate(history.generations)]
+    # Process histories with zero generations.
+    if len(history.generations) > 0:
+        # Process older histories to wrap generations into the new class.
+        if isinstance(history.generations[0], list):
+            history.generations = [Generation(gen, gen_num) for gen_num, gen in enumerate(history.generations)]
     # Deserialize parents for all generations.
     _deserialize_parent_individuals(list(chain(*history.generations)), uid_to_individual_map)
     # The attribute is used only for serialization.
