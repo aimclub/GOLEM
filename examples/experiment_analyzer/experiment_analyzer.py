@@ -37,15 +37,19 @@ if __name__ == '__main__':
     convergence = analyzer.analyze_convergence(history_folder='histories', is_raise=False)
     path_to_save_convergence_boxplots = os.path.join(path_to_save_convergence, 'convergence_boxplots')
 
-    for dataset in convergence[list(convergence.keys())[0]].keys():
-        to_compare = dict()
-        for setup in convergence.keys():
-            to_compare[setup] = [i for i in convergence[setup][dataset]]
-        plt.boxplot(list(to_compare.values()), labels=list(to_compare.keys()))
-        plt.title(f'Convergence on {dataset}')
-        os.makedirs(path_to_save_convergence_boxplots, exist_ok=True)
-        plt.savefig(os.path.join(path_to_save_convergence_boxplots, f'convergence_{dataset}.png'))
-        plt.close()
+    metrics = list(convergence.keys())
+    setups = list(convergence[metrics[0]].keys())
+    datasets = list(convergence[metrics[0]][setups[0]].keys())
+    for dataset in datasets:
+        for metric_name in convergence.keys():
+            to_compare = dict()
+            for setup in convergence[metric_name].keys():
+                to_compare[setup] = [i for i in convergence[metric_name][setup][dataset]]
+            plt.boxplot(list(to_compare.values()), labels=list(to_compare.keys()))
+            plt.title(f'Convergence on {dataset}')
+            os.makedirs(path_to_save_convergence_boxplots, exist_ok=True)
+            plt.savefig(os.path.join(path_to_save_convergence_boxplots, f'convergence_{dataset}.png'))
+            plt.close()
 
     # to get metrics table with mean values
     path_to_save_metrics = os.path.join(path_to_save, 'metrics')
