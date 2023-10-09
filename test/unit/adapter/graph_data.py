@@ -54,10 +54,10 @@ def graph_with_custom_parameters(alpha_value):
 
 def networkx_graph_with_parameters(alpha_value):
     graph = nx.DiGraph()
-    graph.add_node('a')
-    graph.add_node('b')
-    graph.add_node('c', alpha=alpha_value)
-    graph.add_edges_from([('a', 'c'), ('b', 'c')])
+    graph.add_node(0, name='a')
+    graph.add_node(1, name='b')
+    graph.add_node(2, name='c', alpha=alpha_value)
+    graph.add_edges_from([(0, 2), (1, 2)])
     return graph
 
 

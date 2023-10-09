@@ -1,6 +1,7 @@
 from functools import partial
 
 import networkx as nx
+import pytest
 
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
@@ -14,12 +15,12 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.metrics.graph_metrics import spectral_dist
-from golem.serializers.serializer import default_save
 
 
-def test_evolution_with_crossover():
+@pytest.mark.parametrize('graph_type', ['tree', 'dag'])
+def test_evolution_with_crossover(graph_type):
     Log().reset_logging_level(10)
-    target_graph = generate_labeled_graph('tree', 50).reverse()
+    target_graph = generate_labeled_graph(graph_type, 50)
     num_iterations = 100
     objective = Objective(partial(spectral_dist, target_graph))
 
@@ -38,7 +39,7 @@ def test_evolution_with_crossover():
             MutationTypesEnum.simple,
             MutationTypesEnum.single_change
         ],
-        crossover_types=[CrossoverTypesEnum.one_point]
+        crossover_types=[CrossoverTypesEnum.subtree, CrossoverTypesEnum.one_point]
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
@@ -47,7 +48,7 @@ def test_evolution_with_crossover():
     )
 
     # Generate simple initial population with cyclic graphs
-    initial_graphs = [generate_labeled_graph('tree', i).reverse() for i in range(4, 20)]
+    initial_graphs = [generate_labeled_graph('tree', i) for i in range(4, 20)]
 
     optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     found_graphs = optimiser.optimise(objective)
