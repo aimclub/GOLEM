@@ -3,7 +3,6 @@ from abc import ABC
 from datetime import timedelta, datetime
 from io import StringIO
 from itertools import product
-from pathlib import Path
 from typing import Optional, Type, Sequence, List, Callable, Union, Tuple
 
 import numpy as np
@@ -47,7 +46,6 @@ class ExperimentLauncher(ABC):
             node_types = ['X']
         for graph_name, num_nodes in product(self.graph_names, self.graph_sizes):
             experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
-            file_name = f'{self.optimizer_cls.__name__[:-9]}_{graph_name}_n{num_nodes}_iter{self.trial_iterations}'
             trial_results = []
             for i in range(self.num_trials):
                 setup_name = optimizer_setup.__name__

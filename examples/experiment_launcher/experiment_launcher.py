@@ -1,7 +1,7 @@
 import os
 
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
-from experiments.experiment_launcher import ExperimentLauncher, CustomExperimentLauncher
+from experiments.experiment_launcher import CustomExperimentLauncher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.paths import project_root
 
