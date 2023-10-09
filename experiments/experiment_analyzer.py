@@ -31,7 +31,9 @@ class ExperimentAnalyzer:
     :param folders_to_ignore: folders without experiment data to ignore.
     """
 
-    def __init__(self, path_to_root: str, folders_to_ignore: List[str] = []):
+    def __init__(self, path_to_root: str, folders_to_ignore: Optional[List[str]] = None):
+        if folders_to_ignore is None:
+            folders_to_ignore = []
         self.path_to_root = path_to_root
         self._folders_to_ignore = folders_to_ignore
         self._log = default_log('ExperimentAnalyzer')
@@ -109,7 +111,12 @@ class ExperimentAnalyzer:
         total_time_to_get_best_fitness_per_objective = []
         for j, best_fitness in enumerate(best_fitness_per_objective):
             first_gen_with_best_fitness = history.generations_count
-            for i, gen_fitnesses in enumerate(history.historical_fitness[j]):
+            # since if objective is not multi-modal than historical_fitness[j] is 1d list
+            historical_fitness = history.historical_fitness[j]
+            if not history.objective.is_multi_objective:
+                historical_fitness = [history.historical_fitness[j]]
+
+            for i, gen_fitnesses in enumerate(historical_fitness):
                 if best_fitness in gen_fitnesses:
                     first_gen_with_best_fitness = i
                     break
