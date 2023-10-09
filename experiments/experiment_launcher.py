@@ -21,8 +21,21 @@ from golem.metrics.graph_metrics import nxgraph_stats
 
 
 class ExperimentLauncher(ABC):
-    """ Class that allows to easily set up experiments and save results in format
-    required for ExperimentAnalyzer. """
+    """
+    Class that allows to easily set up experiments and save results in format
+    required for ExperimentAnalyzer.
+
+    The format is:
+        setup (e.g. configuration of framework)
+        \
+         dataset
+               \
+               launch
+                     \
+                      all collected data (metrics.csv, history, visualizations, etc)
+
+    Example of usage: examples/experiment_launcher/experiment_launcher.py
+    """
     def __init__(self, graph_names: List[str], graph_sizes: List[int], path_to_save: str,
                  is_save_visualizations: bool = True, optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
                  node_types: Optional[Sequence[str]] = None, num_trials: int = 10, trial_timeout: Optional[int] = None,
@@ -40,6 +53,7 @@ class ExperimentLauncher(ABC):
     def launch(self, optimizer_setup: Callable):
         """
         Launches experiments for product of all graph names and graph sizes for specified number of trials.
+        :param optimizer_setup: function that setups all infrastructure for launches.
         """
         log = StringIO()
         if not self.node_types:
