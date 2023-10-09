@@ -64,7 +64,7 @@ class Mutation(Operator):
             agent = NeuralContextualMultiArmedBanditAgent(
                 actions=parameters.mutation_types,
                 context_agent_type=parameters.context_agent_type,
-                available_operations=graph_gen_params.node_factory.available_nodes,
+                available_operations=graph_gen_params.node_factory.get_all_available_operations(),
                 n_jobs=requirements.n_jobs)
         # if agent was specified pretrained (with instance)
         elif isinstance(parameters.adaptive_mutation_type, OperatorAgent):
