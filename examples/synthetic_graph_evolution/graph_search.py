@@ -5,6 +5,7 @@ from typing import Type, Optional, Sequence, List
 import networkx as nx
 
 from examples.synthetic_graph_evolution.experiment_setup import run_experiments
+from examples.synthetic_graph_evolution.generators import postprocess_nx_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
@@ -86,7 +87,8 @@ def graph_search_setup(target_graph: Optional[nx.DiGraph] = None,
     if not initial_graphs:
         if not initial_graph_sizes:
             initial_graph_sizes = [7] * gp_params.pop_size
-        initial_graphs = [nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph)
+        initial_graphs = [postprocess_nx_graph(nx.random_tree(initial_graph_sizes[i], create_using=nx.DiGraph),
+                                               node_labels=node_types)
                           for i in range(gp_params.pop_size)]
     # Build the optimizer
     optimiser = optimizer_cls(objective, initial_graphs, requirements, graph_gen_params, gp_params)

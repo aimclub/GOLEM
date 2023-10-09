@@ -2,7 +2,6 @@ import random
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum
-from itertools import chain
 from typing import Union, Sequence, Hashable, Tuple, Optional, List
 
 import numpy as np
@@ -10,6 +9,7 @@ import numpy as np
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.log import default_log
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.opt_history_objects.individual import Individual
 
 ObsType = Graph
@@ -126,7 +126,10 @@ class OperatorAgent(ABC):
                         f'min={nonzero.min()} max={nonzero.max()} ')
 
             self._log.info(msg)
-            self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
+
+            actions_names = [action.name if isinstance(action, MutationTypesEnum) else action.__name__
+                             for action in actions]
+            self._log.info(f'actions/rewards: {list(zip(actions_names, rr))}')
 
             action_values = list(map(self.get_action_values, obs))
             action_probs = list(map(self.get_action_probs, obs))
