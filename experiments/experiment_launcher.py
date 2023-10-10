@@ -1,5 +1,5 @@
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import timedelta, datetime
 from io import StringIO
 from itertools import product
@@ -20,11 +20,71 @@ from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.metrics.graph_metrics import nxgraph_stats
 
 
-class ExperimentLauncher(ABC):
+class BaseExperimentLauncher:
+    """ Base class for all experiment launchers. Setups the logic of saving experiments results as
+    it is required in ExperimentAnalyzer. """
+    def __init__(self, path_to_save: str, is_save_visualizations: bool = True,
+                 optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer, num_trials: int = 10,
+                 trial_timeout: Optional[int] = None, trial_iterations: Optional[int] = None, **kwargs):
+        self.optimizer_cls = optimizer_cls
+        self.num_trials = num_trials
+        self.trial_timeout = trial_timeout
+        self.trial_iterations = trial_iterations
+        self.path_to_save = path_to_save
+        self.is_save_visualizations = is_save_visualizations
+
+    @abstractmethod
+    def launch(self, optimizer_setup: Callable, **kwargs):
+        """
+         Launches experiments for specified number of trials.
+         :param optimizer_setup: function that setups all infrastructure for launches.
+         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _launch_experiment(self, optimizer_setup: Callable, *args, **kwargs):
+        """ Launches one experiment with specified params. """
+        raise NotImplementedError()
+
+    @staticmethod
+    def _save_experiment_results(path_to_save: str, optimizer: GraphOptimizer):
+        """ Saves experiment result as it is required in ExperimentAnalyzer. """
+        os.makedirs(path_to_save, exist_ok=True)
+
+        # save metrics
+        obj_names = optimizer.objective.metric_names
+        fitness = dict.fromkeys(obj_names)
+        for ind in optimizer.best_individuals:
+            for j, metric in enumerate(obj_names):
+                if not fitness[metric]:
+                    fitness[metric] = []
+                fitness[metric].append(ind.fitness.values[j])
+        df_metrics = pd.DataFrame(fitness)
+        df_metrics.to_csv(os.path.join(path_to_save, 'metrics.csv'))
+
+        # save history
+        history = optimizer.history
+        history.save(os.path.join(path_to_save, 'history.json'))
+
+    @staticmethod
+    def _save_visualizations(history: OptHistory, setup_name: str, path_to_save: str):
+        """ Saves visualizations of results. """
+        path_to_save = os.path.join(path_to_save, 'visualizations')
+        os.makedirs(path_to_save, exist_ok=True)
+        diversity_path_to_save = os.path.join(path_to_save, 'diversity')
+        os.makedirs(diversity_path_to_save, exist_ok=True)
+        diversity_filename = f'diversity_hist_{setup_name}.gif'
+        history.show.diversity_population(save_path=os.path.join(diversity_path_to_save, diversity_filename))
+        history.show.diversity_line(save_path=diversity_path_to_save, show=False)
+        history.show.fitness_line(save_path=os.path.join(path_to_save, 'fitness_line.png'))
+
+
+class ExperimentLauncher(BaseExperimentLauncher, ABC):
     """
     Class that allows to easily set up experiments and save results in format
     required for ExperimentAnalyzer.
-
+    ExperimentAnalyzer provide common logic for experiments concerned with growing
+    a graph with specified structure and type.
     The format is:
         setup (e.g. configuration of framework)
         \
@@ -33,31 +93,27 @@ class ExperimentLauncher(ABC):
                launch
                      \
                       all collected data (metrics.csv, history, visualizations, etc)
-
     Example of usage: examples/experiment_launcher/experiment_launcher.py
     """
     def __init__(self, graph_names: List[str], graph_sizes: List[int], path_to_save: str,
                  is_save_visualizations: bool = True, optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
                  node_types: Optional[Sequence[str]] = None, num_trials: int = 10, trial_timeout: Optional[int] = None,
                  trial_iterations: Optional[int] = None):
+        super().__init__(path_to_save=path_to_save, is_save_visualizations=is_save_visualizations,
+                         optimizer_cls=optimizer_cls, num_trials=num_trials, trial_timeout=trial_timeout,
+                         trial_iterations=trial_iterations)
         self.graph_names = graph_names
         self.graph_sizes = graph_sizes
-        self.optimizer_cls = optimizer_cls
         self.node_types = node_types
-        self.num_trials = num_trials
-        self.trial_timeout = trial_timeout
-        self.trial_iterations = trial_iterations
-        self.path_to_save = path_to_save
-        self.is_save_visualizations = is_save_visualizations
 
-    def launch(self, optimizer_setup: Callable):
+    def launch(self, optimizer_setup: Callable, **kwargs):
         """
         Launches experiments for product of all graph names and graph sizes for specified number of trials.
         :param optimizer_setup: function that setups all infrastructure for launches.
         """
         log = StringIO()
         if not self.node_types:
-            node_types = ['X']
+            self.node_types = ['X']
         for graph_name, num_nodes in product(self.graph_names, self.graph_sizes):
             experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
             trial_results = []
@@ -70,7 +126,7 @@ class ExperimentLauncher(ABC):
 
                 optimizer, objective, target_graph = self._launch_experiment(graph_name=graph_name,
                                                                              num_nodes=num_nodes,
-                                                                             node_types=node_types,
+                                                                             node_types=self.node_types,
                                                                              optimizer_setup=optimizer_setup)
 
                 found_graphs = optimizer.optimise(objective)
@@ -102,51 +158,24 @@ class ExperimentLauncher(ABC):
                   file=log)
             print(log.getvalue())
 
-    def _launch_experiment(self, graph_name: str, num_nodes: int, node_types: List[str], optimizer_setup: Callable):
-        """ Launches one experiment with specified params. """
-        raise NotImplementedError()
-
     @staticmethod
-    def _save_experiment_results(path_to_save: str, optimizer):
-        """ Saves experiment result as it is required in ExperimentAnalyzer. """
-        os.makedirs(path_to_save, exist_ok=True)
-
-        # save metrics
-        obj_names = optimizer.objective.metric_names
-        fitness = dict.fromkeys(obj_names)
-        for ind in optimizer.best_individuals:
-            for j, metric in enumerate(obj_names):
-                if not fitness[metric]:
-                    fitness[metric] = []
-                fitness[metric].append(ind.fitness.values[j])
-        df_metrics = pd.DataFrame(fitness)
-        df_metrics.to_csv(os.path.join(path_to_save, 'metrics.csv'))
-
-        # save history
-        history = optimizer.history
-        history.save(os.path.join(path_to_save, 'history.json'))
-
-    @staticmethod
-    def _save_visualizations(target_graph: Union[Graph, DiGraph], found_nx_graph: Union[DiGraph, Sequence[DiGraph]],
-                             history: OptHistory, setup_name: str, path_to_save: str):
+    def _save_visualizations(history: OptHistory, setup_name: str, path_to_save: str, **kwargs):
         """ Saves visualizations of results. """
-        path_to_save = os.path.join(path_to_save, 'visualizations')
-        os.makedirs(path_to_save, exist_ok=True)
+        target_graph = kwargs['target_graph']
+        found_nx_graph = kwargs['found_nx_graph']
+        BaseExperimentLauncher._save_visualizations(history=history, setup_name=setup_name, path_to_save=path_to_save)
         draw_graphs_subplots(target_graph, found_nx_graph,
                              titles=['Target Graph', 'Found Graph'], show=False, path_to_save=path_to_save)
-        diversity_path_to_save = os.path.join(path_to_save, 'diversity')
-        os.makedirs(diversity_path_to_save, exist_ok=True)
-        diversity_filename = f'diversity_hist_{setup_name}.gif'
-        history.show.diversity_population(save_path=os.path.join(diversity_path_to_save, diversity_filename))
-        history.show.diversity_line(save_path=diversity_path_to_save, show=False)
-        history.show.fitness_line(save_path=os.path.join(path_to_save, 'fitness_line.png'))
 
 
 class CustomExperimentLauncher(ExperimentLauncher):
     """ Custom ExperimentLauncher. """
-    def _launch_experiment(self, graph_name: str, num_nodes: int, node_types: List[str], optimizer_setup: Callable) \
+    def _launch_experiment(self, optimizer_setup: Callable, **kwargs) \
             -> Tuple[GraphOptimizer, Objective, Union[Graph, DiGraph]]:
         """ Custom example for graph structure search task. """
+        graph_name = kwargs['graph_name']
+        num_nodes = kwargs['num_nodes']
+        node_types = kwargs['node_types']
         # Generate random target graph and run the optimizer
         target_graph = generate_labeled_graph(graph_name, num_nodes, node_types)
         target_graph = target_graph.reverse()
