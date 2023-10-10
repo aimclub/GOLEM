@@ -42,7 +42,7 @@ class BaseExperimentLauncher:
         raise NotImplementedError()
 
     @abstractmethod
-    def _launch_experiment(self, optimizer_setup: Callable, *args, **kwargs):
+    def _launch_experiment(self, optimizer_setup: Callable, **kwargs):
         """ Launches one experiment with specified params. """
         raise NotImplementedError()
 
