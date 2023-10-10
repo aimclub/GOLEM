@@ -48,7 +48,7 @@ def test_evolution_with_crossover(graph_type):
     )
 
     # Generate simple initial population with cyclic graphs
-    initial_graphs = [generate_labeled_graph('tree', i) for i in range(4, 20)]
+    initial_graphs = [generate_labeled_graph(graph_type, i) for i in range(4, 20)]
 
     optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
     found_graphs = optimiser.optimise(objective)
