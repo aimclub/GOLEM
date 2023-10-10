@@ -18,7 +18,7 @@ class MolAdapter(BaseOptimizationAdapter):
     def _restore(self, opt_graph: OptGraph, metadata: Optional[Dict[str, Any]] = None) -> MolGraph:
         digraph = self.nx_adapter.restore(opt_graph)
         # return to previous node indexing
-        digraph = nx.relabel_nodes(digraph, dict(list(digraph.nodes(data='nxid'))))
+        digraph = nx.relabel_nodes(digraph, dict(digraph.nodes(data='nxid')))
         digraph = restore_edges_params_from_nodes(digraph)
         nx_graph = digraph.to_undirected()
         mol_graph = MolGraph.from_nx_graph(nx_graph)
