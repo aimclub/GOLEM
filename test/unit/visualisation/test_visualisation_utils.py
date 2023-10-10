@@ -1,9 +1,8 @@
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.convert import graph_structure_as_nx_graph
-from golem.core.dag.graph_utils import distance_to_primary_level
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.visualisation.graph_viz import get_hierarchy_pos
+from golem.visualisation.graph_viz import GraphVisualizer
 from golem.visualisation.opt_viz_extra import extract_objectives
 from test.unit.utils import graph_first
 
@@ -41,12 +40,10 @@ def test_hierarchy_pos():
                                1: ['a', 'b'],
                                2: ['a']}
 
-    graph, node_labels = graph_structure_as_nx_graph(graph)
-    for n, data in graph.nodes(data=True):
-        data['hierarchy_level'] = distance_to_primary_level(node_labels[n])
-        node_labels[n] = str(node_labels[n])
+    nx_graph, nodes_dict = graph_structure_as_nx_graph(graph)
+    node_labels = {uid: str(node) for uid, node in  nodes_dict.items()}
 
-    pos, _ = get_hierarchy_pos(graph)
+    pos, _, _ = GraphVisualizer._get_hierarchy_pos(nx_graph, nodes_dict)
     comparable_lists_y = make_comparable_lists(pos, real_hierarchy_levels_y,
                                                node_labels, 1, reverse=True)
     comparable_lists_x = make_comparable_lists(pos, real_hierarchy_levels_x,
