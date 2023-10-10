@@ -140,8 +140,7 @@ class GraphVisualizer:
         dpi = dpi or self._get_predefined_value('dpi')
         figure_size = figure_size or self._get_predefined_value('figure_size')
 
-        ax = GraphVisualizer._setup_matplotlib_figure(figure_size, dpi)
-        ax.title(title)
+        ax = GraphVisualizer._setup_matplotlib_figure(figure_size, dpi, title)
         self.draw_nx_dag(ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
                          nodes_labels, edges_labels)
         GraphVisualizer._rescale_matplotlib_figure(ax)
@@ -247,9 +246,10 @@ class GraphVisualizer:
         return colors
 
     @staticmethod
-    def _setup_matplotlib_figure(figure_size: Tuple[float, float], dpi: int) -> plt.Axes:
+    def _setup_matplotlib_figure(figure_size: Tuple[float, float], dpi: int, title: Optional[str] = None) -> plt.Axes:
         fig, ax = plt.subplots(figsize=figure_size)
         fig.set_dpi(dpi)
+        plt.title(title)
         return ax
 
     @staticmethod
