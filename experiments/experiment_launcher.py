@@ -79,7 +79,7 @@ class BaseExperimentLauncher:
         history.show.fitness_line(save_path=os.path.join(path_to_save, 'fitness_line.png'))
 
 
-class ExperimentLauncher(BaseExperimentLauncher, ABC):
+class ExperimentLauncher(BaseExperimentLauncher):
     """
     Class that allows to easily set up experiments and save results in format
     required for ExperimentAnalyzer.
@@ -158,21 +158,9 @@ class ExperimentLauncher(BaseExperimentLauncher, ABC):
                   file=log)
             print(log.getvalue())
 
-    @staticmethod
-    def _save_visualizations(history: OptHistory, setup_name: str, path_to_save: str, **kwargs):
-        """ Saves visualizations of results. """
-        target_graph = kwargs['target_graph']
-        found_nx_graph = kwargs['found_nx_graph']
-        BaseExperimentLauncher._save_visualizations(history=history, setup_name=setup_name, path_to_save=path_to_save)
-        draw_graphs_subplots(target_graph, found_nx_graph,
-                             titles=['Target Graph', 'Found Graph'], show=False, path_to_save=path_to_save)
-
-
-class CustomExperimentLauncher(ExperimentLauncher):
-    """ Custom ExperimentLauncher. """
     def _launch_experiment(self, optimizer_setup: Callable, **kwargs) \
             -> Tuple[GraphOptimizer, Objective, Union[Graph, DiGraph]]:
-        """ Custom example for graph structure search task. """
+        """ Experiment launch for structure search task. """
         graph_name = kwargs['graph_name']
         num_nodes = kwargs['num_nodes']
         node_types = kwargs['node_types']
@@ -187,3 +175,12 @@ class CustomExperimentLauncher(ExperimentLauncher):
                                                if self.trial_timeout else None,
                                                num_iterations=self.trial_iterations)
         return optimizer, objective, target_graph
+
+    @staticmethod
+    def _save_visualizations(history: OptHistory, setup_name: str, path_to_save: str, **kwargs):
+        """ Saves visualizations of results. """
+        target_graph = kwargs['target_graph']
+        found_nx_graph = kwargs['found_nx_graph']
+        BaseExperimentLauncher._save_visualizations(history=history, setup_name=setup_name, path_to_save=path_to_save)
+        draw_graphs_subplots(target_graph, found_nx_graph,
+                             titles=['Target Graph', 'Found Graph'], show=False, path_to_save=path_to_save)
