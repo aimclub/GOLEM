@@ -5,7 +5,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from textwrap import wrap
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, TYPE_CHECKING, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, TYPE_CHECKING, Tuple, Union
 from uuid import uuid4
 
 import networkx as nx
@@ -73,9 +73,9 @@ class GraphVisualizer:
 
         if engine == 'matplotlib':
             self._draw_with_networkx(save_path=save_path, node_color=node_color, dpi=dpi,
-                                      node_size_scale=node_size_scale, font_size_scale=font_size_scale,
-                                      edge_curvature_scale=edge_curvature_scale, figure_size=figure_size,
-                                      title=title, nodes_labels=nodes_labels, edges_labels=edges_labels)
+                                     node_size_scale=node_size_scale, font_size_scale=font_size_scale,
+                                     edge_curvature_scale=edge_curvature_scale, figure_size=figure_size,
+                                     title=title, nodes_labels=nodes_labels, edges_labels=edges_labels)
         elif engine == 'pyvis':
             self._draw_with_pyvis(save_path, node_color)
         elif engine == 'graphviz':
@@ -123,7 +123,6 @@ class GraphVisualizer:
         self._draw_nx_labels(ax, pos,
                              longest_x_sequence, longest_y_sequence, font_size_scale,
                              nodes_labels, edges_labels)
-
 
     def _get_predefined_value(self, param: str):
         if param not in self.visuals_params:
@@ -463,7 +462,6 @@ class GraphVisualizer:
 
         if edges_labels:
             draw_edge_labels(edges_labels, ax, bias, font_size, self.nx_graph, pos)
-
 
     @staticmethod
     def _get_hierarchy_pos(nx_graph: nx.DiGraph, nodes: Dict) -> Tuple[Dict[Any, Tuple[float, float]], int, int]:
