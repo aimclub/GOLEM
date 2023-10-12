@@ -5,13 +5,13 @@ import pickle
 if __name__ == '__main__':
     # задаю параметры
 
-    des_num_nodes = max_graph_size = 310
-    des_degree = 50
+    des_num_nodes = max_graph_size = 30
+    des_degree = 3
     num_edges = 5
-    des_cluster = 0.2
-    des_asp  = 3
+    des_cluster = 0.3
+    des_asp  = 2
 
-    des_label_assort = 0.8
+    des_label_assort = 1
 
     cycle = False
     path = False

@@ -90,6 +90,7 @@ class Mutation(Operator):
 
     def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType]]:
         """ Function applies mutation operator to graph """
+        application_attempt = False
         mutation_applied = None
         for o in range(self.parameters.max_num_of_operator_attempts):
             new_graph = deepcopy(individual.graph)
@@ -116,7 +117,7 @@ class Mutation(Operator):
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')
 
-        return individual, mutation_applied,application_attempt
+        return individual, mutation_applied, application_attempt
 
 
     def _sample_num_of_mutations(self) -> int:

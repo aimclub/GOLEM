@@ -127,7 +127,6 @@ class OperatorAgent(ABC):
 
             self._log.info(msg)
             self._log.info(f'actions/rewards: {list(zip(actions, rr))}')
-
             action_values = list(map(self.get_action_values, obs))
             action_probs = list(map(self.get_action_probs, obs))
             action_values = np.round(np.mean(action_values, axis=0), prec)
@@ -156,6 +155,7 @@ class RandomAgent(OperatorAgent):
 
     def partial_fit(self, experience: ExperienceBuffer):
         obs, actions, rewards = experience.retrieve_experience()
+        print('actions',rewards)
         self._dbg_log(obs, actions, rewards)
 
     def get_action_probs(self, obs: Optional[ObsType] = None) -> Sequence[float]:

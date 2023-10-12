@@ -107,7 +107,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         self._update_requirements()
 
-
         # Regularize previous population
 
         individuals_to_select = self.regularization(self.population, evaluator)
@@ -117,6 +116,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # Adaptive agent experience collection & learning
         # Must be called after reproduction (that collects the new experience)
         experience = self.mutation.agent_experience
+        print('experience',experience)
         experience.collect_results(new_population)
         self.mutation.agent.partial_fit(experience)
         # Use some part of previous pop in the next pop

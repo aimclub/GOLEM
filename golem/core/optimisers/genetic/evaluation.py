@@ -162,6 +162,7 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
 
         graph = self.evaluation_cache.get(cache_key, graph)
 
+
         if with_time_limit and self.timer.is_time_limit_reached():
             return None
         if logs_initializer is not None:

@@ -2,7 +2,7 @@ import collections
 from datetime import timedelta
 from functools import partial
 from wrapt_timeout_decorator import timeout
-
+from datetime import datetime
 from typing import Optional, Union, List
 
 import pandas as pd
@@ -73,10 +73,8 @@ class GeneratorNode(LinkedGraphNode):
     def __str__(self):
 
         return self.content["name"]
-
-
 def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_cluster,des_num_nodes, des_label_assort,des_asp, timeout=15, visualize=True):
-
+    print('datetime', datetime.now())
     # Generate target graph that will be sought by optimizer
 
     def overall_mape(des_values, fact_values):
@@ -86,19 +84,15 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         return mape / len(des_values)
 
 
-    def shortes_paths(G, id, changed_nodes):
-        G = ig.Graph.from_networkx(G)
-        connected_components = ig.count_components(G)
-        matrix_of_shortest_paths = pd.load()
-        ig.get_all_shortest_paths(v, to=None)
-
+    def shortes_paths(G):
 
         avg_shortes_path = 0
+        connected_components = 0
         for nodes in nx.connected_components(G):
-            g = G.graph.subgraph(nodes)
+            connected_components+=1
+            g = G.subgraph(list(nodes))
             g_ig = ig.Graph.from_networkx(g)
             num_nodes = g.number_of_nodes()
-
             avg = 0
             for shortes_paths in g_ig.shortest_paths():
                 for sp in shortes_paths:
@@ -109,6 +103,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
                 avg_shortes_path = avg
 
         avg_s_p = avg_shortes_path / connected_components
+        return avg_s_p
 
 
     def label_assortativity(G):
@@ -157,7 +152,13 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
 
     def asp_count(des_shortest_paths, G):
-        fact_asp = shortes_paths(G)
+
+        G_new = nx.Graph()
+        G_new.add_nodes_from(G.nodes)
+        G_new.add_edges_from(G.get_edges())
+
+
+        fact_asp = shortes_paths(G_new)
         return (des_shortest_paths - fact_asp) * (des_shortest_paths - fact_asp)
 
 
@@ -181,54 +182,54 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     distributions = [
         lambda: [1/des_num_nodes]*des_num_nodes,
        # lambda: [(2**(-i)/sum([2**(-j) for j in range(des_num_nodes)])) for i in range(des_num_nodes)],
-        lambda: normalize([i**2 for i in range(des_num_nodes)]),
-        lambda: normalize([i for i in range(des_num_nodes)]),
-        lambda: normalize([np.log(i+1) for i in range(des_num_nodes)]),
-        lambda: normalize([1/(i+1) for i in range(des_num_nodes)]),
-        lambda: normalize(list(np.random.normal(des_num_nodes//2, des_num_nodes//4, des_num_nodes))),
-        lambda: normalize(list(np.random.normal(des_num_nodes*3//4, des_num_nodes//4, des_num_nodes))),
-        lambda: normalize([np.sin(np.pi * i/des_num_nodes) for i in range(des_num_nodes)]),
-        lambda: normalize([i for i in range(des_num_nodes//2)] + [des_num_nodes//2 - i for i in range(des_num_nodes//2)]),
-        lambda: normalize([des_num_nodes//2 - i for i in range(des_num_nodes//2)] + [i for i in range(des_num_nodes//2)]),
-        lambda: normalize(list(np.random.poisson(des_num_nodes//2, des_num_nodes))),
-        lambda: normalize([1 if i < des_num_nodes/2 else 0 for i in range(des_num_nodes)]),
-        lambda: normalize(list(np.random.normal(des_num_nodes//4, des_num_nodes//8, des_num_nodes) + np.random.normal(3*des_num_nodes//4, des_num_nodes//8, des_num_nodes))),
-        lambda: normalize([1/(i+2) for i in range(des_num_nodes)]),
-        lambda: normalize([1 / (i + 3) for i in range(des_num_nodes)]),
-        lambda: normalize([1 / (i + 4) for i in range(des_num_nodes)]),
-        lambda: normalize([1 / (i + 5) for i in range(des_num_nodes)])
-
+       # lambda: normalize([i**2 for i in range(des_num_nodes)]),
+        #lambda: normalize([i for i in range(des_num_nodes)]),
+        #lambda: normalize([np.log(i+1) for i in range(des_num_nodes)]),
+        #lambda: normalize([1/(i+1) for i in range(des_num_nodes)]),
+        #lambda: normalize(list(np.random.normal(des_num_nodes//2, des_num_nodes//4, des_num_nodes))),
+        #lambda: normalize(list(np.random.normal(des_num_nodes*3//4, des_num_nodes//4, des_num_nodes))),
+        #lambda: normalize([np.sin(np.pi * i/des_num_nodes) for i in range(des_num_nodes)]),
+        #lambda: normalize([i for i in range(des_num_nodes//2)] + [des_num_nodes//2 - i for i in range(des_num_nodes//2)]),
+        #lambda: normalize([des_num_nodes//2 - i for i in range(des_num_nodes//2)] + [i for i in range(des_num_nodes//2)]),
+        #lambda: normalize(list(np.random.poisson(des_num_nodes//2, des_num_nodes))),
+        #lambda: normalize([1 if i < des_num_nodes/2 else 0 for i in range(des_num_nodes)]),
+        #lambda: normalize(list(np.random.normal(des_num_nodes//4, des_num_nodes//8, des_num_nodes) + np.random.normal(3*des_num_nodes//4, des_num_nodes//8, des_num_nodes))),
+        #lambda: normalize([1/(i+2) for i in range(des_num_nodes)]),
+        #lambda: normalize([1 / (i + 3) for i in range(des_num_nodes)]),
+        #lambda: normalize([1 / (i + 4) for i in range(des_num_nodes)]),
+        #lambda: normalize([1 / (i + 5) for i in range(des_num_nodes)])
     ]
 
     # Generate initial population with random graphs
     initial_graphs = []
     print('all my distributions')
     print(distributions)
-    for dist_func in distributions:
-        print('making a graph')
+    for i in range(20):
+        for dist_func in distributions:
+            print('making a graph')
 
-        Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
-                                                   content={'name': vertex,
-                                                            'label': random.choices([0, 1], weights = [0.5+0.5*des_label_assort, 0.5-0.5*des_label_assort],k=1)})
-                                     for vertex in range(des_num_nodes)])
+            Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
+                                                       content={'name': vertex,
+                                                                'label': random.choices([0, 1], weights = [0.5+0.5*des_label_assort, 0.5-0.5*des_label_assort],k=1)})
+                                         for vertex in range(des_num_nodes)])
 
-        probs = dist_func()
-        print(probs,sum(probs))
-        init_edges = []
+            probs = dist_func()
+            print(probs,sum(probs))
+            init_edges = []
 
-        i = 0
-        while i < (int(des_degree*des_num_nodes/2)):
-            #print(i)
-            node_1, node_2 = choices(Init2.nodes, weights = probs, k=2)
+            i = 0
+            while i < (int(des_degree*des_num_nodes/2)):
+                #print(i)
+                node_1, node_2 = choices(Init2.nodes, weights = probs, k=2)
 
-            if (node_1, node_2) not in init_edges and (node_2,node_1) not in init_edges and node_1!=node_2:
-                init_edges.append((node_1, node_2))
-                Init2.connect_nodes(node_1, node_2)
-                i +=1
+                if (node_1, node_2) not in init_edges and (node_2,node_1) not in init_edges and node_1!=node_2:
+                    init_edges.append((node_1, node_2))
+                    Init2.connect_nodes(node_1, node_2)
+                    i +=1
 
-        initial_graphs.append(Init2)
+            initial_graphs.append(Init2)
 
-        print('ended making graph')
+            print('ended making graph')
 
 
     print('avg degree of random graph: {} vs des:{}'.format( np.mean(list(dict(Init2.degree()).values())),des_degree))
@@ -249,9 +250,9 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     print('clustering coefficient of random graph: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()), des_cluster))
 
     objective = Objective({'avg degree': partial(avg_deg_count, des_degree),
-                           'cluster coef': partial(avg_cluster_count, des_cluster) , 'label assort': partial(lab_assort_count,des_label_assort)}, is_multi_objective=True)
+                           'cluster coef': partial(avg_cluster_count, des_cluster) , 'label assort': partial(lab_assort_count,des_label_assort), 'shortest paths': partial(asp_count,des_asp)}, is_multi_objective=True)
 
-#, 'shortest paths': partial(asp_count,des_asp)
+#,
     
 
     # Setup optimization parameters
@@ -259,9 +260,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size*10000,
-
         num_of_generations = 600,
-
         early_stopping_iterations=100,
         timeout=timedelta(minutes=timeout),
         n_jobs=-1,
@@ -347,9 +346,9 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         max_pop_size = 10,
         crossover_prob = 0.8,
         mutation_prob = 1,
-        genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
-        multi_objective=objective.is_multi_objective,
-        mutation_types=mutation_types,
+        genetic_scheme_type = GeneticSchemeTypesEnum.parameter_free,
+        multi_objective = objective.is_multi_objective,
+        mutation_types =  mutation_types,
         adaptive_mutation_type = MutationAgentTypeEnum.default,
         context_agent_type = ContextAgentTypeEnum.adjacency_matrix,
 
@@ -385,14 +384,45 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
         print('clustering coefficient real: {} vs des:{}'.format(nx.average_clustering(G_new.to_undirected()),des_cluster))
         print('label assortativity real: {} vs des: {} '.format(label_assortativity(found_graphs[0]), des_label_assort) )
-
-
+        print('shortest paths real: {} vs des: {}'.format(shortes_paths(G_new.to_undirected()), des_asp))
         #des_values = [des_degree, des_cluster, des_label_assort]
         #fact_values = [np.mean(list(dict(found_graph.degree()).values())), nx.average_clustering(G_new.to_undirected()), label_assortativity(found_graphs[0])]
         #print(nx.degree(G_new), len(G_new.edges()), len(G_new.edges()), 'mape', overall_mape(des_values, fact_values))
         #print(found_graph.degree())
         #nx.draw(G_new,node_color = colors)
         #plt.show()
+
+        G_after_nx = nx.tensor_product(G_new,G_new)
+        G_ini = (ig.Graph.from_networkx(G_new))
+        G_after = (ig.Graph.from_networkx(G_after_nx))
+
+        d1 = datetime.now()
+        print('statistics for kronocker product:')
+        print('shortest paths real: {} vs des: {}'.format(shortes_paths(G_after_nx.to_undirected()), des_asp))
+        print('time', datetime.now()-d1)
+
+       # print('table for initial',G_ini.shortest_paths())
+       # print('table for the ended graph', G_after.shortest_paths())
+
+        d1 = datetime.now()
+        with open('output_init.txt', 'w') as f:
+            for sublist in G_ini.shortest_paths():
+                for item in sublist:
+                    f.write(str(item) + ' ')
+                f.write('\n')
+        print('counting INI distances', datetime.now()-d1)
+        d1 = datetime.now()
+        with open('output.txt', 'w') as f:
+            for sublist in G_after.shortest_paths():
+                for item in sublist:
+                    f.write(str(item) + ' ')
+                f.write('\n')
+        print('shortest AFTER distances', datetime.now() - d1)
+        d = datetime.now()
+        #print('true avg shortest paths of kronocker product', shortes_paths(G_new.to_undirected()), 'time ', datetime.now()-d)
+        d = datetime.now()
+
+        #print('my count of asp', table, 'time', datetime.now()-d)
         return G_new
 
 
