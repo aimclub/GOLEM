@@ -12,6 +12,7 @@ from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory
 from golem.core.paths import project_root
 from golem.structural_analysis.graph_sa.graph_structural_analysis import GraphStructuralAnalysis
 from golem.structural_analysis.graph_sa.sa_requirements import StructuralAnalysisRequirements
+from golem.utilities.utils import set_random_seed
 
 
 def get_opt_graph() -> OptGraph:
@@ -63,7 +64,7 @@ def test_structural_analysis():
                                  requirements=requirements,
                                  path_to_save=path_to_save,
                                  is_visualize_per_iteration=False)
-
+    set_random_seed(42)
     optimized_graph, _ = sa.optimize(graph=opt_graph, n_jobs=1,
                                      max_iter=2)
 

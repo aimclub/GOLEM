@@ -10,6 +10,7 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
+from golem.utilities.utils import set_random_seed
 
 
 def set_up_params(genetic_scheme: GeneticSchemeTypesEnum):
@@ -31,6 +32,7 @@ def test_genetic_scheme_types(genetic_type):
     num_iterations = 30
 
     gp_params = set_up_params(genetic_type)
+    set_random_seed(42)
     found_graph, history = run_trial(target_graph=target_graph,
                                      optimizer_setup=partial(tree_search_setup, algorithm_parameters=gp_params),
                                      num_iterations=num_iterations)
