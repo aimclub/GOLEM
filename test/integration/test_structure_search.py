@@ -1,4 +1,3 @@
-import random
 from datetime import timedelta
 from functools import partial
 from math import ceil
