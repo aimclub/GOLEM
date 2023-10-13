@@ -12,6 +12,7 @@ from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.objective import Objective
 from golem.metrics.edit_distance import tree_edit_dist, graph_size
+from golem.utilities.utils import set_random_seed
 
 
 def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> Tuple[float, Graph]:
@@ -35,7 +36,7 @@ def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> 
 
 
 @pytest.mark.parametrize('target_sizes, distance_function, indulgence',
-                         [([10, 24], tree_edit_dist, 0.6),
+                         [([10, 24], tree_edit_dist, 0.3),
                           ([30], graph_size, 0.3)])
 def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
     """ Checks if simple targets can be found within specified time. """
@@ -43,6 +44,8 @@ def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
         num_trials = 3
         distances = []
         for i in range(num_trials):
+            # to test num_trials different options
+            set_random_seed(i)
             distance, target_graph = run_search(target_size, distance_function=distance_function, timeout_min=1)
             distances.append(distance)
 
