@@ -17,7 +17,7 @@ from examples.molecule_search.mol_metrics import normalized_sa_score, penalised_
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
     has_no_isolated_nodes
 from golem.core.optimisers.adaptive.agent_trainer import AgentTrainer
-from golem.core.optimisers.adaptive.history_collector import HistoryReader, HistoryCollector
+from golem.core.optimisers.adaptive.history_collector import HistoryReader
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -226,9 +226,9 @@ if __name__ == '__main__':
     run_experiment(molecule_search_setup,
                    adaptive_kind=MutationAgentTypeEnum.bandit,
                    max_heavy_atoms=38,
-                   trial_timeout=2,
-                   pop_size=10,
+                   trial_timeout=6,
+                   pop_size=50,
                    metrics=['qed_score', 'cl_score'],
                    visualize=True,
-                   num_trials=1,
+                   num_trials=5,
                    )
