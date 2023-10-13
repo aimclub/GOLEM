@@ -43,6 +43,11 @@ class AgentTrainer:
         self._adapter = self.mutation.graph_generation_params.adapter
 
     def fit(self, histories: Iterable[OptHistory], validate_each: int = -1) -> OperatorAgent:
+        """
+        Method to fit trainer on collected histories.
+        param histories: histories to use in training.
+        param validate_each: validate agent once in validate_each generation.
+        """
         # Set mutation probabilities to 1.0
         initial_req = deepcopy(self.mutation.requirements)
         self.mutation.requirements.mutation_prob = 1.0
@@ -137,7 +142,8 @@ class AgentTrainer:
         and 2.2 means they on average deviate by more than 2 times from optimal reward."""
         reward_losses = np.subtract(optimal_rewards, rewards)  # always positive
         if normalized:
-            reward_losses = reward_losses / np.abs(optimal_rewards)
+            reward_losses = reward_losses / np.abs(optimal_rewards) \
+                if np.count_nonzero(optimal_rewards) == optimal_rewards.size else reward_losses
         means = np.mean(reward_losses)
         return float(means)
 
