@@ -79,11 +79,11 @@ class BaseExperimentLauncher:
         history.show.fitness_line(save_path=os.path.join(path_to_save, 'fitness_line.png'))
 
 
-class ExperimentLauncher(BaseExperimentLauncher):
+class GraphStructureExperimentLauncher(BaseExperimentLauncher):
     """
     Class that allows to easily set up experiments and save results in format
     required for ExperimentAnalyzer.
-    ExperimentAnalyzer provide common logic for experiments concerned with growing
+    GraphStructureExperimentLauncher provide common logic for experiments concerned with growing
     a graph with specified structure and type.
     The format is:
         setup (e.g. configuration of framework)
