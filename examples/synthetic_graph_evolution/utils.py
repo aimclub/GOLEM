@@ -1,3 +1,4 @@
+import os.path
 from itertools import chain
 from typing import Tuple, Optional, Sequence
 
@@ -83,7 +84,8 @@ def draw_graphs_subplots(*graphs: nx.Graph,
                          with_labels: bool = False,
                          draw_fn=nx.draw,
                          size: int = 10,
-                         show: bool = True):
+                         show: bool = True,
+                         path_to_save: Optional[str] = None):
     """Draw 1 or several NetworkX graphs
     with coloring of roots, sources and node degrees.
 
@@ -95,6 +97,7 @@ def draw_graphs_subplots(*graphs: nx.Graph,
         draw_fn: nx.draw_* primitive for drawing graph subplots
         size: figure size, passed to plt.subplots(figsize=...)
         show: if plt.show() is necessary
+        path_to_save: path to dir where to save results
     """
 
     graphs = ensure_wrapped_in_sequence(graphs)
@@ -115,6 +118,8 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     fig.legend(handles=legend_handles)
     if show:
         plt.show()
+    if path_to_save:
+        plt.savefig(os.path.join(path_to_save, 'graphs_subplots.png'))
 
 
 def _get_node_colors_and_labels(graph: nx.Graph,
