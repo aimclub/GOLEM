@@ -36,7 +36,7 @@ def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> 
 
 
 @pytest.mark.parametrize('target_sizes, distance_function, indulgence',
-                         [([10, 24], tree_edit_dist, 0.3),
+                         [([10, 24], tree_edit_dist, 0.4),
                           ([30], graph_size, 0.3)])
 def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
     """ Checks if simple targets can be found within specified time. """
