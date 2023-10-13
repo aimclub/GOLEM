@@ -1,5 +1,5 @@
 import os
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from datetime import timedelta, datetime
 from io import StringIO
 from itertools import product
