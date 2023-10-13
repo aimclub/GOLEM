@@ -20,6 +20,7 @@ from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.core.paths import project_root
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
 from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
@@ -316,6 +317,16 @@ def test_collect_intermediate_metric():
     restored_graph = graph_gen_params.adapter.restore(evaluated_graph)
 
     assert_intermediate_metrics(restored_graph)
+
+
+def test_load_zero_generations_history():
+    """ Test to load histories with zero generations, since it still can contain info about
+    objective, tuning result, etc. """
+    path_to_history = os.path.join(project_root(), 'test', 'data', 'zero_gen_history.json')
+    history = OptHistory.load(path_to_history)
+    assert isinstance(history, OptHistory)
+    assert len(history.archive_history) == 0
+    assert history.objective is not None
 
 
 def assert_intermediate_metrics(graph: MockDomainStructure):
