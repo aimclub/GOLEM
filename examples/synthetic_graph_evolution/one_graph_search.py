@@ -181,36 +181,31 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
 
     # Generate initial population with random graphs
     initial_graphs = []
-    print('all my distributions')
+
     print(distributions)
     for i in range(20):
-        for dist_func in distributions:
-            print('making a graph')
+        Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
+                                                    content={'name': vertex,
+                                                             'label': random.choices([0, 1], weights=[
+                                                                 0.5 + 0.5 * des_label_assort,
+                                                                 0.5 - 0.5 * des_label_assort], k=1)})
+                                      for vertex in range(des_num_nodes)])
 
-            Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
-                                                        content={'name': vertex,
-                                                                 'label': random.choices([0, 1], weights=[
-                                                                     0.5 + 0.5 * des_label_assort,
-                                                                     0.5 - 0.5 * des_label_assort], k=1)})
-                                          for vertex in range(des_num_nodes)])
+        init_edges = []
 
-            probs = dist_func()
-            print(probs, sum(probs))
-            init_edges = []
+        i = 0
+        while i < (int(des_degree * des_num_nodes / 2)):
+            # print(i)
+            node_1, node_2 = choices(Init2.nodes, k=2)
 
-            i = 0
-            while i < (int(des_degree * des_num_nodes / 2)):
-                # print(i)
-                node_1, node_2 = choices(Init2.nodes, weights=probs, k=2)
+            if (node_1, node_2) not in init_edges and (node_2, node_1) not in init_edges and node_1 != node_2:
+                init_edges.append((node_1, node_2))
+                Init2.connect_nodes(node_1, node_2)
+                i += 1
 
-                if (node_1, node_2) not in init_edges and (node_2, node_1) not in init_edges and node_1 != node_2:
-                    init_edges.append((node_1, node_2))
-                    Init2.connect_nodes(node_1, node_2)
-                    i += 1
+        initial_graphs.append(Init2)
 
-            initial_graphs.append(Init2)
-
-            print('ended making graph')
+        print('ended making graph')
 
     print('avg degree of random graph: {} vs des:{}'.format(np.mean(list(dict(Init2.degree()).values())), des_degree))
 
