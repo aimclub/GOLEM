@@ -38,7 +38,9 @@ class MutationTypesEnum(Enum):
     single_change = 'single_change'
     single_drop = 'single_drop'
     single_edge = 'single_edge'
-    single_edge_del = 'edge_delete'
+    single_edge_add = 'single_edge_add'
+    single_edge_del = 'single_edge_del'
+
     change_label = 'change_label'
     change_label_to_1 = 'change_label_to_1'
     change_label_to_0 = 'change_label_to_0'
@@ -257,6 +259,62 @@ def single_edge_mutation(graph: OptGraph,
  #       return old_graph
     return graph
 
+
+@register_native
+def single_edge_add_mutation(graph: OptGraph,
+                         requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters',
+                         ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    old_graph = deepcopy(graph)
+    for _ in range(parameters.max_num_of_operator_attempts):
+        if len(graph.nodes) < 2:# or graph.depth > requirements.max_depth:
+                return graph
+
+
+        source_node, target_node = sample(graph.nodes, 2)
+        if (source_node not in target_node.nodes_from) and (target_node not in source_node.nodes_from):
+            graph.connect_nodes(source_node, target_node)
+            break
+
+
+#    if graph.depth > requirements.max_depth:
+ #       return old_graph
+    return graph
+
+@register_native
+def single_edge_del_mutation(graph: OptGraph,
+                         requirements: GraphRequirements,
+                         graph_gen_params: GraphGenerationParams,
+                         parameters: 'GPAlgorithmParameters',
+                         ) -> OptGraph:
+    """
+    This mutation adds new edge between two random nodes in graph.
+
+    :param graph: graph to mutate
+    """
+    old_graph = deepcopy(graph)
+
+    for _ in range(parameters.max_num_of_operator_attempts):
+        try:
+            if len(graph.get_edges()) ==0:
+                return graph
+            source_node, target_node = sample(graph.get_edges(), 1)[0]
+
+            graph.disconnect_nodes(source_node, target_node)
+            break
+        except:
+            continue
+
+#    if graph.depth > requirements.max_depth:
+ #       return old_graph
+    return graph
+
 @register_native
 def batch_edge_mutation(graph: OptGraph,
                          requirements: GraphRequirements,
@@ -392,7 +450,7 @@ def cycle_edge_mutation(graph: OptGraph,
                 return graph
 
             nodes = sample(graph.nodes, num_nodes)
-            print(nodes)
+
             first_node=nodes[0]
             source_node = first_node
             for target_node in nodes[1:]:
@@ -517,7 +575,6 @@ def dense_edge_mutation(graph: OptGraph,
             break
         except:
             continue
-    print('remove edges', datetime.now())
     for _ in range(int(num_edges)):
         for _ in range(parameters.max_num_of_operator_attempts):
             try:
@@ -529,7 +586,6 @@ def dense_edge_mutation(graph: OptGraph,
                 break
             except:
                 continue
-    print('after remove edges', datetime.now())
    # if graph.depth > requirements.max_depth:
     #    return old_graph
     return graph
@@ -970,6 +1026,8 @@ base_mutations_repo = {
     MutationTypesEnum.reduce: reduce_mutation,
     MutationTypesEnum.single_add: single_add_mutation,
     MutationTypesEnum.single_edge: single_edge_mutation,
+    MutationTypesEnum.single_edge_add: single_edge_add_mutation,
+    MutationTypesEnum.single_edge_del: single_edge_del_mutation,
 
 
     MutationTypesEnum.star_edge_5: star_edge_5_mutation,
