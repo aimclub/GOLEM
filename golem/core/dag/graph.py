@@ -33,8 +33,9 @@ class Graph(ABC):
     def update_node(self, old_node: GraphNode, new_node: GraphNode):
         """Replaces ``old_node`` node with ``new_node``
 
-        :param old_node: node to be replaced
-        :param new_node: node to be placed instead
+        Args:
+            old_node: node to be replaced
+            new_node: node to be placed instead
         """
         raise NotImplementedError()
 

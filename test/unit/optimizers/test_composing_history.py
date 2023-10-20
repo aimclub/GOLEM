@@ -60,7 +60,8 @@ def generate_history(request) -> OptHistory:
             ind.set_native_generation(gen_num)
             new_pop.append(ind)
         history.add_to_history(new_pop)
-        history.add_to_archive_history(new_pop)
+        # since only n best individuals need to be added to archive history
+        history.add_to_archive_history([sorted(new_pop,  key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
     return history
 
 
@@ -327,6 +328,32 @@ def test_load_zero_generations_history():
     assert isinstance(history, OptHistory)
     assert len(history.archive_history) == 0
     assert history.objective is not None
+
+
+@pytest.mark.parametrize('generate_history', [[100, 100, create_individual]], indirect=True)
+def test_save_light_history(generate_history):
+    history = generate_history
+    file_name = 'light_history.json'
+    path_to_dir = os.path.join(project_root(), 'test', 'data')
+    history.save(json_file_path=os.path.join(path_to_dir, file_name), is_save_light=True)
+    assert file_name in os.listdir(path_to_dir)
+    os.remove(path=os.path.join(path_to_dir, file_name))
+
+
+@pytest.mark.parametrize('generate_history', [[50, 30, create_individual]], indirect=True)
+def test_light_history_is_significantly_lighter(generate_history):
+    """ Checks if light version of history weights signif """
+    history = generate_history
+    file_name_light = 'light_history.json'
+    file_name_heavy = 'heavy_history.json'
+    path_to_dir = os.path.join(project_root(), 'test', 'data')
+    history.save(json_file_path=os.path.join(path_to_dir, file_name_light), is_save_light=True)
+    history.save(json_file_path=os.path.join(path_to_dir, file_name_heavy), is_save_light=False)
+    light_history_size = os.stat(os.path.join(path_to_dir, file_name_light)).st_size
+    heavy_history_size = os.stat(os.path.join(path_to_dir, file_name_heavy)).st_size
+    assert light_history_size * 25 <= heavy_history_size
+    os.remove(path=os.path.join(path_to_dir, file_name_light))
+    os.remove(path=os.path.join(path_to_dir, file_name_heavy))
 
 
 def assert_intermediate_metrics(graph: MockDomainStructure):
