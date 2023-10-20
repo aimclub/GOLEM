@@ -14,7 +14,6 @@ from golem.core.optimisers.opt_history_objects.generation import Generation
 
 from golem.core.paths import default_data_dir
 from golem.serializers.serializer import default_load, default_save
-from golem.visualisation.opt_history.fitness_line import find_best_running_fitness
 from golem.visualisation.opt_viz import OptHistoryVisualizer
 
 if TYPE_CHECKING:
