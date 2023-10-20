@@ -63,7 +63,6 @@ class ReproductionController:
         mutation_tries_for_each_ind = {descriptive_id: copy(mutation_count)
                                        for descriptive_id in population_descriptive_ids_mapping}
 
-
         # prepare one mutation for each individual in population
         # mutation_type is None, let Mutation() choose
         mutation_queue = Queue()
@@ -73,7 +72,7 @@ class ReproductionController:
         # run infinite cycle with evaluation in parallel
         new_population = list()
         with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
-            ind_generator = parallel(delayed(mutation_fun)(mutation_queue) for _ in cycle([1]))
+            ind_generator = parallel(delayed(mutation_fun)(mutation_queue) for _ in [1] * 5) # cycle([1]))
             for try_num, (parent_descriptive_id, mutation_type, new_ind) in enumerate(ind_generator):
                 mutation_tries_for_each_ind[parent_descriptive_id][mutation_type] += 1
                 if new_ind:
@@ -147,7 +146,7 @@ class ReproductionController:
                               f'have {len(population)},'
                               f' required {target_pop_size}!\n' + helpful_msg)
 
-    def _mutation_n_evaluation(self, mutation_queue: Queue,
+    def _mutation_n_evaluation(self, i, mutation_queue: Queue,
                                evaluator: EvaluationOperator):
         try:
             # wait timeout in seconds for new task to reduce probability of process flooding
