@@ -5,7 +5,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from textwrap import wrap
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, TYPE_CHECKING, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Literal, Optional, Sequence, TYPE_CHECKING, Tuple, Union
 from uuid import uuid4
 
 import networkx as nx
@@ -48,7 +48,10 @@ class GraphVisualizer:
             node_size_scale=1.0,
             font_size_scale=1.0,
             edge_curvature_scale=1.0,
-            figure_size=(7, 7)
+            node_names_placement='auto',
+            nodes_layout_function=GraphVisualizer._get_hierarchy_pos_by_distance_to_primary_level,
+            figure_size=(7, 7),
+            save_path=None,
         )
         default_visuals_params.update(visuals_params)
         self.visuals_params = default_visuals_params
@@ -65,6 +68,8 @@ class GraphVisualizer:
                   node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
                   edge_curvature_scale: Optional[float] = None, figure_size: Optional[Tuple[int, int]] = None,
                   nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None,
+                  node_names_placement: Optional[Literal['auto', 'nodes', 'legend', 'none']] = None,
+                  nodes_layout_function: Optional[Callable[[nx.DiGraph], Dict[Any, Tuple[float, float]]]] = None,
                   title: Optional[str] = None):
         engine = engine or self._get_predefined_value('engine')
 
@@ -75,7 +80,9 @@ class GraphVisualizer:
             self._draw_with_networkx(save_path=save_path, node_color=node_color, dpi=dpi,
                                      node_size_scale=node_size_scale, font_size_scale=font_size_scale,
                                      edge_curvature_scale=edge_curvature_scale, figure_size=figure_size,
-                                     title=title, nodes_labels=nodes_labels, edges_labels=edges_labels)
+                                     title=title, nodes_labels=nodes_labels, edges_labels=edges_labels,
+                                     nodes_layout_function=nodes_layout_function,
+                                     node_names_placement=node_names_placement)
         elif engine == 'pyvis':
             self._draw_with_pyvis(save_path, node_color)
         elif engine == 'graphviz':
@@ -84,16 +91,20 @@ class GraphVisualizer:
             raise NotImplementedError(f'Unexpected visualization engine: {engine}. '
                                       'Possible values: matplotlib, pyvis, graphviz.')
 
-    def draw_nx_dag(self, ax: Optional[plt.Axes] = None, node_color: Optional[NodeColorType] = None,
-                    node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
-                    edge_curvature_scale: Optional[float] = None, nodes_labels: Dict[int, str] = None,
-                    edges_labels: Dict[int, str] = None):
-
+    def draw_nx_dag(
+            self, ax: Optional[plt.Axes] = None, node_color: Optional[NodeColorType] = None,
+            node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
+            edge_curvature_scale: Optional[float] = None, nodes_labels: Dict[int, str] = None,
+            edges_labels: Dict[int, str] = None,
+            nodes_layout_function: Optional[Callable[[nx.DiGraph], Dict[Any, Tuple[float, float]]]] = None,
+            node_names_placement: Optional[Literal['auto', 'nodes', 'legend', 'none']] = None):
         node_color = node_color or self._get_predefined_value('node_color')
         node_size_scale = node_size_scale or self._get_predefined_value('node_size_scale')
         font_size_scale = font_size_scale or self._get_predefined_value('font_size_scale')
         edge_curvature_scale = (edge_curvature_scale if edge_curvature_scale is not None
                                 else self._get_predefined_value('edge_curvature_scale'))
+        nodes_layout_function = nodes_layout_function or self._get_predefined_value('nodes_layout_function')
+        node_names_placement = node_names_placement or self._get_predefined_value('node_names_placement')
 
         nx_graph, nodes = self.nx_graph, self.nodes_dict
 
@@ -107,33 +118,39 @@ class GraphVisualizer:
             node_color = [node_color.get(str(node), node_color.get(None)) for node in nodes.values()]
         else:
             node_color = [node_color for _ in nodes]
-        # Get nodes positions
-        (pos,
-         longest_x_sequence,
-         longest_y_sequence) = GraphVisualizer._get_hierarchy_pos(nx_graph, nodes)
-        longest_nodes_sequence_size = max(longest_x_sequence, longest_y_sequence)
-        node_size = GraphVisualizer._get_scaled_node_size(longest_nodes_sequence_size, node_size_scale)
-
-        if longest_nodes_sequence_size > 6:
-            self._draw_nx_small_nodes(ax, pos, nodes, node_color, node_size, font_size_scale)
+        # Get node positions
+        if nodes_layout_function == GraphVisualizer._get_hierarchy_pos_by_distance_to_primary_level:
+            pos = nodes_layout_function(nx_graph, nodes)
         else:
-            self._draw_nx_big_nodes(ax, pos, nodes, node_color, node_size, font_size_scale,
-                                    longest_nodes_sequence_size)
+            pos = nodes_layout_function(nx_graph)
+
+        node_size = self._get_scaled_node_size(len(nodes), node_size_scale)
+
+        with_node_names = node_names_placement != 'none'
+
+        if node_names_placement in ('auto', 'none'):
+            node_names_placement = GraphVisualizer._define_node_names_placement(node_size)
+
+        if node_names_placement == 'nodes':
+            self._draw_nx_big_nodes(ax, pos, nodes, node_color, node_size, font_size_scale, with_node_names)
+        elif node_names_placement == 'legend':
+            self._draw_nx_small_nodes(ax, pos, nodes, node_color, node_size, font_size_scale, with_node_names)
         self._draw_nx_curved_edges(ax, pos, node_size, edge_curvature_scale)
-        self._draw_nx_labels(ax, pos,
-                             longest_x_sequence, longest_y_sequence, font_size_scale,
-                             nodes_labels, edges_labels)
+        self._draw_nx_labels(ax, pos, font_size_scale, nodes_labels, edges_labels)
 
     def _get_predefined_value(self, param: str):
         if param not in self.visuals_params:
             self.log.warning(f'No default param found: {param}.')
         return self.visuals_params.get(param)
 
-    def _draw_with_networkx(self, save_path: Optional[PathType] = None, node_color: Optional[NodeColorType] = None,
-                            dpi: Optional[int] = None, node_size_scale: Optional[float] = None,
-                            font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
-                            figure_size: Optional[Tuple[int, int]] = None, title: Optional[str] = None,
-                            nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
+    def _draw_with_networkx(
+            self, save_path: Optional[PathType] = None, node_color: Optional[NodeColorType] = None,
+            dpi: Optional[int] = None, node_size_scale: Optional[float] = None,
+            font_size_scale: Optional[float] = None, edge_curvature_scale: Optional[float] = None,
+            figure_size: Optional[Tuple[int, int]] = None, title: Optional[str] = None,
+            nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None,
+            nodes_layout_function: Optional[Callable[[nx.DiGraph], Dict[Any, Tuple[float, float]]]] = None,
+            node_names_placement: Optional[Literal['auto', 'nodes', 'legend', 'none']] = None):
         save_path = save_path or self._get_predefined_value('save_path')
         node_color = node_color or self._get_predefined_value('node_color')
         dpi = dpi or self._get_predefined_value('dpi')
@@ -141,7 +158,7 @@ class GraphVisualizer:
 
         ax = GraphVisualizer._setup_matplotlib_figure(figure_size, dpi, title)
         self.draw_nx_dag(ax, node_color, node_size_scale, font_size_scale, edge_curvature_scale,
-                         nodes_labels, edges_labels)
+                         nodes_labels, edges_labels, nodes_layout_function, node_names_placement)
         GraphVisualizer._rescale_matplotlib_figure(ax)
         if not save_path:
             plt.show()
@@ -224,7 +241,7 @@ class GraphVisualizer:
     @staticmethod
     def _get_scaled_font_size(nodes_amount: int, size_scale: float) -> float:
         min_size = 11
-        max_size = 25
+        max_size = 60
         size = max(max_size * (1 - np.log10(nodes_amount)), min_size)
         return size * size_scale
 
@@ -265,14 +282,15 @@ class GraphVisualizer:
         ax.axis('off')
         plt.tight_layout()
 
-    def _draw_nx_big_nodes(self, ax, pos, nodes, node_color, node_size, font_size_scale,
-                           longest_nodes_sequence_size):
+    def _draw_nx_big_nodes(self, ax, pos, nodes, node_color, node_size, font_size_scale, with_node_names):
         # Draw the graph's nodes.
         nx.draw_networkx_nodes(self.nx_graph, pos, node_size=node_size, ax=ax, node_color='w', linewidths=3,
                                edgecolors=node_color)
+        if not with_node_names:
+            return
         # Draw the graph's node labels.
         node_labels = {node_id: str(node) for node_id, node in nodes.items()}
-        font_size = GraphVisualizer._get_scaled_font_size(longest_nodes_sequence_size, font_size_scale)
+        font_size = GraphVisualizer._get_scaled_font_size(len(nodes), font_size_scale)
         for node, (x, y) in pos.items():
             text = '\n'.join(wrap(node_labels[node].replace('_', ' ').replace('-', ' '), 10))
             ax.text(x, y, text,
@@ -280,7 +298,7 @@ class GraphVisualizer:
                     fontsize=font_size,
                     bbox=dict(alpha=0.9, color='w', boxstyle='round'))
 
-    def _draw_nx_small_nodes(self, ax, pos, nodes, node_color, node_size, font_size_scale):
+    def _draw_nx_small_nodes(self, ax, pos, nodes, node_color, node_size, font_size_scale, with_node_names):
         nx_graph = self.nx_graph
         markers = 'os^>v<dph8'
         label_markers = {}
@@ -306,7 +324,13 @@ class GraphVisualizer:
                 continue
             ax.plot([], [], marker=marker, linestyle='None', color=color, label=label)
             labels_added.add(label)
-        ax.legend(prop={'size': round(20 * font_size_scale)})
+        if not with_node_names:
+            return
+        # @morrisnein took the following code from https://stackoverflow.com/a/27512450
+        handles, labels = ax.get_legend_handles_labels()
+        # Sort both labels and handles by labels
+        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+        ax.legend(handles, labels, prop={'size': round(20 * font_size_scale)})
 
     def _draw_nx_curved_edges(self, ax, pos, node_size, edge_curvature_scale):
         nx_graph = self.nx_graph
@@ -368,25 +392,19 @@ class GraphVisualizer:
         self._rescale_matplotlib_figure(ax)
 
     def _draw_nx_labels(self, ax: plt.Axes, pos: Any,
-                        longest_x_sequence: int, longest_y_sequence: int, font_size_scale: float,
+                        font_size_scale: float,
                         nodes_labels: Dict[int, str], edges_labels: Dict[int, str]):
         """ Set labels with scores to nodes and edges. """
 
-        def calculate_labels_bias(ax: plt.Axes, longest_y_sequence: int):
+        def calculate_labels_bias(ax: plt.Axes, y_span: int):
             y_1, y_2 = ax.get_ylim()
             y_size = y_2 - y_1
-            if longest_y_sequence == 1:
+            if y_span == 1:
                 bias_scale = 0.25  # Fits between the central line and the upper bound.
             else:
-                bias_scale = 1 / longest_y_sequence / 3 * 0.9  # Fits between the narrowest horizontal rows.
+                bias_scale = 1 / y_span / 3 * 0.5  # Fits between the narrowest horizontal rows.
             bias = y_size * bias_scale
             return bias
-
-        def _get_scaled_font_size(nodes_amount: int, size_scale: float) -> float:
-            min_size = 11
-            max_size = 25
-            size = max(max_size * (1 - np.log10(nodes_amount)), min_size)
-            return size * size_scale
 
         def match_labels_with_nx_nodes(nx_graph: nx.DiGraph, labels: Dict[int, str]) -> Dict[str, str]:
             """ Matches index of node in GOLEM graph with networkx node name. """
@@ -454,8 +472,9 @@ class GraphVisualizer:
         if not (edges_labels or nodes_labels):
             return
 
-        bias = calculate_labels_bias(ax, longest_y_sequence)
-        font_size = _get_scaled_font_size(longest_x_sequence, font_size_scale * 0.7)
+        x_span, y_span = GraphVisualizer._get_x_y_span(pos)
+        bias = calculate_labels_bias(ax, y_span)
+        font_size = GraphVisualizer._get_scaled_font_size(max(x_span, y_span), font_size_scale * 0.25)
 
         if nodes_labels:
             draw_node_labels(nodes_labels, ax, bias, font_size, self.nx_graph, pos)
@@ -464,7 +483,8 @@ class GraphVisualizer:
             draw_edge_labels(edges_labels, ax, bias, font_size, self.nx_graph, pos)
 
     @staticmethod
-    def _get_hierarchy_pos(nx_graph: nx.DiGraph, nodes: Dict) -> Tuple[Dict[Any, Tuple[float, float]], int, int]:
+    def _get_hierarchy_pos_by_distance_to_primary_level(nx_graph: nx.DiGraph, nodes: Dict
+                                                        ) -> Dict[Any, Tuple[float, float]]:
         """By default, returns 'networkx.multipartite_layout' positions based on 'hierarchy_level`
         from node data - the property must be set beforehand.
         :param graph: the graph.
@@ -472,20 +492,22 @@ class GraphVisualizer:
         for node_id, node_data in nx_graph.nodes(data=True):
             node_data['hierarchy_level'] = distance_to_primary_level(nodes[node_id])
 
-        longest_path = nx.dag_longest_path(nx_graph, weight=None)
-        longest_x_sequence = len(longest_path)
+        return nx.multipartite_layout(nx_graph, subset_key='hierarchy_level')
 
-        pos = nx.multipartite_layout(nx_graph, subset_key='hierarchy_level')
+    @staticmethod
+    def _get_x_y_span(pos: Dict[Any, Tuple[float, float]]) -> Tuple[int, int]:
+        pos_x, pos_y = np.split(np.array(tuple(pos.values())), 2, axis=1)
+        x_span = max(pos_x) - min(pos_x)
+        y_span = max(pos_y) - min(pos_y)
+        return x_span, y_span
 
-        y_level_nodes_count = {}
-        longest_y_sequence = 1
-        for x, _ in pos.values():
-            y_level_nodes_count[x] = y_level_nodes_count.get(x, 0) + 1
-            nodes_on_level = y_level_nodes_count[x]
-            if nodes_on_level > longest_y_sequence:
-                longest_y_sequence = nodes_on_level
-
-        return pos, longest_x_sequence, longest_y_sequence
+    @staticmethod
+    def _define_node_names_placement(node_size):
+        if node_size >= 1000:
+            node_names_placement = 'nodes'
+        else:
+            node_names_placement = 'legend'
+        return node_names_placement
 
 
 def remove_old_files_from_dir(dir_: Path, time_interval=datetime.timedelta(minutes=10)):
