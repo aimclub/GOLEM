@@ -126,7 +126,7 @@ class AgentTrainer:
         reward_targets = []
         for trajectory in trajectories:
             inds, actions, rewards = unzip(trajectory)
-            _, best_actions, best_rewards = unzip(map(self._apply_best_action, inds))
+            _, best_actions, best_rewards = self._apply_best_action(inds)
             reward_loss = self._compute_reward_loss(rewards, best_rewards)
             reward_losses.append(reward_loss)
             reward_targets.append(np.mean(best_rewards))
@@ -147,17 +147,18 @@ class AgentTrainer:
         means = np.mean(reward_losses)
         return float(means)
 
-    def _apply_best_action(self, ind: Individual) -> TrajectoryStep:
+    def _apply_best_action(self, inds: Sequence[Individual]) -> TrajectoryStep:
         """Returns greedily optimal mutation for given graph and associated reward."""
         candidates = []
-        for mutation_id in self.agent.available_actions:
-            try:
-                values = self._apply_action(mutation_id, ind)
-                candidates.append(values)
-            except Exception as e:
-                self._log.warning(f'Eval error for mutation <{mutation_id}> '
-                                  f'on graph: {ind.graph.descriptive_id}:\n{e}')
-                continue
+        for ind in inds:
+            for mutation_id in self.agent.available_actions:
+                try:
+                    values = self._apply_action(mutation_id, ind)
+                    candidates.append(values)
+                except Exception as e:
+                    self._log.warning(f'Eval error for mutation <{mutation_id}> '
+                                      f'on graph: {ind.graph.descriptive_id}:\n{e}')
+                    continue
         best_step = max(candidates, key=lambda step: step[-1])
         return best_step
 

@@ -22,7 +22,7 @@ class MultiArmedBanditAgent(OperatorAgent):
                  decaying_factor: float = 1.0,
                  path_to_save: Optional[str] = None,
                  is_initial_fit: bool = True):
-        super().__init__(enable_logging)
+        super().__init__(actions=actions, enable_logging=enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
         self._arm_by_action = dict(zip(actions, self._indices))

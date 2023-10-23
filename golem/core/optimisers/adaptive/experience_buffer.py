@@ -1,4 +1,5 @@
-from typing import List, Iterable, Tuple
+from collections import deque
+from typing import List, Iterable, Tuple, Optional
 
 import numpy as np
 
@@ -11,23 +12,34 @@ class ExperienceBuffer:
     """Buffer for learning experience of ``OperatorAgent``.
     Keeps (State, Action, Reward) lists until retrieval."""
 
+    def __init__(self, window_size: Optional[int] = None, inds=None, actions=None, rewards=None):
+        self.window_size = window_size
+        self.reset()
+        self._reset_main_storages(inds, actions, rewards)
+
     @staticmethod
     def from_history(history: OptHistory) -> 'ExperienceBuffer':
         exp = ExperienceBuffer()
         exp.collect_history(history)
         return exp
 
-    def __init__(self, inds=None, actions=None, rewards=None):
-        self.reset(inds, actions, rewards)
-
-    def reset(self, inds=None, actions=None, rewards=None):
-        if inds and not (len(inds) == len(actions) == len(rewards)):
-            raise ValueError('lengths of buffers do not mathch')
-        self._individuals = inds or []
-        self._actions = actions or []
-        self._rewards = rewards or []
+    def reset(self):
+        self._current_individuals = []
+        self._current_actions = []
+        self._current_rewards = []
         self._prev_pop = set()
         self._next_pop = set()
+
+        # if window size was not specified than there is no need to store these values for reuse
+        if self.window_size is None:
+            self._reset_main_storages()
+
+    def _reset_main_storages(self, inds=None, actions=None, rewards=None):
+        if inds and not (len(inds) == len(actions) == len(rewards)):
+            raise ValueError('lengths of buffers do not mathch')
+        self._individuals = deque(inds) if inds else deque(maxlen=self.window_size)
+        self._actions = deque(actions) if actions else deque(maxlen=self.window_size)
+        self._rewards = deque(rewards) if rewards else deque(maxlen=self.window_size)
 
     @staticmethod
     def unroll_action_step(result: Individual) -> TrajectoryStep:
@@ -37,7 +49,8 @@ class ExperienceBuffer:
         source_ind = result.parent_operator.parent_individuals[0]
         action = result.parent_operator.operators[0]
         # we're minimising the fitness, that's why less is better
-        reward = source_ind.fitness.value - result.fitness.value if source_ind.fitness else 0.
+        reward = (source_ind.fitness.value - result.fitness.value) / source_ind.fitness.value\
+            if source_ind.fitness and source_ind.fitness.value != 0. else 0.
         return source_ind, action, reward
 
     @staticmethod
@@ -59,12 +72,6 @@ class ExperienceBuffer:
             trajectories.append(trajectory)
         return trajectories
 
-    def __len__(self):
-        return len(self._individuals)
-
-    def __str__(self):
-        return f'{self.__class__.__name__}({len(self)})'
-
     def collect_history(self, history: OptHistory):
         seen = set()
         # We don't need the initial assumptions, as they have no parent operators, hence [1:]
@@ -77,6 +84,9 @@ class ExperienceBuffer:
     def collect_results(self, results: Iterable[Individual]):
         for ind in results:
             self.collect_result(ind)
+        self._individuals += self._current_individuals
+        self._actions += self._current_actions
+        self._rewards += self._current_rewards
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
@@ -128,3 +138,9 @@ class ExperienceBuffer:
                                       actions=np.array(self._actions)[~mask_train].tolist(),
                                       rewards=np.array(self._rewards)[~mask_train].tolist())
         return buffer_train, buffer_val
+
+    def __len__(self):
+        return len(self._individuals)
+
+    def __str__(self):
+        return f'{self.__class__.__name__}({len(self)})'
