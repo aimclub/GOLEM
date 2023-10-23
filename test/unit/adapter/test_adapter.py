@@ -34,7 +34,8 @@ def test_adapters_params_correct(adapter, graph_with_params):
     if isinstance(graph, Graph):
         restored_alpha = restored_graph.root_node.content['params']['alpha']
     else:
-        restored_alpha = restored_graph.nodes['c']['alpha']
+        root_node = [node for node in restored_graph.nodes() if restored_graph.out_degree(node) == 0][0]
+        restored_alpha = restored_graph.nodes[root_node]['alpha']
     assert np.isclose(init_alpha, restored_alpha)
 
 
