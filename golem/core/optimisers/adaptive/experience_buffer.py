@@ -116,9 +116,9 @@ class ExperienceBuffer:
     def split(self, ratio: float = 0.8, shuffle: bool = False
               ) -> Tuple['ExperienceBuffer', 'ExperienceBuffer']:
         """Splits buffer in 2 parts, useful for train/validation split."""
-        mask_train = np.full_like(self._individuals, True, dtype=bool)
+        mask_train = np.full_like(self._individuals, False, dtype=bool)
         num_train = int(len(self._individuals) * ratio)
-        mask_train[-num_train:] = False
+        mask_train[-num_train:] = True
         if shuffle:
             np.random.default_rng().shuffle(mask_train)
         buffer_train = ExperienceBuffer(inds=np.array(self._individuals)[mask_train].tolist(),

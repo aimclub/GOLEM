@@ -27,6 +27,7 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.core.paths import project_root
 from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnessLines
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
@@ -131,7 +132,7 @@ def visualize_results(molecules: Iterable[MolGraph],
         image.show()
 
 
-def pretrain_agent(optimizer, objective, results_dir='./results') -> AgentTrainer:
+def pretrain_agent(optimizer: EvoGraphOptimizer, objective: Objective, results_dir: str) -> AgentTrainer:
     agent = optimizer.mutation.agent
     trainer = AgentTrainer(objective, optimizer.mutation, agent)
     # load histories
@@ -157,12 +158,12 @@ def run_experiment(optimizer_setup: Callable,
                    save_history: bool = True,
                    pretrain_dir: Optional[str] = None,
                    ):
+    metrics = metrics or ['qed_score']
     optimizer_id = optimizer_cls.__name__.lower()[:3]
     experiment_id = f'Experiment [optimizer={optimizer_id} metrics={", ".join(metrics)} pop_size={pop_size}]'
     exp_name = f'{optimizer_id}_{adaptive_kind.value}_popsize{pop_size}_min{trial_timeout}_{"_".join(metrics)}'
 
     atom_types = atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br']
-    metrics = metrics or ['qed_score']
     trial_results = []
     trial_histories = []
     trial_timedelta = timedelta(minutes=trial_timeout) if trial_timeout else None
@@ -228,7 +229,7 @@ if __name__ == '__main__':
                    max_heavy_atoms=38,
                    trial_timeout=6,
                    pop_size=50,
-                   metrics=['qed_score', 'cl_score'],
                    visualize=True,
                    num_trials=5,
+                   pretrain_dir=os.path.join(project_root(), 'examples', 'molecule_search', 'histories')
                    )
