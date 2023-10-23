@@ -1,3 +1,14 @@
+ctions import deque
+from functools import partial
+from itertools import cycle, chain
+from typing import Callable, Dict, Union, List, Optional
+from multiprocessing import Queue, Manager
+import queue
+from copy import copy, deepcopy
+
+import numpy as np
+from joblib import Parallel, delayed
+from joblib.externals.loky import get_reusable_executor
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
 from golem.core.dag.graph_verifier import GraphVerifier
@@ -35,6 +46,9 @@ class ReproductionController:
         self.selection = selection
         self.mutation = mutation
         self.crossover = crossover
+        self.verifier = verifier
+
+        self._pop_graph_descriptive_ids = set()
         self._minimum_valid_ratio = parameters.required_valid_ratio * 0.5
 
         self._log = default_log(self)
@@ -53,68 +67,95 @@ class ReproductionController:
         target_pop_size = self.parameters.pop_size
         max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
         max_attempts_count = self.parameters.max_num_of_operator_attempts
-        mutation_fun = partial(self._mutation_n_evaluation, evaluator=evaluator)
+        multiplier = target_pop_size / len(population)
         population_descriptive_ids_mapping = {ind.graph.descriptive_id: ind for ind in population}
+        finished_initial_individuals = {descriptive_id: False for descriptive_id in population_descriptive_ids_mapping}
 
         # mutations counters
-        mutation_types = self.parameters.mutation_types
+        mutation_types = self.mutation._operator_agent.actions
         mutation_count_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
                                        for descriptive_id in population_descriptive_ids_mapping}
         all_mutations_count_for_each_ind = {descriptive_id: 0 for descriptive_id in population_descriptive_ids_mapping}
         mutation_tries_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
                                        for descriptive_id in population_descriptive_ids_mapping}
 
-        # prepare one mutation for each individual in population
-        mutation_queue = Manager().Queue()
-        for descriptive_id, individual in zip(population_descriptive_ids_mapping, population):
-            # mutation_type is None, let Mutation() choose
-            mutation_queue.put((descriptive_id, individual, None))
+        # increase probability of mutation
+        initial_parameters = deepcopy(self.parameters)
+        initial_parameters.mutation_prob = 1.0
+        self.mutation.update_requirements(parameters=initial_parameters)
 
-        # run cycle with evaluation in parallel
-        # made with joblib.Parallel due to
-        #     it is simple
-        #     it is reliable (joblib/loky solves some problems with multiprocessing)
-        #     joblib is in requirements
-        new_population = list()
-        with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
-            ind_generator = parallel(delayed(mutation_fun)(mutation_queue) for _ in range(max_tries * 2))
-            for try_num, (parent_descriptive_id, mutation_type, new_ind) in enumerate(ind_generator):
-                if parent_descriptive_id is None:
-                    continue
-                mutation_tries_for_each_ind[parent_descriptive_id][mutation_type] += 1
-                if new_ind:
+        executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
+
+        def try_mutation(descriptive_id: str, individual: Individual, mutation_type: Optional[MutationType] = None):
+            return executor.submit(self._mutation_n_evaluation, descriptive_id, individual, mutation_type, evaluator)
+
+        def add_new_individual_to_new_population(new_individual):
+            mutation_tries_for_each_ind[parent_descriptive_id][mutation_type] += 1
+            if new_individual:
+                descriptive_id = new_individual.graph.descriptive_id
+                if descriptive_id not in self._pop_graph_descriptive_ids:
                     mutation_count_for_each_ind[parent_descriptive_id][mutation_type] += 1
                     all_mutations_count_for_each_ind[parent_descriptive_id] += 1
+                    new_population.append(new_individual)
+                    self._pop_graph_descriptive_ids.add(descriptive_id)
 
-                    descriptive_id = new_ind.graph.descriptive_id
-                    if descriptive_id not in self._pop_graph_descriptive_ids:
-                        # add ind to new population
-                        new_population.append(new_ind)
-                        self._pop_graph_descriptive_ids.add(descriptive_id)
-                        if len(new_population) >= target_pop_size:
-                            break
-
-                        # filter mutations for individual, rely on probabilities
+        def get_next_parent_descriptive_id_with_allowed_operations():
+            for parent_descriptive_id, is_finished in finished_initial_individuals.items():
+                if not is_finished:
+                    if all_mutations_count_for_each_ind[parent_descriptive_id] == 0:
+                        # if there are no mutations then make any mutation
+                        allowed_mutation_types = mutation_types
+                    else:
+                        # filter mutations for individual, rely on probabilities and mutation_count
                         # place for error if mutation_types order in _operator_agent and in mutation_types is differ
                         allowed_mutation_types = []
                         mutation_probabilities = self.mutation._operator_agent.get_action_probs()
-                        for mutation_type, mutation_probability in zip(mutation_types, mutation_probabilities):
-                            real_prob = (mutation_count_for_each_ind[parent_descriptive_id][mutation_type] /
-                                         all_mutations_count_for_each_ind[parent_descriptive_id])
-                            if real_prob < mutation_probability:
-                                allowed_mutation_types.append(mutation_type)
+                        allowed_mutations_count = [max(1, round(multiplier * x)) for x in mutation_probabilities]
+                        for mutation_type, mutation_probability, allowed_count in zip(mutation_types,
+                                                                                      mutation_probabilities,
+                                                                                      allowed_mutations_count):
+                            if allowed_count > mutation_count_for_each_ind[parent_descriptive_id][mutation_type]:
+                                real_prob = (mutation_count_for_each_ind[parent_descriptive_id][mutation_type] /
+                                             all_mutations_count_for_each_ind[parent_descriptive_id])
+                                if real_prob < mutation_probability:
+                                    allowed_mutation_types.append(mutation_type)
+                    if not allowed_mutation_types:
+                        finished_initial_individuals[parent_descriptive_id] = True
+                    return parent_descriptive_id, allowed_mutation_types
+            return None, None
 
-                        if allowed_mutation_types:
-                            # choose next mutation with lowest tries count
-                            next_mutation_type = min(allowed_mutation_types,
-                                                     key=lambda mutation_type:
-                                                     mutation_tries_for_each_ind[parent_descriptive_id][mutation_type])
+        # set up len(mutation_types) // 2 evaluations for each ind
+        results = deque(try_mutation(*args)
+                        for args in list(population_descriptive_ids_mapping.items()) * int(len(mutation_types) // 2))
+        new_population = list()
+        print(f"{len(results)}")
+        for _ in range(max_tries - len(results)):
+            if len(new_population) >= target_pop_size or (not results):
+                break
 
-                            mutation_queue.put((parent_descriptive_id,
-                                                population_descriptive_ids_mapping[parent_descriptive_id],
-                                                next_mutation_type))
-                if try_num >= max_tries:
-                    break
+            parent_descriptive_id, mutation_type, new_ind = results.popleft().result()
+            add_new_individual_to_new_population(new_ind)
+
+            parent_descriptive_id, allowed_mutation_types = get_next_parent_descriptive_id_with_allowed_operations()
+            if allowed_mutation_types:
+                # choose next mutation with lowest tries count and run it
+                next_mutation_type = min(allowed_mutation_types,
+                                         key=lambda mutation_type:
+                                         mutation_tries_for_each_ind[parent_descriptive_id][mutation_type])
+                new_res = try_mutation(parent_descriptive_id,
+                                       population_descriptive_ids_mapping[parent_descriptive_id],
+                                       next_mutation_type)
+                results.append(new_res)
+            print(f"{len(results)}: {sum(future._state == 'FINISHED' for future in results)}")
+
+        # if there are any feature then process it and add new_ind to new_population if it is ready
+        for future in results:
+            if future._state == 'FINISHED':
+                add_new_individual_to_new_population(future.result()[-1])
+        executor.shutdown(wait=False)
+
+        # Reset mutation probabilities to default
+        self.mutation.update_requirements(requirements=self.parameters)
 
         self._check_final_population(new_population)
         return new_population
@@ -134,14 +175,10 @@ class ReproductionController:
                               f' required {target_pop_size}!\n' + helpful_msg)
 
     def _mutation_n_evaluation(self,
-                               mutation_queue: Queue,
+                               descriptive_id: str,
+                               individual: Individual,
+                               mutation_type: Optional[MutationType],
                                evaluator: EvaluationOperator):
-        try:
-            descriptive_id, individual, mutation_type = mutation_queue.get(timeout=0.1)
-        except queue.Empty:
-            # is there is no task, then return nothing
-            return None, None, None
-
         individual, mutation_type, applied = self.mutation._mutation(individual, mutation_type=mutation_type)
         if applied and individual and self.verifier(individual.graph):
             individuals = evaluator([individual])

@@ -3,7 +3,6 @@ from random import random
 from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
 import numpy as np
-from joblib import Parallel, delayed
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import ContextualMultiArmedBanditAgent
