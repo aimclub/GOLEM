@@ -61,7 +61,7 @@ def test_dispatchers_with_faulty_objectives(objective, dispatcher):
     adapter, population = set_up_tests()
 
     evaluator = dispatcher.dispatch(objective)
-    assert evaluator(population) is None
+    assert evaluator(population) == []
 
 
 @pytest.mark.parametrize('dispatcher', [
