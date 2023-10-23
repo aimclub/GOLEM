@@ -331,12 +331,18 @@ def test_load_zero_generations_history():
 
 
 @pytest.mark.parametrize('generate_history', [[100, 100, create_individual]], indirect=True)
-def test_save_light_history(generate_history):
+def test_save_load_light_history(generate_history):
     history = generate_history
     file_name = 'light_history.json'
     path_to_dir = os.path.join(project_root(), 'test', 'data')
-    history.save(json_file_path=os.path.join(path_to_dir, file_name), is_save_light=True)
+    path_to_history = os.path.join(path_to_dir, file_name)
+    history.save(json_file_path=path_to_history, is_save_light=True)
     assert file_name in os.listdir(path_to_dir)
+    loaded_history = OptHistory().load(path_to_history)
+    assert isinstance(loaded_history, OptHistory)
+    assert len(loaded_history.archive_history) == len(loaded_history.generations) == 100
+    for i, _ in enumerate(loaded_history.generations):
+        assert len(loaded_history.generations[i]) == len(loaded_history.archive_history[i]) == 1
     os.remove(path=os.path.join(path_to_dir, file_name))
 
 

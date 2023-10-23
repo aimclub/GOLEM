@@ -110,6 +110,8 @@ class OptHistory:
         Args:
             json_file_path: path to json file where to save history.
             is_save_light: bool parameter to specify whether there is a need to save full history or a light version.
+            NB! For experiments and etc. full histories must be saved. However, to make the analysis of results faster
+            (show fitness plots, for example) the light version of histories can be saved too.
         """
         history_to_save = lighten_history(self) if is_save_light else self
         return default_save(obj=history_to_save, json_file_path=json_file_path)
