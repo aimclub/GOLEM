@@ -68,7 +68,9 @@ class ReproductionController:
         return new_population
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
+        # TODO n_jobs may be -1, should be fixed
         n_jobs = self.mutation.requirements.n_jobs
+        n_jobs = 8
         target_pop_size = self.parameters.pop_size
         population_descriptive_ids_mapping = {ind.graph.descriptive_id: ind for ind in population}
         mutation_types = self.mutation._operator_agent.actions
@@ -139,12 +141,19 @@ class ReproductionController:
         # stage 2
         delayed_mutations = deque()
         individual_id_with_lowest_mutations, rarest_mutation_type = None, None
+        times = []
         while futures:
             if len(new_population) == target_pop_size or left_tries[0] <= 0:
                 break
 
+            # get next finished future
+            for _ in range(int(len(futures) * 3)):
+                future = futures.popleft()
+                if future._state == 'FINISHED': break
+                futures.append(future)
+
             # add new individual to new population
-            parent_descriptive_id, mutation_type, new_ind = futures.popleft().result()
+            parent_descriptive_id, mutation_type, new_ind = future.result()
             added = add_new_individual_to_new_population(parent_descriptive_id, mutation_type, new_ind)
 
             # define rarest ind and mutation
