@@ -1,6 +1,8 @@
-ctions import deque
+from collections import deque
+from concurrent.futures import as_completed
 from functools import partial
 from itertools import cycle, chain
+from math import ceil
 from typing import Callable, Dict, Union, List, Optional
 from multiprocessing import Queue, Manager
 import queue
@@ -60,36 +62,65 @@ class ReproductionController:
         """
         selected_individuals = self.selection(population, self.parameters.pop_size)
         new_population = self.crossover(selected_individuals)
-        new_population = self._mutate_over_population(new_population, evaluator)
-        return new_population
-
-    def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        target_pop_size = self.parameters.pop_size
-        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
-        multiplier = target_pop_size / len(population)
-        population_descriptive_ids_mapping = {ind.graph.descriptive_id: ind for ind in population}
-
-        # mutations counters
-        mutation_types = self.mutation._operator_agent.actions
-        mutation_count_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
-                                       for descriptive_id in population_descriptive_ids_mapping}
-        all_mutations_count_for_each_ind = {descriptive_id: 0 for descriptive_id in population_descriptive_ids_mapping}
-        mutation_tries_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
-                                       for descriptive_id in population_descriptive_ids_mapping}
-        individuals_order = cycle(mutation_count_for_each_ind)
-        mutations_order = cycle(mutation_types)
 
         # increase probability of mutation
         initial_parameters = deepcopy(self.parameters)
         initial_parameters.mutation_prob = 1.0
         self.mutation.update_requirements(parameters=initial_parameters)
 
-        executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
+        # create new populatin with mutations
+        new_population = self._mutate_over_population(new_population, evaluator)
 
-        def try_mutation(descriptive_id: str, individual: Individual, mutation_type: Optional[MutationType] = None):
-            return executor.submit(self._mutation_n_evaluation, descriptive_id, individual, mutation_type, evaluator)
+        # Reset mutation probabilities to default
+        self.mutation.update_requirements(requirements=self.parameters)
 
-        def add_new_individual_to_new_population(new_individual):
+        return new_population
+
+    def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
+        # some params
+        n_jobs = self.mutation.requirements.n_jobs
+        tasks_queue_length = n_jobs + 1
+        target_pop_size = self.parameters.pop_size
+        multiplier = target_pop_size / len(population)
+        population_descriptive_ids_mapping = {ind.graph.descriptive_id: ind for ind in population}
+        mutation_types = self.mutation._operator_agent.actions
+
+        # counters and limits
+        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+        tries = [0, max_tries]  # [current count, max count]
+        max_tries_for_each_mutation = 2 * ceil(max_tries / target_pop_size / len(mutation_types))
+        mutation_count_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
+                                       for descriptive_id in population_descriptive_ids_mapping}
+        all_mutations_count_for_each_ind = {descriptive_id: 0 for descriptive_id in population_descriptive_ids_mapping}
+        mutation_tries_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
+                                       for descriptive_id in population_descriptive_ids_mapping}
+        guessed_mutation_count = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
+                                  for descriptive_id in population_descriptive_ids_mapping}
+
+        # queues
+        descriptive_id_queue = cycle(mutation_count_for_each_ind)
+        mutation_type_queue = cycle(mutation_types)
+        forbidden_mutations = {descriptive_id: set() for descriptive_id in population_descriptive_ids_mapping}
+
+        def iterate_over_descriptive_ids(count: int = len(population_descriptive_ids_mapping)):
+            for _ in range(count):
+                yield next(descriptive_id_queue)
+
+        def iterate_over_mutations(descriptive_id: str, count: int = len(mutation_types)):
+            for _ in range(count):
+                mutation_type = next(mutation_type_queue)
+                if mutation_type not in forbidden_mutations[descriptive_id]:
+                    yield mutation_type
+
+        # additional functions
+        def try_mutation(descriptive_id: str, mutation_type: Optional[MutationType] = None):
+            tries[0] += 1
+            mutation_tries_for_each_ind[descriptive_id][mutation_type] += 1
+            return executor.submit(self._mutation_n_evaluation, descriptive_id,
+                                   population_descriptive_ids_mapping[descriptive_id],
+                                   mutation_type, evaluator)
+
+        def add_new_individual_to_new_population(parent_descriptive_id, mutation_type, new_individual):
             if new_individual:
                 descriptive_id = new_individual.graph.descriptive_id
                 if descriptive_id not in self._pop_graph_descriptive_ids:
@@ -97,6 +128,63 @@ class ReproductionController:
                     all_mutations_count_for_each_ind[parent_descriptive_id] += 1
                     new_population.append(new_individual)
                     self._pop_graph_descriptive_ids.add(descriptive_id)
+                    if len(new_population) == target_pop_size:
+                        return True
+            return False
+
+        # start reproducing
+        new_population = []
+        executor = get_reusable_executor(max_workers=n_jobs)
+
+        # stage 1
+        # set up each type of mutation for each individual
+        futures = deque
+        for descriptive_id in np.random.permutation(list(population_descriptive_ids_mapping)):
+            for mutation_type in np.random.permutation(mutation_types):
+                futures.append(try_mutation(descriptive_id, mutation_type))
+        # get some results from parallel computation for reducing calculation queue
+        for future in as_completed(futures):
+            population_is_prepared = add_new_individual_to_new_population(*future.result())
+            if population_is_prepared: return new_population
+            if len(futures) <= tasks_queue_length: break
+
+
+        # stage 2
+        # set up mutations until of all them will be applied once
+        # if mutation does not work for some times, then do not use it
+
+        while True:
+            # get next finished future
+            for _ in range(len(futures)):
+                future = futures.popleft()
+                if future._state == 'FINISHED': break
+                futures.append(future)
+
+            # add new individual to new population
+            parent_descriptive_id, mutation_type, new_ind = future.result()
+            population_is_prepared = add_new_individual_to_new_population(parent_descriptive_id, mutation_type, new_ind)
+            if population_is_prepared: return new_population
+            # if there are a lot of tasks go to next task
+            if len(futures) > tasks_queue_length: continue
+
+            # create new futures with mutation if mutation is not applied yet and not forbidden
+            for descriptive_id in iterate_over_descriptive_ids():
+                for mutation_type in iterate_over_mutations(descriptive_id):
+                    if mutation_tries_for_each_ind[descriptive_id][mutation_type] < max_tries_for_each_mutation:
+                        if mutation_count_for_each_ind[descriptive_id][mutation_type] == 0:
+                            new_future = try_mutation(descriptive_id, mutation_type)
+                            futures.append(new_future)
+                    else:
+                        # forbidd mutation if it not works
+                        forbidden_mutations[descriptive_id].add(mutation_type)
+
+        print(1)
+        # check that forbidden_mutations works
+        # check that as_completed(futures) works with list
+
+
+
+
 
         def get_next_parent_descriptive_id_with_next_mutation():
             min_mutation_count = min(all_mutations_count_for_each_ind.values())
@@ -160,9 +248,6 @@ class ReproductionController:
             if future._state == 'FINISHED':
                 add_new_individual_to_new_population(future.result()[-1])
         executor.shutdown(wait=False)
-
-        # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=self.parameters)
 
         self._check_final_population(new_population)
         return new_population
