@@ -68,15 +68,15 @@ class ReproductionController:
         return new_population
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        # some params
         n_jobs = self.mutation.requirements.n_jobs
         target_pop_size = self.parameters.pop_size
         population_descriptive_ids_mapping = {ind.graph.descriptive_id: ind for ind in population}
         mutation_types = self.mutation._operator_agent.actions
         left_tries = [target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER]
-        mutations_per_individual = left_tries[0] / len(population)
+        mutations_per_individual = ceil(target_pop_size / len(population))
         all_mutations_count_for_each_ind = {descriptive_id: 0
                                             for descriptive_id in population_descriptive_ids_mapping}
+        mutations_count = {mutation_type: 0 for mutation_type in mutation_types}
         mutation_count_for_each_ind = {descriptive_id: {mutation_type: 0 for mutation_type in mutation_types}
                                        for descriptive_id in population_descriptive_ids_mapping}
 
@@ -84,7 +84,6 @@ class ReproductionController:
         initial_parameters = deepcopy(self.parameters)
         initial_parameters.mutation_prob = 1.0
         self.mutation.update_requirements(parameters=initial_parameters)
-
 
         # additional functions
         def try_mutation(descriptive_id: str, mutation_type: Optional[MutationType] = None):
@@ -98,13 +97,17 @@ class ReproductionController:
                                    count: int = 1):
             # probs should be the same order as mutation_types
             probs = dict(zip(mutation_types, self.mutation._operator_agent.get_action_probs()))
+            real_probs = {mutation_type: mutation_count_for_each_ind[parent_descriptive_id][mutation_type] /
+                          max(1, all_mutations_count_for_each_ind[parent_descriptive_id])
+                          for mutation_type in mutation_types}
             # check probability allows to make mutations
-            if (probs[mutation_type] > (mutation_count_for_each_ind[parent_descriptive_id][mutation_type] /
-                                        all_mutations_count_for_each_ind[parent_descriptive_id])):
+            if (all_mutations_count_for_each_ind[parent_descriptive_id] == 0 or
+                probs[mutation_type] > real_probs[mutation_type] or
+                len(set(real_probs.values())) == 1):
                 # check that there is not enough mutations
                 if all_mutations_count_for_each_ind[parent_descriptive_id] < mutations_per_individual:
                     for _ in range(count):
-                        try_mutation(parent_descriptive_id, mutation_type)
+                        futures.append(try_mutation(parent_descriptive_id, mutation_type))
                     return True
             return False
 
@@ -116,6 +119,8 @@ class ReproductionController:
                 if descriptive_id not in self._pop_graph_descriptive_ids:
                     mutation_count_for_each_ind[parent_descriptive_id][mutation_type] += 1
                     all_mutations_count_for_each_ind[parent_descriptive_id] += 1
+                    mutations_count[mutation_type] += 1
+
                     new_population.append(new_individual)
                     self._pop_graph_descriptive_ids.add(descriptive_id)
                     return True
@@ -133,34 +138,45 @@ class ReproductionController:
 
         # stage 2
         delayed_mutations = deque()
-        excessive_mutation_count = 0
-        optimal_future_length = n_jobs + 4
+        individual_id_with_lowest_mutations, rarest_mutation_type = None, None
         while futures:
-            if len(new_population) == target_pop_size or left_tries[0] == 0:
+            if len(new_population) == target_pop_size or left_tries[0] <= 0:
                 break
 
             # add new individual to new population
             parent_descriptive_id, mutation_type, new_ind = futures.popleft().result()
             added = add_new_individual_to_new_population(parent_descriptive_id, mutation_type, new_ind)
 
-            # skip new mutation
-            if added and excessive_mutation_count > 0 and len(futures) >= optimal_future_length:
-                excessive_mutation_count -= 1
-                continue
+            # define rarest ind and mutation
+            if added:
+                key_fun = lambda x: x[1]
+                frequent_mutation_type = max(mutations_count.items(), key=key_fun)[0]
+                rarest_mutation_type = min(mutations_count.items(), key=key_fun)[0]
+                individual_id_with_lowest_mutations = min(all_mutations_count_for_each_ind.items(), key=key_fun)[0]
 
             # create new future with same mutation and same individual
-            count = min(2, max(1, optimal_future_length - len(futures)))
+            count = (1 +
+                     (individual_id_with_lowest_mutations == parent_descriptive_id) +
+                     (rarest_mutation_type == mutation_type))
             applied = check_and_try_mutation(parent_descriptive_id, mutation_type, count)
-            if not applied or len(futures) < optimal_future_length:
-                if len(futures) < optimal_future_length:
-                    print(1)
+
+
+
+            # if there is no need in parent_descriptive_id & mutation_type mutation
+            # then try to find new mutation
+            if not applied:
                 delayed_mutations.append((parent_descriptive_id, mutation_type))
                 for _ in range(len(delayed_mutations) - 1):
                     parent_descriptive_id, mutation_type = delayed_mutations.popleft()
-                    applied = check_and_try_mutation(parent_descriptive_id, mutation_type, count)
-                    if applied: break
+                    if ((individual_id_with_lowest_mutations == parent_descriptive_id or
+                        mutation_type == rarest_mutation_type) and
+                        mutation_type != frequent_mutation_type):
+                        futures.append(try_mutation(parent_descriptive_id, mutation_type))
+                        break
+                    else:
+                        applied = check_and_try_mutation(parent_descriptive_id, mutation_type)
+                        if applied: break
                     delayed_mutations.append((parent_descriptive_id, mutation_type))
-            excessive_mutation_count += count - 1 if applied else 0
 
         # if there are any feature then process it and add new_ind to new_population if it is ready
         for future in futures:
