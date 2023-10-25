@@ -4,14 +4,16 @@ import pytest
 from hyperopt import hp
 
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.tuning.iopt_tuner import IOptTuner
 from golem.core.tuning.optuna_tuner import OptunaTuner
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultaneous import SimultaneousTuner
-from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
-    opt_graph_with_params, MockNode, MockDomainStructure
-from test.unit.utils import ParamsSumMetric, ParamsProductMetric
+from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate, \
+    mock_graph_with_params, opt_graph_with_params
+from test.unit.optimizers.test_composing_history import test_individuals_in_history
+from test.unit.utils import ParamsProductMetric, ParamsSumMetric
 
 
 def not_tunable_mock_graph():
@@ -128,3 +130,18 @@ def test_multi_objective_tuning(search_space, tuner_cls, init_graph, adapter, ob
         final_metric = obj_eval.evaluate(graph)
         assert final_metric is not None
         assert not init_metric.dominates(final_metric)
+
+
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
+@pytest.mark.parametrize('graph, adapter, obj_eval',
+                         [(mock_graph_with_params(), MockAdapter(),
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))),
+                          (opt_graph_with_params(), None,
+                           ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value})))])
+def test_tuning_supports_history(search_space, tuner_cls, graph, adapter, obj_eval):
+    history = OptHistory()
+    iterations = 10
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=iterations, history=history)
+    tuner.tune(deepcopy(graph))
+    assert history.tuning_result is not None
+    test_individuals_in_history(history)
