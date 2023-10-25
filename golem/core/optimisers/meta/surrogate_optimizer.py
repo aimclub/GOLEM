@@ -51,7 +51,7 @@ class SurrogateEachNgenOptimizer(EvoGraphOptimizer):
                         new_population = self._evolve_population(evaluator)
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
-                    return [ind.graph for ind in self.best_individuals]
+                    break
                 # Adding of new population to history
                 self._update_population(new_population)
         self._update_population(self.best_individuals, 'final_choices')
