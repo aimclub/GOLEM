@@ -178,6 +178,6 @@ class SimultaneousTuner(HyperoptTuner):
         # Set hyperparameters for every node
         graph = self.set_arg_graph(graph, parameters_dict)
 
-        metric_value = self.get_metric_value(graph=graph)
+        metric_value = self.evaluate_graph(graph=graph)
 
         return metric_value
