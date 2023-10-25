@@ -22,12 +22,12 @@ class MultiArmedBanditAgent(OperatorAgent):
                  decaying_factor: float = 1.0,
                  path_to_save: Optional[str] = None,
                  is_initial_fit: bool = True):
-        super().__init__(enable_logging)
+        super().__init__(actions=actions, enable_logging=enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
         self._arm_by_action = dict(zip(actions, self._indices))
         self._agent = MAB(arms=self._indices,
-                          learning_policy=LearningPolicy.UCB1(alpha=1.25),
+                          learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.4),
                           n_jobs=n_jobs)
         self._reward_agent = FitnessRateRankRewardTransformer(decaying_factor=decaying_factor)
         if is_initial_fit:

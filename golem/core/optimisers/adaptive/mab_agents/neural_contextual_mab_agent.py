@@ -3,7 +3,7 @@ from typing import Sequence, List
 from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import ContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.neural_mab import NeuralMAB
 from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
-from golem.core.optimisers.adaptive.operator_agent import ActType
+from golem.core.optimisers.adaptive.common_types import ActType
 
 
 class NeuralContextualMultiArmedBanditAgent(ContextualMultiArmedBanditAgent):

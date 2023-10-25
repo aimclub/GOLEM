@@ -16,6 +16,8 @@ from examples.molecule_search.mol_metrics import normalized_sa_score, penalised_
     normalized_logp, CLScorer
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
     has_no_isolated_nodes
+from golem.core.optimisers.adaptive.agent_trainer import AgentTrainer
+from golem.core.optimisers.adaptive.history_collector import HistoryReader
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -25,6 +27,7 @@ from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTyp
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.core.paths import project_root
 from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnessLines
 from golem.visualisation.opt_viz_extra import visualise_pareto
 
@@ -129,6 +132,16 @@ def visualize_results(molecules: Iterable[MolGraph],
         image.show()
 
 
+def pretrain_agent(optimizer: EvoGraphOptimizer, objective: Objective, results_dir: str) -> AgentTrainer:
+    agent = optimizer.mutation.agent
+    trainer = AgentTrainer(objective, optimizer.mutation, agent)
+    # load histories
+    history_reader = HistoryReader(Path(results_dir))
+    # train agent
+    trainer.fit(histories=history_reader.load_histories(), validate_each=1)
+    return trainer
+
+
 def run_experiment(optimizer_setup: Callable,
                    optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
                    adaptive_kind: MutationAgentTypeEnum = MutationAgentTypeEnum.random,
@@ -143,13 +156,14 @@ def run_experiment(optimizer_setup: Callable,
                    trial_iterations: Optional[int] = None,
                    visualize: bool = False,
                    save_history: bool = True,
+                   pretrain_dir: Optional[str] = None,
                    ):
+    metrics = metrics or ['qed_score']
     optimizer_id = optimizer_cls.__name__.lower()[:3]
     experiment_id = f'Experiment [optimizer={optimizer_id} metrics={", ".join(metrics)} pop_size={pop_size}]'
     exp_name = f'{optimizer_id}_{adaptive_kind.value}_popsize{pop_size}_min{trial_timeout}_{"_".join(metrics)}'
 
     atom_types = atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br']
-    metrics = metrics or ['qed_score']
     trial_results = []
     trial_histories = []
     trial_timedelta = timedelta(minutes=trial_timeout) if trial_timeout else None
@@ -165,6 +179,9 @@ def run_experiment(optimizer_setup: Callable,
                                                pop_size,
                                                metrics,
                                                initial_molecules)
+        if pretrain_dir:
+            pretrain_agent(optimizer, objective, pretrain_dir)
+
         found_graphs = optimizer.optimise(objective)
         history = optimizer.history
 
@@ -208,10 +225,11 @@ def plot_experiment_comparison(experiment_ids: Sequence[str], metric_id: int = 0
 
 if __name__ == '__main__':
     run_experiment(molecule_search_setup,
-                   adaptive_kind=MutationAgentTypeEnum.random,
+                   adaptive_kind=MutationAgentTypeEnum.bandit,
                    max_heavy_atoms=38,
-                   trial_timeout=15,
+                   trial_timeout=6,
                    pop_size=50,
-                   metrics=['qed_score', 'cl_score'],
                    visualize=True,
-                   num_trials=5)
+                   num_trials=5,
+                   pretrain_dir=os.path.join(project_root(), 'examples', 'molecule_search', 'histories')
+                   )

@@ -6,14 +6,14 @@ import numpy as np
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import ContextualMultiArmedBanditAgent
-from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.mab_agents.mab_agent import MultiArmedBanditAgent
+from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.operator_agent import \
-    OperatorAgent, RandomAgent, ExperienceBuffer, MutationAgentTypeEnum
+    OperatorAgent, RandomAgent, MutationAgentTypeEnum
+from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
 from golem.core.optimisers.genetic.operators.base_mutations import \
     base_mutations_repo, MutationTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements, OptimizationParameters
@@ -113,7 +113,7 @@ class Mutation(Operator):
                 break
             else:
                 # Collect invalid actions
-                self.agent_experience.collect_experience(individual.graph, mutation_applied, reward=-1.0)
+                self.agent_experience.collect_experience(individual, mutation_applied, reward=-1.0)
         else:
             self.log.debug('Number of mutation attempts exceeded. '
                            'Please check optimization parameters for correctness.')
@@ -127,7 +127,7 @@ class Mutation(Operator):
             num_mut = 1
         return num_mut
 
-    def _apply_mutations(self, new_graph: OptGraph) -> Tuple[OptGraph, Optional[MutationIdType]]:
+    def _apply_mutations(self, new_graph: Graph) -> Tuple[Graph, Optional[MutationIdType]]:
         """Apply mutation 1 or few times iteratively"""
         mutation_type = self._operator_agent.choose_action(new_graph)
         mutation_applied = None
@@ -140,7 +140,7 @@ class Mutation(Operator):
                     break
         return new_graph, mutation_applied
 
-    def _adapt_and_apply_mutation(self, new_graph: OptGraph, mutation_type) -> Tuple[OptGraph, bool]:
+    def _adapt_and_apply_mutation(self, new_graph: Graph, mutation_type) -> Tuple[Graph, bool]:
         applied = self._will_mutation_be_applied(mutation_type)
         if applied:
             # get the mutation function and adapt it

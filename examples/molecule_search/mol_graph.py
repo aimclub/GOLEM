@@ -5,7 +5,7 @@ from PIL import Image
 from rdkit import Chem
 from rdkit.Chem import MolFromSmiles, MolToSmiles, SanitizeMol, Kekulize, MolToInchi
 from rdkit.Chem.Draw import rdMolDraw2D
-from rdkit.Chem.rdchem import Atom, BondType, RWMol, GetPeriodicTable
+from rdkit.Chem.rdchem import Atom, BondType, RWMol, GetPeriodicTable, ChiralType, HybridizationType
 
 
 class MolGraph:
@@ -32,10 +32,10 @@ class MolGraph:
         node_to_idx = {}
         for node in graph.nodes():
             a = Chem.Atom(atomic_nums[node])
-            a.SetChiralTag(chiral_tags[node])
+            a.SetChiralTag(ChiralType(chiral_tags[node]))
             a.SetFormalCharge(formal_charges[node])
             a.SetIsAromatic(node_is_aromatics[node])
-            a.SetHybridization(node_hybridizations[node])
+            a.SetHybridization(HybridizationType(node_hybridizations[node]))
             a.SetNumExplicitHs(num_explicit_hss[node])
             idx = mol.AddAtom(a)
             node_to_idx[node] = idx
@@ -45,7 +45,7 @@ class MolGraph:
             first, second = edge
             ifirst = node_to_idx[first]
             isecond = node_to_idx[second]
-            bond_type = bond_types[first, second]
+            bond_type = BondType(bond_types[first, second])
             mol.AddBond(ifirst, isecond, bond_type)
 
         SanitizeMol(mol)

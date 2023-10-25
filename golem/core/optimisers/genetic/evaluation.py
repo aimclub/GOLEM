@@ -255,7 +255,7 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         if not successful_evals:
             for single_ind in individuals:
                 evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
-                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or []
+                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result])
                 if successful_evals:
                     break
         MemoryAnalytics.log(self.logger,
