@@ -68,7 +68,8 @@ if __name__ == "__main__":
                                                   seed=1, replacement_number_of_random_operations_nodes=2,
                                                   replacement_number_of_random_operations_edges=2)
 
-    path_to_save = os.path.join(project_root(), 'sa')
+    path_to_save = os.path.join(project_root(), 'examples', 'sa')
+    os.makedirs(path_to_save, exist_ok=True)
     # structural analysis will optimize given graph if at least one of the metrics was increased.
     sa = GraphStructuralAnalysis(objective=objective, node_factory=node_factory,
                                  requirements=requirements,
@@ -81,6 +82,7 @@ if __name__ == "__main__":
     optimized_graph = GraphStructuralAnalysis.visualize_on_graph(graph=get_opt_graph(), analysis_result=results,
                                                                  metric_idx_to_optimize_by=0,
                                                                  mode="by_iteration",
-                                                                 font_size_scale=0.6)
+                                                                 font_size_scale=0.6,
+                                                                 save_path=path_to_save)
 
     graph.show()

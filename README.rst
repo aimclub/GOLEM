@@ -7,7 +7,7 @@
 
     |sai| |itmo|
 
-    |python| |pypi| |build| |integration| |docs| |license| |tg| |eng| |mirror|
+    |python| |pypi| |build| |integration| |coverage| |docs| |license| |tg| |eng| |mirror|
 
 
 Оптимизация и обучение графовых моделей эволюционными методами
