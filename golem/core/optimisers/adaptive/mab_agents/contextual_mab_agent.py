@@ -82,6 +82,14 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         contexts = self.get_context(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=processed_rewards, contexts=contexts)
 
+    def _get_experience(self, experience: ExperienceBuffer):
+        """ Get experience from ExperienceBuffer, process rewards and log. """
+        obs, actions, rewards = experience.retrieve_experience()
+        arms = [self._arm_by_action[action] for action in actions]
+        # there is no need to process rewards as in MAB, since this processing unifies rewards for all contexts
+        self._dbg_log(obs, actions, rewards)
+        return obs, arms, rewards
+
     def get_context(self, obs: Union[List[ObsType], ObsType]) -> np.array:
         """ Returns contexts based on specified context agent. """
         if not isinstance(obs, list):

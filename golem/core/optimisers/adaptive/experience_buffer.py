@@ -14,8 +14,14 @@ class ExperienceBuffer:
 
     def __init__(self, window_size: Optional[int] = None, inds=None, actions=None, rewards=None):
         self.window_size = window_size
-        self.reset()
-        self._reset_main_storages(inds, actions, rewards)
+        self._prev_pop = set()
+        self._next_pop = set()
+
+        if inds and not (len(inds) == len(actions) == len(rewards)):
+            raise ValueError('lengths of buffers do not match')
+        self._individuals = deque(inds) if inds else deque(maxlen=self.window_size)
+        self._actions = deque(actions) if actions else deque(maxlen=self.window_size)
+        self._rewards = deque(rewards) if rewards else deque(maxlen=self.window_size)
 
     @staticmethod
     def from_history(history: OptHistory) -> 'ExperienceBuffer':
@@ -23,23 +29,16 @@ class ExperienceBuffer:
         exp.collect_history(history)
         return exp
 
-    def reset(self):
-        self._current_individuals = []
-        self._current_actions = []
-        self._current_rewards = []
+    def _reset(self):
         self._prev_pop = set()
         self._next_pop = set()
 
-        # if window size was not specified than there is no need to store these values for reuse
+        # if window size was not specified than there is no need to store these values for reuse.
+        # Otherwise, if the window_size is specified, then storages will be updated automatically in queue
         if self.window_size is None:
-            self._reset_main_storages()
-
-    def _reset_main_storages(self, inds=None, actions=None, rewards=None):
-        if inds and not (len(inds) == len(actions) == len(rewards)):
-            raise ValueError('lengths of buffers do not mathch')
-        self._individuals = deque(inds) if inds else deque(maxlen=self.window_size)
-        self._actions = deque(actions) if actions else deque(maxlen=self.window_size)
-        self._rewards = deque(rewards) if rewards else deque(maxlen=self.window_size)
+            self._individuals = deque(maxlen=self.window_size)
+            self._actions = deque(maxlen=self.window_size)
+            self._rewards = deque(maxlen=self.window_size)
 
     @staticmethod
     def unroll_action_step(result: Individual) -> TrajectoryStep:
@@ -49,7 +48,7 @@ class ExperienceBuffer:
         source_ind = result.parent_operator.parent_individuals[0]
         action = result.parent_operator.operators[0]
         # we're minimising the fitness, that's why less is better
-        reward = (source_ind.fitness.value - result.fitness.value) / source_ind.fitness.value\
+        reward = (source_ind.fitness.value - result.fitness.value) / abs(source_ind.fitness.value)\
             if source_ind.fitness and source_ind.fitness.value != 0. else 0.
         return source_ind, action, reward
 
@@ -84,13 +83,10 @@ class ExperienceBuffer:
     def collect_results(self, results: Iterable[Individual]):
         for ind in results:
             self.collect_result(ind)
-        self._individuals += self._current_individuals
-        self._actions += self._current_actions
-        self._rewards += self._current_rewards
 
     def collect_result(self, result: Individual):
         if result.uid in self._prev_pop:
-            # avoid collecting results from indiiduals that didn't change
+            # avoid collecting results from individuals that didn't change
             return
         self._next_pop.add(result.uid)
 
@@ -114,9 +110,9 @@ class ExperienceBuffer:
         individuals, actions, rewards = self._individuals, self._actions, self._rewards
         observations = [ind.graph for ind in individuals] if as_graphs else individuals
         next_pop = self._next_pop
-        self.reset()
+        self._reset()
         self._prev_pop = next_pop
-        return observations, actions, rewards
+        return list(observations), list(actions), list(rewards)
 
     def retrieve_trajectories(self) -> GraphTrajectory:
         """Same as `retrieve_experience` but in the form of zipped trajectories that consist from steps."""

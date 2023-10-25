@@ -1,9 +1,5 @@
 from typing import List, Tuple
 
-from numpy import sign
-
-from golem.core.optimisers.adaptive.operator_agent import ObsType
-
 
 class FitnessRateRankRewardTransformer:
     """
@@ -32,4 +28,4 @@ class FitnessRateRankRewardTransformer:
     def get_fitness_rank_rate(decay_values: List[float]) -> List[float]:
         # abs() is used to save the initial sign of each decay value
         total_decay_sum = abs(sum(decay_values))
-        return [decay / total_decay_sum for decay in decay_values] if total_decay_sum != 0 else [0.]
+        return [decay / total_decay_sum for decay in decay_values] if total_decay_sum != 0 else [0.]*len(decay_values)
