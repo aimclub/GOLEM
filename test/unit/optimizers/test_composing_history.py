@@ -69,7 +69,7 @@ def generate_history(request) -> OptHistory:
     return history
 
 
-def test_individuals_in_history(history: OptHistory):
+def check_individuals_in_history(history: OptHistory):
     uids = set()
     ids = set()
     for ind in itertools.chain(*history.generations):
@@ -317,13 +317,13 @@ def test_newly_generated_history(n_jobs: int, search_space):
     assert len(history.evolution_results) == 1
     assert len(history.tuning_result) == 1
     assert hasattr(history, 'objective')
-    test_individuals_in_history(history)
+    check_individuals_in_history(history)
     # Test history dumps
     dumped_history_json = history.save()
     loaded_history = OptHistory.load(dumped_history_json)
     assert dumped_history_json is not None
     assert dumped_history_json == loaded_history.save(), 'The history is not equal to itself after reloading!'
-    test_individuals_in_history(loaded_history)
+    check_individuals_in_history(loaded_history)
 
 
 @pytest.mark.parametrize('generate_history', [[3, 4, create_individual],
@@ -366,7 +366,7 @@ def test_history_correct_serialization():
 
     assert history.generations == reloaded_history.generations
     assert dumped_history_json == reloaded_history.save(), 'The history is not equal to itself after reloading!'
-    test_individuals_in_history(reloaded_history)
+    check_individuals_in_history(reloaded_history)
 
 
 def test_collect_intermediate_metric():

@@ -12,7 +12,7 @@ from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultaneous import SimultaneousTuner
 from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate, \
     mock_graph_with_params, opt_graph_with_params
-from test.unit.optimizers.test_composing_history import test_individuals_in_history
+from test.unit.optimizers.test_composing_history import check_individuals_in_history
 from test.unit.utils import ParamsProductMetric, ParamsSumMetric
 
 
@@ -144,4 +144,4 @@ def test_tuning_supports_history(search_space, tuner_cls, graph, adapter, obj_ev
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=iterations, history=history)
     tuner.tune(deepcopy(graph))
     assert history.tuning_result is not None
-    test_individuals_in_history(history)
+    check_individuals_in_history(history)
