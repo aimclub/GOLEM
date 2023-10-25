@@ -25,8 +25,7 @@ from golem.utilities.memory import MemoryAnalytics
 # at which evolution is not threatened with stagnation at the moment
 STAGNATION_EVALUATION_PERCENTAGE = 0.5
 
-OptionalEvalResult = Optional[GraphEvalResult]
-EvalResultsList = List[OptionalEvalResult]
+EvalResultsList = List[GraphEvalResult]
 G = TypeVar('G', bound=Serializable)
 
 
@@ -153,12 +152,12 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
                                 f"were evaluated successfully.")
 
     @abstractmethod
-    def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
+    def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         raise NotImplementedError()
 
     def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
                         cache_key: Optional[str] = None,
-                        logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> OptionalEvalResult:
+                        logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> GraphEvalResult:
 
         graph = self.evaluation_cache.get(cache_key, graph)
 
@@ -193,7 +192,7 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
 
         return fitness, domain_graph
 
-    def evaluate_with_cache(self, population: PopulationT) -> Optional[PopulationT]:
+    def evaluate_with_cache(self, population: PopulationT) -> PopulationT:
         reversed_population = list(reversed(population))
         self._remote_compute_cache(reversed_population)
         evaluated_population = self.evaluate_population(reversed_population)
@@ -239,7 +238,7 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         super().dispatch(objective, timer)
         return self.evaluate_with_cache
 
-    def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
+    def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
         # Evaluate individuals without valid fitness in parallel.
         n_jobs = determine_n_jobs(self._n_jobs, self.logger)
@@ -256,7 +255,7 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         if not successful_evals:
             for single_ind in individuals:
                 evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
-                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
+                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or []
                 if successful_evals:
                     break
         MemoryAnalytics.log(self.logger,
@@ -271,11 +270,11 @@ class SequentialDispatcher(BaseGraphEvaluationDispatcher):
         Usage: call `dispatch(objective_function)` to get evaluation function.
     """
 
-    def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
+    def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
         evaluation_results = [self.evaluate_single(ind.graph, ind.uid) for ind in individuals_to_evaluate]
         individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
-        evaluated_population = individuals_evaluated + individuals_to_skip or None
+        evaluated_population = individuals_evaluated + individuals_to_skip
         return evaluated_population
 
 
