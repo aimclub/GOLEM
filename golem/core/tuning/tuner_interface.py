@@ -194,8 +194,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
                 metric_value = self._default_metric_value
 
         elif isinstance(graph_fitness, MultiObjFitness):
-            metric_value = graph_fitness.values
-            for e, value in enumerate(metric_value):
+            metric_value = list(graph_fitness.values)  # MultiObjFitness.values returns a tuple (immutable).
+            for e, value in enumerate(metric_value):   # Consequently, the next line would cause an error by assignment.
                 metric_value[e] = self._default_metric_value if value is None else value
         else:
             raise ValueError(f'Objective evaluation must be a Fitness instance, not {graph_fitness}.')
