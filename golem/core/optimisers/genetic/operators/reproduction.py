@@ -147,10 +147,11 @@ class ReproductionController:
                 break
 
             # get next finished future
-            for _ in range(int(len(futures) * 3)):
+            while True:
                 future = futures.popleft()
                 if future._state == 'FINISHED': break
                 futures.append(future)
+                time.sleep(0.01)  # to prevent flooding
 
             # add new individual to new population
             parent_descriptive_id, mutation_type, new_ind = future.result()
@@ -158,10 +159,15 @@ class ReproductionController:
 
             # define rarest ind and mutation
             if added:
-                key_fun = lambda x: x[1]
-                frequent_mutation_type = max(mutations_count.items(), key=key_fun)[0]
-                rarest_mutation_type = min(mutations_count.items(), key=key_fun)[0]
-                individual_id_with_lowest_mutations = min(all_mutations_count_for_each_ind.items(), key=key_fun)[0]
+                all_mutations = sum(mutations_count.values())
+                probs = dict(zip(mutation_types, self.mutation._operator_agent.get_action_probs()))
+                real_probs = {mutation_type: mutations_count[mutation_type] / (all_mutations * probs[mutation_type])
+                              for mutation_type in mutation_types}
+
+                frequent_mutation_type = max(real_probs.items(), key=lambda x: x[1])[0]
+                rarest_mutation_type = min(real_probs.items(), key=lambda x: x[1])[0]
+                individual_id_with_lowest_mutations = min(all_mutations_count_for_each_ind.items(),
+                                                          key=lambda x: x[1])[0]
 
             # create new future with same mutation and same individual
             count = (1 +
@@ -169,10 +175,9 @@ class ReproductionController:
                      (rarest_mutation_type == mutation_type))
             applied = check_and_try_mutation(parent_descriptive_id, mutation_type, count)
 
-
-
             # if there is no need in parent_descriptive_id & mutation_type mutation
             # then try to find new mutation
+            count = n_jobs + 1 - len(futures)
             if not applied:
                 delayed_mutations.append((parent_descriptive_id, mutation_type))
                 for _ in range(len(delayed_mutations) - 1):
@@ -181,11 +186,12 @@ class ReproductionController:
                         mutation_type == rarest_mutation_type) and
                         mutation_type != frequent_mutation_type):
                         futures.append(try_mutation(parent_descriptive_id, mutation_type))
-                        break
+                        applied = True
                     else:
                         applied = check_and_try_mutation(parent_descriptive_id, mutation_type)
-                        if applied: break
-                    delayed_mutations.append((parent_descriptive_id, mutation_type))
+                    count -= applied
+                    if count <= 0: break
+                    if not applied: delayed_mutations.append((parent_descriptive_id, mutation_type))
 
         # if there are any feature then process it and add new_ind to new_population if it is ready
         for future in futures:
