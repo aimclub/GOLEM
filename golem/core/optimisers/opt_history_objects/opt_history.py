@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 class OptHistory:
     """
-    Contains optimization history, save history to csv.
+    Contains optimization history, saves history to csv.
     Can be used for any type of graph that is serializable with Serializer.
 
     Args:
@@ -105,8 +105,16 @@ class OptHistory:
         except Exception as ex:
             self._log.exception(ex)
 
-    def save(self, json_file_path: Union[str, os.PathLike] = None) -> Optional[str]:
-        return default_save(obj=self, json_file_path=json_file_path)
+    def save(self, json_file_path: Union[str, os.PathLike] = None, is_save_light: bool = False) -> Optional[str]:
+        """ Saves history to specified path.
+        Args:
+            json_file_path: path to json file where to save history.
+            is_save_light: bool parameter to specify whether there is a need to save full history or a light version.
+            NB! For experiments and etc. full histories must be saved. However, to make the analysis of results faster
+            (show fitness plots, for example) the light version of histories can be saved too.
+        """
+        history_to_save = lighten_history(self) if is_save_light else self
+        return default_save(obj=history_to_save, json_file_path=json_file_path)
 
     @staticmethod
     def load(json_str_or_file_path: Union[str, os.PathLike] = None) -> OptHistory:
@@ -256,3 +264,15 @@ class OptHistory:
     @property
     def _log(self):
         return default_log(self)
+
+
+def lighten_history(history: OptHistory) -> OptHistory:
+    """ Keeps the most informative field in OptHistory object to show most of the visualizations
+    without excessive memory usage. """
+    light_history = OptHistory()
+    light_history._generations = \
+        [Generation(iterable=gen, generation_num=i) for i, gen in enumerate(history.archive_history)]
+    light_history.archive_history = history.archive_history
+    light_history._objective = history.objective
+    light_history._tuning_result = history.tuning_result
+    return light_history
