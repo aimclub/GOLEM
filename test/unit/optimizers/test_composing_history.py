@@ -64,7 +64,8 @@ def generate_history(request) -> OptHistory:
             new_pop.append(ind)
         history.add_to_history(new_pop)
         # since only n best individuals need to be added to archive history
-        history.add_to_evolution_best_archive([sorted(new_pop, key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
+        history.add_to_evolution_best_archive(
+            [sorted(new_pop, key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
     return history
 
 

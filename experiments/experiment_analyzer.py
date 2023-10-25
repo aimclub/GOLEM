@@ -231,7 +231,8 @@ class ExperimentAnalyzer:
 
     def analyze_statistical_significance(self, data_to_analyze: Dict[str, Dict[str, List[float]]],
                                          stat_tests: List[Callable], path_to_save: Optional[str] = None,
-                                         test_format: Optional[List[str]] = None) -> Dict[str, Dict[str, Dict[str, float]]]:
+                                         test_format: Optional[List[str]] = None
+                                         ) -> Dict[str, Dict[str, Dict[str, float]]]:
         """ Method to perform statistical analysis of data. Metric data obtained with 'analyze_metrics' and
         convergence data obtained with 'analyze_convergence' can be simply analyzed, for example.
         :param data_to_analyze: data to analyze.
@@ -291,7 +292,8 @@ class ExperimentAnalyzer:
             os.makedirs(path_to_save, exist_ok=True)
 
         for setup, dataset, path_to_launch in self._get_path_to_launch():
-            if not self._check_if_file_or_folder_present(path=os.path.join(path_to_launch, dir_name), is_raise=is_raise):
+            if not self._check_if_file_or_folder_present(path=os.path.join(path_to_launch, dir_name),
+                                                         is_raise=is_raise):
                 continue
 
             path_to_json = None
@@ -324,7 +326,7 @@ class ExperimentAnalyzer:
             saved_results = [int(cur_name.split("_")[0]) for cur_name in os.listdir(cur_path_to_save)
                              if cur_name not in self._folders_to_ignore]
             max_saved_num = max(saved_results) if saved_results else 0
-            cur_path_to_save = os.path.join(cur_path_to_save, f'{max_saved_num+1}_result.png')
+            cur_path_to_save = os.path.join(cur_path_to_save, f'{max_saved_num + 1}_result.png')
             result.show(cur_path_to_save, title=title)
             self._log.info(f"Resulting graph was saved to {cur_path_to_save}")
 
