@@ -57,7 +57,7 @@ class ExperienceBuffer:
         """Iterates through history and find continuous sequences of applied operator actions."""
         trajectories = []
         seen_uids = set()
-        for terminal_individual in history.final_choices:
+        for terminal_individual in history.evolution_results:
             trajectory = []
             next_ind = terminal_individual
             while True:

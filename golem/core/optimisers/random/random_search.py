@@ -53,7 +53,7 @@ class RandomSearchOptimizer(GraphOptimizer):
                 self.current_iteration_num += 1
                 self._update_best_individual(new_individual)
                 pbar.update()
-        self._update_best_individual(self.best_individual, 'final_choices')
+        self._update_best_individual(self.best_individual, 'evolution_results')
         pbar.close()
         return [self.best_individual.graph]
 
@@ -68,7 +68,7 @@ class RandomSearchOptimizer(GraphOptimizer):
                       f'Best individuals fitness {str(self.generations)}')
 
         self.history.add_to_history([new_individual], label)
-        self.history.add_to_archive_history(self.generations.best_individuals)
+        self.history.add_to_evolution_best_archive(self.generations.best_individuals)
 
     def _eval_initial_individual(self, evaluator: EvaluationOperator) -> Individual:
         init_ind = Individual(choice(self.initial_graphs)) if self.initial_graphs else self._generate_new_individual()

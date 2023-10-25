@@ -109,7 +109,7 @@ def visualize_results(molecules: Iterable[MolGraph],
 
     # Plot pareto front (if multi-objective)
     if objective.is_multi_objective:
-        visualise_pareto(history.archive_history[-1],
+        visualise_pareto(history.evolution_best_archive[-1],
                          objectives_names=objective.metric_names[:2],
                          folder=str(save_path))
 
@@ -193,7 +193,7 @@ def run_experiment(optimizer_setup: Callable,
             result_dir = Path('results') / exp_name
             result_dir.mkdir(parents=True, exist_ok=True)
             history.save(result_dir / f'history_trial_{trial}.json')
-        trial_results.extend(history.final_choices)
+        trial_results.extend(history.evolution_results)
         trial_histories.append(history)
 
     # Compute mean & std for metrics of trials

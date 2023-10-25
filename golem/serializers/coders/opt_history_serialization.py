@@ -46,7 +46,7 @@ def opt_history_to_json(obj: OptHistory) -> Dict[str, Any]:
     serialized = any_to_json(obj)
     serialized['individuals_pool'] = _flatten_generations_list(serialized['_generations'])
     serialized['_generations'] = _generations_list_to_uids(serialized['_generations'])
-    serialized['archive_history'] = _archive_to_uids(serialized['archive_history'])
+    serialized['evolution_best_archive'] = _archive_to_uids(serialized['evolution_best_archive'])
     return serialized
 
 
@@ -103,14 +103,18 @@ def opt_history_from_json(cls: Type[OptHistory], json_obj: Dict[str, Any]) -> Op
     if 'individuals' in json_obj:
         json_obj['_generations'] = json_obj.pop('individuals')
 
+    # Renamed since #...
+    if 'archive_history' in json_obj:
+        json_obj['evolution_best_archive'] = json_obj.pop('archive_history')
+
     history = any_from_json(cls, json_obj)
     # Read all individuals from history.
     individuals_pool = history.individuals_pool
     uid_to_individual_map = {ind.uid: ind for ind in individuals_pool}
-    # The attributes `individuals` and `archive_history` at the moment contain uid strings that must be converted
-    # to `Individual` instances.
+    # The attributes `individuals` and `evolution_best_archive` at the moment contain uid strings that must
+    # be converted to `Individual` instances.
     _deserialize_generations_list(history.generations, uid_to_individual_map)
-    _deserialize_generations_list(history.archive_history, uid_to_individual_map)
+    _deserialize_generations_list(history.evolution_best_archive, uid_to_individual_map)
     # Process histories with zero generations.
     if len(history.generations) > 0:
         # Process older histories to wrap generations into the new class.

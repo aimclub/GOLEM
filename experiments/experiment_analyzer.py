@@ -104,7 +104,7 @@ class ExperimentAnalyzer:
         # find best final metric for each objective
         best_fitness_per_objective = [np.inf] * metrics_num
         for i in range(metrics_num):
-            for ind in history.final_choices.data:
+            for ind in history.evolution_results.data:
                 if ind.fitness.values[i] < best_fitness_per_objective[i]:
                     best_fitness_per_objective[i] = ind.fitness.values[i]
 

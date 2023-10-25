@@ -37,7 +37,7 @@ class GraphsInteractive(HistoryVisualization):
 
         x_template = 'best individual #{}'
         best_individuals = {i: ind
-                            for i, ind in enumerate(self.history.archive_history[-1])}
+                            for i, ind in enumerate(self.history.evolution_best_archive[-1])}
 
         class InteractivePlot:
             temp_path = Path(default_data_dir(), 'current_graph.png')

@@ -46,7 +46,7 @@ class OptHistoryExtraVisualizer:
                           objectives_numbers: Tuple[int, int] = (0, 1),
                           objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
         files = []
-        pareto_fronts = self.history.archive_history
+        pareto_fronts = self.history.evolution_best_archive
         individuals = self.history.generations
         array_for_analysis = individuals if individuals else pareto_fronts
         all_objectives = extract_objectives(array_for_analysis, objectives_numbers)

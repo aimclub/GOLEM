@@ -105,7 +105,7 @@ class PopulationalOptimizer(GraphOptimizer):
                 # Adding of new population to history
                 self._update_population(new_population)
         pbar.close()
-        self._update_population(self.best_individuals, 'final_choices')
+        self._update_population(self.best_individuals, 'evolution_results')
         return [ind.graph for ind in self.best_individuals]
 
     @property
@@ -146,7 +146,7 @@ class PopulationalOptimizer(GraphOptimizer):
     def _log_to_history(self, population: PopulationT, label: Optional[str] = None,
                         metadata: Optional[Dict[str, Any]] = None):
         self.history.add_to_history(population, label, metadata)
-        self.history.add_to_archive_history(self.generations.best_individuals)
+        self.history.add_to_evolution_best_archive(self.generations.best_individuals)
         if self.requirements.history_dir:
             self.history.save_current_results(self.requirements.history_dir)
 

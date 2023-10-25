@@ -31,7 +31,7 @@ def test_external_history_load(history_path):
 
     assert history is not None
     history_plausible(history)
-    assert len(history.individuals) > 0
+    assert len(history.generations) > 0
 
 
 def history_plausible(history: OptHistory):
@@ -44,7 +44,7 @@ def history_plausible(history: OptHistory):
         parent_operator = individual.parent_operator
         operations_correct = True
         if parent_operator:
-            type_correct = parent_operator.type_ in ['mutation', 'crossover', 'selection']
+            type_correct = parent_operator.type_ in ['mutation', 'crossover', 'selection', 'tuning']
             parent_inds_correct = all(isinstance(ind, Individual) for ind in parent_operator.parent_individuals)
             operations_correct = type_correct and parent_inds_correct
         assert graph_correct

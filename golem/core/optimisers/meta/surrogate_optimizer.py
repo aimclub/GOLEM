@@ -54,5 +54,5 @@ class SurrogateEachNgenOptimizer(EvoGraphOptimizer):
                     break
                 # Adding of new population to history
                 self._update_population(new_population)
-        self._update_population(self.best_individuals, 'final_choices')
+        self._update_population(self.best_individuals, 'evolution_results')
         return [ind.graph for ind in self.best_individuals]

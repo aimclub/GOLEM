@@ -6,18 +6,16 @@ import itertools
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING, Union
 
 from golem.core.log import default_log
 from golem.core.optimisers.objective.objective import ObjectiveInfo
 from golem.core.optimisers.opt_history_objects.generation import Generation
-
 from golem.core.paths import default_data_dir
 from golem.serializers.serializer import default_load, default_save
 from golem.visualisation.opt_viz import OptHistoryVisualizer
 
 if TYPE_CHECKING:
-    from golem.core.dag.graph import Graph
     from golem.core.optimisers.opt_history_objects.individual import Individual
 
 
@@ -36,8 +34,7 @@ class OptHistory:
                  default_save_dir: Optional[os.PathLike] = None):
         self._objective = objective or ObjectiveInfo()
         self._generations: List[Generation] = []
-        self.archive_history: List[List[Individual]] = []
-        self._tuning_result: Optional[Graph] = None
+        self.evolution_best_archive: List[List[Individual]] = []
 
         # init default save directory
         if default_save_dir:
@@ -61,8 +58,8 @@ class OptHistory:
         generation = Generation(individuals, self.generations_count, generation_label, generation_metadata)
         self.generations.append(generation)
 
-    def add_to_archive_history(self, individuals: Sequence[Individual]):
-        self.archive_history.append(list(individuals))
+    def add_to_evolution_best_archive(self, individuals: Sequence[Individual]):
+        self.evolution_best_archive.append(list(individuals))
 
     def to_csv(self, save_dir: Optional[os.PathLike] = None, file: os.PathLike = 'history.csv'):
         save_dir = save_dir or self._default_save_dir
@@ -219,27 +216,24 @@ class OptHistory:
                 return gen
 
     @property
-    def final_choices(self) -> Optional[Generation]:
-        if not self.generations:
-            return None
-        for gen in reversed(self.generations):
-            if gen.label == 'final_choices':
-                return gen
-
-    @property
     def generations_count(self) -> int:
         return len(self.generations)
 
     @property
-    def tuning_result(self):
-        if hasattr(self, '_tuning_result'):
-            return self._tuning_result
-        else:
+    def evolution_results(self) -> Optional[Generation]:
+        if not self.generations:
             return None
+        for gen in reversed(self.generations):
+            if gen.label == 'evolution_results':
+                return gen
 
-    @tuning_result.setter
-    def tuning_result(self, val):
-        self._tuning_result = val
+    @property
+    def tuning_result(self) -> Optional[Generation]:
+        if not self.generations:
+            return None
+        for gen in reversed(self.generations):
+            if gen.label == 'tuning_result':
+                return gen
 
     @property
     def generations(self):
@@ -270,8 +264,7 @@ def lighten_history(history: OptHistory) -> OptHistory:
     without excessive memory usage. """
     light_history = OptHistory()
     light_history._generations = \
-        [Generation(iterable=gen, generation_num=i) for i, gen in enumerate(history.archive_history)]
-    light_history.archive_history = history.archive_history
+        [Generation(iterable=gen, generation_num=i) for i, gen in enumerate(history.evolution_best_archive)]
+    light_history.evolution_best_archive = history.evolution_best_archive
     light_history._objective = history.objective
-    light_history._tuning_result = history.tuning_result
     return light_history

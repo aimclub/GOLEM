@@ -66,7 +66,7 @@ def run_experiments(optimizer_setup: Callable,
             found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
             history = optimizer.history
 
-            trial_results.extend(history.final_choices)
+            trial_results.extend(history.evolution_results)
             found_nx_graph = BaseNetworkxAdapter().restore(found_graph)
 
             duration = datetime.now() - start_time
