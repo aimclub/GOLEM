@@ -99,7 +99,7 @@ class OptHistory:
             last_gen = self.generations[last_gen_id]
             for individual in last_gen:
                 ind_path = Path(save_dir, str(last_gen_id), str(individual.uid))
-                ind_path.mkdir(exist_ok=True)
+                ind_path.mkdir(exist_ok=True, parents=True)
                 individual.save(json_file_path=ind_path / f'{str(individual.uid)}.json')
         except Exception as ex:
             self._log.exception(ex)
