@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from numbers import Number
 from typing import Optional
 
+from golem.core.optimisers.genetic.evaluation import determine_n_jobs
 from golem.core.paths import default_data_dir
 
 
@@ -85,9 +86,9 @@ class GraphRequirements(OptimizationParameters):
     max_arity: int = 4
 
     def __post_init__(self):
-        excluded_fields = ['n_jobs']
+        # check and convert n_jobs to non-negative
+        self.n_jobs = determine_n_jobs(self.n_jobs)
+
         for field_name, field_value in dataclasses.asdict(self).items():
-            if field_name in excluded_fields:
-                continue
             if isinstance(field_value, Number) and field_value < 0:
                 raise ValueError(f'Value of {field_name} must be non-negative')
