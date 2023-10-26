@@ -10,7 +10,7 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 from golem.core.optimisers.random.random_search import RandomSearchOptimizer
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class PopulationalRandomMutationOptimizer(PopulationalOptimizer):

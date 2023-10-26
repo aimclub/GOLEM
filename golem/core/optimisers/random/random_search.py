@@ -12,7 +12,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphOptimizer, GraphGenerationParams
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.core.utilities.grouped_condition import GroupedCondition
+from golem.utilities.grouped_condition import GroupedCondition
 
 
 class RandomSearchOptimizer(GraphOptimizer):

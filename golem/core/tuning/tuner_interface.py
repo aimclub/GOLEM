@@ -14,7 +14,7 @@ from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 DomainGraphForTune = TypeVar('DomainGraphForTune')
 

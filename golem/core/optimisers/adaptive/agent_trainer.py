@@ -16,7 +16,7 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
-from golem.core.utilities.data_structures import unzip
+from golem.utilities.data_structures import unzip
 
 
 class AgentTrainer:

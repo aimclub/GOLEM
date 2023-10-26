@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 
 from golem.core.log import DEFAULT_LOG_PATH, Log, default_log
-from golem.core.utilities.grouped_condition import GroupedCondition
-from golem.core.utilities.singleton_meta import SingletonMeta
+from golem.utilities.grouped_condition import GroupedCondition
+from golem.utilities.singleton_meta import SingletonMeta
 
 
 @pytest.fixture()

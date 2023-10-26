@@ -1,7 +1,7 @@
 from random import shuffle
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 
 class ElitismTypesEnum(Enum):

@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import partial
 from typing import List, Optional, Sequence, Tuple, TypeVar, Dict
 
-from joblib import Parallel, cpu_count, delayed
+from joblib import Parallel, delayed
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph import Graph
@@ -18,7 +18,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 from golem.core.optimisers.timer import Timer, get_forever_timer
-from golem.core.utilities.serializable import Serializable
+from golem.utilities.serializable import Serializable
 from golem.utilities.memory import MemoryAnalytics
 from golem.utilities.utilities import determine_n_jobs
 

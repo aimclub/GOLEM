@@ -8,7 +8,7 @@ from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth, graph_has_cycle
 from golem.core.paths import copy_doc
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
+from golem.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
 
 NodePostprocessCallable = Callable[[Graph, Sequence[GraphNode]], Any]
 
