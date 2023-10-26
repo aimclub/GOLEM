@@ -240,8 +240,8 @@ class GraphVisualizer:
 
     @staticmethod
     def _get_scaled_font_size(nodes_amount: int, size_scale: float) -> float:
-        min_size = 11
-        max_size = 60
+        min_size = 14
+        max_size = 30
         size = max(max_size * (1 - np.log10(nodes_amount)), min_size)
         return size * size_scale
 
@@ -391,8 +391,7 @@ class GraphVisualizer:
                                    arrowstyle=arrow_style, connectionstyle=e['connectionstyle'])
         self._rescale_matplotlib_figure(ax)
 
-    def _draw_nx_labels(self, ax: plt.Axes, pos: Any,
-                        font_size_scale: float,
+    def _draw_nx_labels(self, ax: plt.Axes, pos: Any, font_size_scale: float,
                         nodes_labels: Dict[int, str], edges_labels: Dict[int, str]):
         """ Set labels with scores to nodes and edges. """
 
@@ -472,9 +471,10 @@ class GraphVisualizer:
         if not (edges_labels or nodes_labels):
             return
 
-        x_span, y_span = GraphVisualizer._get_x_y_span(pos)
+        nodes_amount = len(pos)
+        font_size = GraphVisualizer._get_scaled_font_size(nodes_amount, font_size_scale * 0.75)
+        _, y_span = GraphVisualizer._get_x_y_span(pos)
         bias = calculate_labels_bias(ax, y_span)
-        font_size = GraphVisualizer._get_scaled_font_size(max(x_span, y_span), font_size_scale * 0.25)
 
         if nodes_labels:
             draw_node_labels(nodes_labels, ax, bias, font_size, self.nx_graph, pos)
