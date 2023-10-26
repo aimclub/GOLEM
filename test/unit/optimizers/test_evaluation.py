@@ -13,9 +13,9 @@ from golem.core.optimisers.meta.surrogate_evaluator import SurrogateDispatcher
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.timer import OptimisationTimer
+from golem.utilities.utilities import determine_n_jobs
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, RandomMetric
 
-from golem.utilities.utilities import determine_n_jobs
 
 
 def set_up_tests():
