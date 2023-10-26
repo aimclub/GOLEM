@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from numbers import Number
 from typing import Optional
 
-from golem.core.optimisers.genetic.evaluation import determine_n_jobs
 from golem.core.paths import default_data_dir
+from golem.utilities.utilities import determine_n_jobs
 
 
 @dataclass
