@@ -41,7 +41,7 @@ class HyperoptTuner(BaseTuner, ABC):
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
-                 algo: Callable = tpe.suggest):
+                 algo: Callable = tpe.suggest, **kwargs):
         early_stopping_rounds = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
         super().__init__(objective_evaluate,
                          search_space,
@@ -50,7 +50,7 @@ class HyperoptTuner(BaseTuner, ABC):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation)
+                         deviation, **kwargs)
 
         self.early_stop_fn = no_progress_loss(iteration_stop_count=self.early_stopping_rounds)
         self.max_seconds = int(timeout.seconds) if timeout is not None else None

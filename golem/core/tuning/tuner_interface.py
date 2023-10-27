@@ -43,7 +43,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
                  early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 deviation: float = 0.05):
+                 deviation: float = 0.05, **kwargs):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
         self.search_space = search_space

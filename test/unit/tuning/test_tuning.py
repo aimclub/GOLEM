@@ -121,7 +121,7 @@ def test_node_tuning(search_space, graph):
                                                        is_multi_objective=True)))])
 def test_multi_objective_tuning(search_space, tuner_cls, init_graph, adapter, obj_eval):
     init_metric = obj_eval.evaluate(init_graph)
-    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, objectives_number=2)
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
     tuned_graphs = tuner.tune(deepcopy(init_graph), show_progress=False)
     for graph in tuned_graphs:
         assert type(graph) == type(init_graph)

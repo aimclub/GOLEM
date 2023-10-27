@@ -26,7 +26,7 @@ class SequentialTuner(HyperoptTuner):
                  n_jobs: int = -1,
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 inverse_node_order: bool = False):
+                 inverse_node_order: bool = False, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -34,7 +34,7 @@ class SequentialTuner(HyperoptTuner):
                          early_stopping_rounds, timeout,
                          n_jobs,
                          deviation,
-                         algo)
+                         algo, **kwargs)
 
         self.inverse_node_order = inverse_node_order
 

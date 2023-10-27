@@ -12,6 +12,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class OptunaTuner(BaseTuner):
@@ -22,8 +23,7 @@ class OptunaTuner(BaseTuner):
                  early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 deviation: float = 0.05,
-                 objectives_number: int = 1):
+                 deviation: float = 0.05, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -31,17 +31,18 @@ class OptunaTuner(BaseTuner):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation)
-        self.objectives_number = objectives_number
+                         deviation, **kwargs)
+        self.objectives_number = 1
         self.study = None
 
     def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> \
             Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         graph = self.adapter.adapt(graph)
         predefined_objective = partial(self.objective, graph=graph)
-        is_multi_objective = self.objectives_number > 1
 
         self.init_check(graph)
+        self.objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
+        is_multi_objective = self.objectives_number > 1
 
         self.study = optuna.create_study(directions=['minimize'] * self.objectives_number)
 
