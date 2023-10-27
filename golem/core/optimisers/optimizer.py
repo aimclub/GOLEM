@@ -20,8 +20,6 @@ from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNod
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
 from golem.utilities.random import RandomStateHandler
 
-STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
-
 
 def do_nothing_callback(*args, **kwargs):
     pass
@@ -46,7 +44,6 @@ class AlgorithmParameters:
     max_pop_size: Optional[int] = 55
     adaptive_depth: bool = False
     adaptive_depth_max_stagnation: int = 3
-    structural_diversity_frequency_check: int = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 
 
 @dataclass

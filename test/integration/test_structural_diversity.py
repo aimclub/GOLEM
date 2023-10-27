@@ -8,14 +8,13 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.objective import Objective
-from golem.core.optimisers.optimizer import STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 from golem.metrics.edit_distance import tree_edit_dist
 from golem.metrics.graph_metrics import degree_distance
 
 DIVERSITY_THRESHOLD = 0.5
 
 
-def set_up_params(gen_structural_check: int):
+def set_up_params(gen_structural_check: int = -1):
     """ It is possible to run test with and without structural check.
     To run test without structural test set `gen_structural_check` to -1,
     otherwise it has to be set to positive integer value. """
@@ -32,7 +31,6 @@ def set_up_params(gen_structural_check: int):
             MutationTypesEnum.single_drop,
         ],
         crossover_types=[CrossoverTypesEnum.none],
-        structural_diversity_frequency_check=gen_structural_check
     )
     return gp_params
 
@@ -41,7 +39,7 @@ def test_structural_diversity():
     """ Checks population's structural diversity. Diversity should not be lower than DIVERSITY_THRESHOLD. """
     target_graph = generate_labeled_graph('tree', 4, node_labels=['x'])
     node_types = ['x', 'y', 'z', 'w', 'v', 'u']
-    gen_structural_check = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
+    gen_structural_check = -1
     reset_diversity_threshold = 0.90
 
     gp_params = set_up_params(gen_structural_check=gen_structural_check)

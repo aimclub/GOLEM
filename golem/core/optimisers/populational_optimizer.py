@@ -69,10 +69,7 @@ class PopulationalOptimizer(GraphOptimizer):
                 'Optimisation finished: Early stopping iterations criteria was satisfied'
             ).add_condition(
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
-                'Optimisation finished: Early stopping timeout criteria was satisfied'
-            )
-        # in how many generations structural diversity check should be performed
-        self.gen_structural_diversity_check = self.graph_optimizer_params.structural_diversity_frequency_check
+                'Optimisation finished: Early stopping timeout criteria was satisfied')
 
     @property
     def current_generation_num(self) -> int:
@@ -94,10 +91,6 @@ class PopulationalOptimizer(GraphOptimizer):
             while not self.stop_optimization():
                 try:
                     new_population = self._evolve_population(evaluator)
-                    if self.gen_structural_diversity_check != -1 \
-                            and self.generations.generation_num % self.gen_structural_diversity_check == 0 \
-                            and self.generations.generation_num != 0:
-                        new_population = self.get_structure_unique_population(new_population, evaluator)
                     pbar.update()
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
@@ -149,17 +142,6 @@ class PopulationalOptimizer(GraphOptimizer):
         self.history.add_to_archive_history(self.generations.best_individuals)
         if self.requirements.history_dir:
             self.history.save_current_results(self.requirements.history_dir)
-
-    def get_structure_unique_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
-        Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
-        unique_population_with_ids = {ind.graph.descriptive_id: ind for ind in population}
-        unique_population = list(unique_population_with_ids.values())
-
-        # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
-        if len(unique_population) < MIN_POP_SIZE:
-            unique_population = self._extend_population(pop=unique_population, target_pop_size=MIN_POP_SIZE)
-        return evaluator(unique_population)
 
 
 # TODO: remove this hack (e.g. provide smth like FitGraph with fit/unfit interface)
