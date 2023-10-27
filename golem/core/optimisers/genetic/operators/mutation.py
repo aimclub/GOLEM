@@ -1,4 +1,5 @@
 from copy import deepcopy
+from multiprocessing.managers import ValueProxy
 from random import random
 from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 
@@ -169,8 +170,8 @@ class SpecialSingleMutation(Mutation):
                  requirements: GraphRequirements,
                  graph_gen_params: GraphGenerationParams,
                  mutations_repo: MutationRepo,
-                 operator_agent: OperatorAgent,
-                 agent_experience: ExperienceBuffer,
+                 operator_agent: ValueProxy,
+                 agent_experience: ValueProxy,
                  ):
         super().__init__(parameters=parameters,
                          requirements=requirements,
@@ -182,16 +183,14 @@ class SpecialSingleMutation(Mutation):
     def __call__(self, individual: Individual) -> Individual:
         new_graph = deepcopy(individual.graph)
 
-        mutation_type = self._operator_agent.choose_action(new_graph)
+        mutation_type = self._operator_agent.value.choose_action(new_graph)
         mutation_func = self._get_mutation_func(mutation_type)
 
         new_graph = mutation_func(new_graph, requirements=self.requirements,
                                   graph_gen_params=self.graph_generation_params,
                                   parameters=self.parameters)
 
-        parent_operator = ParentOperator(type_='mutation',
-                                         operators=mutation_type,
-                                         parent_individuals=individual)
+        parent_operator = ParentOperator(type_='mutation', operators=mutation_type, parent_individuals=individual)
         individual = Individual(new_graph, parent_operator,
                                 metadata=self.requirements.static_individual_metadata)
         return individual
