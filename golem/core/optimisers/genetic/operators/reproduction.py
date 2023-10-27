@@ -19,7 +19,7 @@ from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import Crossover
-from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationType
+from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationType, SpecialSingleMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
@@ -68,34 +68,38 @@ class ReproductionController:
         return new_population
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        # increase probability of mutation to not spend tries for no mutations
-        initial_parameters = deepcopy(self.parameters)
-        initial_parameters.mutation_prob = 1.0
-        self.mutation.update_requirements(parameters=initial_parameters)
+        # create common objects for parallel use
+        with Manager() as manager:
+            # create new mutation that suitable for parallel evaluation
+            initial_parameters = deepcopy(self.parameters)
+            initial_parameters.mutation_prob = 1.0
 
-        max_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
-        mutation_fun = partial(self._mutation_n_evaluation, evaluator=evaluator)
-        new_population = []
+            operator_agent = manager.Value('operator_agent', self.mutation._operator_agent)
+            agent_experience = manager.Value('agent_experience', self.mutation.agent_experience)
 
-        new_population = list(map(mutation_fun, cycle(population)))
+            mutation = SpecialSingleMutation(parameters=initial_parameters,
+                                              requirements=self.mutation.requirements,
+                                              graph_gen_params=self.mutation.graph_generation_params,
+                                              mutations_repo=self.mutation._mutations_repo,
+                                              operator_agent=operator_agent,
+                                              agent_experience=agent_experience)
+            mutation_fun = partial(self._mutation_n_evaluation, mutation=mutation, evaluator=evaluator)
 
-        with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
-            new_ind_generator = parallel(delayed(mutation_fun)(ind)
-                                         for ind, _ in zip(cycle(population), range(max_tries)))
-            for new_ind, mutation_type, applied in new_ind_generator:
-                if applied:
-                    descriptive_id = new_ind.graph.descriptive_id
-                    if descriptive_id not in self._pop_graph_descriptive_ids:
-                        new_population.append(new_ind)
-                        self._pop_graph_descriptive_ids.add(descriptive_id)
-                        if len(new_population) >= self.parameters.pop_size:
-                            break
-                else:
-                    self.mutation.agent_experience.collect_experience(new_ind.graph, mutation_type, reward=-1.0)
+            max_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+            new_population = []
 
-        # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=self.parameters)
-        return new_population
+            with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
+                new_ind_generator = parallel(delayed(mutation_fun)(ind)
+                                             for ind, _ in zip(cycle(population), range(max_tries)))
+                for new_ind in new_ind_generator:
+                    if new_ind:
+                        descriptive_id = new_ind.graph.descriptive_id
+                        if descriptive_id not in self._pop_graph_descriptive_ids:
+                            new_population.append(new_ind)
+                            self._pop_graph_descriptive_ids.add(descriptive_id)
+                            if len(new_population) >= self.parameters.pop_size:
+                                break
+            return new_population
 
     def _check_final_population(self, population: PopulationT) -> None:
         """ If population do not achieve required length return a warning or raise exception """
@@ -111,10 +115,9 @@ class ReproductionController:
                               f'have {len(population)},'
                               f' required {target_pop_size}!\n' + helpful_msg)
 
-    def _mutation_n_evaluation(self, individual: Individual, evaluator: EvaluationOperator):
-        individual, mutation_type, applied = self.mutation._mutation(individual)
+    def _mutation_n_evaluation(self, individual: Individual, mutation: Mutation, evaluator: EvaluationOperator):
+        individual = mutation(individual)
         if individual and self.verifier(individual.graph):
             individuals = evaluator([individual])
             if individuals:
-                return individuals[0], mutation_type, applied
-        return individual, mutation_type, False
+                return individuals[0]

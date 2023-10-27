@@ -163,7 +163,22 @@ class Mutation(Operator):
         return adapted_mutation_func
 
 
-class FastSingleMutation(Mutation):
+class SpecialSingleMutation(Mutation):
+    def __init__(self,
+                 parameters: 'GPAlgorithmParameters',
+                 requirements: GraphRequirements,
+                 graph_gen_params: GraphGenerationParams,
+                 mutations_repo: MutationRepo,
+                 operator_agent: OperatorAgent,
+                 agent_experience: ExperienceBuffer,
+                 ):
+        super().__init__(parameters=parameters,
+                         requirements=requirements,
+                         graph_gen_params=graph_gen_params,
+                         mutations_repo=mutations_repo)
+        self._operator_agent = operator_agent
+        self.agent_experience = agent_experience
+
     def __call__(self, individual: Individual) -> Individual:
         new_graph = deepcopy(individual.graph)
 
