@@ -229,7 +229,7 @@ def get_all_simple_paths(graph: 'Graph', source: 'GraphNode', target: 'GraphNode
                 pairs_list = [(path[i], path[(i + 1) % len(path)]) for i in range(len(path) - 1)]
                 paths.append(pairs_list)
             visited[neighbor] = None
-            if target - set(visited.keys()):  # expand stack until find all targets
+            if target - set(visited.keys()):
                 children = nodes_children.setdefault(neighbor.uid, graph.node_children(neighbor))
                 node_neighbors = set(neighbor.nodes_from).union(children)
                 stack.append(iter(node_neighbors))
