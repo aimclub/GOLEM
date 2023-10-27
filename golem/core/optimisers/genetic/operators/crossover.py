@@ -25,6 +25,7 @@ class CrossoverTypesEnum(Enum):
     subtree = 'subtree'
     one_point = "one_point"
     none = 'none'
+    subgraph = 'subgraph_crossover'
     exchange_edges = 'exchange_edges'
     exchange_parents_one = 'exchange_parents_one'
     exchange_parents_both = 'exchange_parents_both'
@@ -87,7 +88,8 @@ class Crossover(Operator):
             CrossoverTypesEnum.one_point: one_point_crossover,
             CrossoverTypesEnum.exchange_edges: exchange_edges_crossover,
             CrossoverTypesEnum.exchange_parents_one: exchange_parents_one_crossover,
-            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover
+            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover,
+            CrossoverTypesEnum.subgraph: subgraph_crossover
         }
         if crossover_type in crossovers:
             return crossovers[crossover_type]
@@ -151,7 +153,10 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
 
 
 @register_native
-def subgraph_crossover(graph_first: OptGraph, graph_second: OptGraph, **kwargs):
+def subgraph_crossover(graph_first: OptGraph, graph_second: OptGraph, **kwargs) -> Tuple[OptGraph, OptGraph]:
+    """ A random edge is chosen and all paths between these nodes are disconnected.
+    This way each graph is divided into two subgraphs.
+    The subgraphs are exchanged between the graphs and connected randomly at the points of division. """
     first_subgraphs, first_div_points = get_subgraphs(graph_first)
     second_subgraphs, second_div_points = get_subgraphs(graph_second)
     graph_first = connect_subgraphs(first_subgraphs[0], second_subgraphs[1], first_div_points, second_div_points)

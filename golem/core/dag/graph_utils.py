@@ -202,7 +202,7 @@ def graph_has_cycle(graph: 'Graph') -> bool:
     return False
 
 
-def get_all_simple_paths(graph: Graph, source: GraphNode, target: GraphNode) -> List[List[Tuple[GraphNode]]]:
+def get_all_simple_paths(graph: 'Graph', source: 'GraphNode', target: 'GraphNode') -> List[List[Tuple['GraphNode']]]:
     """ Returns all simple paths from one node to another ignoring edge direction.
     Args:
         graph: graph in which to search for paths
@@ -238,7 +238,7 @@ def get_all_simple_paths(graph: Graph, source: GraphNode, target: GraphNode) -> 
     return paths
 
 
-def get_connected_components(graph: Graph, nodes: Optional[List[GraphNode]]) -> List[set]:
+def get_connected_components(graph: 'Graph', nodes: Optional[List['GraphNode']]) -> List[set]:
     """ Returns list of connected components of the graph.
     Each connected component is represented as a set of its nodes.
     Args:
@@ -246,7 +246,7 @@ def get_connected_components(graph: Graph, nodes: Optional[List[GraphNode]]) -> 
         nodes: if provided, only connected components containing these nodes are returned
     Returns:
         List of connected components"""
-    def _bfs(graph: Graph, source: GraphNode):
+    def _bfs(graph: 'Graph', source: 'GraphNode'):
         seen = set()
         nextlevel = {source}
         while nextlevel:
