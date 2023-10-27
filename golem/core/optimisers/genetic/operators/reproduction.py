@@ -69,9 +69,7 @@ class ReproductionController:
         return new_population
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        with (Manager() as manager,
-              Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel):
-
+        with Manager() as manager:
             operator_agent = manager.Value('operator_agent', self.mutation._operator_agent)
             agent_experience = manager.Value('agent_experience', self.mutation.agent_experience)
             mutation = SpecialSingleMutation(parameters=self.mutation.parameters,
@@ -82,22 +80,50 @@ class ReproductionController:
                                              agent_experience=agent_experience)
             pop_graph_descriptive_ids = manager.dict(zip(self._pop_graph_descriptive_ids,
                                                          range(len(self._pop_graph_descriptive_ids))))
-            mutation_fun = partial(self._mutation_n_evaluation,
-                                   count=self.parameters.max_num_of_mutation_attempts,
-                                   pop_graph_descriptive_ids=pop_graph_descriptive_ids,
-                                   mutation=mutation,
-                                   evaluator=evaluator)
 
-            max_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+            left_tries = [self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER]
+            executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
+            cycled_population = cycle(population)
             new_population = []
+            futures = deque()
 
-            new_ind_generator = parallel(delayed(mutation_fun)(ind)
-                                         for ind, _ in zip(cycle(population), range(max_tries)))
-            for new_ind in new_ind_generator:
-                if new_ind:
-                    new_population.append(new_ind)
+            def try_mutation(ind, mutation_type=None, count=self.parameters.max_num_of_mutation_attempts):
+                return executor.submit(self._mutation_n_evaluation,
+                                       individual=ind,
+                                       count=count,
+                                       mutation_type=mutation_type,
+                                       pop_graph_descriptive_ids=pop_graph_descriptive_ids,
+                                       mutation=mutation,
+                                       evaluator=evaluator)
+
+            while True:
+                if left_tries[0] <= 0:
+                    break
+
+                # create new tasks if there is not enough load
+                if len(futures) < self.mutation.requirements.n_jobs + 2:
+                    futures.append(try_mutation(next(cycled_population)))
+                    continue
+
+                # get next finished future
+                while True:
+                    future = futures.popleft()
+                    if future._state == 'FINISHED':
+                        left_tries[0] -= 1
+                        break
+                    futures.append(future)
+                    time.sleep(0.01)  # to prevent flooding
+
+                # process result
+                applied, ind, mutation_type, count = future.result()
+                if applied:
+                    new_population.append(ind)
                     if len(new_population) >= self.parameters.pop_size:
                         break
+                elif count > 0:
+                    futures.append(try_mutation(ind, mutation_type, count))
+
+            executor.shutdown(wait=False)
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids)
             return new_population
 
@@ -118,16 +144,16 @@ class ReproductionController:
     def _mutation_n_evaluation(self,
                                individual: Individual,
                                count: int,
+                               mutation_type: MutationType,
                                pop_graph_descriptive_ids: DictProxy,
                                mutation: SpecialSingleMutation,
                                evaluator: EvaluationOperator):
-        origin, mutation_type = individual, None
-        for _ in range(count):
-            individual, mutation_type = mutation(origin, mutation_type=mutation_type)
-            if individual and self.verifier(individual.graph):
-                descriptive_id = individual.graph.descriptive_id
-                if descriptive_id not in pop_graph_descriptive_ids:
-                    pop_graph_descriptive_ids[descriptive_id] = True
-                    individuals = evaluator([individual])
-                    if individuals:
-                        return individuals[0]
+        new_ind, mutation_type = mutation(individual, mutation_type=mutation_type)
+        if new_ind and self.verifier(new_ind.graph):
+            descriptive_id = new_ind.graph.descriptive_id
+            if descriptive_id not in pop_graph_descriptive_ids:
+                pop_graph_descriptive_ids[descriptive_id] = True
+                new_inds = evaluator([new_ind])
+                if new_inds:
+                    return True, new_inds[0], mutation_type, count - 1
+        return False, individual, mutation_type, count - 1
