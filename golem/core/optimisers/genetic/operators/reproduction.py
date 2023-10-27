@@ -1,24 +1,14 @@
 import time
-from collections import deque
-from concurrent.futures import as_completed
-from functools import partial
-from itertools import cycle, chain
-from math import ceil
-from multiprocessing.managers import ValueProxy, DictProxy
-from typing import Callable, Dict, Union, List, Optional
-from multiprocessing import Queue, Manager
-import queue
-from copy import copy, deepcopy
+from itertools import cycle
+from multiprocessing.managers import DictProxy
+from multiprocessing import Manager
 
-import numpy as np
-from joblib import Parallel, delayed
 from joblib.externals.loky import get_reusable_executor
 
-from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_PER_IND
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationType, SinglePredefinedMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
@@ -75,25 +65,22 @@ class ReproductionController:
                                                 requirements=self.mutation.requirements,
                                                 graph_gen_params=self.mutation.graph_generation_params,
                                                 mutations_repo=self.mutation._mutations_repo)
-            pop_graph_descriptive_ids = manager.dict(zip(self._pop_graph_descriptive_ids,
-                                                         range(len(self._pop_graph_descriptive_ids))))
-
-            left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
+            pop_graph_descriptive_ids = manager.dict([(ids, True) for ids in self._pop_graph_descriptive_ids])
             executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
-            cycled_population = cycle(population)
-            new_population = []
-            futures = deque()
 
-            def try_mutation(ind, mutation_type=None, count=self.parameters.max_num_of_mutation_attempts):
+            def try_mutation(ind, mutation_type=None, tries=self.parameters.max_num_of_mutation_attempts):
                 mutation_type = mutation_type or self.mutation.agent.choose_action(ind.graph)
                 return executor.submit(self._mutation_n_evaluation,
                                        individual=ind,
-                                       count=count,
+                                       tries=tries,
                                        mutation_type=mutation_type,
                                        pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                        mutation=mutation,
                                        evaluator=evaluator)
 
+            left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
+            cycled_population = cycle(population)
+            new_population, futures = list(), list()
             while left_tries > 0:
                 # create new tasks if there is not enough load
                 if len(futures) < self.mutation.requirements.n_jobs + 2:
@@ -101,15 +88,15 @@ class ReproductionController:
                     continue
 
                 # get next finished future
-                while True:
-                    future = futures.popleft()
-                    if future._state == 'FINISHED': break
-                    futures.append(future)
+                for i in cycle(range(len(futures))):
                     time.sleep(0.01)  # to prevent flooding
+                    if futures[i]._state == 'FINISHED':
+                        future = futures.pop(i)
+                        left_tries -= 1
+                        break
 
                 # process result
-                left_tries -= 1
-                failed_stage, individual, mutation_type, retained_count = future.result()
+                failed_stage, individual, mutation_type, retained_tries = future.result()
                 if failed_stage is None:
                     new_population.append(individual)
                     if len(new_population) >= self.parameters.pop_size:
@@ -118,8 +105,8 @@ class ReproductionController:
                     if failed_stage == 'verification':
                         # add experience to mutation
                         self.mutation.agent_experience.collect_experience(individual, mutation_type, reward=-1.0)
-                    if retained_count > 0:
-                        futures.append(try_mutation(individual, mutation_type, retained_count))
+                    if retained_tries > 0:
+                        futures.append(try_mutation(individual, mutation_type, retained_tries))
 
             # get finished mutations
             for future in futures:
@@ -129,20 +116,14 @@ class ReproductionController:
 
             # shutdown workers and add pop_graph_descriptive_ids to self._pop_graph_descriptive_ids
             executor.shutdown(wait=False)
-            for _ in range(10):
-                try:
-                    self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids)
-                    break
-                except RuntimeError as exception:
-                    time.sleep(0.1)  # time for finish all processes
-            else:
-                raise exception
+            time.sleep(0.1)  # time for finish all processes, otherwise may crash
+            self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids)
 
             return new_population
 
     def _mutation_n_evaluation(self,
                                individual: Individual,
-                               count: int,
+                               tries: int,
                                mutation_type: MutationType,
                                pop_graph_descriptive_ids: DictProxy,
                                mutation: SinglePredefinedMutation,
@@ -150,26 +131,28 @@ class ReproductionController:
         # mutation
         new_ind, mutation_type = mutation(individual, mutation_type=mutation_type)
         if not new_ind:
-            return 'mutation', individual, mutation_type, count - 1
+            return 'mutation', individual, mutation_type, tries - 1
 
         # verification
         if not self.verifier(new_ind.graph):
-            return 'verification', individual, mutation_type, count - 1
+            return 'verification', individual, mutation_type, tries - 1
 
         # unique check
         descriptive_id = new_ind.graph.descriptive_id
-        if descriptive_id in pop_graph_descriptive_ids:
-            # worker can't send nonempty string! wtf?
-            return '', individual, mutation_type, count - 1
+        lock = pop_graph_descriptive_ids._mutex._lock
+        lock.acquire()
+        not_unique = descriptive_id in pop_graph_descriptive_ids
+        lock.release()
+        if not_unique:
+            return 'non unique', individual, mutation_type, tries - 1
         pop_graph_descriptive_ids[descriptive_id] = True
 
         # evaluation
         new_inds = evaluator([new_ind])
         if not new_inds:
-            # worker can't send nonempty string! wtf?
-            return '', individual, mutation_type, count - 1
+            return 'evaluation', individual, mutation_type, tries - 1
 
-        return None, new_inds[0], mutation_type, count - 1
+        return None, new_inds[0], mutation_type, tries - 1
 
     def _check_final_population(self, population: PopulationT) -> None:
         """ If population do not achieve required length return a warning or raise exception """

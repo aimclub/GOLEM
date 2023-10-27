@@ -44,8 +44,10 @@ class PopulationalOptimizer(GraphOptimizer):
         self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
 
-        dispatcher_type = MultiprocessingDispatcher if self.requirements.parallelization_mode == 'populational' else \
-            SequentialDispatcher
+        # dispatcher_type = MultiprocessingDispatcher if self.requirements.parallelization_mode == 'populational' else \
+        #     SequentialDispatcher
+
+        dispatcher_type = SequentialDispatcher
 
         self.eval_dispatcher = dispatcher_type(adapter=graph_generation_params.adapter,
                                                n_jobs=requirements.n_jobs,
