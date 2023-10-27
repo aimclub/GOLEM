@@ -180,10 +180,10 @@ class SpecialSingleMutation(Mutation):
         self._operator_agent = operator_agent
         self.agent_experience = agent_experience
 
-    def __call__(self, individual: Individual) -> Individual:
+    def __call__(self, individual: Individual, mutation_type: Optional[MutationType] = None) -> Individual:
         new_graph = deepcopy(individual.graph)
 
-        mutation_type = self._operator_agent.value.choose_action(new_graph)
+        mutation_type = mutation_type or self._operator_agent.value.choose_action(new_graph)
         mutation_func = self._get_mutation_func(mutation_type)
 
         new_graph = mutation_func(new_graph, requirements=self.requirements,
@@ -193,4 +193,4 @@ class SpecialSingleMutation(Mutation):
         parent_operator = ParentOperator(type_='mutation', operators=mutation_type, parent_individuals=individual)
         individual = Individual(new_graph, parent_operator,
                                 metadata=self.requirements.static_individual_metadata)
-        return individual
+        return individual, mutation_type

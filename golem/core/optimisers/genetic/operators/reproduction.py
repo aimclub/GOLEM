@@ -72,12 +72,9 @@ class ReproductionController:
         with (Manager() as manager,
               Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel):
 
-            initial_parameters = deepcopy(self.parameters)
-            initial_parameters.mutation_prob = 1.0
-
             operator_agent = manager.Value('operator_agent', self.mutation._operator_agent)
             agent_experience = manager.Value('agent_experience', self.mutation.agent_experience)
-            mutation = SpecialSingleMutation(parameters=initial_parameters,
+            mutation = SpecialSingleMutation(parameters=self.mutation.parameters,
                                              requirements=self.mutation.requirements,
                                              graph_gen_params=self.mutation.graph_generation_params,
                                              mutations_repo=self.mutation._mutations_repo,
@@ -86,6 +83,7 @@ class ReproductionController:
             pop_graph_descriptive_ids = manager.dict(zip(self._pop_graph_descriptive_ids,
                                                          range(len(self._pop_graph_descriptive_ids))))
             mutation_fun = partial(self._mutation_n_evaluation,
+                                   count=self.parameters.max_num_of_mutation_attempts,
                                    pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                    mutation=mutation,
                                    evaluator=evaluator)
@@ -117,14 +115,19 @@ class ReproductionController:
                               f'have {len(population)},'
                               f' required {target_pop_size}!\n' + helpful_msg)
 
-    def _mutation_n_evaluation(self, individual: Individual, pop_graph_descriptive_ids: DictProxy,
-                               mutation: Mutation, evaluator: EvaluationOperator):
-        individual = mutation(individual)
-        if individual and self.verifier(individual.graph):
-            descriptive_id = individual.graph.descriptive_id
-            if descriptive_id not in pop_graph_descriptive_ids:
-                individuals = evaluator([individual])
-                if individuals:
+    def _mutation_n_evaluation(self,
+                               individual: Individual,
+                               count: int,
+                               pop_graph_descriptive_ids: DictProxy,
+                               mutation: SpecialSingleMutation,
+                               evaluator: EvaluationOperator):
+        origin, mutation_type = individual, None
+        for _ in range(count):
+            individual, mutation_type = mutation(origin, mutation_type=mutation_type)
+            if individual and self.verifier(individual.graph):
+                descriptive_id = individual.graph.descriptive_id
+                if descriptive_id not in pop_graph_descriptive_ids:
                     pop_graph_descriptive_ids[descriptive_id] = True
-                    return individuals[0]
-            pop_graph_descriptive_ids[descriptive_id] = False
+                    individuals = evaluator([individual])
+                    if individuals:
+                        return individuals[0]
