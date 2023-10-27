@@ -17,7 +17,6 @@ from golem.utilities.utilities import determine_n_jobs
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, RandomMetric
 
 
-
 def set_up_tests():
     adapter = DirectAdapter()
     graphs = [graph_first(), graph_second(), graph_third(), graph_fourth()]
