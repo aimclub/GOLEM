@@ -156,7 +156,8 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
 def subgraph_crossover(graph_first: OptGraph, graph_second: OptGraph, **kwargs) -> Tuple[OptGraph, OptGraph]:
     """ A random edge is chosen and all paths between these nodes are disconnected.
     This way each graph is divided into two subgraphs.
-    The subgraphs are exchanged between the graphs and connected randomly at the points of division. """
+    The subgraphs are exchanged between the graphs and connected randomly at the points of division.
+    Suitable for graphs with cycles. Does not guarantee not exceeding maximal depth. """
     first_subgraphs, first_div_points = get_subgraphs(graph_first)
     second_subgraphs, second_div_points = get_subgraphs(graph_second)
     graph_first = connect_subgraphs(first_subgraphs[0], second_subgraphs[1], first_div_points, second_div_points)
