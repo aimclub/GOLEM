@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 
 MutationFunc = Callable[[Graph, GraphRequirements, GraphGenerationParams, AlgorithmParameters], Graph]
+MutationType = Union[MutationTypesEnum, Callable]
 MutationIdType = Hashable
 MutationRepo = Mapping[MutationIdType, MutationFunc]
 
@@ -78,14 +79,15 @@ class Mutation(Operator):
     def agent(self) -> OperatorAgent:
         return self._operator_agent
 
-    def __call__(self, population: Union[Individual, PopulationT]) -> Union[Individual, PopulationT]:
+    def __call__(self,
+                 population: Union[Individual, PopulationT],
+                 mutation_type: Union[None, MutationTypesEnum, Callable] = None,
+                 ) -> Union[Individual, PopulationT]:
         if isinstance(population, Individual):
-            mutation_result = [[x] for x in self._mutation(population)]
             population = [population]
-        else:
-            with Parallel(n_jobs=self.requirements.n_jobs) as parallel:
-                mutation_result = tuple(zip(*parallel(delayed(self._mutation)(ind) for ind in population)))
-        final_population, mutations_applied, application_attempts = mutation_result
+
+        final_population, _, application_attempts = \
+            tuple(zip(*map(lambda individual: self._mutation(individual, mutation_type=mutation_type), population)))
 
         # drop individuals to which mutations could not be applied
         final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)
@@ -96,25 +98,23 @@ class Mutation(Operator):
 
         return final_population
 
-    def _mutation(self, individual: Individual) -> Tuple[Individual, Optional[MutationIdType], bool]:
+    def _mutation(self,
+                  individual: Individual,
+                  mutation_type: Union[None, MutationTypesEnum, Callable] = None,
+                  ) -> Tuple[Individual, Union[MutationTypesEnum, Callable], bool]:
         """ Function applies mutation operator to graph """
-        application_attempt = False
-        mutation_applied = None
-        for _ in range(self.parameters.max_num_of_operator_attempts):
-            new_graph = deepcopy(individual.graph)
-
-            new_graph, mutation_applied = self._apply_mutations(new_graph)
-            if mutation_applied is None:
-                continue
-            application_attempt = True
+        new_graph = deepcopy(individual.graph)
+        mutation_type = mutation_type or self._operator_agent.choose_action(new_graph)
+        applied = self._will_mutation_be_applied(mutation_type)
+        if applied:
+            new_graph = self._apply_mutations(new_graph, mutation_type=mutation_type)
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
                 parent_operator = ParentOperator(type_='mutation',
-                                                 operators=mutation_applied,
+                                                 operators=mutation_type,
                                                  parent_individuals=individual)
                 individual = Individual(new_graph, parent_operator,
                                         metadata=self.requirements.static_individual_metadata)
-                break
             else:
                 # Collect invalid actions
                 self.agent_experience.collect_experience(individual, mutation_applied, reward=-1.0)
@@ -123,9 +123,11 @@ class Mutation(Operator):
                            'Please check optimization parameters for correctness.')
         return individual, mutation_applied, application_attempt
 
-    def _sample_num_of_mutations(self) -> int:
+    def _sample_num_of_mutations(self, mutation_type: Union[MutationTypesEnum, Callable]) -> int:
         # most of the time returns 1 or rarely several mutations
-        if self.parameters.variable_mutation_num:
+        # if mutation is custom apply it only once
+        is_custom_mutation = isinstance(mutation_type, Callable)
+        if not is_custom_mutation and self.parameters.variable_mutation_num:
             num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
         else:
             num_mut = 1
@@ -152,7 +154,7 @@ class Mutation(Operator):
             new_graph = mutation_func(new_graph, requirements=self.requirements,
                                       graph_gen_params=self.graph_generation_params,
                                       parameters=self.parameters)
-        return new_graph, applied
+        return new_graph
 
     def _will_mutation_be_applied(self, mutation_type: Union[MutationTypesEnum, Callable]) -> bool:
         return random() <= self.parameters.mutation_prob and mutation_type is not MutationTypesEnum.none

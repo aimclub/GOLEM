@@ -1,14 +1,9 @@
 from copy import deepcopy
-from time import perf_counter
 from typing import Sequence, Union, Any
-from math import ceil
 
-from joblib import Parallel, delayed
+from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
 
-from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
 from golem.core.dag.graph import Graph
-from golem.core.dag.graph_verifier import GraphVerifier
-from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
@@ -24,7 +19,7 @@ from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
+from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 
 
 class EvoGraphOptimizer(PopulationalOptimizer):
@@ -39,7 +34,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
-        self._log = default_log(self)
         # Define genetic operators
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)
@@ -49,6 +43,12 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,
                           self.mutation, self.inheritance, self.elitism]
+
+        self.reproducer = ReproductionController(parameters=graph_optimizer_params,
+                                                 selection=self.selection,
+                                                 mutation=self.mutation,
+                                                 crossover=self.crossover,
+                                                 verifier=self.graph_generation_params.verifier)
 
         # Define adaptive parameters
         self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
@@ -65,9 +65,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
                                     for graph in self.initial_graphs]
 
-        # All individuals graphs
-        self._graphs = set()
-
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
         # Adding of initial assumptions to history as zero generation
@@ -75,24 +72,10 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         pop_size = self.graph_optimizer_params.pop_size
 
         if len(self.initial_individuals) < pop_size:
-            self.initial_individuals = self._extend_population(self.initial_individuals, evaluator)
+            self.initial_individuals += self.reproducer._mutate_over_population(population=self.initial_individuals,
+                                                                                evaluator=evaluator)
             # Adding of extended population to history
             self._update_population(self.initial_individuals, 'extended_initial_assumptions')
-        # Save graphs
-        self._save_graphs(self.initial_individuals)
-
-    def _extend_population(self, pop: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        # Set mutation probabilities to 1.0
-        initial_req = deepcopy(self.requirements)
-        initial_req.mutation_prob = 1.0
-        self.mutation.update_requirements(requirements=initial_req)
-
-        # Make mutations
-        extended_pop = self._mutation_n_evaluation_in_parallel(population=list(pop), evaluator=evaluator)
-
-        # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=self.requirements)
-        return extended_pop
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """
@@ -104,7 +87,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # Regularize previous population
         individuals_to_select = self.regularization(self.population, evaluator)
         # Reproduce from previous pop to get next population
-        new_population = self._reproduce(individuals_to_select, evaluator)
+        new_population = self.reproducer.reproduce(individuals_to_select, evaluator)
 
         # Adaptive agent experience collection & learning
         # Must be called after reproduction (that collects the new experience)
@@ -115,8 +98,6 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # Use some part of previous pop in the next pop
         new_population = self.inheritance(self.population, new_population)
         new_population = self.elitism(self.generations.best_individuals, new_population)
-        # Save graphs
-        self._save_graphs(new_population)
         return new_population
 
     def _update_requirements(self):
@@ -135,61 +116,3 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # update requirements in operators
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
-
-    def _reproduce(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
-        selected_individuals = self.selection(population, self.graph_optimizer_params.pop_size)
-        new_population = self.crossover(selected_individuals)
-        new_population = self._mutation_n_evaluation_in_parallel(population=new_population,
-                                                                 evaluator=evaluator,
-                                                                 include_population_to_new_population=False)
-        self._log.info(f'Reproduction achieved pop size {len(new_population)}')
-        return new_population
-
-    def _mutation_n_evaluation_in_parallel(self,
-                                           population: PopulationT,
-                                           evaluator: EvaluationOperator,
-                                           include_population_to_new_population: bool = True) -> PopulationT:
-        def mutation_n_evaluation(individual: Individual,
-                                  mutation: Mutation = self.mutation,
-                                  verifier: GraphVerifier = self.graph_generation_params.verifier,
-                                  evaluator: callable = evaluator):
-            individual = mutation(individual)
-            if individual and verifier(individual.graph):
-                individuals = evaluator([individual])
-                if individuals:
-                    return individuals[0]
-
-        target_pop_size = self.graph_optimizer_params.pop_size
-        max_tries = target_pop_size * MAX_GRAPH_GEN_ATTEMPTS_AS_POP_SIZE_MULTIPLIER
-        _population = (list(population) * ceil(max_tries / len(population) + 1))
-
-        new_population, pop_graphs = [], set()
-        if include_population_to_new_population:
-            new_population, pop_graphs = population[:], set([ind.graph.descriptive_id for ind in population])
-
-        with Parallel(n_jobs=self.mutation.requirements.n_jobs, return_as='generator') as parallel:
-            new_ind_generator = parallel(delayed(mutation_n_evaluation)(ind) for ind in _population)
-            for try_num, new_ind in enumerate(new_ind_generator):
-                if new_ind:
-                    descriptive_id = new_ind.graph.descriptive_id
-                    if descriptive_id not in pop_graphs and descriptive_id not in self._graphs:
-                        new_population.append(new_ind)
-                        pop_graphs.add(descriptive_id)
-                        if len(new_population) >= target_pop_size:
-                            break
-                if try_num >= max_tries:
-                    break
-
-        helpful_msg = ('Check objective, constraints and evo operators. '
-                       'Possibly they return too few valid individuals.')
-        if 0 < len(new_population) < target_pop_size:
-            self._log.warning(f'Could not achieve required population size: '
-                              f'have {len(new_population)},'
-                              f' required {target_pop_size}!\n' + helpful_msg)
-        elif len(new_population) == 0:
-            raise EvaluationAttemptsError('Could not collect valid individuals'
-                                          ' for population.' + helpful_msg)
-        return new_population
-
-    def _save_graphs(self, population: PopulationT):
-        self._graphs |= set(ind.graph.descriptive_id for ind in population)
