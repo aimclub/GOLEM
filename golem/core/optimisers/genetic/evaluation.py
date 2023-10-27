@@ -241,15 +241,18 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
 
     def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
-        # Evaluate individuals without valid fitness in parallel.
-        n_jobs = determine_n_jobs(self._n_jobs, self.logger)
 
-        parallel = Parallel(n_jobs=n_jobs, verbose=0, pre_dispatch="2*n_jobs")
+        # Evaluate individuals without valid fitness
         eval_func = partial(self.evaluate_single, logs_initializer=Log().get_parameters())
-        evaluation_results = parallel(delayed(eval_func)(ind.graph, ind.uid) for ind in individuals_to_evaluate)
+
+        if len(individuals_to_evaluate) == 1 or self._n_jobs == 1:
+            evaluation_results = [eval_func(ind.graph, ind.uid) for ind in individuals_to_evaluate]
+        else:
+            n_jobs = determine_n_jobs(self._n_jobs, self.logger)
+            parallel = Parallel(n_jobs=n_jobs)
+            evaluation_results = parallel(delayed(eval_func)(ind.graph, ind.uid) for ind in individuals_to_evaluate)
+
         individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
-        # If there were no successful evals then try once again getting at least one,
-        # even if time limit was reached
         successful_evals = individuals_evaluated + individuals_to_skip
         self.population_evaluation_info(evaluated_pop_size=len(successful_evals),
                                         pop_size=len(individuals))
