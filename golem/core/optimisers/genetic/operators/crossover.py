@@ -1,4 +1,3 @@
-import time
 from copy import deepcopy
 from itertools import chain
 from math import ceil
@@ -6,7 +5,6 @@ from random import choice, random, sample, randrange
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
-from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth, get_all_simple_paths, get_connected_components
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator

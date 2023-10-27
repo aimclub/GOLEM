@@ -9,7 +9,7 @@ from golem.core.dag.verification_rules import has_no_isolated_components, has_no
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
-from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, subgraph_crossover
+from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
@@ -41,7 +41,7 @@ def test_cycled_graphs_evolution():
     requirements = GraphRequirements(
         early_stopping_iterations=num_iterations,
         num_of_generations=num_iterations,
-        n_jobs=1,
+        n_jobs=-1,
         history_dir=None
     )
     gp_params = GPAlgorithmParameters(
@@ -53,7 +53,7 @@ def test_cycled_graphs_evolution():
             MutationTypesEnum.simple,
             MutationTypesEnum.single_change
         ],
-        crossover_types=[subgraph_crossover]
+        crossover_types=[CrossoverTypesEnum.subgraph]
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
