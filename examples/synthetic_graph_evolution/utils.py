@@ -10,7 +10,7 @@ from matplotlib import cm
 
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 from golem.visualisation.graph_viz import GraphVisualizer
 
 

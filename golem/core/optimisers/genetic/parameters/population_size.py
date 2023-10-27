@@ -7,8 +7,8 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.genetic.parameters.parameter import AdaptiveParameter
-from golem.core.utilities.data_structures import BidirectionalIterator
-from golem.core.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
+from golem.utilities.data_structures import BidirectionalIterator
+from golem.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
 
 PopulationSize = AdaptiveParameter[int]
 

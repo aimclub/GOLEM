@@ -18,7 +18,7 @@ from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveF
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
-from golem.core.utilities.random import RandomStateHandler
+from golem.utilities.random import RandomStateHandler
 
 STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
 

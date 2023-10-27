@@ -1,6 +1,6 @@
 from typing import List, Any, TypeVar, Generic
 
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 NodeType = TypeVar('NodeType')
 

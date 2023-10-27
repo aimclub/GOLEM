@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import partial
 from typing import List, Optional, Sequence, Tuple, TypeVar, Dict
 
-from joblib import Parallel, cpu_count, delayed
+from joblib import Parallel, delayed
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph import Graph
@@ -18,8 +18,9 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 from golem.core.optimisers.timer import Timer, get_forever_timer
-from golem.core.utilities.serializable import Serializable
+from golem.utilities.serializable import Serializable
 from golem.utilities.memory import MemoryAnalytics
+from golem.utilities.utilities import determine_n_jobs
 
 # the percentage of successful evaluations,
 # at which evolution is not threatened with stagnation at the moment
@@ -276,17 +277,3 @@ class SequentialDispatcher(BaseGraphEvaluationDispatcher):
         individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
         evaluated_population = individuals_evaluated + individuals_to_skip
         return evaluated_population
-
-
-def determine_n_jobs(n_jobs=-1, logger=None):
-    cpu_num = cpu_count()
-    if n_jobs > cpu_num:
-        n_jobs = cpu_num
-    elif n_jobs <= 0:
-        if n_jobs <= -cpu_num - 1 or n_jobs == 0:
-            raise ValueError(f"Unproper `n_jobs` = {n_jobs}. "
-                             f"`n_jobs` should be between ({-cpu_num}, {cpu_num}) except 0")
-        n_jobs = cpu_num + 1 + n_jobs
-    if logger:
-        logger.info(f"Number of used CPU's: {n_jobs}")
-    return n_jobs

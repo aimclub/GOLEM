@@ -3,7 +3,7 @@ from typing import Sequence, Any, Optional, Tuple
 
 import numpy as np
 
-from golem.core.utilities.data_structures import Comparable
+from golem.utilities.data_structures import Comparable
 
 
 class Fitness(Comparable):

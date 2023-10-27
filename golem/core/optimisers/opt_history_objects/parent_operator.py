@@ -5,7 +5,7 @@ from typing import Hashable, Sequence
 from uuid import uuid4
 
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 @dataclass(frozen=True)

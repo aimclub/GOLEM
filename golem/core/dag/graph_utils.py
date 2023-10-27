@@ -1,6 +1,6 @@
 from typing import Sequence, List, TYPE_CHECKING, Callable, Union
 
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
