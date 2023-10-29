@@ -176,10 +176,10 @@ class BaseTuner(Generic[DomainGraphForTune]):
                              f'{metrics_formatted}')
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
-            self.obtained_individual = self.init_individual
-            final_graphs = self.init_individual.graph
+            self.obtained_individual = [self.init_individual]
+            final_graphs = [self.init_individual.graph]
 
-        self._add_to_history(ensure_wrapped_in_sequence(self.obtained_individual), label='tuning_result')
+        self._add_to_history(self.obtained_individual, label='tuning_result')
 
         return final_graphs
 
@@ -192,7 +192,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
           graph: Graphs to evaluate
 
         Returns:
-          values of loss function for graphs
+          values of loss function for graph
         """
         graph_fitness = self.objective_evaluate(graph)
         individual = self._create_individual(graph, graph_fitness)

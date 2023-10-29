@@ -310,8 +310,9 @@ def test_newly_generated_history(n_jobs: int, search_space, tuner_cls, objective
 
     tuning_iterations = 2
     objectives_number = len(objective.metric_names)
+    objectives_number_kwarg = dict(objectives_number=objectives_number) if objectives_number > 1 else {}
     tuner = tuner_cls(obj_eval, search_space, MockAdapter(), iterations=tuning_iterations, n_jobs=n_jobs,
-                      objectives_number=objectives_number, history=history)
+                      history=history, **objectives_number_kwarg)
     tuner.tune(history.evolution_results[0].graph)
 
     # initial_assumptions=1 + num_of_gens + evolution_results=1 + tuning_start=1 +
