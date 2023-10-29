@@ -285,7 +285,7 @@ def search_space():
     return SearchSpace(params_per_operation)
 
 
-@pytest.mark.parametrize('n_jobs', [1, 2])
+@pytest.mark.parametrize('n_jobs', [1, 2, -1])
 def test_newly_generated_history(n_jobs: int, search_space):
     num_of_gens = 5
     objective = Objective({'random_metric': RandomMetric.get_value})
