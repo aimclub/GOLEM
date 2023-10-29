@@ -260,7 +260,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
     def _create_individual(self, graph: OptGraph, fitness: Fitness) -> Individual:
         history = self.history
-        if history and history.tuning_start:
+        if history and history.evolution_results:
+            parent_individuals = history.evolution_results
+        elif history and history.tuning_start:
             parent_individuals = history.tuning_start
         else:
             parent_individuals = []
@@ -271,7 +273,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         return individual
 
-    def _add_to_history(self, individuals: Sequence[Individual], label: str = None):
+    def _add_to_history(self, individuals: Sequence[Individual], label: Optional[str] = None):
         history = self.history
         tuner_name = self.__class__.__name__
 
