@@ -154,7 +154,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.log.message('Final metric is None')
 
         self.obtained_individual = final_individual
-        self._add_to_history([self.obtained_individual], 'tuning_result')
+        self._add_to_history([self.obtained_individual], label='tuning_result')
 
         return self.obtained_individual.graph
 
@@ -176,9 +176,10 @@ class BaseTuner(Generic[DomainGraphForTune]):
                              f'{metrics_formatted}')
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
+            self.obtained_individual = self.init_individual
             final_graphs = self.init_individual.graph
 
-        self._add_to_history(self.obtained_individual, label='tuning_result')
+        self._add_to_history(ensure_wrapped_in_sequence(self.obtained_individual), label='tuning_result')
 
         return final_graphs
 

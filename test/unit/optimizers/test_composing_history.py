@@ -12,7 +12,7 @@ from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
-from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
+from golem.core.optimisers.genetic.operators.crossover import Crossover, CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
@@ -22,12 +22,13 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.paths import project_root
+from golem.core.tuning.optuna_tuner import OptunaTuner
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.simultaneous import SimultaneousTuner
-from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
+from golem.visualisation.opt_viz import OptHistoryVisualizer, PlotTypesEnum
 from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
-from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
+from test.unit.utils import RandomMetric, graph_fifth, graph_first, graph_fourth, graph_second, graph_third
 
 
 def create_mock_graph_individual():
@@ -286,9 +287,18 @@ def search_space():
 
 
 @pytest.mark.parametrize('n_jobs', [1, 2, -1])
-def test_newly_generated_history(n_jobs: int, search_space):
+@pytest.mark.parametrize('tuner_cls, objective',
+                         [(SimultaneousTuner,
+                           Objective({'random_metric': RandomMetric.get_value})),
+                          (OptunaTuner,
+                           Objective({
+                               'random_metric_1': RandomMetric.get_value,
+                               'random_metric_2': RandomMetric.get_value,
+                           },
+                               is_multi_objective=True))
+                          ])
+def test_newly_generated_history(n_jobs: int, search_space, tuner_cls, objective):
     num_of_gens = 5
-    objective = Objective({'random_metric': RandomMetric.get_value})
     init_graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
     requirements = GraphRequirements(num_of_generations=num_of_gens)
     graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c', 'd', 'e', 'f'])
@@ -299,13 +309,14 @@ def test_newly_generated_history(n_jobs: int, search_space):
     history = opt.history
 
     tuning_iterations = 2
-    tuner = SimultaneousTuner(obj_eval, search_space, MockAdapter(), iterations=tuning_iterations, n_jobs=n_jobs,
-                              history=history)
+    objectives_number = len(objective.metric_names)
+    tuner = tuner_cls(obj_eval, search_space, MockAdapter(), iterations=tuning_iterations, n_jobs=n_jobs,
+                      objectives_number=objectives_number, history=history)
     tuner.tune(history.evolution_results[0].graph)
 
-    # initial_assumptions=1 + num_of_gens=5 + evolution_results=1 + tuning_start=1 +
-    #   tuning_iterations=2 + tuning_result=1 -> num_of_gens + tuning_iterations + 4
-    expected_gen_num = num_of_gens + tuning_iterations + 4
+    # initial_assumptions=1 + num_of_gens + evolution_results=1 + tuning_start=1 +
+    #   evaluations_count + tuning_result=1 -> num_of_gens + tuning_iterations + 4
+    expected_gen_num = num_of_gens + tuner.evaluations_count + 4
 
     # initial_assumptions=1 + num_of_gens=5 + evolution_results=1 -> num_of_gens + 2
     expected_evolution_gen_num = num_of_gens + 2
@@ -314,8 +325,12 @@ def test_newly_generated_history(n_jobs: int, search_space):
     assert len(history.generations) == expected_gen_num
     assert len(history.evolution_best_archive) == expected_evolution_gen_num
     assert len(history.initial_assumptions) == 5
-    assert len(history.evolution_results) == 1
-    assert len(history.tuning_result) == 1
+    if objectives_number == 1:
+        assert len(history.evolution_results) == 1
+        assert len(history.tuning_result) == 1
+    else:
+        assert len(history.evolution_results) >= 1
+        assert len(history.tuning_result) >= 1
     assert hasattr(history, 'objective')
     check_individuals_in_history(history)
     # Test history dumps
