@@ -51,7 +51,7 @@ class OptunaTuner(BaseTuner):
         init_parameters, has_parameters_to_optimize = self._get_initial_point(graph)
         if not has_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
-            tuned_graphs = self.init_graph
+            tuned_graphs = self.init_individual.graph
         else:
             # Enqueue initial point to try
             if init_parameters:

@@ -228,6 +228,14 @@ class OptHistory:
                 return gen
 
     @property
+    def tuning_start(self) -> Optional[Generation]:
+        if not self.generations:
+            return None
+        for gen in reversed(self.generations):
+            if gen.label == 'tuning_start':
+                return gen
+
+    @property
     def tuning_result(self) -> Optional[Generation]:
         if not self.generations:
             return None
