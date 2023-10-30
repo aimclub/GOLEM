@@ -74,8 +74,7 @@ def check_individuals_in_history(history: OptHistory):
     uids = set()
     ids = set()
     for ind in itertools.chain(*history.generations):
-        # All individuals in `history.generations` must have a native generation.
-        assert ind.has_native_generation
+        assert ind.has_native_generation  # All individuals in `history.generations` must have a native generation.
         assert ind.fitness
         if ind.native_generation == 0:
             continue
@@ -86,6 +85,7 @@ def check_individuals_in_history(history: OptHistory):
         assert ind.parents_from_prev_generation == list(ind.operators_from_prev_generation[0].parent_individuals)
         # All parents are from previous generations
         assert all(p.native_generation < ind.native_generation for p in ind.parents_from_prev_generation)
+        assert all(p in history.generations[ind.native_generation - 1] for p in ind.parents_from_prev_generation)
 
         uids.add(ind.uid)
         ids.add(id(ind))
@@ -308,7 +308,7 @@ def test_newly_generated_history(n_jobs: int, search_space, tuner_cls, objective
     opt.optimise(obj_eval)
     history = opt.history
 
-    tuning_iterations = 2
+    tuning_iterations = 10
     objectives_number = len(objective.metric_names)
     objectives_number_kwarg = dict(objectives_number=objectives_number) if objectives_number > 1 else {}
     tuner = tuner_cls(obj_eval, search_space, MockAdapter(), iterations=tuning_iterations, n_jobs=n_jobs,
