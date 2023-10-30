@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from golem.core.optimisers.graph import OptNode, OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, Objective
 from golem.core.tuning.iopt_tuner import IOptTuner
@@ -66,8 +68,5 @@ if __name__ == '__main__':
     # ищем такие параметры, чтобы их сумма была максимальна
     obj_eval = ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
 
-    tuner = IOptTuner(obj_eval, search_space, iterations=20, n_jobs=1)
-    tuned_graph = tuner.tune(graph)
-
-    tuner = IOptTuner(obj_eval, search_space, iterations=20, n_jobs=4)
+    tuner = IOptTuner(obj_eval, search_space, iterations=10000, n_jobs=1)
     tuned_graph = tuner.tune(graph)

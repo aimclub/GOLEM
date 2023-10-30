@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import timedelta
 from random import choice
 from typing import List, Dict, Generic, Tuple, Any, Optional
 
@@ -53,34 +54,34 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
         self.objective_evaluate = objective_evaluate
         self.graph = graph
 
-        self.numberOfObjectives = 1
-        self.numberOfConstraints = 0
+        self.number_of_objectives = 1
+        self.number_of_constraints = 0
 
-        self.discreteVariableNames = problem_parameters.discrete_parameters_names
-        self.discreteVariableValues = problem_parameters.discrete_parameters_vals
-        self.numberOfDiscreteVariables = len(self.discreteVariableNames)
+        self.discrete_variable_names = problem_parameters.discrete_parameters_names
+        self.discrete_variable_values = problem_parameters.discrete_parameters_vals
+        self.number_of_discrete_variables = len(self.discrete_variable_names)
 
-        self.floatVariableNames = problem_parameters.float_parameters_names
-        self.lowerBoundOfFloatVariables = problem_parameters.lower_bounds_of_float_parameters
-        self.upperBoundOfFloatVariables = problem_parameters.upper_bounds_of_float_parameters
-        self.numberOfFloatVariables = len(self.floatVariableNames)
+        self.float_variable_names = problem_parameters.float_parameters_names
+        self.lower_bound_of_float_variables = problem_parameters.lower_bounds_of_float_parameters
+        self.upper_bound_of_float_variables = problem_parameters.upper_bounds_of_float_parameters
+        self.number_of_float_variables = len(self.float_variable_names)
 
         self._default_metric_value = np.inf
 
-    def Calculate(self, point: Point, functionValue: FunctionValue) -> FunctionValue:
+    def calculate(self, point: Point, function_value: FunctionValue) -> FunctionValue:
         new_parameters = self.get_parameters_dict_from_iopt_point(point)
         BaseTuner.set_arg_graph(self.graph, new_parameters)
         graph_fitness = self.objective_evaluate(self.graph)
         metric_value = graph_fitness.value if graph_fitness.valid else self._default_metric_value
-        functionValue.value = metric_value
-        return functionValue
+        function_value.value = metric_value
+        return function_value
 
     def get_parameters_dict_from_iopt_point(self, point: Point) -> Dict[str, Any]:
         """Constructs a dict with all hyperparameters """
-        float_parameters = dict(zip(self.floatVariableNames, point.floatVariables)) \
-            if point.floatVariables is not None else {}
-        discrete_parameters = dict(zip(self.discreteVariableNames, point.discreteVariables)) \
-            if point.discreteVariables is not None else {}
+        float_parameters = dict(zip(self.float_variable_names, point.float_variables)) \
+            if point.float_variables is not None else {}
+        discrete_parameters = dict(zip(self.discrete_variable_names, point.discrete_variables)) \
+            if point.discrete_variables is not None else {}
 
         parameters_dict = {**float_parameters, **discrete_parameters}
         return parameters_dict
@@ -113,8 +114,9 @@ class IOptTuner(BaseTuner):
                  search_space: SearchSpace,
                  adapter: Optional[BaseOptimizationAdapter] = None,
                  iterations: int = 100,
+                 timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 eps: float = 0.01,
+                 eps: float = 0.000001,
                  r: float = 2.0,
                  evolvent_density: int = 10,
                  eps_r: float = 0.001,
@@ -124,16 +126,18 @@ class IOptTuner(BaseTuner):
                          search_space,
                          adapter,
                          iterations=iterations,
+                         timeout=timeout,
                          n_jobs=n_jobs,
                          deviation=deviation, **kwargs)
         self.n_jobs = determine_n_jobs(self.n_jobs)
         self.solver_parameters = SolverParameters(r=np.double(r),
                                                   eps=np.double(eps),
-                                                  itersLimit=iterations,
-                                                  evolventDensity=evolvent_density,
-                                                  epsR=np.double(eps_r),
-                                                  refineSolution=refine_solution,
-                                                  numberOfParallelPoints=n_jobs)
+                                                  iters_limit=iterations,
+                                                  evolvent_density=evolvent_density,
+                                                  eps_r=np.double(eps_r),
+                                                  refine_solution=refine_solution,
+                                                  number_of_parallel_points=determine_n_jobs(n_jobs),
+                                                  timeout=round(timeout.total_seconds()/60))
 
     def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
@@ -150,11 +154,11 @@ class IOptTuner(BaseTuner):
 
             if show_progress:
                 console_output = ConsoleOutputListener(mode='full')
-                solver.AddListener(console_output)
+                solver.add_listener(console_output)
 
-            solver.Solve()
-            solution = solver.GetResults()
-            best_point = solution.bestTrials[0].point
+            solver.solve()
+            solution = solver.get_results()
+            best_point = solution.best_trials[0].point
             best_parameters = problem.get_parameters_dict_from_iopt_point(best_point)
             final_graph = self.set_arg_graph(graph, best_parameters)
 
@@ -176,7 +180,7 @@ class IOptTuner(BaseTuner):
         """
         float_parameters_dict = {}
         discrete_parameters_dict = {}
-        initial_parameters = {'floatVariables': [], 'discreteVariables': []}
+        initial_parameters = {'float_variables': [], 'discrete_variables': []}
         for node_id, node in enumerate(graph.nodes):
             operation_name = node.name
 
@@ -191,12 +195,12 @@ class IOptTuner(BaseTuner):
             for parameter, bounds in float_node_parameters.items():
                 # If parameter is not set use parameter minimum possible value
                 initial_value = node.parameters.get(parameter) or bounds[0]
-                initial_parameters['floatVariables'].append(initial_value)
+                initial_parameters['float_variables'].append(initial_value)
 
             for parameter, values in discrete_node_parameters.items():
                 # If parameter is not set use parameter random value
                 initial_value = node.parameters.get(parameter) or choice(values)
-                initial_parameters['discreteVariables'].append(initial_value)
+                initial_parameters['discrete_variables'].append(initial_value)
 
             float_parameters_dict.update(float_node_parameters)
             discrete_parameters_dict.update(discrete_node_parameters)
