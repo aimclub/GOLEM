@@ -6,7 +6,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.meta.surrogate_evaluator import SurrogateDispatcher
 from golem.core.optimisers.meta.surrogate_model import RandomValuesSurrogateModel
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
-from golem.core.optimisers.opt_history_objects.opt_history import EVOLUTION_RESULTS_LABEL
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistoryLabels
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError, _try_unfit_graph
@@ -56,5 +56,5 @@ class SurrogateEachNgenOptimizer(EvoGraphOptimizer):
                     break
                 # Adding of new population to history
                 self._update_population(new_population)
-        self._update_population(self.best_individuals, EVOLUTION_RESULTS_LABEL)
+        self._update_population(self.best_individuals, OptHistoryLabels.evolution_results)
         return [ind.graph for ind in self.best_individuals]

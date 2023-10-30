@@ -10,7 +10,7 @@ from golem.core.optimisers.genetic.operators.operator import EvaluationOperator,
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.optimisers.opt_history_objects.opt_history import EVOLUTION_RESULTS_LABEL
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistoryLabels
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import AlgorithmParameters, GraphGenerationParams, GraphOptimizer
 from golem.core.optimisers.timer import OptimisationTimer
@@ -106,7 +106,7 @@ class PopulationalOptimizer(GraphOptimizer):
                 # Adding of new population to history
                 self._update_population(new_population)
         pbar.close()
-        self._update_population(self.best_individuals, EVOLUTION_RESULTS_LABEL)
+        self._update_population(self.best_individuals, OptHistoryLabels.evolution_results)
         return [ind.graph for ind in self.best_individuals]
 
     @property

@@ -14,7 +14,7 @@ from golem.core.optimisers.fitness import Fitness, MultiObjFitness, SingleObjFit
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.optimisers.opt_history_objects.opt_history import OptHistory, TUNING_RESULT_LABEL, TUNING_START_LABEL
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory, OptHistoryLabels
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
 from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
@@ -96,7 +96,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         graph = deepcopy(graph)
         fitness = self.objective_evaluate(graph)
         self.init_individual = self._create_individual(graph, fitness)
-        self._add_to_history([self.init_individual], label=TUNING_START_LABEL)
+        self._add_to_history([self.init_individual], label=OptHistoryLabels.tuning_start)
 
         init_metric = self._fitness_to_metric_value(fitness)
         self.log.message(f'Initial graph: {graph_structure(graph)} \n'
@@ -154,7 +154,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.log.message('Final metric is None')
 
         self.obtained_individual = final_individual
-        self._add_to_history([self.obtained_individual], label=TUNING_RESULT_LABEL)
+        self._add_to_history([self.obtained_individual], label=OptHistoryLabels.tuning_results)
 
         return self.obtained_individual.graph
 
@@ -179,7 +179,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.obtained_individual = [self.init_individual]
             final_graphs = [self.init_individual.graph]
 
-        self._add_to_history(self.obtained_individual, label=TUNING_RESULT_LABEL)
+        self._add_to_history(self.obtained_individual, label=OptHistoryLabels.tuning_results)
 
         return final_graphs
 
@@ -284,7 +284,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         if label is None:
             label = f'tuning_iteration_{self.evaluations_count}'
-        if label not in (TUNING_START_LABEL, TUNING_RESULT_LABEL):
+        if label not in (OptHistoryLabels.tuning_start, OptHistoryLabels.tuning_results):
             individuals = list(individuals)
             individuals.append(self.init_individual)  # add initial individual to maintain consistency of inheritance
         history.add_to_history(individuals=individuals,

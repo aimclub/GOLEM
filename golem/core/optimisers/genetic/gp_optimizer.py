@@ -18,8 +18,7 @@ from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptiv
 from golem.core.optimisers.genetic.parameters.population_size import PopulationSize, init_adaptive_pop_size
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.optimisers.opt_history_objects.opt_history import EXTENDED_INITIAL_ASSUMPTIONS_LABEL, \
-    INITIAL_ASSUMPTIONS_LABEL
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistoryLabels
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
@@ -66,13 +65,13 @@ class EvoGraphOptimizer(PopulationalOptimizer):
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
         # Adding of initial assumptions to history as zero generation
-        self._update_population(evaluator(self.initial_individuals), INITIAL_ASSUMPTIONS_LABEL)
+        self._update_population(evaluator(self.initial_individuals), OptHistoryLabels.initial_assumptions)
         pop_size = self.graph_optimizer_params.pop_size
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
             # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), EXTENDED_INITIAL_ASSUMPTIONS_LABEL)
+            self._update_population(evaluator(self.initial_individuals), OptHistoryLabels.extended_initial_assumptions)
 
     def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
         verifier = self.graph_generation_params.verifier

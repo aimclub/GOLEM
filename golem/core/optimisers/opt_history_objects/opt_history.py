@@ -5,6 +5,7 @@ import io
 import itertools
 import os
 import shutil
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING, Union
 
@@ -18,11 +19,13 @@ from golem.visualisation.opt_viz import OptHistoryVisualizer
 if TYPE_CHECKING:
     from golem.core.optimisers.opt_history_objects.individual import Individual
 
-INITIAL_ASSUMPTIONS_LABEL = 'initial_assumptions'
-EXTENDED_INITIAL_ASSUMPTIONS_LABEL = 'extended_initial_assumptions'
-EVOLUTION_RESULTS_LABEL = 'evolution_results'
-TUNING_START_LABEL = 'tuning_start'
-TUNING_RESULT_LABEL = 'tuning_result'
+
+class OptHistoryLabels(str, Enum):
+    initial_assumptions = 'initial_assumptions'
+    extended_initial_assumptions = 'extended_initial_assumptions'
+    evolution_results = 'evolution_results'
+    tuning_start = 'tuning_start'
+    tuning_results = 'tuning_results'
 
 
 class OptHistory:
@@ -218,7 +221,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in self.generations:
-            if gen.label == INITIAL_ASSUMPTIONS_LABEL:
+            if gen.label == OptHistoryLabels.initial_assumptions:
                 return gen
 
     @property
@@ -230,7 +233,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in reversed(self.generations):
-            if gen.label == EVOLUTION_RESULTS_LABEL:
+            if gen.label == OptHistoryLabels.evolution_results:
                 return gen
 
     @property
@@ -238,7 +241,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in reversed(self.generations):
-            if gen.label == TUNING_START_LABEL:
+            if gen.label == OptHistoryLabels.tuning_start:
                 return gen
 
     @property
@@ -246,7 +249,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in reversed(self.generations):
-            if gen.label == TUNING_RESULT_LABEL:
+            if gen.label == OptHistoryLabels.tuning_results:
                 return gen
 
     @property
