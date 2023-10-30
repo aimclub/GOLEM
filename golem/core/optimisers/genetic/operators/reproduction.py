@@ -1,7 +1,9 @@
 import time
+from copy import deepcopy
 from itertools import cycle
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
+import pickle
 
 from joblib.externals.loky import get_reusable_executor
 
@@ -13,6 +15,7 @@ from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationType, SinglePredefinedMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
+from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
 from golem.core.optimisers.opt_history_objects.individual import Individual
 
@@ -97,14 +100,21 @@ class ReproductionController:
 
                 # process result
                 failed_stage, individual, mutation_type, retained_tries = future.result()
-                if failed_stage is None:
+                if failed_stage == 0:
                     new_population.append(individual)
                     if len(new_population) >= self.parameters.pop_size:
                         break
                 else:
-                    if failed_stage == 'verification':
+                    if failed_stage == 2:
                         # add experience to mutation
-                        self.mutation.agent_experience.collect_experience(individual, mutation_type, reward=-1.0)
+                        # need to create new individual due to problems with parallel workers
+                        # they cannot receive old individual after experience collection
+                        parent_operator = ParentOperator(type_='mutation', operators=mutation_type,
+                                                         parent_individuals=individual)
+                        new_individual = Individual(deepcopy(individual.graph),
+                                                    parent_operator,
+                                                    metadata=self.mutation.requirements.static_individual_metadata)
+                        self.mutation.agent_experience.collect_experience(new_individual, mutation_type, reward=-1.0)
                     if retained_tries > 0:
                         futures.append(try_mutation(individual, mutation_type, retained_tries))
 
@@ -131,28 +141,24 @@ class ReproductionController:
         # mutation
         new_ind, mutation_type = mutation(individual, mutation_type=mutation_type)
         if not new_ind:
-            return 'mutation', individual, mutation_type, tries - 1
+            return 1, individual, mutation_type, tries - 1
 
         # verification
         if not self.verifier(new_ind.graph):
-            return 'verification', individual, mutation_type, tries - 1
+            return 2, individual, mutation_type, tries - 1
 
         # unique check
         descriptive_id = new_ind.graph.descriptive_id
-        lock = pop_graph_descriptive_ids._mutex._lock
-        lock.acquire()
-        not_unique = descriptive_id in pop_graph_descriptive_ids
-        lock.release()
-        if not_unique:
-            return 'non unique', individual, mutation_type, tries - 1
+        if descriptive_id in pop_graph_descriptive_ids:
+            return 3, individual, mutation_type, tries - 1
         pop_graph_descriptive_ids[descriptive_id] = True
 
         # evaluation
         new_inds = evaluator([new_ind])
-        if not new_inds:
-            return 'evaluation', individual, mutation_type, tries - 1
+        if not new_inds or new_inds[0].fitness.value is None:
+            return 4, individual, mutation_type, tries - 1
 
-        return None, new_inds[0], mutation_type, tries - 1
+        return 0, new_inds[0], mutation_type, tries - 1
 
     def _check_final_population(self, population: PopulationT) -> None:
         """ If population do not achieve required length return a warning or raise exception """
