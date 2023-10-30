@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from itertools import chain
 from typing import List, Dict, Generic, Tuple, Any, Optional
 
 import numpy as np

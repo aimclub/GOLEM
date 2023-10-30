@@ -44,6 +44,7 @@ class SimultaneousTuner(HyperoptTuner):
                                                                                    parameters_dict,
                                                                                    init_parameters,
                                                                                    trials,
+                                                                                   remaining_time,
                                                                                    show_progress)
                     remaining_time = self._get_remaining_time(global_tuner_timer)
                     if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
@@ -87,6 +88,7 @@ class SimultaneousTuner(HyperoptTuner):
                                         search_space: dict,
                                         initial_parameters: dict,
                                         trials: Trials,
+                                        remaining_time: float,
                                         show_progress: bool = True) -> Tuple[Trials, int]:
         """ Method to search using the search space where parameters initially set for the graph are fixed.
         This allows not to lose results obtained while composition process
@@ -121,7 +123,7 @@ class SimultaneousTuner(HyperoptTuner):
              max_evals=init_trials_num,
              show_progressbar=show_progress,
              early_stop_fn=self.early_stop_fn,
-             timeout=self.max_seconds)
+             timeout=remaining_time)
         return trials, init_trials_num
 
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[dict, dict]:

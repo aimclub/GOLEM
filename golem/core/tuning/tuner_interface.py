@@ -13,6 +13,7 @@ from golem.core.log import default_log
 from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
+from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
@@ -233,8 +234,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
         return graph
 
     def _check_tuning_possible(self, graph: OptGraph,
-                               parameters_to_optimize,
-                               remaining_time = None,
+                               parameters_to_optimize: bool,
+                               remaining_time: Optional[float] = None,
                                supports_multi_objective: bool = False) -> bool:
         if len(ensure_wrapped_in_sequence(self.init_metric)) > 1 and not supports_multi_objective:
             self._stop_tuning_with_message(f'{self.__class__.__name__} does not support multi-objective optimization.')
@@ -250,3 +251,10 @@ class BaseTuner(Generic[DomainGraphForTune]):
     def _stop_tuning_with_message(self, message: str):
         self.log.message(message)
         self.obtained_metric = self.init_metric
+
+    def _get_remaining_time(self, tuner_timer: Timer) -> Optional[float]:
+        if self.timeout is not None:
+            remaining_time = self.timeout.seconds - tuner_timer.minutes_from_start * 60
+            return remaining_time
+        else:
+            return None
