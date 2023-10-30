@@ -57,8 +57,9 @@ class HyperoptTuner(BaseTuner, ABC):
         self.algo = algo
         self.log = default_log(self)
 
-    def _update_remaining_time(self, tuner_timer: Timer):
-        self.max_seconds = self.max_seconds - tuner_timer.minutes_from_start * 60
+    def _get_remaining_time(self, tuner_timer: Timer) -> float:
+        remaining_time = self.max_seconds - tuner_timer.minutes_from_start * 60
+        return remaining_time
 
 
 def get_parameter_hyperopt_space(search_space: SearchSpace,

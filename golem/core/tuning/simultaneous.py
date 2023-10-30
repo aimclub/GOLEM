@@ -9,7 +9,6 @@ from golem.core.optimisers.timer import Timer
 from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 from golem.core.tuning.search_space import get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import DomainGraphForTune
-from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class SimultaneousTuner(HyperoptTuner):
@@ -33,9 +32,9 @@ class SimultaneousTuner(HyperoptTuner):
 
         with Timer() as global_tuner_timer:
             self.init_check(graph)
-            self._update_remaining_time(global_tuner_timer)
+            remaining_time = self._get_remaining_time(global_tuner_timer)
 
-            if self._check_tuning_possible(graph, parameters_dict):
+            if self._check_tuning_possible(graph, parameters_dict, remaining_time):
                 trials = Trials()
 
                 try:
@@ -46,8 +45,8 @@ class SimultaneousTuner(HyperoptTuner):
                                                                                    init_parameters,
                                                                                    trials,
                                                                                    show_progress)
-                    self._update_remaining_time(global_tuner_timer)
-                    if self.max_seconds > MIN_TIME_FOR_TUNING_IN_SEC:
+                    remaining_time = self._get_remaining_time(global_tuner_timer)
+                    if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
                         fmin(partial(self._objective, graph=graph),
                              parameters_dict,
                              trials=trials,
@@ -55,7 +54,7 @@ class SimultaneousTuner(HyperoptTuner):
                              max_evals=self.iterations,
                              show_progressbar=show_progress,
                              early_stop_fn=self.early_stop_fn,
-                             timeout=self.max_seconds)
+                             timeout=remaining_time)
                     else:
                         self.log.message('Tunner stopped after initial search due to the lack of time')
 
