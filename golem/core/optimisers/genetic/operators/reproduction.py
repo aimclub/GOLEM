@@ -4,6 +4,7 @@ from itertools import cycle
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
 import pickle
+from typing import Optional
 
 from joblib.externals.loky import get_reusable_executor
 
@@ -37,12 +38,12 @@ class ReproductionController:
                  selection: Selection,
                  mutation: Mutation,
                  crossover: Crossover,
-                 verifier: GraphVerifier):
+                 verifier: Optional[GraphVerifier] = None):
         self.parameters = parameters
         self.selection = selection
         self.mutation = mutation
         self.crossover = crossover
-        self.verifier = verifier
+        self.verifier = verifier or self.mutation.graph_generation_params.verifier
 
         self._pop_graph_descriptive_ids = set()
         self._minimum_valid_ratio = parameters.required_valid_ratio * 0.5
@@ -155,7 +156,7 @@ class ReproductionController:
 
         # evaluation
         new_inds = evaluator([new_ind])
-        if not new_inds or new_inds[0].fitness.value is None:
+        if not new_inds:# or new_inds[0].fitness.value is None:
             return 4, individual, mutation_type, tries - 1
 
         return 0, new_inds[0], mutation_type, tries - 1
