@@ -29,4 +29,4 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.GOLEM_PYPI_PUBLISH }}
-          repository_url: https://upload.pypi.org/legacy/
+          repository-url: https://upload.pypi.org/legacy/
