@@ -7,7 +7,7 @@ import numpy as np
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import IdentityAdapter
-from golem.core.constants import MAX_TUNING_METRIC_VALUE
+from golem.core.constants import MAX_TUNING_METRIC_VALUE, MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
 from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
@@ -231,6 +231,21 @@ class BaseTuner(Generic[DomainGraphForTune]):
         graph.nodes[node_id].parameters = node_params
 
         return graph
+
+    def _check_tuning_possible(self, graph: OptGraph,
+                               parameters_to_optimize,
+                               remaining_time = None,
+                               supports_multi_objective: bool = False) -> bool:
+        if len(ensure_wrapped_in_sequence(self.init_metric)) > 1 and not supports_multi_objective:
+            self._stop_tuning_with_message(f'{self.__class__.__name__} does not support multi-objective optimization.')
+            return False
+        elif not parameters_to_optimize:
+            self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+            return False
+        elif remaining_time is not None:
+            if remaining_time <= MIN_TIME_FOR_TUNING_IN_SEC:
+                self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
+        return True
 
     def _stop_tuning_with_message(self, message: str):
         self.log.message(message)

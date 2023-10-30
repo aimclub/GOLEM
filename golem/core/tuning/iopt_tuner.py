@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from itertools import chain
 from typing import List, Dict, Generic, Tuple, Any, Optional
 
 import numpy as np
@@ -146,14 +147,10 @@ class IOptTuner(BaseTuner):
         graph = self.adapter.adapt(graph)
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
 
-        no_parameters_to_optimize = (not problem_parameters.discrete_parameters_names and
-                                     not problem_parameters.float_parameters_names)
+        has_parameters_to_optimize = (len(problem_parameters.discrete_parameters_names) > 0 or
+                                      len(problem_parameters.float_parameters_names) > 0)
         self.init_check(graph)
-
-        if no_parameters_to_optimize:
-            self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
-            final_graph = graph
-        else:
+        if self._check_tuning_possible(graph, has_parameters_to_optimize):
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
                 self.solver_parameters.startPoint = initial_point
@@ -172,10 +169,14 @@ class IOptTuner(BaseTuner):
 
             self.was_tuned = True
 
-        # Validate if optimisation did well
-        graph = self.final_check(final_graph)
-        final_graph = self.adapter.restore(graph)
-        return final_graph
+            # Validate if optimisation did well
+            final_graph = self.final_check(final_graph)
+        else:
+            final_graph = graph
+            self.obtained_metric = self.init_metric
+
+        final_graph = self.adapter.restore(final_graph)
+        return [final_graph]
 
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[IOptProblemParameters, dict]:
         """ Method for defining the search space

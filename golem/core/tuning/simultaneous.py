@@ -9,6 +9,7 @@ from golem.core.optimisers.timer import Timer
 from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 from golem.core.tuning.search_space import get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import DomainGraphForTune
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class SimultaneousTuner(HyperoptTuner):
@@ -34,15 +35,7 @@ class SimultaneousTuner(HyperoptTuner):
             self.init_check(graph)
             self._update_remaining_time(global_tuner_timer)
 
-            if not parameters_dict:
-                self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
-                final_graph = graph
-
-            elif self.max_seconds <= MIN_TIME_FOR_TUNING_IN_SEC:
-                self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
-                final_graph = graph
-
-            else:
+            if self._check_tuning_possible(graph, parameters_dict):
                 trials = Trials()
 
                 try:
@@ -76,13 +69,19 @@ class SimultaneousTuner(HyperoptTuner):
 
                     self.was_tuned = True
 
+                    # Validate if optimisation did well
+                    final_graph = self.final_check(final_graph)
+
                 except Exception as ex:
                     self.log.warning(f'Exception {ex} occurred during tuning')
                     final_graph = graph
+                    self.obtained_metric = self.init_metric
 
-        # Validate if optimisation did well
-        graph = self.final_check(final_graph)
-        final_graph = self.adapter.restore(graph)
+            else:
+                final_graph = graph
+                self.obtained_metric = self.init_metric
+
+        final_graph = self.adapter.restore(final_graph)
         return final_graph
 
     def _search_near_initial_parameters(self, graph: OptGraph,
