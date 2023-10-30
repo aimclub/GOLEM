@@ -1,17 +1,18 @@
 from abc import abstractmethod
 from random import choice
-from typing import Any, Optional, Sequence, Dict
+from typing import Any, Dict, Optional, Sequence
 
 from golem.core.constants import MIN_POP_SIZE
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
-from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
+from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.opt_history_objects.opt_history import EVOLUTION_RESULTS_LABEL
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
+from golem.core.optimisers.optimizer import AlgorithmParameters, GraphGenerationParams, GraphOptimizer
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.utilities.grouped_condition import GroupedCondition
 
@@ -105,7 +106,7 @@ class PopulationalOptimizer(GraphOptimizer):
                 # Adding of new population to history
                 self._update_population(new_population)
         pbar.close()
-        self._update_population(self.best_individuals, 'evolution_results')
+        self._update_population(self.best_individuals, EVOLUTION_RESULTS_LABEL)
         return [ind.graph for ind in self.best_individuals]
 
     @property

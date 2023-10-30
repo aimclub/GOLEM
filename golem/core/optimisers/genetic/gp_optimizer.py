@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Union, Any
+from typing import Any, Sequence, Union
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -9,15 +9,17 @@ from golem.core.optimisers.genetic.operators.crossover import Crossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
 from golem.core.optimisers.genetic.operators.inheritance import Inheritance
 from golem.core.optimisers.genetic.operators.mutation import Mutation
-from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
+from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.genetic.operators.regularization import Regularization
 from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
-from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
+from golem.core.optimisers.genetic.parameters.population_size import PopulationSize, init_adaptive_pop_size
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.opt_history_objects.opt_history import EXTENDED_INITIAL_ASSUMPTIONS_LABEL, \
+    INITIAL_ASSUMPTIONS_LABEL
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
@@ -64,13 +66,13 @@ class EvoGraphOptimizer(PopulationalOptimizer):
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
         # Adding of initial assumptions to history as zero generation
-        self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
+        self._update_population(evaluator(self.initial_individuals), INITIAL_ASSUMPTIONS_LABEL)
         pop_size = self.graph_optimizer_params.pop_size
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
             # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+            self._update_population(evaluator(self.initial_individuals), EXTENDED_INITIAL_ASSUMPTIONS_LABEL)
 
     def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
         verifier = self.graph_generation_params.verifier

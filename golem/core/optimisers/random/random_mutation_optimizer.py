@@ -1,4 +1,4 @@
-from typing import Union, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -6,6 +6,8 @@ from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.opt_history_objects.opt_history import EXTENDED_INITIAL_ASSUMPTIONS_LABEL, \
+    INITIAL_ASSUMPTIONS_LABEL
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
@@ -38,13 +40,13 @@ class PopulationalRandomMutationOptimizer(PopulationalOptimizer):
         return new_population
 
     def _initial_population(self, evaluator: EvaluationOperator):
-        self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
+        self._update_population(evaluator(self.initial_individuals), INITIAL_ASSUMPTIONS_LABEL)
         pop_size = self.graph_optimizer_params.pop_size
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
             # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+            self._update_population(evaluator(self.initial_individuals), EXTENDED_INITIAL_ASSUMPTIONS_LABEL)
 
 
 class RandomMutationOptimizer(RandomSearchOptimizer):

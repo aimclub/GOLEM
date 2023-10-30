@@ -9,8 +9,9 @@ from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.opt_history_objects.opt_history import EVOLUTION_RESULTS_LABEL, INITIAL_ASSUMPTIONS_LABEL
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphOptimizer, GraphGenerationParams
+from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.core.optimisers.timer import OptimisationTimer
 from golem.core.utilities.grouped_condition import GroupedCondition
 
@@ -34,7 +35,7 @@ class RandomSearchOptimizer(GraphOptimizer):
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
                 lambda: requirements.num_of_generations is not None and
-                self.current_iteration_num >= requirements.num_of_generations,
+                        self.current_iteration_num >= requirements.num_of_generations,
                 'Optimisation stopped: Max number of iterations reached')
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[OptGraph]:
@@ -46,14 +47,14 @@ class RandomSearchOptimizer(GraphOptimizer):
 
         with self.timer, self._progressbar as pbar:
             self.best_individual = self._eval_initial_individual(evaluator)
-            self._update_best_individual(self.best_individual, 'initial_assumptions')
+            self._update_best_individual(self.best_individual, INITIAL_ASSUMPTIONS_LABEL)
             while not self.stop_optimization():
                 new_individual = self._generate_new_individual()
                 evaluator([new_individual])
                 self.current_iteration_num += 1
                 self._update_best_individual(new_individual)
                 pbar.update()
-        self._update_best_individual(self.best_individual, 'evolution_results')
+        self._update_best_individual(self.best_individual, EVOLUTION_RESULTS_LABEL)
         pbar.close()
         return [self.best_individual.graph]
 

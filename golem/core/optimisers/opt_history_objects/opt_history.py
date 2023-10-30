@@ -18,6 +18,12 @@ from golem.visualisation.opt_viz import OptHistoryVisualizer
 if TYPE_CHECKING:
     from golem.core.optimisers.opt_history_objects.individual import Individual
 
+INITIAL_ASSUMPTIONS_LABEL = 'initial_assumptions'
+EXTENDED_INITIAL_ASSUMPTIONS_LABEL = 'extended_initial_assumptions'
+EVOLUTION_RESULTS_LABEL = 'evolution_results'
+TUNING_START_LABEL = 'tuning_start'
+TUNING_RESULT_LABEL = 'tuning_result'
+
 
 class OptHistory:
     """
@@ -212,7 +218,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in self.generations:
-            if gen.label == 'initial_assumptions':
+            if gen.label == INITIAL_ASSUMPTIONS_LABEL:
                 return gen
 
     @property
@@ -224,7 +230,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in reversed(self.generations):
-            if gen.label == 'evolution_results':
+            if gen.label == EVOLUTION_RESULTS_LABEL:
                 return gen
 
     @property
@@ -232,7 +238,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in reversed(self.generations):
-            if gen.label == 'tuning_start':
+            if gen.label == TUNING_START_LABEL:
                 return gen
 
     @property
@@ -240,7 +246,7 @@ class OptHistory:
         if not self.generations:
             return None
         for gen in reversed(self.generations):
-            if gen.label == 'tuning_result':
+            if gen.label == TUNING_RESULT_LABEL:
                 return gen
 
     @property
