@@ -116,7 +116,7 @@ class IOptTuner(BaseTuner):
                  iterations: int = 100,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 eps: float = 0.000001,
+                 eps: float = 0.001,
                  r: float = 2.0,
                  evolvent_density: int = 10,
                  eps_r: float = 0.001,
@@ -137,7 +137,7 @@ class IOptTuner(BaseTuner):
                                                   eps_r=np.double(eps_r),
                                                   refine_solution=refine_solution,
                                                   number_of_parallel_points=determine_n_jobs(n_jobs),
-                                                  timeout=round(timeout.total_seconds()/60))
+                                                  timeout=round(timeout.total_seconds()/60) if self.timeout else -1)
 
     def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         problem_parameters, initial_parameters = self._get_parameters_for_tune(graph)
