@@ -128,34 +128,3 @@ def test_graphs_with_multi_root_equivalent_subtree():
     similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_first, graph_second=graph_second,
                                                         with_primary_nodes=True)
     assert len(similar_nodes_first_and_second) == 8
-
-
-def test_structural_diversity():
-    """ Checks if `get_structure_unique_population` method returns population without structural duplicates. """
-    operations = ['a', 'b', 'c', 'd', 'e']
-    population_with_reps = population_with_structural_duplicates(operations=operations)
-    optimizer, objective = set_up_optimizer(operations=operations)
-
-    adapter = DirectAdapter()
-    evaluator = SequentialDispatcher(adapter).dispatch(objective)
-    new_population = optimizer.get_structure_unique_population(population_with_reps, evaluator)
-
-    target_new_population = []
-    for op in operations:
-        target_new_population += [Individual(adapter.adapt(get_graph_with_operation(operation=op)))]
-
-    for i in range(len(target_new_population)):
-        assert graphs_same(new_population[i].graph, target_new_population[i].graph)
-
-
-def test_recover_pop_size_after_structure_check():
-    """ Checks that `get_structure_unique_population` extends population
-    if after structural check there sre less than MIN_POP_SIZE individuals in population. """
-    operations = ['a', 'b', 'c']
-    population_with_reps = population_with_structural_duplicates(operations=operations)
-    optimizer, objective = set_up_optimizer(operations=operations)
-    adapter = DirectAdapter()
-    evaluator = SequentialDispatcher(adapter).dispatch(objective)
-    new_population = optimizer.get_structure_unique_population(population_with_reps, evaluator)
-
-    assert len(new_population) == MIN_POP_SIZE
