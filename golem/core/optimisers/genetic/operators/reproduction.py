@@ -1,6 +1,6 @@
 import time
 from copy import deepcopy
-from itertools import cycle
+from itertools import cycle, chain
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
 import pickle
@@ -130,7 +130,24 @@ class ReproductionController:
             time.sleep(0.1)  # time for finish all processes, otherwise may crash
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids)
 
-            return new_population
+            # rebuild population due to problem with changing id of individuals in parallel individuals building
+            to_add = chain(*[ind.parents + ind.parents_from_prev_generation + [ind] for ind in population])
+            population_uid_map = {ind.uid: ind for ind in to_add}
+            rebuilded_population = []
+            for individual in new_population:
+                if individual.parent_operator:
+                    parent_operator = ParentOperator(type_=individual.parent_operator.type_,
+                                                     operators=individual.parent_operator.operators,
+                                                     parent_individuals=population_uid_map[
+                                                         individual.parent_operator.parent_individuals[0].uid])
+                else:
+                    parent_operator = None
+                individual = Individual(deepcopy(individual.graph),
+                                        parent_operator,
+                                        fitness=individual.fitness,
+                                        metadata=self.mutation.requirements.static_individual_metadata)
+                rebuilded_population.append(individual)
+            return rebuilded_population
 
     def _mutation_n_evaluation(self,
                                individual: Individual,
