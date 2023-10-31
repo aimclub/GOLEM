@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import timedelta
 from random import choice
@@ -16,6 +17,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label, convert_parameters
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 @dataclass
@@ -49,12 +51,13 @@ class IOptProblemParameters:
 class GolemProblem(Problem, Generic[DomainGraphForTune]):
     def __init__(self, graph: DomainGraphForTune,
                  objective_evaluate: ObjectiveEvaluate,
-                 problem_parameters: IOptProblemParameters):
+                 problem_parameters: IOptProblemParameters,
+                 objectives_number: int = 1):
         super().__init__()
         self.objective_evaluate = objective_evaluate
         self.graph = graph
 
-        self.number_of_objectives = 1
+        self.number_of_objectives = objectives_number
         self.number_of_constraints = 0
 
         self.discrete_variable_names = problem_parameters.discrete_parameters_names
@@ -144,12 +147,14 @@ class IOptTuner(BaseTuner):
 
         has_parameters_to_optimize = (len(problem_parameters.discrete_parameters_names) > 0 or
                                       len(problem_parameters.float_parameters_names) > 0)
+        objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
+        is_multi_objective = objectives_number > 1
         if self._check_if_tuning_possible(graph, has_parameters_to_optimize):
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
                 self.solver_parameters.start_point = initial_point
 
-            problem = GolemProblem(graph, self.objective_evaluate, problem_parameters)
+            problem = GolemProblem(graph, self.objective_evaluate, problem_parameters, objectives_number)
             solver = Solver(problem, parameters=self.solver_parameters)
 
             if show_progress:
@@ -158,15 +163,21 @@ class IOptTuner(BaseTuner):
 
             solver.solve()
             solution = solver.get_results()
-            best_point = solution.best_trials[0].point
-            best_parameters = problem.get_parameters_dict_from_iopt_point(best_point)
-            final_graph = self.set_arg_graph(graph, best_parameters)
-
-            self.was_tuned = True
+            if not is_multi_objective:
+                best_point = solution.best_trials[0].point
+                best_parameters = problem.get_parameters_dict_from_iopt_point(best_point)
+                tuned_graphs = self.set_arg_graph(graph, best_parameters)
+                self.was_tuned = True
+            else:
+                tuned_graphs = []
+                for best_trial in solution.best_trials:
+                    best_parameters = problem.get_parameters_dict_from_iopt_point(best_trial.point)
+                    tuned_graph = self.set_arg_graph(deepcopy(graph), best_parameters)
+                    tuned_graphs.append(tuned_graph)
+                    self.was_tuned = True
         else:
-            final_graph = graph
-
-        return final_graph
+            tuned_graphs = graph
+        return tuned_graphs
 
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[IOptProblemParameters, dict]:
         """ Method for defining the search space
