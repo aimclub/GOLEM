@@ -39,7 +39,7 @@ def get_search_space():
                 'type': 'categorical'
             },
             'b2': {
-                'sampling-scope': [0.05, 1.0],
+                'sampling-scope': [0.04, 1.0],
                 'type': 'continuous'
             },
         },
@@ -68,5 +68,5 @@ if __name__ == '__main__':
     # ищем такие параметры, чтобы их сумма была максимальна
     obj_eval = ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
 
-    tuner = IOptTuner(obj_eval, search_space, iterations=10, n_jobs=1)
+    tuner = IOptTuner(obj_eval, search_space, iterations=10, n_jobs=-1)
     tuned_graph = tuner.tune(graph)

@@ -14,7 +14,7 @@ from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.genetic.evaluation import determine_n_jobs
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate
-from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
+from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label, convert_parameters
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
 
 
@@ -180,7 +180,8 @@ class IOptTuner(BaseTuner):
         """
         float_parameters_dict = {}
         discrete_parameters_dict = {}
-        initial_parameters = {'float_variables': [], 'discrete_variables': []}
+        has_init_parameters = any(len(node.parameters) > 0 for node in graph.nodes)
+        initial_parameters = {'float_variables': [], 'discrete_variables': []} if has_init_parameters else None
         for node_id, node in enumerate(graph.nodes):
             operation_name = node.name
 
@@ -190,17 +191,17 @@ class IOptTuner(BaseTuner):
                 self.search_space,
                 node_id,
                 operation_name)
+            if has_init_parameters:
+                # Set initial parameters for search
+                for parameter, bounds in convert_parameters(float_node_parameters).items():
+                    # If parameter is not set use parameter minimum possible value
+                    initial_value = node.parameters.get(parameter) or bounds[0]
+                    initial_parameters['float_variables'].append(initial_value)
 
-            # Set initial parameters for search
-            for parameter, bounds in float_node_parameters.items():
-                # If parameter is not set use parameter minimum possible value
-                initial_value = node.parameters.get(parameter) or bounds[0]
-                initial_parameters['float_variables'].append(initial_value)
-
-            for parameter, values in discrete_node_parameters.items():
-                # If parameter is not set use parameter random value
-                initial_value = node.parameters.get(parameter) or choice(values)
-                initial_parameters['discrete_variables'].append(initial_value)
+                for parameter, values in convert_parameters(discrete_node_parameters).items():
+                    # If parameter is not set use the last value
+                    initial_value = node.parameters.get(parameter) or values[-1]
+                    initial_parameters['discrete_variables'].append(initial_value)
 
             float_parameters_dict.update(float_node_parameters)
             discrete_parameters_dict.update(discrete_node_parameters)
