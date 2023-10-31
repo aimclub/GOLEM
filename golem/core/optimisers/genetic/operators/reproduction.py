@@ -3,7 +3,6 @@ from copy import deepcopy
 from itertools import cycle, chain
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
-import pickle
 from typing import Optional
 
 from joblib.externals.loky import get_reusable_executor
@@ -72,7 +71,9 @@ class ReproductionController:
             pop_graph_descriptive_ids = manager.dict([(ids, True) for ids in self._pop_graph_descriptive_ids])
             executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
 
-            def try_mutation(ind, mutation_type=None, tries=self.parameters.max_num_of_mutation_attempts):
+            def try_mutation(ind: Individual,
+                             mutation_type: Optional[MutationType] = None,
+                             tries: int = self.parameters.max_num_of_mutation_attempts):
                 mutation_type = mutation_type or self.mutation.agent.choose_action(ind.graph)
                 return executor.submit(self._mutation_n_evaluation,
                                        individual=ind,
@@ -170,7 +171,7 @@ class ReproductionController:
 
         # evaluation
         new_inds = evaluator([new_ind])
-        if not new_inds:# or new_inds[0].fitness.value is None:
+        if not new_inds:
             return 4, individual, mutation_type, tries - 1
 
         return 0, new_inds[0], mutation_type, tries - 1
