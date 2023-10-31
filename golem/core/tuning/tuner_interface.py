@@ -246,6 +246,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         elif remaining_time is not None:
             if remaining_time <= MIN_TIME_FOR_TUNING_IN_SEC:
                 self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
+                return False
         return True
 
     def _stop_tuning_with_message(self, message: str):

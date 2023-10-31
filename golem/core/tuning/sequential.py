@@ -148,8 +148,11 @@ class SequentialTuner(HyperoptTuner):
                                     )
                 self.was_tuned = True
 
-            # Validation is the optimization do well
-            final_graph = self.final_check(graph)
+                # Validation is the optimization do well
+                final_graph = self.final_check(graph)
+            else:
+                final_graph = graph
+                self.obtained_metric = self.init_metric
         final_graph = self.adapter.restore(final_graph)
         return final_graph
 
