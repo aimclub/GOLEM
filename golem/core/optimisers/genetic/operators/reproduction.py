@@ -84,8 +84,7 @@ class ReproductionController:
 
             left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
             cycled_population = cycle(population)
-            new_population, futures = list(), list()
-            inds_for_experience = []
+            new_population, futures, inds_for_experience = list(), list(), list()
             while left_tries > 0:
                 # create new tasks if there is not enough load
                 if len(futures) < self.mutation.requirements.n_jobs + 2:
@@ -126,7 +125,7 @@ class ReproductionController:
                 self.mutation.agent_experience.collect_experience(individual, mutation_type, reward=-1.0)
 
             # update looked graphs
-            self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids)
+            self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids.keys())
 
             # rebuild population due to problem with changing id of individuals in parallel individuals building
             population_uid_map = {ind.uid: ind
