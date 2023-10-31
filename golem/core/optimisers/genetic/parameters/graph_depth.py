@@ -14,6 +14,13 @@ class AdaptiveGraphDepth(AdaptiveParameter[int]):
                  start_depth: int = 1, max_depth: int = 10,
                  max_stagnation_gens: int = 1,
                  adaptive: bool = True):
+        if start_depth is None or start_depth <= 0:
+            raise ValueError(f'Uncorrect start_depth value: {start_depth}. It should be greater than 0.')
+        if max_depth is None or max_depth < start_depth:
+            raise ValueError(f'Uncorrect max_depth value: {max_depth}. It should be greater than start_depth.')
+        if max_stagnation_gens is None or max_stagnation_gens <= 0:
+            raise ValueError(f'Uncorrect max_stagnation_gens value: {max_stagnation_gens}.'
+                             'It should be greater than 0.')
         self._improvements = improvements
         self._start_depth = start_depth
         self._max_depth = max_depth
