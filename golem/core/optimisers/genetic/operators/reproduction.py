@@ -60,7 +60,7 @@ class ReproductionController:
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """Generate new individuals by mutation in parallel.
-           Implements additional checks on population to ensure that population size follows
+           Implements additional checks on population to ensure that population size is greater or equal to
            required population size. Also controls uniqueness of population.
         """
         with Manager() as manager:
@@ -118,7 +118,7 @@ class ReproductionController:
                     applied, ind, *_ = future.result()
                     if applied: new_population.append(ind)
 
-            # shutdown workers and add pop_graph_descriptive_ids to self._pop_graph_descriptive_ids
+            # shutdown workers
             executor.shutdown(wait=False)
 
             # add experience for agent
