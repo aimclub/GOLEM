@@ -85,6 +85,7 @@ class ReproductionController:
             left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
             cycled_population = cycle(population)
             new_population, futures = list(), list()
+            inds_for_experience = []
             while left_tries > 0:
                 # create new tasks if there is not enough load
                 if len(futures) < self.mutation.requirements.n_jobs + 2:
@@ -107,15 +108,7 @@ class ReproductionController:
                         break
                 else:
                     if failed_stage == 2:
-                        # add experience to mutation
-                        # need to create new individual due to problems with parallel workers
-                        # they cannot receive old individual after experience collection
-                        parent_operator = ParentOperator(type_='mutation', operators=mutation_type,
-                                                         parent_individuals=individual)
-                        new_individual = Individual(deepcopy(individual.graph),
-                                                    parent_operator,
-                                                    metadata=self.mutation.requirements.static_individual_metadata)
-                        self.mutation.agent_experience.collect_experience(new_individual, mutation_type, reward=-1.0)
+                        inds_for_experience.append((individual, mutation_type))
                     if retained_tries > 0:
                         futures.append(try_mutation(individual, mutation_type, retained_tries))
 
@@ -127,12 +120,17 @@ class ReproductionController:
 
             # shutdown workers and add pop_graph_descriptive_ids to self._pop_graph_descriptive_ids
             executor.shutdown(wait=False)
-            time.sleep(0.1)  # time for finish all processes, otherwise may crash
+
+            # add experience for agent
+            for individual, mutation_type in inds_for_experience:
+                self.mutation.agent_experience.collect_experience(individual, mutation_type, reward=-1.0)
+
+            # update looked graphs
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids)
 
             # rebuild population due to problem with changing id of individuals in parallel individuals building
-            to_add = chain(*[ind.parents + ind.parents_from_prev_generation + [ind] for ind in population])
-            population_uid_map = {ind.uid: ind for ind in to_add}
+            population_uid_map = {ind.uid: ind
+                                  for ind in chain(*[ind.parents + [ind] for ind in population])}
             rebuilded_population = []
             for individual in new_population:
                 if individual.parent_operator:
