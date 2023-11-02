@@ -72,7 +72,7 @@ class ReproductionController:
            Implements additional checks on population to ensure that population size is greater or equal to
            required population size. Also controls uniqueness of population.
         """
-        with (Manager() as manager):
+        with Manager() as manager:
             mutation = SinglePredefinedMutation(parameters=self.mutation.parameters,
                                                 requirements=self.mutation.requirements,
                                                 graph_gen_params=self.mutation.graph_generation_params,
