@@ -1,5 +1,4 @@
 from copy import deepcopy
-from multiprocessing.managers import ValueProxy
 from random import random
 from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
 

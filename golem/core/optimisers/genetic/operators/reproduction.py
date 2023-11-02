@@ -126,7 +126,8 @@ class ReproductionController:
             for future in futures:
                 if future._state == 'FINISHED':
                     applied, ind, *_ = future.result()
-                    if applied: new_population.append(ind)
+                    if applied:
+                        new_population.append(ind)
 
             # shutdown workers
             executor.shutdown(wait=False)

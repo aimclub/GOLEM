@@ -2,7 +2,6 @@ from abc import abstractmethod
 from random import choice
 from typing import Any, Optional, Sequence, Dict
 
-from golem.core.constants import MIN_POP_SIZE
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher

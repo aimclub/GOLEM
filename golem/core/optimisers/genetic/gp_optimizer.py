@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Sequence, Union, Any
 
 from golem.core.dag.graph import Graph
