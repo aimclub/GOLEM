@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import as_completed
 from copy import deepcopy
 from enum import Enum
 from itertools import cycle, chain
@@ -103,12 +104,8 @@ class ReproductionController:
                     continue
 
                 # get next finished future
-                for i in cycle(range(len(futures))):
-                    time.sleep(0.01)  # to prevent flooding
-                    if futures[i]._state == 'FINISHED':
-                        future = futures.pop(i)
-                        left_tries -= 1
-                        break
+                future = next(as_completed(futures))
+                futures.remove(future)
 
                 # process result
                 failed_stage, individual, mutation_type, retained_tries = future.result()
