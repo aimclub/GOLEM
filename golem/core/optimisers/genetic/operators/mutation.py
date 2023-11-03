@@ -175,4 +175,4 @@ class SinglePredefinedMutation(Mutation):
         parent_operator = ParentOperator(type_='mutation', operators=mutation_type, parent_individuals=individual)
         individual = Individual(new_graph, parent_operator,
                                 metadata=self.requirements.static_individual_metadata)
-        return individual, mutation_type
+        return individual

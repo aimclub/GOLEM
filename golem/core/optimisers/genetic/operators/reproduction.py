@@ -5,16 +5,17 @@ from enum import Enum
 from itertools import cycle, chain
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
-from typing import Optional
+from typing import Optional, Dict
 
 from joblib.externals.loky import get_reusable_executor
+from joblib.externals.loky.backend.queues import Queue
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_PER_IND
 from golem.core.dag.graph_verifier import GraphVerifier
 from golem.core.log import default_log
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover
-from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationType, SinglePredefinedMutation
+from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
@@ -62,10 +63,16 @@ class ReproductionController:
     def reproduce(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """Reproduces and evaluates population (select, crossover, mutate).
         """
+        t0 = time.perf_counter()
         selected_individuals = self.selection(population, self.parameters.pop_size)
+        t1 = time.perf_counter()
         new_population = self.crossover(selected_individuals)
+        t2 = time.perf_counter()
         new_population = self._mutate_over_population(new_population, evaluator)
+        t3 = time.perf_counter()
         self._check_final_population(new_population)
+        t4 = time.perf_counter()
+        print('\n\n reproduce:', t1-t0, t2-t1, t3-t2, t4-t3, '\n\n')
         return new_population
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
@@ -74,56 +81,82 @@ class ReproductionController:
            required population size. Also controls uniqueness of population.
         """
         with Manager() as manager:
+            population_uid_map = {ind.uid: ind for ind in population}
+            left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
+            cycled_population_uid = cycle(population_uid_map)
+            new_population, inds_for_experience = list(), list()
             mutation = SinglePredefinedMutation(parameters=self.mutation.parameters,
                                                 requirements=self.mutation.requirements,
                                                 graph_gen_params=self.mutation.graph_generation_params,
                                                 mutations_repo=self.mutation._mutations_repo)
             pop_graph_descriptive_ids = manager.dict([(ids, True) for ids in self._pop_graph_descriptive_ids])
+            task_queue, result_queue = manager.Queue(), manager.Queue()
+
+            def worker(pop_graph_descriptive_ids: DictProxy = pop_graph_descriptive_ids,
+                       mutation: SinglePredefinedMutation = mutation,
+                       evaluator: EvaluationOperator = evaluator,
+                       population_uid_map: Dict[str, Individual] = population_uid_map,
+                       task_queue: Queue = task_queue,
+                       result_queue: Queue = result_queue) -> None:
+                while True:
+                    individual_uid, mutation_type, tries = task_queue.get()
+                    individual = population_uid_map[individual_uid]
+
+                    # mutation
+                    new_ind = mutation(individual, mutation_type=mutation_type)
+                    if not new_ind:
+                        result_queue.put((FailedStageEnum.MUTATION, individual_uid, mutation_type))
+                        if tries > 0:
+                            task_queue.put((individual_uid, mutation_type, tries - 1))
+                        continue
+
+                    # verification
+                    if not self.verifier(new_ind.graph):
+                        result_queue.put((FailedStageEnum.VERIFICATION, individual_uid, mutation_type))
+                        if tries > 0:
+                            task_queue.put((individual_uid, mutation_type, tries - 1))
+                        continue
+
+                    # unique check
+                    descriptive_id = new_ind.graph.descriptive_id
+                    if descriptive_id in pop_graph_descriptive_ids:
+                        result_queue.put((FailedStageEnum.UNIQUENESS_CHECK, individual_uid, mutation_type))
+                        if tries > 0:
+                            task_queue.put((individual_uid, mutation_type, tries - 1))
+                        continue
+                    pop_graph_descriptive_ids[descriptive_id] = True
+
+                    # evaluation
+                    new_inds = evaluator([new_ind])
+                    if not new_inds:
+                        result_queue.put((FailedStageEnum.EVALUATION, individual_uid, mutation_type))
+                        if tries > 0:
+                            task_queue.put((individual_uid, mutation_type, tries - 1))
+                        continue
+
+                    result_queue.put((FailedStageEnum.NONE, new_inds[0], mutation_type))
+
+
+            # create pool
             executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
+            for _ in range(self.mutation.requirements.n_jobs - 1): executor.submit(worker)
 
-            def try_mutation(individual: Individual,
-                             mutation_type: Optional[MutationType] = None,
-                             tries: int = self.parameters.max_num_of_mutation_attempts
-                             ) -> (FailedStageEnum, Individual, MutationType, int):
-                mutation_type = mutation_type or self.mutation.agent.choose_action(individual.graph)
-                return executor.submit(self._mutation_n_evaluation,
-                                       individual=individual,
-                                       tries=tries,
-                                       mutation_type=mutation_type,
-                                       pop_graph_descriptive_ids=pop_graph_descriptive_ids,
-                                       mutation=mutation,
-                                       evaluator=evaluator)
-
-            left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
-            cycled_population = cycle(population)
-            new_population, futures, inds_for_experience = list(), list(), list()
-            while left_tries > 0:
-                # create new tasks if there is not enough load
-                while len(futures) < self.mutation.requirements.n_jobs + 1:
-                    futures.append(try_mutation(next(cycled_population)))
-
-                # get next finished future
-                future = next(as_completed(futures))
-                futures.remove(future)
+            while left_tries > 0 and len(new_population) < self.parameters.pop_size:
+                # if there is not enough jobs, create new
+                while task_queue.qsize() < 2:
+                    individual_uid = next(cycled_population_uid)
+                    mutation_type = self.mutation.agent.choose_action(population_uid_map[individual_uid].graph)
+                    task_queue.put((individual_uid, mutation_type, self.parameters.max_num_of_mutation_attempts))
+                    time.sleep(0.01)
 
                 # process result
-                failed_stage, individual, mutation_type, retained_tries = future.result()
-                if failed_stage is FailedStageEnum.NONE:
-                    new_population.append(individual)
-                    if len(new_population) >= self.parameters.pop_size:
-                        break
-                else:
-                    if failed_stage is FailedStageEnum.VERIFICATION:
-                        inds_for_experience.append((individual, mutation_type))
-                    if retained_tries > 0:
-                        futures.append(try_mutation(individual, mutation_type, retained_tries))
-
-            # get finished mutations
-            for future in futures:
-                if future._state == 'FINISHED':
-                    applied, ind, *_ = future.result()
-                    if applied:
-                        new_population.append(ind)
+                if result_queue.qsize() > 0:
+                    failed_stage, individual, mutation_type = result_queue.get()
+                    left_tries -= 1
+                    if failed_stage is FailedStageEnum.NONE:
+                        new_population.append(individual)
+                    elif failed_stage is FailedStageEnum.VERIFICATION:
+                        inds_for_experience.append((population_uid_map[individual], mutation_type))
 
             # shutdown workers
             executor.shutdown(wait=False)
@@ -153,35 +186,6 @@ class ReproductionController:
                                         metadata=self.mutation.requirements.static_individual_metadata)
                 rebuilded_population.append(individual)
             return rebuilded_population
-
-    def _mutation_n_evaluation(self,
-                               individual: Individual,
-                               tries: int,
-                               mutation_type: MutationType,
-                               pop_graph_descriptive_ids: DictProxy,
-                               mutation: SinglePredefinedMutation,
-                               evaluator: EvaluationOperator):
-        # mutation
-        new_ind, mutation_type = mutation(individual, mutation_type=mutation_type)
-        if not new_ind:
-            return FailedStageEnum.MUTATION, individual, mutation_type, tries - 1
-
-        # verification
-        if not self.verifier(new_ind.graph):
-            return FailedStageEnum.VERIFICATION, individual, mutation_type, tries - 1
-
-        # unique check
-        descriptive_id = new_ind.graph.descriptive_id
-        if descriptive_id in pop_graph_descriptive_ids:
-            return FailedStageEnum.UNIQUENESS_CHECK, individual, mutation_type, tries - 1
-        pop_graph_descriptive_ids[descriptive_id] = True
-
-        # evaluation
-        new_inds = evaluator([new_ind])
-        if not new_inds:
-            return FailedStageEnum.EVALUATION, individual, mutation_type, tries - 1
-
-        return FailedStageEnum.NONE, new_inds[0], mutation_type, tries - 1
 
     def _check_final_population(self, population: PopulationT) -> None:
         """ If population do not achieve required length return a warning or raise exception """
