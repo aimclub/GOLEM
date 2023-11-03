@@ -99,9 +99,8 @@ class ReproductionController:
             new_population, futures, inds_for_experience = list(), list(), list()
             while left_tries > 0:
                 # create new tasks if there is not enough load
-                if len(futures) < self.mutation.requirements.n_jobs + 2:
+                while len(futures) < self.mutation.requirements.n_jobs + 1:
                     futures.append(try_mutation(next(cycled_population)))
-                    continue
 
                 # get next finished future
                 future = next(as_completed(futures))
