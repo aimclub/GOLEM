@@ -63,18 +63,10 @@ class ReproductionController:
     def reproduce(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """Reproduces and evaluates population (select, crossover, mutate).
         """
-        t0 = time.perf_counter()
         selected_individuals = self.selection(population, self.parameters.pop_size)
-        t1 = time.perf_counter()
         new_population = self.crossover(selected_individuals)
-        print('crossover is over')
-        t2 = time.perf_counter()
         new_population = self._mutate_over_population(new_population, evaluator)
-        print('mutation is over')
-        t3 = time.perf_counter()
         self._check_final_population(new_population)
-        t4 = time.perf_counter()
-        print('\n\n reproduce:', t1-t0, t2-t1, t3-t2, t4-t3, '\n\n')
         return new_population
 
     def _mutate_over_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
@@ -127,7 +119,7 @@ class ReproductionController:
                                                 requirements=self.mutation.requirements,
                                                 graph_gen_params=self.mutation.graph_generation_params,
                                                 mutations_repo=self.mutation._mutations_repo)
-            pop_graph_descriptive_ids = manager.dict([(ids, True) for ids in self._pop_graph_descriptive_ids])
+            pop_graph_descriptive_ids = manager.dict({ids: True for ids in self._pop_graph_descriptive_ids})
             task_queue, result_queue = manager.Queue(), manager.Queue()
 
             def worker(pop_graph_descriptive_ids: DictProxy = pop_graph_descriptive_ids,
@@ -187,8 +179,6 @@ class ReproductionController:
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids.keys())
 
             # rebuild population due to problem with changing id of individuals in parallel individuals building
-            population_uid_map = {ind.uid: ind
-                                  for ind in chain(*[ind.parents + [ind] for ind in population])}
             rebuilded_population = []
             for individual in new_population:
                 if individual.parent_operator:
