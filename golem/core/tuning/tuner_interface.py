@@ -257,7 +257,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
     def _stop_tuning_with_message(self, message: str):
         self.log.message(message)
-        self.obtained_fitness = self.init_individual.fitness
+        self.obtained_individual = self.init_individual
 
     def _create_individual(self, graph: OptGraph, fitness: Fitness) -> Individual:
         history = self.history
@@ -277,9 +277,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
     def _add_to_history(self, individuals: Sequence[Individual], label: Optional[str] = None):
         history = self.history
-        tuner_name = self.__class__.__name__
 
-        if not history:
+        if history is None:
             return
 
         if label is None:
@@ -287,6 +286,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         if label not in (OptHistoryLabels.tuning_start, OptHistoryLabels.tuning_results):
             individuals = list(individuals)
             individuals.append(self.init_individual)  # add initial individual to maintain consistency of inheritance
+        tuner_name = self.__class__.__name__
         history.add_to_history(individuals=individuals,
                                generation_label=label,
                                generation_metadata=dict(tuner=tuner_name))
