@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Generic, Tuple, Any, Optional
+from typing import Any, Dict, Generic, List, Optional, Tuple
 
 import numpy as np
 from iOpt.method.listener import ConsoleFullOutputListener
 from iOpt.problem import Problem
 from iOpt.solver import Solver
 from iOpt.solver_parametrs import SolverParameters
-from iOpt.trial import Point, FunctionValue
+from iOpt.trial import FunctionValue, Point
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph

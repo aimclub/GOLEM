@@ -10,6 +10,7 @@ from optuna.trial import FrozenTrial
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
 
@@ -23,7 +24,8 @@ class OptunaTuner(BaseTuner):
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
-                 objectives_number: int = 1):
+                 objectives_number: int = 1,
+                 history: Optional[OptHistory] = None):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -31,7 +33,8 @@ class OptunaTuner(BaseTuner):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation)
+                         deviation,
+                         history)
         self.objectives_number = objectives_number
         self.study = None
 
@@ -48,7 +51,7 @@ class OptunaTuner(BaseTuner):
         init_parameters, has_parameters_to_optimize = self._get_initial_point(graph)
         if not has_parameters_to_optimize:
             self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
-            tuned_graphs = self.init_graph
+            tuned_graphs = self.init_individual.graph
         else:
             # Enqueue initial point to try
             if init_parameters:
@@ -82,7 +85,7 @@ class OptunaTuner(BaseTuner):
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Sequence[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)
         new_graph = BaseTuner.set_arg_graph(graph, new_parameters)
-        metric_value = self.get_metric_value(new_graph)
+        metric_value = self.evaluate_graph(new_graph)
         return metric_value
 
     def _get_parameters_from_trial(self, graph: OptGraph, trial: Trial) -> dict:

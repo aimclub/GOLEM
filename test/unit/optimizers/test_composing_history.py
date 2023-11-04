@@ -5,13 +5,14 @@ from random import random
 
 import numpy as np
 import pytest
+from hyperopt import hp
 
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
-from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
+from golem.core.optimisers.genetic.operators.crossover import Crossover, CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
@@ -21,10 +22,13 @@ from golem.core.optimisers.opt_history_objects.parent_operator import ParentOper
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.paths import project_root
-from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
+from golem.core.tuning.optuna_tuner import OptunaTuner
+from golem.core.tuning.search_space import SearchSpace
+from golem.core.tuning.simultaneous import SimultaneousTuner
+from golem.visualisation.opt_viz import OptHistoryVisualizer, PlotTypesEnum
 from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
-from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
+from test.unit.utils import RandomMetric, graph_fifth, graph_first, graph_fourth, graph_second, graph_third
 
 
 def create_mock_graph_individual():
@@ -61,16 +65,16 @@ def generate_history(request) -> OptHistory:
             new_pop.append(ind)
         history.add_to_history(new_pop)
         # since only n best individuals need to be added to archive history
-        history.add_to_archive_history([sorted(new_pop,  key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
+        history.add_to_evolution_best_archive(
+            [sorted(new_pop, key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
     return history
 
 
-def _test_individuals_in_history(history: OptHistory):
+def check_individuals_in_history(history: OptHistory):
     uids = set()
     ids = set()
     for ind in itertools.chain(*history.generations):
-        # All individuals in `history.generations` must have a native generation.
-        assert ind.has_native_generation
+        assert ind.has_native_generation  # All individuals in `history.generations` must have a native generation.
         assert ind.fitness
         if ind.native_generation == 0:
             continue
@@ -81,6 +85,7 @@ def _test_individuals_in_history(history: OptHistory):
         assert ind.parents_from_prev_generation == list(ind.operators_from_prev_generation[0].parent_individuals)
         # All parents are from previous generations
         assert all(p.native_generation < ind.native_generation for p in ind.parents_from_prev_generation)
+        assert all(p in history.generations[ind.native_generation - 1] for p in ind.parents_from_prev_generation)
 
         uids.add(ind.uid)
         ids.add(id(ind))
@@ -232,10 +237,68 @@ def test_all_historical_quality(generate_history):
     assert all_quality[0] == -0.9 and all_quality[4] == -1.4 and all_quality[5] == -1.3 and all_quality[10] == -1.2
 
 
-@pytest.mark.parametrize('n_jobs', [1, 2])
-def test_newly_generated_history(n_jobs: int):
+@pytest.fixture()
+def search_space():
+    params_per_operation = {
+        'a': {
+            'a1': {
+                'hyperopt-dist': hp.uniformint,
+                'sampling-scope': [2, 7],
+                'type': 'discrete'
+            },
+            'a2': {
+                'hyperopt-dist': hp.loguniform,
+                'sampling-scope': [1e-3, 1],
+                'type': 'continuous'
+            }
+        },
+        'b': {
+            'b1': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [["first", "second", "third"]],
+                'type': 'categorical'
+            },
+            'b2': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            },
+        },
+        'e': {
+            'e1': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            },
+            'e2': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            }
+        },
+        'f': {
+            'f': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [1e-2, 10.0],
+                'type': 'continuous'
+            }
+        }}
+    return SearchSpace(params_per_operation)
+
+
+@pytest.mark.parametrize('n_jobs', [1, 2, -1])
+@pytest.mark.parametrize('tuner_cls, objective',
+                         [(SimultaneousTuner,
+                           Objective({'random_metric': RandomMetric.get_value})),
+                          (OptunaTuner,
+                           Objective({
+                               'random_metric_1': RandomMetric.get_value,
+                               'random_metric_2': RandomMetric.get_value,
+                           },
+                               is_multi_objective=True))
+                          ])
+def test_newly_generated_history(n_jobs: int, search_space, tuner_cls, objective):
     num_of_gens = 5
-    objective = Objective({'random_metric': RandomMetric.get_value})
     init_graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
     requirements = GraphRequirements(num_of_generations=num_of_gens)
     graph_generation_params = GraphGenerationParams(available_node_types=['a', 'b', 'c', 'd', 'e', 'f'])
@@ -245,19 +308,38 @@ def test_newly_generated_history(n_jobs: int):
     opt.optimise(obj_eval)
     history = opt.history
 
+    tuning_iterations = 10
+    objectives_number = len(objective.metric_names)
+    objectives_number_kwarg = dict(objectives_number=objectives_number) if objectives_number > 1 else {}
+    tuner = tuner_cls(obj_eval, search_space, MockAdapter(), iterations=tuning_iterations, n_jobs=n_jobs,
+                      history=history, **objectives_number_kwarg)
+    tuner.tune(history.evolution_results[0].graph)
+
+    # initial_assumptions=1 + num_of_gens + evolution_results=1 + tuning_start=1 +
+    #   evaluations_count + tuning_result=1 -> num_of_gens + tuning_iterations + 4
+    expected_gen_num = num_of_gens + tuner.evaluations_count + 4
+
+    # initial_assumptions=1 + num_of_gens=5 + evolution_results=1 -> num_of_gens + 2
+    expected_evolution_gen_num = num_of_gens + 2
+
     assert history is not None
-    assert len(history.generations) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
-    assert len(history.archive_history) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
+    assert len(history.generations) == expected_gen_num
+    assert len(history.evolution_best_archive) == expected_evolution_gen_num
     assert len(history.initial_assumptions) == 5
-    assert len(history.final_choices) == 1
+    if objectives_number == 1:
+        assert len(history.evolution_results) == 1
+        assert len(history.tuning_result) == 1
+    else:
+        assert len(history.evolution_results) >= 1
+        assert len(history.tuning_result) >= 1
     assert hasattr(history, 'objective')
-    _test_individuals_in_history(history)
+    check_individuals_in_history(history)
     # Test history dumps
     dumped_history_json = history.save()
     loaded_history = OptHistory.load(dumped_history_json)
     assert dumped_history_json is not None
     assert dumped_history_json == loaded_history.save(), 'The history is not equal to itself after reloading!'
-    _test_individuals_in_history(loaded_history)
+    check_individuals_in_history(loaded_history)
 
 
 @pytest.mark.parametrize('generate_history', [[3, 4, create_individual],
@@ -300,7 +382,7 @@ def test_history_correct_serialization():
 
     assert history.generations == reloaded_history.generations
     assert dumped_history_json == reloaded_history.save(), 'The history is not equal to itself after reloading!'
-    _test_individuals_in_history(reloaded_history)
+    check_individuals_in_history(reloaded_history)
 
 
 def test_collect_intermediate_metric():
@@ -326,7 +408,7 @@ def test_load_zero_generations_history():
     path_to_history = os.path.join(project_root(), 'test', 'data', 'zero_gen_history.json')
     history = OptHistory.load(path_to_history)
     assert isinstance(history, OptHistory)
-    assert len(history.archive_history) == 0
+    assert len(history.evolution_best_archive) == 0
     assert history.objective is not None
 
 
@@ -340,9 +422,9 @@ def test_save_load_light_history(generate_history):
     assert file_name in os.listdir(path_to_dir)
     loaded_history = OptHistory().load(path_to_history)
     assert isinstance(loaded_history, OptHistory)
-    assert len(loaded_history.archive_history) == len(loaded_history.generations) == 100
+    assert len(loaded_history.evolution_best_archive) == len(loaded_history.generations) == 100
     for i, _ in enumerate(loaded_history.generations):
-        assert len(loaded_history.generations[i]) == len(loaded_history.archive_history[i]) == 1
+        assert len(loaded_history.generations[i]) == len(loaded_history.evolution_best_archive[i]) == 1
     os.remove(path=os.path.join(path_to_dir, file_name))
 
 

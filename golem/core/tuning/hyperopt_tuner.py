@@ -10,6 +10,7 @@ from hyperopt.pyll import Apply
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.log import default_log
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner
@@ -31,6 +32,7 @@ class HyperoptTuner(BaseTuner, ABC):
         By default, ``deviation=0.05``, which means that tuned graph will be returned
         if it's metric will be at least 0.05% better than the initial.
       algo: algorithm for hyperparameters optimization with signature similar to :obj:`hyperopt.tse.suggest`
+      history: object to store tuning history if needed.
     """
 
     def __init__(self, objective_evaluate: ObjectiveFunction,
@@ -41,7 +43,8 @@ class HyperoptTuner(BaseTuner, ABC):
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
-                 algo: Callable = tpe.suggest):
+                 algo: Callable = tpe.suggest,
+                 history: Optional[OptHistory] = None):
         early_stopping_rounds = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
         super().__init__(objective_evaluate,
                          search_space,
@@ -50,7 +53,8 @@ class HyperoptTuner(BaseTuner, ABC):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation)
+                         deviation,
+                         history)
 
         self.early_stop_fn = no_progress_loss(iteration_stop_count=self.early_stopping_rounds)
         self.max_seconds = int(timeout.seconds) if timeout is not None else None

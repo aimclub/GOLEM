@@ -7,6 +7,7 @@ from hyperopt import tpe, fmin, space_eval
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.tuner_interface import DomainGraphForTune
@@ -26,7 +27,8 @@ class SequentialTuner(HyperoptTuner):
                  n_jobs: int = -1,
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 inverse_node_order: bool = False):
+                 inverse_node_order: bool = False,
+                 history: Optional[OptHistory] = None):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -34,7 +36,8 @@ class SequentialTuner(HyperoptTuner):
                          early_stopping_rounds, timeout,
                          n_jobs,
                          deviation,
-                         algo)
+                         algo,
+                         history)
 
         self.inverse_node_order = inverse_node_order
 
@@ -191,5 +194,5 @@ class SequentialTuner(HyperoptTuner):
         # Set hyperparameters for node
         graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)
 
-        metric_value = self.get_metric_value(graph=graph)
+        metric_value = self.evaluate_graph(graph=graph)
         return metric_value
