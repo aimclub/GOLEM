@@ -9,7 +9,7 @@ from golem.core.optimisers.genetic.operators.operator import EvaluationOperator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.optimisers.opt_history_objects.opt_history import OptHistoryLabels.evolution_results, OptHistoryLabels.initial_assumptions
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistoryLabels
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.core.optimisers.timer import OptimisationTimer
