@@ -16,7 +16,7 @@ class SimultaneousTuner(HyperoptTuner):
         Class for hyperparameters optimization for all nodes simultaneously
     """
 
-    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
+    def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
         """ Function for hyperparameters tuning on the entire graph
 
         Args:
@@ -26,62 +26,49 @@ class SimultaneousTuner(HyperoptTuner):
         Returns:
             Graph with tuned hyperparameters
         """
-
-        graph = self.adapter.adapt(graph)
         parameters_dict, init_parameters = self._get_parameters_for_tune(graph)
+        remaining_time = self._get_remaining_time()
 
-        with Timer() as global_tuner_timer:
-            self.init_check(graph)
-            remaining_time = self._get_remaining_time(global_tuner_timer)
+        if self._check_if_tuning_possible(graph, parameters_dict, remaining_time):
+            trials = Trials()
 
-            if self._check_tuning_possible(graph, parameters_dict, remaining_time):
-                trials = Trials()
+            try:
+                # try searching using initial parameters
+                # (uses original search space with fixed initial parameters)
+                trials, init_trials_num = self._search_near_initial_parameters(graph,
+                                                                               parameters_dict,
+                                                                               init_parameters,
+                                                                               trials,
+                                                                               remaining_time,
+                                                                               show_progress)
+                remaining_time = self._get_remaining_time()
+                if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
+                    fmin(partial(self._objective, graph=graph),
+                         parameters_dict,
+                         trials=trials,
+                         algo=self.algo,
+                         max_evals=self.iterations,
+                         show_progressbar=show_progress,
+                         early_stop_fn=self.early_stop_fn,
+                         timeout=remaining_time)
+                else:
+                    self.log.message('Tunner stopped after initial search due to the lack of time')
 
-                try:
-                    # try searching using initial parameters
-                    # (uses original search space with fixed initial parameters)
-                    trials, init_trials_num = self._search_near_initial_parameters(graph,
-                                                                                   parameters_dict,
-                                                                                   init_parameters,
-                                                                                   trials,
-                                                                                   remaining_time,
-                                                                                   show_progress)
-                    remaining_time = self._get_remaining_time(global_tuner_timer)
-                    if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
-                        fmin(partial(self._objective, graph=graph),
-                             parameters_dict,
-                             trials=trials,
-                             algo=self.algo,
-                             max_evals=self.iterations,
-                             show_progressbar=show_progress,
-                             early_stop_fn=self.early_stop_fn,
-                             timeout=remaining_time)
-                    else:
-                        self.log.message('Tunner stopped after initial search due to the lack of time')
+                best = space_eval(space=parameters_dict, hp_assignment=trials.argmin)
+                # check if best point was obtained using search space with fixed initial parameters
+                is_best_trial_with_init_params = trials.best_trial.get('tid') in range(init_trials_num)
+                if is_best_trial_with_init_params:
+                    best = {**best, **init_parameters}
 
-                    best = space_eval(space=parameters_dict, hp_assignment=trials.argmin)
-                    # check if best point was obtained using search space with fixed initial parameters
-                    is_best_trial_with_init_params = trials.best_trial.get('tid') in range(init_trials_num)
-                    if is_best_trial_with_init_params:
-                        best = {**best, **init_parameters}
+                final_graph = self.set_arg_graph(graph=graph, parameters=best)
 
-                    final_graph = self.set_arg_graph(graph=graph, parameters=best)
+                self.was_tuned = True
 
-                    self.was_tuned = True
-
-                    # Validate if optimisation did well
-                    final_graph = self.final_check(final_graph)
-
-                except Exception as ex:
-                    self.log.warning(f'Exception {ex} occurred during tuning')
-                    final_graph = graph
-                    self.obtained_metric = self.init_metric
-
-            else:
+            except Exception as ex:
+                self.log.warning(f'Exception {ex} occurred during tuning')
                 final_graph = graph
-                self.obtained_metric = self.init_metric
-
-        final_graph = self.adapter.restore(final_graph)
+        else:
+            final_graph = graph
         return final_graph
 
     def _search_near_initial_parameters(self, graph: OptGraph,

@@ -55,6 +55,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.deviation = deviation
 
         self.timeout = timeout
+        self.timer = Timer()
         self.early_stopping_rounds = early_stopping_rounds
 
         self._default_metric_value = MAX_TUNING_METRIC_VALUE
@@ -63,9 +64,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.init_metric = None
         self.obtained_metric = None
         self.log = default_log(self)
+        self.objectives_number = 1
 
-    @abstractmethod
-    def tune(self, graph: DomainGraphForTune) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
+    def tune(self, graph: DomainGraphForTune, **kwargs) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         """
         Function for hyperparameters tuning on the graph
 
@@ -76,7 +77,22 @@ class BaseTuner(Generic[DomainGraphForTune]):
           Graph with optimized hyperparameters
           or pareto front of optimized graphs in case of multi-objective optimization
         """
-        raise NotImplementedError()
+        graph = self.adapter.adapt(graph)
+        self.was_tuned = False
+        with self.timer:
+
+            # Check source metrics for data
+            self.init_check(graph)
+            final_graph = self._tune(graph, **kwargs)
+            # Validate if optimisation did well
+            final_graph = self.final_check(final_graph, self.objectives_number > 1)
+
+        final_graph = self.adapter.restore(final_graph)
+        return final_graph
+
+    @abstractmethod
+    def _tune(self, graph: DomainGraphForTune, **kwargs):
+        raise NotImplementedError
 
     def init_check(self, graph: OptGraph) -> None:
         """
@@ -164,6 +180,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
             final_graphs = self.init_graph
+            self.obtained_metric = self.init_metric
         return final_graphs
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
@@ -233,10 +250,10 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         return graph
 
-    def _check_tuning_possible(self, graph: OptGraph,
-                               parameters_to_optimize: bool,
-                               remaining_time: Optional[float] = None,
-                               supports_multi_objective: bool = False) -> bool:
+    def _check_if_tuning_possible(self, graph: OptGraph,
+                                  parameters_to_optimize: bool,
+                                  remaining_time: Optional[float] = None,
+                                  supports_multi_objective: bool = False) -> bool:
         if len(ensure_wrapped_in_sequence(self.init_metric)) > 1 and not supports_multi_objective:
             self._stop_tuning_with_message(f'{self.__class__.__name__} does not support multi-objective optimization.')
             return False
@@ -253,9 +270,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.log.message(message)
         self.obtained_metric = self.init_metric
 
-    def _get_remaining_time(self, tuner_timer: Timer) -> Optional[float]:
+    def _get_remaining_time(self) -> Optional[float]:
         if self.timeout is not None:
-            remaining_time = self.timeout.seconds - tuner_timer.minutes_from_start * 60
+            remaining_time = self.timeout.seconds - self.timer.seconds_from_start
             return remaining_time
         else:
             return None
