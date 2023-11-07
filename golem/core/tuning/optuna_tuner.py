@@ -10,7 +10,6 @@ from optuna.trial import FrozenTrial
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
-from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
