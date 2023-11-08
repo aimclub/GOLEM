@@ -143,8 +143,7 @@ class ReproductionController:
                     if failed_stage is FailedStageEnum.NONE:
                         result_queue.put((failed_stage, individual, mutation_type))
                     else:
-                        if failed_stage is FailedStageEnum.VERIFICATION:
-                            result_queue.put((failed_stage, individual_uid, mutation_type))
+                        result_queue.put((failed_stage, individual_uid, mutation_type))
                         task_queue.put((individual_uid, mutation_type, tries - 1))
 
 
