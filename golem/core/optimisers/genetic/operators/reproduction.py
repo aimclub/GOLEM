@@ -98,6 +98,7 @@ class ReproductionController:
                                             pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                             mutation=mutation,
                                             evaluator=evaluator)
+            left_tries -= 1
             if failed_stage is FailedStageEnum.NONE:
                 new_population.append(individual)
 
