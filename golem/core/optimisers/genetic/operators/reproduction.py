@@ -149,27 +149,28 @@ class ReproductionController:
 
             # create pool
             executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
-            for _ in range(max(2, self.mutation.requirements.n_jobs - 1)): executor.submit(worker)
+            try:
+                for _ in range(max(2, self.mutation.requirements.n_jobs - 1)): executor.submit(worker)
 
-            while left_tries > 0 and len(new_population) < self.parameters.pop_size:
-                # if there is not enough jobs, create new
-                while task_queue.qsize() < 2:
-                    individual_uid = next(cycled_population_uid)
-                    mutation_type = self.mutation.agent.choose_action(population_uid_map[individual_uid].graph)
-                    task_queue.put((individual_uid, mutation_type, self.parameters.max_num_of_mutation_attempts))
-                    time.sleep(0.01)
+                while left_tries > 0 and len(new_population) < self.parameters.pop_size:
+                    # if there is not enough jobs, create new
+                    while task_queue.qsize() < 2:
+                        individual_uid = next(cycled_population_uid)
+                        mutation_type = self.mutation.agent.choose_action(population_uid_map[individual_uid].graph)
+                        task_queue.put((individual_uid, mutation_type, self.parameters.max_num_of_mutation_attempts))
+                        time.sleep(0.01)
 
-                # process result
-                if result_queue.qsize() > 0:
-                    failed_stage, individual, mutation_type = result_queue.get()
-                    left_tries -= 1
-                    if failed_stage is FailedStageEnum.NONE:
-                        new_population.append(individual)
-                    elif failed_stage is FailedStageEnum.VERIFICATION:
-                        inds_for_experience.append((population_uid_map[individual], mutation_type))
-
-            # shutdown workers
-            executor.shutdown(wait=False)
+                    # process result
+                    if result_queue.qsize() > 0:
+                        failed_stage, individual, mutation_type = result_queue.get()
+                        left_tries -= 1
+                        if failed_stage is FailedStageEnum.NONE:
+                            new_population.append(individual)
+                        elif failed_stage is FailedStageEnum.VERIFICATION:
+                            inds_for_experience.append((population_uid_map[individual], mutation_type))
+            finally:
+                # shutdown workers
+                executor.shutdown(wait=False)
 
             # add experience for agent
             for individual, mutation_type in inds_for_experience:
