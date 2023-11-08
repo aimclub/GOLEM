@@ -36,7 +36,8 @@ def test_genetic_scheme_types(genetic_type):
                                      num_iterations=num_iterations)
     assert found_graph is not None
     # at least 20% more generation than early_stopping_iterations were evaluated
-    assert history.generations_count >= num_iterations // 3 * 1.2
+    # (+2 gen for initial assumption and final choice)
+    assert history.generations_count >= num_iterations // 3 * 1.2 + 2
     # metric improved
     assert np.mean([ind.fitness.value for ind in history.generations[0].data]) > \
            np.mean([ind.fitness.value for ind in history.generations[-1].data])
