@@ -2,10 +2,11 @@ from typing import Sequence, Union, Any
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-from golem.core.optimisers.genetic.operators.crossover import Crossover
+from golem.core.optimisers.genetic.operators.crossover import Crossover, SinglePredefinedGraphCrossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
 from golem.core.optimisers.genetic.operators.inheritance import Inheritance
-from golem.core.optimisers.genetic.operators.mutation import Mutation
+from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedMutation, \
+    SinglePredefinedGraphMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.regularization import Regularization
 from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
@@ -35,8 +36,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # Define genetic operators
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)
-        self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
-        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
+        self.crossover = SinglePredefinedGraphCrossover(graph_optimizer_params, requirements, graph_generation_params)
+        self.mutation = SinglePredefinedGraphMutation(graph_optimizer_params, requirements, graph_generation_params)
         self.inheritance = Inheritance(graph_optimizer_params, self.selection)
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,
@@ -67,13 +68,13 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         """ Initializes the initial population """
         # Adding of initial assumptions to history as zero generation
         self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
-        pop_size = self.graph_optimizer_params.pop_size
-
-        if len(self.initial_individuals) < pop_size:
-            self.initial_individuals += self.reproducer._mutate_over_population(population=self.initial_individuals,
-                                                                                evaluator=evaluator)
-            # Adding of extended population to history
-            self._update_population(self.initial_individuals, 'extended_initial_assumptions')
+        # pop_size = self.graph_optimizer_params.pop_size
+        #
+        # if len(self.initial_individuals) < pop_size:
+        #     self.initial_individuals += self.reproducer._mutate_over_population(population=self.initial_individuals,
+        #                                                                         evaluator=evaluator)
+        #     # Adding of extended population to history
+        #     self._update_population(self.initial_individuals, 'extended_initial_assumptions')
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """

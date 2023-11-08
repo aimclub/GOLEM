@@ -163,16 +163,15 @@ class Mutation(Operator):
         return adapted_mutation_func
 
 
-class SinglePredefinedMutation(Mutation):
-    def __call__(self, individual: Individual, mutation_type: MutationType) -> Individual:
-        new_graph = deepcopy(individual.graph)
+class SinglePredefinedGraphMutation(Mutation):
+    """ Mutation that tries to create new graph (not individual) from the only graph in one attempt
+        without any checks
+    """
+    def __call__(self, graph: Graph, mutation_type: Optional[MutationType] = None) -> Tuple[Graph, MutationIdType]:
+        new_graph = deepcopy(graph)
+        mutation_type = mutation_type or self._operator_agent.choose_action(new_graph)
         mutation_func = self._get_mutation_func(mutation_type)
-
         new_graph = mutation_func(new_graph, requirements=self.requirements,
                                   graph_gen_params=self.graph_generation_params,
                                   parameters=self.parameters)
-
-        parent_operator = ParentOperator(type_='mutation', operators=mutation_type, parent_individuals=individual)
-        individual = Individual(new_graph, parent_operator,
-                                metadata=self.requirements.static_individual_metadata)
-        return individual
+        return new_graph

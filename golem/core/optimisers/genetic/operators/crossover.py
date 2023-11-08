@@ -2,7 +2,7 @@ from copy import deepcopy
 from itertools import chain
 from math import ceil
 from random import choice, random, sample
-from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
+from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING, Optional
 
 from joblib import Parallel, delayed
 
@@ -107,6 +107,21 @@ class Crossover(Operator):
         return not (graph_first is graph_second or
                     random() > self.parameters.crossover_prob or
                     crossover_type is CrossoverTypesEnum.none)
+
+
+class SinglePredefinedGraphCrossover(Crossover):
+    """ Crossover that tries to create new graph/graphs from only two graphs
+        in one attempt without any checks
+    """
+    def __call__(self,
+                 graph_1: OptGraph,
+                 graph_2: OptGraph,
+                 crossover_type: Optional[CrossoverTypesEnum] = None) -> Tuple[OptGraph, CrossoverTypesEnum]:
+        crossover_type = crossover_type or choice(self.parameters.crossover_types)
+        crossover_func = self._get_crossover_function(crossover_type)
+
+        new_graphs = crossover_func(deepcopy(graph_1), deepcopy(graph_2), max_depth=self.requirements.max_depth)
+        return tuple(new_graphs) + (crossover_type, )
 
 
 @register_native
