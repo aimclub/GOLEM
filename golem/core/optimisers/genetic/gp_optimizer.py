@@ -5,8 +5,7 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import Crossover, SinglePredefinedGraphCrossover
 from golem.core.optimisers.genetic.operators.elitism import Elitism
 from golem.core.optimisers.genetic.operators.inheritance import Inheritance
-from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedMutation, \
-    SinglePredefinedGraphMutation
+from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedGraphMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.regularization import Regularization
 from golem.core.optimisers.genetic.operators.reproduction import ReproductionController

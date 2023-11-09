@@ -174,4 +174,4 @@ class SinglePredefinedGraphMutation(Mutation):
         new_graph = mutation_func(new_graph, requirements=self.requirements,
                                   graph_gen_params=self.graph_generation_params,
                                   parameters=self.parameters)
-        return new_graph
+        return new_graph, mutation_type

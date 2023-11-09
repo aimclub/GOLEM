@@ -4,11 +4,12 @@ from dataclasses import dataclass
 from enum import Enum
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
+from queue import Queue
 from random import sample
 from typing import Optional, Dict, Union, List
 
+from joblib import Parallel, delayed
 from joblib.externals.loky import get_reusable_executor
-from joblib.externals.loky.backend.queues import Queue
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_PER_IND
 from golem.core.dag.graph_verifier import GraphVerifier
@@ -58,8 +59,7 @@ class ReproductionController:
         """Reproduces and evaluates population (select, crossover, mutate).
         """
         selected_individuals = self.selection(population, self.parameters.pop_size)
-        new_population = self.crossover(selected_individuals)
-        new_population = self._reproduce(new_population, evaluator)
+        new_population = self._reproduce(selected_individuals, evaluator)
         self._check_final_population(new_population)
         return new_population
 
@@ -78,40 +78,44 @@ class ReproductionController:
                                      pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                      population=population,
                                      task_queue=task_queue, result_queue=result_queue,
-                                     failed_queue=failed_queue)
+                                     failed_queue=failed_queue,
+                                     log=self._log)
+
+            empty_task = ReproducerWorkerTask(
+                            crossover_tries=self.parameters.max_num_of_crossover_reproducer_attempts,
+                            mutation_tries=self.parameters.max_num_of_mutation_reproducer_attempts,
+                            mutation_attempts_per_each_crossover=self.parameters.mutation_attempts_per_each_crossover_reproducer)
 
             # TODO there is problem with random seed in parallel workers
 
-            # create pool with workers
-            executor = get_reusable_executor(max_workers=self.mutation.requirements.n_jobs)
-            for _ in range(max(1, self.mutation.requirements.n_jobs - 1)):
-                executor.submit(worker)
+            n_jobs = self.mutation.requirements.n_jobs
+            with Parallel(n_jobs=n_jobs, prefer='processes', return_as='generator') as parallel:
+                _ = parallel(delayed(worker)() for _ in range(n_jobs))
 
-            try:
-                # create new population
                 finished_tasks, failed_tasks = list(), list()
                 while left_tries > 0 and len(finished_tasks) < self.parameters.pop_size:
+                    self._log.warning('Cycle')
+                    time.sleep(0.02)
+
                     # if there is not enough jobs, create new empty job
-                    # for fully random starting individuals and operation types
-                    while task_queue.qsize() < 2:
-                        task_queue.put(ReproducerWorkerTask(
-                            crossover_tries=self.parameters.max_num_of_crossover_reproducer_attempts,
-                            mutation_tries=self.parameters.max_num_of_mutation_reproducer_attempts,
-                            mutation_attempts_per_each_crossover=self.parameters.mutation_attempts_per_each_crossover_reproducer))
+                    if task_queue.qsize() < 2:
+                        self._log.warning('Put task to task_queue')
+                        task_queue.put(empty_task)
                         time.sleep(0.01)  # give workers some time to get tasks from queue
 
                     # process result
                     if result_queue.qsize() > 0:
+                        self._log.warning(f'Get finished task, left tries: {left_tries}')
                         left_tries -= 1
                         finished_tasks.append(result_queue.get())
 
                     # process unsuccessful creation attempt
                     if failed_queue.qsize() > 0:
+                        self._log.warning(f'Get failed task, left tries: {left_tries}')
                         left_tries -= 1
                         failed_tasks.append(failed_queue.get())
-            finally:
-                # shutdown workers
-                executor.shutdown(wait=False)
+
+            self._log.warning('Kill workers')
 
             # update looked graphs
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids.keys())
@@ -233,7 +237,8 @@ class ReproduceWorker:
                  population: PopulationT,
                  task_queue: Queue,
                  result_queue: Queue,
-                 failed_queue: Queue
+                 failed_queue: Queue,
+                 log
                  ):
         self.crossover = crossover
         self.mutation = mutation
@@ -244,6 +249,7 @@ class ReproduceWorker:
         self._task_queue = task_queue
         self._result_queue = result_queue
         self._failed_queue = failed_queue
+        self._log = log
 
     def __call__(self):
         tasks = []
@@ -255,6 +261,8 @@ class ReproduceWorker:
 
             # process result
             for processed_task in processed_tasks:
+                # self._log.warning(f"PTask {id(processed_task)}: {processed_task.stage}:{processed_task.fail} "
+                #                   f"{processed_task.crossover_tries}:{processed_task.mutation_tries}")
                 if processed_task.stage is ReproducerWorkerStageEnum.FINISH:
                     self._result_queue.put(processed_task)
                     continue
@@ -361,7 +369,10 @@ class ReproduceWorker:
         return [task]
 
     def uniqueness_check_stage(self, task: ReproducerWorkerTask) -> List[ReproducerWorkerTask]:
-        graph = task.graph_for_mutation if task.is_crossover else task.final_graph
+        if task.is_crossover:
+            graph = task.graph_for_mutation
+        else:
+            graph = task.final_graph
         descriptive_id = graph.descriptive_id
         if descriptive_id not in self._pop_graph_descriptive_ids:
             self._pop_graph_descriptive_ids[descriptive_id] = True
@@ -371,7 +382,10 @@ class ReproduceWorker:
         return [task]
 
     def evaluation_stage(self, task: ReproducerWorkerTask) -> List[ReproducerWorkerTask]:
-        graph = task.graph_for_mutation if task.is_crossover else task.final_graph
+        if task.is_crossover:
+            graph = task.graph_for_mutation
+        else:
+            graph = task.final_graph
         individual = Individual(deepcopy(graph), metadata=self.mutation.requirements.static_individual_metadata)
         evaluated_individuals = self.evaluator([individual])
         if evaluated_individuals:
