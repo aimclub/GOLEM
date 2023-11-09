@@ -105,11 +105,12 @@ class ReproductionController:
                                      pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                      population=population,
                                      task_queue=task_queue, result_queue=result_queue,
-                                     failed_queue=failed_queue, empty_task=empty_task)
+                                     failed_queue=failed_queue, empty_task=empty_task,
+                                     log=self._log)
 
             n_jobs = self.mutation.requirements.n_jobs
             with Parallel(n_jobs=n_jobs, prefer='processes', return_as='generator') as parallel:
-                workers = [ReproduceWorker(seed=randint(0, sys.maxsize), **worker_parameters) for _ in range(n_jobs)]
+                workers = [ReproduceWorker(seed=randint(0, int(2**32 - 1)), **worker_parameters) for _ in range(n_jobs)]
                 _ = parallel(delayed(worker)() for worker in workers)
 
                 finished_tasks, failed_tasks = list(), list()
@@ -127,8 +128,10 @@ class ReproductionController:
                         finished_tasks.append(result_queue.get())
 
             # get all finished works
-            failed_tasks += list(failed_queue.queue)
-            finished_tasks += list(result_queue.queue)
+            while failed_queue.qsize() > 0:
+                failed_tasks.append(failed_queue.get())
+            while result_queue.qsize() > 0:
+                finished_tasks.append(result_queue.get())
 
             # update looked graphs
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids.keys())
@@ -234,7 +237,8 @@ class ReproduceWorker:
                  result_queue: Queue,
                  failed_queue: Queue,
                  empty_task: ReproducerWorkerTask,
-                 seed: int
+                 seed: int,
+                 log
                  ):
         self.crossover = crossover
         self.mutation = mutation
@@ -247,6 +251,7 @@ class ReproduceWorker:
         self._failed_queue = failed_queue
         self._empty_task = empty_task
         self._seed = seed
+        self._log = log
 
     def __call__(self):
         with RandomStateHandler(self._seed):
@@ -263,7 +268,6 @@ class ReproduceWorker:
                 processed_tasks = self.process_task(tasks.pop())
 
                 # process result
-                tasks = []
                 for processed_task in processed_tasks:
                     if processed_task.stage is ReproducerWorkerStageEnum.FINISH:
                         self._result_queue.put(processed_task)
