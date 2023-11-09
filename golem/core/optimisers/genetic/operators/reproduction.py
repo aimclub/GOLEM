@@ -108,7 +108,7 @@ class ReproductionController:
                                      failed_queue=failed_queue, empty_task=empty_task,
                                      log=self._log)
 
-            n_jobs = self.mutation.requirements.n_jobs
+            n_jobs = max(2, self.mutation.requirements.n_jobs)
             with Parallel(n_jobs=n_jobs, prefer='processes', return_as='generator') as parallel:
                 workers = [ReproduceWorker(seed=randint(0, int(2**32 - 1)), **worker_parameters) for _ in range(n_jobs)]
                 _ = parallel(delayed(worker)() for worker in workers)
@@ -254,8 +254,10 @@ class ReproduceWorker:
         self._log = log
 
     def __call__(self):
+        self._log.warning(f"CALLED")
         with RandomStateHandler(self._seed):
             tasks = [self._empty_task]
+            self._log.warning(f"START CYCLE")
             while True:
                 # is there is no tasks, try to get 1. task from queue 2. empty task
                 if not tasks:
@@ -269,6 +271,7 @@ class ReproduceWorker:
 
                 # process result
                 for processed_task in processed_tasks:
+                    self._log.warning(f"PROCESS: {processed_task.stage} {processed_task.crossover_tries}:{processed_task.mutation_tries}")
                     if processed_task.stage is ReproducerWorkerStageEnum.FINISH:
                         self._result_queue.put(processed_task)
                         continue
@@ -278,11 +281,14 @@ class ReproduceWorker:
                         tasks.append(processed_task)
 
                 # if there are some tasks, add it to parallel queue
+                self._log.warning(f"TASKS: {len(tasks)}")
                 for _ in range(len(tasks) - 1):
                     self._task_queue.put(tasks.pop())
+                self._log.warning(f"TASKS: {len(tasks)}")
 
     def process_task(self, task: ReproducerWorkerTask) -> List[ReproducerWorkerTask]:
         """ Get task, make 1 stage and return processed task """
+        self._log.warning(f"START: {task.stage} {task.crossover_tries}:{task.mutation_tries}")
         task = copy(task)  # input task
         task.fail = False
 

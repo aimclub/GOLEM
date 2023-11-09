@@ -176,6 +176,8 @@ class SinglePredefinedGraphMutation(Mutation):
     def __call__(self, graph: Graph, mutation_type: Optional[MutationType] = None) -> Tuple[Graph, MutationIdType]:
         new_graph = deepcopy(graph)
         mutation_type = mutation_type or self._operator_agent.choose_action(new_graph)
+        if mutation_type is MutationTypesEnum.none:
+            return None, None
         mutation_func = self._get_mutation_func(mutation_type)
         new_graph = mutation_func(new_graph, requirements=self.requirements,
                                   graph_gen_params=self.graph_generation_params,
