@@ -106,11 +106,9 @@ class Mutation(Operator):
             application_attempt = True
             is_correct_graph = self.graph_generation_params.verifier(new_graph)
             if is_correct_graph:
-                parent_operator = ParentOperator(type_='mutation',
-                                                 operators=mutation_applied,
-                                                 parent_individuals=individual)
-                individual = Individual(new_graph, parent_operator,
-                                        metadata=self.requirements.static_individual_metadata)
+                individual = self._get_individual(new_graph=new_graph,
+                                                  mutation_type=mutation_applied,
+                                                  parent=individual)
                 break
             else:
                 # Collect invalid actions
@@ -161,6 +159,14 @@ class Mutation(Operator):
             mutation_func = self._mutations_repo[mutation_type]
         adapted_mutation_func = self.graph_generation_params.adapter.adapt_func(mutation_func)
         return adapted_mutation_func
+
+    def _get_individual(self, new_graph: Graph, mutation_type: MutationType, parent: Individual, **kwargs):
+        parent_operator = ParentOperator(type_='mutation',
+                                         operators=mutation_type,
+                                         parent_individuals=parent)
+        individual = Individual(new_graph, parent_operator,
+                                metadata=self.requirements.static_individual_metadata, **kwargs)
+        return individual
 
 
 class SinglePredefinedGraphMutation(Mutation):

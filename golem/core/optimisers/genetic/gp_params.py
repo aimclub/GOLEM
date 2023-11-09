@@ -76,9 +76,9 @@ class GPAlgorithmParameters(AlgorithmParameters):
     mutation_prob: float = 0.8
     variable_mutation_num: bool = True
     max_num_of_operator_attempts: int = 100
-    max_num_of_crossover_reproducer_attempts: int = 2
+    max_num_of_crossover_reproducer_attempts: int = 10
     max_num_of_mutation_reproducer_attempts: int = 2
-    mutation_attempts_per_each_crossover_reproducer: int = 2
+    mutation_attempts_per_each_crossover_reproducer: int = 10
     mutation_strength: MutationStrengthEnum = MutationStrengthEnum.mean
     min_pop_size_with_elitism: int = 5
     required_valid_ratio: float = 0.9

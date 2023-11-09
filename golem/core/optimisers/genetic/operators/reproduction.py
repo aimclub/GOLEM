@@ -4,12 +4,11 @@ from dataclasses import dataclass
 from enum import Enum
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
-from queue import Queue
+from queue import Empty, Queue
 from random import sample
 from typing import Optional, Dict, Union, List
 
 from joblib import Parallel, delayed
-from joblib.externals.loky import get_reusable_executor
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS_PER_IND
 from golem.core.dag.graph_verifier import GraphVerifier
@@ -21,9 +20,26 @@ from golem.core.optimisers.genetic.operators.mutation import Mutation, MutationT
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
 from golem.core.optimisers.opt_history_objects.individual import Individual
+
+
+class ReproducerWorkerStageEnum(Enum):
+    # TODO test that check that nums start from 0 and go to max (FINISH) with 1 steps
+    CROSSOVER = 0
+    CROSSOVER_VERIFICATION = 1
+    CROSSOVER_UNIQUENESS_CHECK = 2
+    CROSSOVER_EVALUATION = 3
+    MUTATION = 4
+    MUTATION_VERIFICATION = 5
+    MUTATION_UNIQUENESS_CHECK = 6
+    MUTATION_EVALUATION = 7
+    FINISH = 8
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class ReproductionController:
@@ -63,63 +79,64 @@ class ReproductionController:
         self._check_final_population(new_population)
         return new_population
 
-    def _reproduce(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
+    def _reproduce(self, population: PopulationT, evaluator: EvaluationOperator,
+                   start_stage: ReproducerWorkerStageEnum = ReproducerWorkerStageEnum.CROSSOVER) -> PopulationT:
         """Generate new individuals by mutation in parallel.
            Implements additional checks on population to ensure that population size is greater or equal to
            required population size. Also controls uniqueness of population.
         """
         with Manager() as manager:
-            left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
             pop_graph_descriptive_ids = manager.dict({ids: True for ids in self._pop_graph_descriptive_ids})
             task_queue, result_queue, failed_queue = [manager.Queue() for _ in range(3)]
+
+            empty_task = ReproducerWorkerTask(
+                stage=start_stage,
+                crossover_tries=self.parameters.max_num_of_crossover_reproducer_attempts,
+                mutation_tries=self.parameters.max_num_of_mutation_reproducer_attempts,
+                mutation_attempts_per_each_crossover=self.parameters.mutation_attempts_per_each_crossover_reproducer)
 
             worker = ReproduceWorker(crossover=self.crossover, mutation=self.mutation,
                                      verifier=self.verifier, evaluator=evaluator,
                                      pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                      population=population,
                                      task_queue=task_queue, result_queue=result_queue,
-                                     failed_queue=failed_queue,
+                                     failed_queue=failed_queue, empty_task=empty_task,
                                      log=self._log)
 
-            empty_task = ReproducerWorkerTask(
-                            crossover_tries=self.parameters.max_num_of_crossover_reproducer_attempts,
-                            mutation_tries=self.parameters.max_num_of_mutation_reproducer_attempts,
-                            mutation_attempts_per_each_crossover=self.parameters.mutation_attempts_per_each_crossover_reproducer)
-
             # TODO there is problem with random seed in parallel workers
+            # TODO do not put failed tasks in queue, return it after worker stop
+            # TODO kill workers, collect tasks and then update _pop_graph_descriptive_ids
+            # TODO only get results in main thread, push empty task in parallel workers
 
             n_jobs = self.mutation.requirements.n_jobs
             with Parallel(n_jobs=n_jobs, prefer='processes', return_as='generator') as parallel:
                 _ = parallel(delayed(worker)() for _ in range(n_jobs))
 
                 finished_tasks, failed_tasks = list(), list()
+                left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
+                left_tries = int(left_tries / (ReproducerWorkerStageEnum.FINISH.value - start_stage.value) *
+                                 ReproducerWorkerStageEnum.FINISH.value)
                 while left_tries > 0 and len(finished_tasks) < self.parameters.pop_size:
-                    self._log.warning('Cycle')
-                    time.sleep(0.02)
+                    time.sleep(0.01)
 
                     # if there is not enough jobs, create new empty job
-                    if task_queue.qsize() < 2:
-                        self._log.warning('Put task to task_queue')
+                    while task_queue.qsize() < 2:
                         task_queue.put(empty_task)
-                        time.sleep(0.01)  # give workers some time to get tasks from queue
 
                     # process result
                     if result_queue.qsize() > 0:
-                        self._log.warning(f'Get finished task, left tries: {left_tries}')
                         left_tries -= 1
                         finished_tasks.append(result_queue.get())
 
                     # process unsuccessful creation attempt
                     if failed_queue.qsize() > 0:
-                        self._log.warning(f'Get failed task, left tries: {left_tries}')
                         left_tries -= 1
                         failed_tasks.append(failed_queue.get())
-
-            self._log.warning('Kill workers')
 
             # update looked graphs
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids.keys())
 
+            self._log.warning(f'left_tries {left_tries}, fin_tasks {len(finished_tasks)}, fail_tasks {len(failed_tasks)}')
             # rebuild population
             new_population = self._process_tasks(population=population,
                                                  finished_tasks=finished_tasks,
@@ -130,12 +147,33 @@ class ReproductionController:
                        population: PopulationT,
                        finished_tasks: List['ReproducerWorkerTask'],
                        failed_tasks: List['ReproducerWorkerTask']):
-        # if failed_stage is ReproducerWorkerStageEnum.MUTATION_VERIFICATION:
-        #     # experience for mab
-        #     self.mutation.agent_experience.collect_experience(population_uid_map[individual_uid],
-        #                                                       mutation_type,
-        #                                                       reward=-1.0)
-        pass
+        population_uid_map = {ind.uid: ind for ind in population}
+
+        crossover_individuals, new_population = dict(), []
+        for task in finished_tasks + failed_tasks:
+            if task.stage > ReproducerWorkerStageEnum.MUTATION:
+                uids = (task.graph_1_uid, task.graph_2_uid)
+                # create individuals, generated by crossover
+                if uids not in crossover_individuals:
+                    individuals = self.crossover._get_individuals(new_graphs=[task.graph_for_mutation],
+                                                                  parent_individuals=[population_uid_map[uid]
+                                                                                      for uid in uids],
+                                                                  crossover_type=task.crossover_type,
+                                                                  fitness=task.crossover_fitness)
+                    crossover_individuals[uids] = individuals[0]
+
+                # create individuals, generated by mutation
+                if uids in crossover_individuals:
+                    individual = self.mutation._get_individual(new_graph=task.final_graph,
+                                                               mutation_type=task.mutation_type,
+                                                               parent=crossover_individuals[uids],
+                                                               fitness=task.final_fitness)
+                    if task.stage is ReproducerWorkerStageEnum.FINISH:
+                        new_population.append(individual)
+                    elif task.stage is ReproducerWorkerStageEnum.MUTATION_VERIFICATION:
+                        # experience for mab
+                        self.mutation.agent_experience.collect_experience(individual, task.mutation_type, reward=-1.0)
+        return new_population
 
     def _check_final_population(self, population: PopulationT) -> None:
         """ If population do not achieve required length return a warning or raise exception """
@@ -150,38 +188,6 @@ class ReproductionController:
             self._log.warning(f'Could not achieve required population size: '
                               f'have {len(population)},'
                               f' required {target_pop_size}!\n' + helpful_msg)
-
-    def _rebuild_final_population(self, population: PopulationT, new_population: PopulationT) -> PopulationT:
-        """ Recreate new_population in main thread with parents from population """
-        population_uid_map = {individual.uid: individual for individual in population}
-        rebuilded_population = []
-        for individual in new_population:
-            if individual.parent_operator:
-                parent_uid = individual.parent_operator.parent_individuals[0].uid
-                parent_operator = ParentOperator(type_=individual.parent_operator.type_,
-                                                 operators=individual.parent_operator.operators,
-                                                 parent_individuals=population_uid_map[parent_uid])
-            else:
-                parent_operator = None
-            individual = Individual(deepcopy(individual.graph),
-                                    parent_operator,
-                                    fitness=individual.fitness,
-                                    metadata=self.mutation.requirements.static_individual_metadata)
-            rebuilded_population.append(individual)
-        return rebuilded_population
-
-
-class ReproducerWorkerStageEnum(Enum):
-    # TODO test that check that nums start from 0 and go to max (FINISH) with 1 steps
-    CROSSOVER = 0
-    CROSSOVER_VERIFICATION = 1
-    CROSSOVER_UNIQUENESS_CHECK = 2
-    CROSSOVER_EVALUATION = 3
-    MUTATION = 4
-    MUTATION_VERIFICATION = 5
-    MUTATION_UNIQUENESS_CHECK = 6
-    MUTATION_EVALUATION = 7
-    FINISH = 8
 
 
 @dataclass
@@ -210,14 +216,7 @@ class ReproducerWorkerTask:
 
     @property
     def is_crossover(self):
-        return self.stage in [ReproducerWorkerStageEnum.CROSSOVER,
-                              ReproducerWorkerStageEnum.CROSSOVER_VERIFICATION,
-                              ReproducerWorkerStageEnum.CROSSOVER_UNIQUENESS_CHECK,
-                              ReproducerWorkerStageEnum.CROSSOVER_EVALUATION]
-
-    @property
-    def is_mutation(self):
-        return not self.is_crossover
+        return self.stage < ReproducerWorkerStageEnum.MUTATION
 
     @property
     def tries(self):
@@ -238,6 +237,7 @@ class ReproduceWorker:
                  task_queue: Queue,
                  result_queue: Queue,
                  failed_queue: Queue,
+                 empty_task: ReproducerWorkerTask,
                  log
                  ):
         self.crossover = crossover
@@ -249,6 +249,7 @@ class ReproduceWorker:
         self._task_queue = task_queue
         self._result_queue = result_queue
         self._failed_queue = failed_queue
+        self._empty_task = empty_task
         self._log = log
 
     def __call__(self):
@@ -256,7 +257,10 @@ class ReproduceWorker:
         while True:
             # work with existing task from tasks or from queue
             if not tasks:
-                tasks.append(self._task_queue.get())
+                try:
+                    tasks.append(self._task_queue.get(timeout=0.02))
+                except Empty:
+                    tasks.append(self._empty_task)
             processed_tasks = self.process_task(tasks.pop())
 
             # process result
@@ -388,10 +392,12 @@ class ReproduceWorker:
             graph = task.final_graph
         individual = Individual(deepcopy(graph), metadata=self.mutation.requirements.static_individual_metadata)
         evaluated_individuals = self.evaluator([individual])
-        if evaluated_individuals:
-            # TODO add null_fitness as flag for previous stage
+        if evaluated_individuals and evaluated_individuals[0].fitness.valid:
             task.fail = False
+            if task.is_crossover:
+                task.crossover_fitness = evaluated_individuals[0].fitness
+            else:
+                task.final_fitness = evaluated_individuals[0].fitness
         else:
             task.fail = True
-        # TODO return fitness
         return [task]

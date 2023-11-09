@@ -96,12 +96,12 @@ class Crossover(Operator):
             raise ValueError(f'Required crossover type is not found: {crossover_type}')
 
     def _get_individuals(self, new_graphs: Tuple[OptGraph, OptGraph], parent_individuals: Tuple[Individual, Individual],
-                         crossover_type: Union[CrossoverTypesEnum, Callable]) -> Tuple[Individual, Individual]:
+                         crossover_type: Union[CrossoverTypesEnum, Callable], **kwargs) -> Tuple[Individual, Individual]:
         operator = ParentOperator(type_='crossover',
                                   operators=str(crossover_type),
                                   parent_individuals=parent_individuals)
         metadata = self.requirements.static_individual_metadata
-        return tuple(Individual(graph, operator, metadata=metadata) for graph in new_graphs)
+        return tuple(Individual(graph, operator, metadata=metadata, **kwargs) for graph in new_graphs)
 
     def _will_crossover_be_applied(self, graph_first, graph_second, crossover_type) -> bool:
         return not (graph_first is graph_second or

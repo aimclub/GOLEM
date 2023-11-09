@@ -8,7 +8,7 @@ from golem.core.optimisers.genetic.operators.inheritance import Inheritance
 from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedGraphMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.regularization import Regularization
-from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
+from golem.core.optimisers.genetic.operators.reproduction import ReproductionController, ReproducerWorkerStageEnum
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
@@ -70,8 +70,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # pop_size = self.graph_optimizer_params.pop_size
         #
         # if len(self.initial_individuals) < pop_size:
-        #     self.initial_individuals += self.reproducer._mutate_over_population(population=self.initial_individuals,
-        #                                                                         evaluator=evaluator)
+        #     self.initial_individuals += self.reproducer._reproduce(population=self.initial_individuals,
+        #                                                            evaluator=evaluator,
+        #                                                            start_stage=ReproducerWorkerStageEnum.MUTATION)
         #     # Adding of extended population to history
         #     self._update_population(self.initial_individuals, 'extended_initial_assumptions')
 
