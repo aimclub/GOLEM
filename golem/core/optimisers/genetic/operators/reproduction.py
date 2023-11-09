@@ -1,11 +1,13 @@
+import sys
 import time
 from copy import deepcopy, copy
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
 from queue import Empty, Queue
-from random import sample
+from random import sample, randint
 from typing import Optional, Dict, Union, List
 
 from joblib import Parallel, delayed
@@ -22,6 +24,7 @@ from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.utilities.random import RandomStateHandler
 
 
 class ReproducerWorkerStageEnum(Enum):
@@ -89,59 +92,52 @@ class ReproductionController:
             pop_graph_descriptive_ids = manager.dict({ids: True for ids in self._pop_graph_descriptive_ids})
             task_queue, result_queue, failed_queue = [manager.Queue() for _ in range(3)]
 
+            # empty task for worker if there is no work
             empty_task = ReproducerWorkerTask(
                 stage=start_stage,
                 crossover_tries=self.parameters.max_num_of_crossover_reproducer_attempts,
                 mutation_tries=self.parameters.max_num_of_mutation_reproducer_attempts,
                 mutation_attempts_per_each_crossover=self.parameters.mutation_attempts_per_each_crossover_reproducer)
 
-            worker = ReproduceWorker(crossover=self.crossover, mutation=self.mutation,
+            # parameters for worker
+            worker_parameters = dict(crossover=self.crossover, mutation=self.mutation,
                                      verifier=self.verifier, evaluator=evaluator,
                                      pop_graph_descriptive_ids=pop_graph_descriptive_ids,
                                      population=population,
                                      task_queue=task_queue, result_queue=result_queue,
-                                     failed_queue=failed_queue, empty_task=empty_task,
-                                     log=self._log)
-
-            # TODO there is problem with random seed in parallel workers
-            # TODO do not put failed tasks in queue, return it after worker stop
-            # TODO kill workers, collect tasks and then update _pop_graph_descriptive_ids
-            # TODO only get results in main thread, push empty task in parallel workers
+                                     failed_queue=failed_queue, empty_task=empty_task)
 
             n_jobs = self.mutation.requirements.n_jobs
             with Parallel(n_jobs=n_jobs, prefer='processes', return_as='generator') as parallel:
-                _ = parallel(delayed(worker)() for _ in range(n_jobs))
+                workers = [ReproduceWorker(seed=randint(0, sys.maxsize), **worker_parameters) for _ in range(n_jobs)]
+                _ = parallel(delayed(worker)() for worker in workers)
 
                 finished_tasks, failed_tasks = list(), list()
                 left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
                 left_tries = int(left_tries / (ReproducerWorkerStageEnum.FINISH.value - start_stage.value) *
                                  ReproducerWorkerStageEnum.FINISH.value)
                 while left_tries > 0 and len(finished_tasks) < self.parameters.pop_size:
-                    time.sleep(0.01)
+                    time.sleep(1)
+                    while failed_queue.qsize() > 0:
+                        left_tries -= 1
+                        failed_tasks.append(failed_queue.get())
 
-                    # if there is not enough jobs, create new empty job
-                    while task_queue.qsize() < 2:
-                        task_queue.put(empty_task)
-
-                    # process result
-                    if result_queue.qsize() > 0:
+                    while result_queue.qsize() > 0:
                         left_tries -= 1
                         finished_tasks.append(result_queue.get())
 
-                    # process unsuccessful creation attempt
-                    if failed_queue.qsize() > 0:
-                        left_tries -= 1
-                        failed_tasks.append(failed_queue.get())
+            # get all finished works
+            failed_tasks += list(failed_queue.queue)
+            finished_tasks += list(result_queue.queue)
 
             # update looked graphs
             self._pop_graph_descriptive_ids |= set(pop_graph_descriptive_ids.keys())
 
-            self._log.warning(f'left_tries {left_tries}, fin_tasks {len(finished_tasks)}, fail_tasks {len(failed_tasks)}')
-            # rebuild population
-            new_population = self._process_tasks(population=population,
-                                                 finished_tasks=finished_tasks,
-                                                 failed_tasks=failed_tasks)
-            return new_population
+        # rebuild population
+        new_population = self._process_tasks(population=population,
+                                             finished_tasks=finished_tasks,
+                                             failed_tasks=failed_tasks)
+        return new_population
 
     def _process_tasks(self,
                        population: PopulationT,
@@ -238,7 +234,7 @@ class ReproduceWorker:
                  result_queue: Queue,
                  failed_queue: Queue,
                  empty_task: ReproducerWorkerTask,
-                 log
+                 seed: int
                  ):
         self.crossover = crossover
         self.mutation = mutation
@@ -250,36 +246,36 @@ class ReproduceWorker:
         self._result_queue = result_queue
         self._failed_queue = failed_queue
         self._empty_task = empty_task
-        self._log = log
+        self._seed = seed
 
     def __call__(self):
-        tasks = []
-        while True:
-            # work with existing task from tasks or from queue
-            if not tasks:
-                try:
-                    tasks.append(self._task_queue.get(timeout=0.02))
-                except Empty:
-                    tasks.append(self._empty_task)
-            processed_tasks = self.process_task(tasks.pop())
+        with RandomStateHandler(self._seed):
+            tasks = [self._empty_task]
+            while True:
+                # is there is no tasks, try to get 1. task from queue 2. empty task
+                if not tasks:
+                    try:
+                        tasks.append(self._task_queue.get(timeout=0.02))
+                    except Empty:
+                        tasks.append(self._empty_task)
 
-            # process result
-            for processed_task in processed_tasks:
-                # self._log.warning(f"PTask {id(processed_task)}: {processed_task.stage}:{processed_task.fail} "
-                #                   f"{processed_task.crossover_tries}:{processed_task.mutation_tries}")
-                if processed_task.stage is ReproducerWorkerStageEnum.FINISH:
-                    self._result_queue.put(processed_task)
-                    continue
-                if processed_task.fail:
-                    self._failed_queue.put(processed_task)
-                    processed_task.fail = False
-                if processed_task.tries > 0:
-                    # task is not finished, need new try
-                    tasks.append(processed_task)
+                # work with task
+                processed_tasks = self.process_task(tasks.pop())
 
-            # if there are some tasks, add it to parallel queue
-            for _ in range(len(tasks) - 1):
-                self._task_queue.put(tasks.pop())
+                # process result
+                tasks = []
+                for processed_task in processed_tasks:
+                    if processed_task.stage is ReproducerWorkerStageEnum.FINISH:
+                        self._result_queue.put(processed_task)
+                        continue
+                    if processed_task.fail:
+                        self._failed_queue.put(processed_task)
+                    if processed_task.tries > 0:
+                        tasks.append(processed_task)
+
+                # if there are some tasks, add it to parallel queue
+                for _ in range(len(tasks) - 1):
+                    self._task_queue.put(tasks.pop())
 
     def process_task(self, task: ReproducerWorkerTask) -> List[ReproducerWorkerTask]:
         """ Get task, make 1 stage and return processed task """
