@@ -8,8 +8,9 @@ from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
-from golem.core.optimisers.genetic.operators.crossover import Crossover, CrossoverTypesEnum
-from golem.core.optimisers.genetic.operators.mutation import Mutation
+from golem.core.optimisers.genetic.operators.crossover import Crossover, CrossoverTypesEnum, \
+    SinglePredefinedGraphCrossover
+from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedGraphMutation
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
 from golem.core.optimisers.genetic.operators.selection import Selection
@@ -60,8 +61,8 @@ def reproducer() -> ReproductionController:
                                              rules_for_constraint=[])
     requirements = GraphRequirements()
 
-    mutation = Mutation(params, requirements, graph_gen_params)
-    crossover = Crossover(params, requirements, graph_gen_params)
+    mutation = SinglePredefinedGraphMutation(params, requirements, graph_gen_params)
+    crossover = SinglePredefinedGraphCrossover(params, requirements, graph_gen_params)
     selection = Selection(params, requirements)
 
     reproduction = ReproductionController(params, selection, mutation, crossover)

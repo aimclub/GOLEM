@@ -1,9 +1,7 @@
-import sys
 import time
 from copy import deepcopy, copy
 from dataclasses import dataclass
 from enum import Enum
-from functools import partial
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
 from queue import Empty, Queue
@@ -29,15 +27,8 @@ from golem.utilities.random import RandomStateHandler
 
 class ReproducerWorkerStageEnum(Enum):
     # TODO test that check that nums start from 0 and go to max (FINISH) with 1 steps
-    CROSSOVER = 0
-    CROSSOVER_VERIFICATION = 1
-    CROSSOVER_UNIQUENESS_CHECK = 2
-    CROSSOVER_EVALUATION = 3
-    MUTATION = 4
-    MUTATION_VERIFICATION = 5
-    MUTATION_UNIQUENESS_CHECK = 6
-    MUTATION_EVALUATION = 7
-    FINISH = 8
+    (CROSSOVER, CROSSOVER_VERIFICATION, CROSSOVER_UNIQUENESS_CHECK, CROSSOVER_EVALUATION,
+     MUTATION, MUTATION_VERIFICATION, MUTATION_UNIQUENESS_CHECK, MUTATION_EVALUATION, FINISH) = range(9)
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
@@ -82,8 +73,7 @@ class ReproductionController:
         self._check_final_population(new_population)
         return new_population
 
-    def _reproduce(self, population: PopulationT, evaluator: EvaluationOperator,
-                   start_stage: ReproducerWorkerStageEnum = ReproducerWorkerStageEnum.CROSSOVER) -> PopulationT:
+    def _reproduce(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
         """Generate new individuals by mutation in parallel.
            Implements additional checks on population to ensure that population size is greater or equal to
            required population size. Also controls uniqueness of population.
@@ -94,7 +84,6 @@ class ReproductionController:
 
             # empty task for worker if there is no work
             empty_task = ReproducerWorkerTask(
-                stage=start_stage,
                 crossover_tries=self.parameters.max_num_of_crossover_reproducer_attempts,
                 mutation_tries=self.parameters.max_num_of_mutation_reproducer_attempts,
                 mutation_attempts_per_each_crossover=self.parameters.mutation_attempts_per_each_crossover_reproducer)
@@ -108,16 +97,22 @@ class ReproductionController:
                                      failed_queue=failed_queue, empty_task=empty_task,
                                      log=self._log)
 
-            n_jobs = max(2, self.mutation.requirements.n_jobs)
-            with Parallel(n_jobs=n_jobs, prefer='processes', return_as='generator') as parallel:
-                workers = [ReproduceWorker(seed=randint(0, int(2**32 - 1)), **worker_parameters) for _ in range(n_jobs)]
-                _ = parallel(delayed(worker)() for worker in workers)
+            n_jobs = self.mutation.requirements.n_jobs
+            with Parallel(n_jobs=n_jobs + 1, prefer='processes', return_as='generator') as parallel:
+                # prepare (n_jobs + 1) workers
+                workers = [ReproduceWorker(seed=randint(0, int(2**32 - 1)), **worker_parameters)
+                           for _ in range(n_jobs + 1)]
+                # run n_jobs workers with run_flag = True
+                # and one worker with run_flag = False
+                # It guarantees n_jobs workers parallel execution also if n_jobs == 1
+                # because joblib for n_jobs == 1 does not start parallel pool
+                _ = parallel(delayed(worker)(run_flag) for worker, run_flag in zip(workers, [True] * n_jobs + [False]))
 
                 finished_tasks, failed_tasks = list(), list()
-                left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND
-                left_tries = int(left_tries / (ReproducerWorkerStageEnum.FINISH.value - start_stage.value) *
-                                 ReproducerWorkerStageEnum.FINISH.value)
+                left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND * n_jobs
                 while left_tries > 0 and len(finished_tasks) < self.parameters.pop_size:
+                    # main thread is fast
+                    # frequent queues blocking with qsize is not good idea
                     time.sleep(1)
                     while failed_queue.qsize() > 0:
                         left_tries -= 1
@@ -169,7 +164,7 @@ class ReproductionController:
                                                                fitness=task.final_fitness)
                     if task.stage is ReproducerWorkerStageEnum.FINISH:
                         new_population.append(individual)
-                    elif task.stage is ReproducerWorkerStageEnum.MUTATION_VERIFICATION:
+                    elif task.failed_stage is ReproducerWorkerStageEnum.MUTATION_VERIFICATION:
                         # experience for mab
                         self.mutation.agent_experience.collect_experience(individual, task.mutation_type, reward=-1.0)
         return new_population
@@ -192,7 +187,8 @@ class ReproductionController:
 @dataclass
 class ReproducerWorkerTask:
     stage: ReproducerWorkerStageEnum = ReproducerWorkerStageEnum(0)
-    fail: bool = False
+    _fail: bool = False
+    failed_stage: ReproducerWorkerStageEnum = None
     mutation_attempts_per_each_crossover: int = 1
 
     # crossover data
@@ -212,6 +208,16 @@ class ReproducerWorkerTask:
     # result
     final_graph: Optional[OptGraph] = None
     final_fitness: Optional[Fitness] = None
+
+    @property
+    def fail(self):
+        return self._fail
+
+    @fail.setter
+    def fail(self, value):
+        if value:
+            self.failed_stage = self.stage
+        self._fail = value
 
     @property
     def is_crossover(self):
@@ -253,12 +259,12 @@ class ReproduceWorker:
         self._seed = seed
         self._log = log
 
-    def __call__(self):
+    def __call__(self, run: bool = True):
         self._log.warning(f"CALLED")
         with RandomStateHandler(self._seed):
             tasks = [self._empty_task]
             self._log.warning(f"START CYCLE")
-            while True:
+            while run:
                 # is there is no tasks, try to get 1. task from queue 2. empty task
                 if not tasks:
                     try:
@@ -271,24 +277,24 @@ class ReproduceWorker:
 
                 # process result
                 for processed_task in processed_tasks:
-                    self._log.warning(f"PROCESS: {processed_task.stage} {processed_task.crossover_tries}:{processed_task.mutation_tries}")
                     if processed_task.stage is ReproducerWorkerStageEnum.FINISH:
                         self._result_queue.put(processed_task)
                         continue
                     if processed_task.fail:
+                        self._log.warning(f"FAIL: {processed_task.failed_stage}")
                         self._failed_queue.put(processed_task)
-                    if processed_task.tries > 0:
+                        if processed_task.tries > 0:
+                            tasks.append(processed_task)
+                    else:
                         tasks.append(processed_task)
 
                 # if there are some tasks, add it to parallel queue
-                self._log.warning(f"TASKS: {len(tasks)}")
                 for _ in range(len(tasks) - 1):
                     self._task_queue.put(tasks.pop())
-                self._log.warning(f"TASKS: {len(tasks)}")
 
     def process_task(self, task: ReproducerWorkerTask) -> List[ReproducerWorkerTask]:
         """ Get task, make 1 stage and return processed task """
-        self._log.warning(f"START: {task.stage} {task.crossover_tries}:{task.mutation_tries}")
+        # self._log.warning(f"START: {task.stage} {task.crossover_tries}:{task.mutation_tries}")
         task = copy(task)  # input task
         task.fail = False
 
@@ -304,20 +310,24 @@ class ReproduceWorker:
 
         # crossover uniqueness check
         if task.stage is ReproducerWorkerStageEnum.CROSSOVER_UNIQUENESS_CHECK:
-            processed_task = self.uniqueness_check_stage(task)[0]
-            processed_task.step_in_stage(-2 if processed_task.fail else 1)
-            return [processed_task]
+            task.step_in_stage(1)
+            return [task]
+            # processed_task = self.uniqueness_check_stage(task)[0]
+            # processed_task.step_in_stage(-2 if processed_task.fail else 1)
+            # return [processed_task]
 
         # crossover result evaluation
         if task.stage is ReproducerWorkerStageEnum.CROSSOVER_EVALUATION:
-            processed_task = self.evaluation_stage(task)[0]
-            if processed_task.fail:
-                processed_task.step_in_stage(-3)
-                return [processed_task]
-            else:
-                # create some tasks for mutation for crossover result
-                processed_task.step_in_stage(1)
-                return [copy(processed_task) for _ in range(task.mutation_attempts_per_each_crossover)]
+            task.step_in_stage(1)
+            return [copy(task) for _ in range(task.mutation_attempts_per_each_crossover)]
+        #     processed_task = self.evaluation_stage(task)[0]
+        #     if processed_task.fail:
+        #         processed_task.step_in_stage(-3)
+        #         return [processed_task]
+        #     else:
+        #         # create some tasks for mutation for crossover result
+        #         processed_task.step_in_stage(1)
+        #         return [copy(processed_task) for _ in range(task.mutation_attempts_per_each_crossover)]
 
         # mutation
         if task.stage is ReproducerWorkerStageEnum.MUTATION:

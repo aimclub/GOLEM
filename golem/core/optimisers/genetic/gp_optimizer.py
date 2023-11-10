@@ -71,8 +71,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         #
         # if len(self.initial_individuals) < pop_size:
         #     self.initial_individuals += self.reproducer._reproduce(population=self.initial_individuals,
-        #                                                            evaluator=evaluator,
-        #                                                            start_stage=ReproducerWorkerStageEnum.MUTATION)
+        #                                                            evaluator=evaluator)
         #     # Adding of extended population to history
         #     self._update_population(self.initial_individuals, 'extended_initial_assumptions')
 

@@ -119,7 +119,7 @@ class SinglePredefinedGraphCrossover(Crossover):
                  crossover_type: Optional[CrossoverTypesEnum] = None) -> Tuple[OptGraph, CrossoverTypesEnum]:
         crossover_type = crossover_type or choice(self.parameters.crossover_types)
         if crossover_type is CrossoverTypesEnum.none:
-            return (None, )
+            return (deepcopy(graph_1), deepcopy(graph_2), crossover_type)
         crossover_func = self._get_crossover_function(crossover_type)
 
         new_graphs = crossover_func(deepcopy(graph_1), deepcopy(graph_2), max_depth=self.requirements.max_depth)
