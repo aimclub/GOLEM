@@ -2,9 +2,12 @@ import os
 import pickle
 import sys
 from typing import Dict
+import pickle as pi
 
+import numpy as np
+import pandas as pd
 from rdkit import RDConfig, Chem
-from rdkit.Chem import Descriptors, AllChem
+from rdkit.Chem import Descriptors, AllChem, rdMolDescriptors, MolFromSmiles
 from rdkit.Chem.QED import qed
 from rdkit.Chem.rdchem import RWMol
 
@@ -199,3 +202,108 @@ class CLScorer:
                 qry_shingles.add(new_shingle)
 
         return qry_shingles
+
+
+class CocrystalsMetrics:
+    def __init__(self, drug: str):
+        self.gbc_unobstructed = pi.load(open('classifier/checkpoints/gbc_Unobstructed.pkl', 'rb'))
+        self.gbc_orthogonal_planes = pi.load(open('classifier/checkpoints/gbc_Orthogonal planes.pkl', 'rb'))
+        self.gbc_h_bond_bridging = pi.load(open('classifier/checkpoints/gbc_H-bonds bridging.pkl', 'rb'))
+
+        self.features_unobstructed = open('classifier/result_features/features_Unobstructed.txt', 'r').read().split(
+            '\n')
+        self.features_orthogonal_planes = open('classifier/result_features/features_Orthogonal planes.txt',
+                                               'r').read().split('\n')
+        self.features_h_bond_bridging = open('classifier/result_features/features_H-bonds bridging.txt',
+                                             'r').read().split('\n')
+
+        self.min_max_scaler = pi.load(open('classifier/checkpoints/min_max_scaler.pkl', 'rb'))
+
+        self.feature_num = 43
+
+        self.desired_value = 1
+        self.drug_descriptors = self.get_drug_descriptors(drug, coformer=False)
+
+    @staticmethod
+    def get_drug_descriptors(drug: str, coformer: bool = True):
+        """Get coformers smiles
+
+        Args:
+            drug (str): smiles of drug
+
+        Returns:
+            table with drug descriptors
+        """
+        descriptor_names = list(rdMolDescriptors.Properties.GetAvailableProperties())
+        column_names = [name + '.1' for name in descriptor_names] if coformer else descriptor_names
+
+        get_descriptors = rdMolDescriptors.Properties(descriptor_names)
+        num_descriptors = len(descriptor_names)
+        descriptors_set = np.empty((0, num_descriptors), float)
+
+        drug = MolFromSmiles(drug)
+        descriptors = np.array(get_descriptors.ComputeProperties(drug)).reshape((-1, num_descriptors))
+        descriptors_set = np.append(descriptors_set, descriptors, axis=0)
+        drug_table = pd.DataFrame(descriptors_set, columns=column_names)
+
+        return drug_table
+
+    def create_clf_dataframe(self, generated_coformer: str):
+        """Create dataframe for classification
+
+        Args:
+            drug (str): smiles of drug
+            generated_coformers (list[str]): list of smiles
+
+        Returns:
+            datafame of drug and coformers with descriptors
+        """
+
+        drug_table = self.drug_descriptors
+        gen_table = self.get_drug_descriptors(generated_coformer)
+
+        clf_data = drug_table.merge(gen_table, how='cross')
+
+        list_of_params = clf_data.columns.tolist()
+
+        for feat_idx in range(self.feature_num):
+            clf_data[list_of_params[feat_idx] + '_sum'] = \
+                clf_data.iloc[:, feat_idx] + clf_data.iloc[:, feat_idx + self.feature_num]
+            clf_data[list_of_params[feat_idx] + '_mean'] = \
+                (clf_data.iloc[:, feat_idx] + clf_data.iloc[:, feat_idx + self.feature_num]) / 2
+
+        clf_data_scaled = pd.DataFrame(self.min_max_scaler.transform(clf_data), columns=clf_data.columns)
+
+        return clf_data_scaled
+
+    def unobstructed(self, generated_coformer: MolGraph):
+
+        clf_data = self.create_clf_dataframe(generated_coformer.get_smiles())
+
+        clf_data_unobstructed = pd.DataFrame(clf_data[self.features_unobstructed])
+        clf_prediction_unobstructed = self.gbc_unobstructed.predict_proba(clf_data_unobstructed)
+        return -clf_prediction_unobstructed[0][1]
+
+    def orthogonal_planes(self, generated_coformer: MolGraph):
+        clf_data = self.create_clf_dataframe(generated_coformer.get_smiles())
+
+        clf_data_orthogonal_planes = pd.DataFrame(clf_data[self.features_orthogonal_planes])
+        clf_prediction_orthogonal_planes = self.gbc_orthogonal_planes.predict_proba(clf_data_orthogonal_planes)
+
+        return -clf_prediction_orthogonal_planes[0][1]
+
+    def h_bond_bridging(self, generated_coformer: MolGraph):
+        clf_data = self.create_clf_dataframe(generated_coformer.get_smiles())
+
+        clf_data_h_bond_bridging = pd.DataFrame(clf_data[self.features_h_bond_bridging])
+        clf_prediction_h_bond_bridging = self.gbc_h_bond_bridging.predict_proba(clf_data_h_bond_bridging)
+        return -clf_prediction_h_bond_bridging[0][1]
+
+
+# init_drug = 'CN1C2=C(C(=O)N(C1=O)C)NC=N2'
+# cocrystal = MolGraph.from_smiles('IC1=CC=C(F)C=C1')
+# metrics = CocrystalsMetrics(init_drug)
+# print('unobs', metrics.unobstructed(cocrystal))
+# print('orth', metrics.orthogonal_planes(cocrystal))
+# print('h_bond', metrics.h_bond_bridging(cocrystal))
+#
