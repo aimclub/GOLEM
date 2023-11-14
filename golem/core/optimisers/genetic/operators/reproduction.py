@@ -408,7 +408,7 @@ class ReproduceWorker:
             graph = task.final_graph
         individual = Individual(deepcopy(graph), metadata=self.mutation.requirements.static_individual_metadata)
         evaluated_individuals = self.evaluator([individual])
-        if evaluated_individuals and evaluated_individuals[0].fitness.valid:
+        if evaluated_individuals:# and evaluated_individuals[0].fitness.valid:
             task.fail = False
             if task.is_crossover:
                 task.crossover_fitness = evaluated_individuals[0].fitness
