@@ -7,6 +7,9 @@ from golem.core.optimisers.genetic.operators.operator import Operator
 from golem.core.optimisers.graph import OptGraph
 
 
+GeneticNodeAllowedType = Union['GeneticNode', str, None]
+
+
 class TaskStagesEnum(Enum):
     (INIT, SUCCESS, FAIL, FINISH) = range(4)
 
@@ -18,14 +21,21 @@ class GeneticOperatorTask:
     operator_type: Optional[Any] = None
 
     stage: TaskStagesEnum = TaskStagesEnum.INIT
-    stage_node: Optional['GeneticNode'] = None
+    stage_node: GeneticNodeAllowedType = None
 
     # parent data
     parent_task: Optional['GeneticOperatorTask'] = None
 
-    fail: bool = False
     fail_message: str = ''
     left_tries: int = 1
+
+    def __repr__(self):
+        s = (f"{self.__class__.__name__}('{self.stage.name}', "
+             f"next: '{self.stage_node}', "
+             f"graphs: {len(self.graphs) if isinstance(self.graphs, list) else type(self.graphs)}, "
+             f"operator_type: '{None if not self.operator_type else 'Operator'}', "
+             f"tries: {self.left_tries})")
+        return s
 
     def __copy__(self):
         return self.copy()
@@ -33,23 +43,23 @@ class GeneticOperatorTask:
     def __deepcopy__(self, memodict: Dict = dict()):
         raise NotImplementedError('Deepcopy is not allowed for task')
 
-    def copy(self):
-        return replace(self)
+    def copy(self, **parameters):
+        new_task = replace(self)
+        for parameter, value in parameters.items():
+            setattr(new_task, parameter, value)
+        return new_task
 
-    def create_failed_task(self, exception: Exception):
-        failed_task = self.copy()
-        failed_task.stage = TaskStagesEnum.FAIL
-        failed_task.fail_message = exception.__str__()
-        failed_task.left_tries -= 1
-        return failed_task
+    def create_failed_task(self, exception: Exception, **parameters):
+        parameters = {**parameters, 'stage': TaskStagesEnum.FAIL,
+                      'fail_message': exception.__str__(), 'left_tries': self.left_tries - 1}
+        return self.copy(**parameters)
 
-    def create_successive_task(self, graphs: List[OptGraph], operator_type: Any):
-        successive_task = self.copy()
-        successive_task.stage = TaskStagesEnum.SUCCESS
-        successive_task.graphs = graphs
-        successive_task.operator_type = operator_type
-        successive_task.parent_task = self
-        return successive_task
+    def create_successive_task(self, graphs: List[OptGraph], operator_type: Any, **parameters):
+        if not isinstance(graphs, list):
+            raise ValueError(f"graphs should be list, got {type(graphs)} instead")
+        parameters = {**parameters, 'stage': TaskStagesEnum.SUCCESS, 'graphs': graphs,
+                      'operator_type': operator_type, 'parent_task': self}
+        return self.copy(**parameters)
 
 
 @dataclass(frozen=True)
@@ -58,31 +68,44 @@ class GeneticNode:
 
     name: str
     operator: Operator
-    success_outputs: List[Union['GeneticNode', None]]
-    fail_outputs: Optional[Union[List['GeneticNode'], None]] = field(default_factory=lambda: [None])
+    success_outputs: Optional[List[GeneticNodeAllowedType]] = field(default_factory=lambda: [None])
+    fail_outputs: Optional[List[GeneticNodeAllowedType]] = field(default_factory=lambda: [None])
+
+    task_params_if_success: Dict[str, Any] = field(default_factory=dict)
+    task_params_if_fail: Dict[str, Any] = field(default_factory=dict)
+    max_graphs_input = False # TODO add support for task splitting
+    max_graphs_output = True # TODO add support for task splitting
 
     def __post_init__(self):
         # some checks
-        _check_list_with_genetic_nodes(self.success_outputs, allow_none=True)
-        _check_list_with_genetic_nodes(self.fail_outputs, allow_none=True)
+        _check_list_with_genetic_nodes(self.success_outputs)
+        _check_list_with_genetic_nodes(self.fail_outputs)
 
         # TODO check interface of operator
 
     def __call__(self, task: GeneticOperatorTask):
         if task.left_tries > 0:
             try:
-                *grouped_graphs, operator_type = self.operator(task.graphs, task.operator_type)
-                tasks = [task.create_successive_task(graphs, operator_type) for graphs in grouped_graphs]
+                # TODO all operator should return list of lists of graph
+                graphs, operator_type = self.operator(task.graphs, task.operator_type)
+                # tasks = [task.create_successive_task(graphs, operator_type) for graphs in grouped_graphs]
+                tasks = [task.create_successive_task(graphs, operator_type, **self.task_params_if_success)]
                 next_nodes = self.success_outputs
             except Exception as exception:
-                tasks = [task.create_failed_task(exception)]
+                # TODO save where it fails
+                tasks = [task.create_failed_task(exception, **self.task_params_if_fail)]
                 next_nodes = self.fail_outputs
 
             final_tasks = list()
             for _task in tasks:
                 for _node in next_nodes:
                     new_task = _task.copy()
-                    new_task.stage_node = _node.name
+                    if _node is None:
+                        if task.stage is TaskStagesEnum.SUCCESS:
+                            new_task.stage = TaskStagesEnum.FINISH
+                        elif task.stage is TaskStagesEnum.FAIL:
+                            new_task.left_tries = -1
+                    new_task.stage_node = _node
                     final_tasks.append(new_task)
             return final_tasks
 
@@ -106,8 +129,20 @@ class GeneticNode:
                                success_outputs=self.success_outputs,
                                fail_outputs=self.fail_outputs)
 
+    # def call_operation(self, task: GeneticOperatorTask):
+    #     graphs_grouped, operator_type = self.operator(task.graphs, task.operator_type)
+    #     graphs_grouped = [([graph] if not isinstance(graph, list) else graph) for graph in graphs_grouped]
+    #
+    #     new_graphs_grouped = list()
+    #     for graphs in graphs_grouped:
+    #         if len(graphs) > self.max_graphs_output:
+    #             raise NotImplementedError()
+    #         else:
+    #             new_graphs_grouped.append(graphs)
+    #     return graphs, operator_type
 
-@dataclass(frozen=True)
+
+@dataclass
 class GeneticPipeline:
     """ Pool of connected nodes with useful checks
         Call only a one node in time
@@ -115,45 +150,51 @@ class GeneticPipeline:
 
     name: str
     nodes: List[GeneticNode]
-    __nodes_map: Optional[Dict[int, GeneticNode]] = None
+    __nodes_map: Optional[Dict[str, GeneticNode]] = None
 
     def __post_init__(self):
         # some checks
-        _check_list_with_genetic_nodes(self.nodes)
+        _check_list_with_genetic_nodes(self.nodes, force_genetic_node_type_check=True)
 
         # check that all connection between nodes connect existing nodes
-        connection_goals = set(chain(*[chain(*(node.success_outputs + node.fail_outputs)) for node in self.nodes]))
-        if not (set(self.nodes) > connection_goals):
-            raise ValueError('Some nodes have connection with nonexisting nodes')
+        # TODO fix
+        # connection_goals = set(chain(*[node.success_outputs + node.fail_outputs for node in self.nodes]))
+        # connection_goals -= {None}
+        # if not (set(self.nodes) > connection_goals):
+        #     raise ValueError('Some nodes have connection with nonexisting nodes')
 
-        self.__setattr__('__nodes_map', {node: node for node in self.nodes})
-
-        if self.__nodes_map is None:
-            raise ValueError('there is no ``__nodes_map``')
+        self.__nodes_map = {node.name: node for node in self.nodes}
 
     def __call__(self, task: GeneticOperatorTask):
-        """ Call one of node and return result """
+        """ Call one node and return result """
         if not isinstance(task, GeneticOperatorTask):
             raise ValueError(f"``task`` should be ``GeneticOperatorTask``, get {type(task)} instead")
 
-        if task.stage in (TaskStagesEnum.INIT, TaskStagesEnum.FINISH):
-            raise ValueError('Unappropriate task')
+        if task.stage is TaskStagesEnum.FINISH:
+            raise ValueError('Task is finished')
 
         if task.stage_node not in self.__nodes_map:
             raise ValueError(f"Unknown stage node {task.stage}")
 
         return self.__nodes_map[task.stage_node](task)
 
+    def __getitem__(self, node_name: str):
+        if node_name not in self.__nodes_map:
+            raise KeyError(f"Unknown node {node_name}")
+        return self.__nodes_map[node_name]
 
-def _check_list_with_genetic_nodes(list_with_nodes, allow_none=False):
+    def __contains__(self, node_name: str):
+        # TODO test that contains also return true when getitem works
+        return node_name in self.__nodes_map
+
+def _check_list_with_genetic_nodes(list_with_nodes, force_genetic_node_type_check=False):
     # check that nodes is list with nodes
     list_with_nodes_is_appropriate = True
     list_with_nodes_is_appropriate &= isinstance(list_with_nodes, list)
     list_with_nodes_is_appropriate &= len(list_with_nodes) > 0
-    if allow_none:
-        list_with_nodes_is_appropriate &= all(isinstance(node, GeneticNode) or node is None for node in list_with_nodes)
-    else:
-        list_with_nodes_is_appropriate &= all(isinstance(node, GeneticNode) for node in list_with_nodes)
+    checked_type = GeneticNode if force_genetic_node_type_check else GeneticNodeAllowedType
+    # TODO fix it
+    # list_with_nodes_is_appropriate &= all(isinstance(node, checked_type) for node in list_with_nodes)
 
     if not list_with_nodes_is_appropriate:
         raise ValueError('``nodes`` parameter should be list with ``GeneticNodes``')

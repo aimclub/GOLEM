@@ -2,7 +2,7 @@ from copy import deepcopy
 from itertools import chain
 from math import ceil
 from random import choice, random, sample
-from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING, Optional
+from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING, Optional, List
 
 from joblib import Parallel, delayed
 
@@ -114,16 +114,21 @@ class SinglePredefinedGraphCrossover(Crossover):
         in one attempt without any checks
     """
     def __call__(self,
-                 graph_1: OptGraph,
-                 graph_2: OptGraph,
+                 graphs: List[OptGraph],
                  crossover_type: Optional[CrossoverTypesEnum] = None) -> Tuple[OptGraph, CrossoverTypesEnum]:
+        if len(graphs) < 2:
+            raise ValueError(f"Crossover needs 2 graphs, get {len(graphs)}")
+        elif len(graphs) > 2:
+            graphs = sample(graphs, 2)
+        graphs = list(map(deepcopy, graphs))
+
         crossover_type = crossover_type or choice(self.parameters.crossover_types)
         if crossover_type is CrossoverTypesEnum.none:
-            return (deepcopy(graph_1), deepcopy(graph_2), crossover_type)
+            return graphs, crossover_type
         crossover_func = self._get_crossover_function(crossover_type)
 
-        new_graphs = crossover_func(deepcopy(graph_1), deepcopy(graph_2), max_depth=self.requirements.max_depth)
-        return tuple(new_graphs) + (crossover_type, )
+        new_graphs = crossover_func(*graphs, max_depth=self.requirements.max_depth)
+        return new_graphs, crossover_type
 
 
 @register_native
