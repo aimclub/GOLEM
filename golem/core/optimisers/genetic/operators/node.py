@@ -1,11 +1,12 @@
 from dataclasses import dataclass, replace, field
 from enum import Enum
 from itertools import chain
+from math import ceil
 from typing import Optional, List, Union, Any, Dict
 
 from golem.core.optimisers.genetic.operators.operator import Operator
 from golem.core.optimisers.graph import OptGraph
-
+from golem.core.optimisers.opt_history_objects.individual import Individual
 
 GeneticNodeAllowedType = Union['GeneticNode', str, None]
 
@@ -16,49 +17,54 @@ class TaskStagesEnum(Enum):
 
 @dataclass
 class GeneticOperatorTask:
-    """ Contain graphs and information what to do with it and what was made """
-    graphs: List[OptGraph]
+    """ Contain individuals and information what to do with it and what was made """
+    individuals: List[Individual]
     operator_type: Optional[Any] = None
 
     stage: TaskStagesEnum = TaskStagesEnum.INIT
-    stage_node: GeneticNodeAllowedType = None
+    next_stage_node: GeneticNodeAllowedType = None
+    prev_stage_node: GeneticNodeAllowedType = None
 
     # parent data
     parent_task: Optional['GeneticOperatorTask'] = None
 
-    fail_message: str = ''
+    exception: Optional[Exception] = None
     left_tries: int = 1
 
     def __repr__(self):
         s = (f"{self.__class__.__name__}('{self.stage.name}', "
-             f"next: '{self.stage_node}', "
-             f"graphs: {len(self.graphs) if isinstance(self.graphs, list) else type(self.graphs)}, "
-             f"operator_type: '{None if not self.operator_type else 'Operator'}', "
-             f"tries: {self.left_tries})")
+             f"next: '{self.next_stage_node}', prev: '{self.prev_stage_node}', "
+             f"individuals: {len(self.individuals) if isinstance(self.individuals, list) else type(self.individuals)}, "
+             f"operator_type: '{self.operator_type}', "
+             f"tries: {self.left_tries}, "
+             f"parent: {int(self.parent_task is not None)})")
         return s
 
     def __copy__(self):
+        # TODO test
         return self.copy()
 
     def __deepcopy__(self, memodict: Dict = dict()):
+        # TODO test
         raise NotImplementedError('Deepcopy is not allowed for task')
 
     def copy(self, **parameters):
+        # TODO test
         new_task = replace(self)
         for parameter, value in parameters.items():
             setattr(new_task, parameter, value)
         return new_task
 
     def create_failed_task(self, exception: Exception, **parameters):
-        parameters = {**parameters, 'stage': TaskStagesEnum.FAIL,
-                      'fail_message': exception.__str__(), 'left_tries': self.left_tries - 1}
+        parameters = {'stage': TaskStagesEnum.FAIL, 'exception': exception,
+                      'left_tries': self.left_tries - 1, **parameters}
         return self.copy(**parameters)
 
-    def create_successive_task(self, graphs: List[OptGraph], operator_type: Any, **parameters):
-        if not isinstance(graphs, list):
-            raise ValueError(f"graphs should be list, got {type(graphs)} instead")
-        parameters = {**parameters, 'stage': TaskStagesEnum.SUCCESS, 'graphs': graphs,
-                      'operator_type': operator_type, 'parent_task': self}
+    def create_successive_task(self, individuals: List[Individual], **parameters):
+        if not isinstance(individuals, list):
+            raise ValueError(f"individuals should be list, got {type(individuals)} instead")
+        parameters = {'stage': TaskStagesEnum.SUCCESS, 'individuals': individuals,
+                      'parent_task': self, **parameters}
         return self.copy(**parameters)
 
 
@@ -73,8 +79,10 @@ class GeneticNode:
 
     task_params_if_success: Dict[str, Any] = field(default_factory=dict)
     task_params_if_fail: Dict[str, Any] = field(default_factory=dict)
-    max_graphs_input = False # TODO add support for task splitting
-    max_graphs_output = True # TODO add support for task splitting
+
+    individuals_input_count: Optional[int] = None
+    repeat_count: int = 1
+    tries_count: int = 1
 
     def __post_init__(self):
         # some checks
@@ -84,30 +92,56 @@ class GeneticNode:
         # TODO check interface of operator
 
     def __call__(self, task: GeneticOperatorTask):
-        if task.left_tries > 0:
+        final_tasks = list()
+
+        if task.stage is not TaskStagesEnum.FAIL:
+            # if task from previous node then set max tries
+            task.left_tries = self.tries_count
+
+            # if there are unappropriated individuals count
+            # then divide task to subtasks with appropriate individuals count
+            length, max_length = len(task.individuals), self.individuals_input_count
+            if max_length is not None and length > max_length:
+                individuals_groups = [task.individuals[i * max_length:min(length, (i + 1) * max_length)]
+                                      for i in range(ceil(length / max_length))]
+                for individuals_group in individuals_groups:
+                    final_tasks.append(task.copy(individuals=individuals_group))
+                # get task for current run
+                task = final_tasks.pop()
+
+            # repeat each task if it is allowed
+            if self.repeat_count > 1:
+                final_tasks.append(task)
+                for _ in range(self.repeat_count - 1):
+                    final_tasks.extend([task.copy() for task in final_tasks])
+                # get task for current run
+                task = final_tasks.pop()
+
+        # run operator
+        if task.stage is not TaskStagesEnum.FAIL or task.left_tries > 0:
             try:
                 # TODO all operator should return list of lists of graph
-                graphs, operator_type = self.operator(task.graphs, task.operator_type)
-                # tasks = [task.create_successive_task(graphs, operator_type) for graphs in grouped_graphs]
-                tasks = [task.create_successive_task(graphs, operator_type, **self.task_params_if_success)]
+                individuals, operator_type = self.operator(task.individuals, task.operator_type)
+                tasks = [task.create_successive_task(individuals, prev_stage_node=self.name,
+                                                     operator_type=None, **self.task_params_if_success)]
                 next_nodes = self.success_outputs
             except Exception as exception:
                 # TODO save where it fails
                 tasks = [task.create_failed_task(exception, **self.task_params_if_fail)]
                 next_nodes = self.fail_outputs
 
-            final_tasks = list()
             for _task in tasks:
                 for _node in next_nodes:
                     new_task = _task.copy()
                     if _node is None:
-                        if task.stage is TaskStagesEnum.SUCCESS:
+                        if new_task.stage is TaskStagesEnum.SUCCESS:
                             new_task.stage = TaskStagesEnum.FINISH
-                        elif task.stage is TaskStagesEnum.FAIL:
+                        elif new_task.stage is TaskStagesEnum.FAIL:
+                            # if there is no next node, then no tries
                             new_task.left_tries = -1
-                    new_task.stage_node = _node
+                    new_task.next_stage_node = _node
                     final_tasks.append(new_task)
-            return final_tasks
+        return final_tasks
 
     def __hash__(self):
         # TODO add test for hash
@@ -173,10 +207,10 @@ class GeneticPipeline:
         if task.stage is TaskStagesEnum.FINISH:
             raise ValueError('Task is finished')
 
-        if task.stage_node not in self.__nodes_map:
+        if task.next_stage_node not in self.__nodes_map:
             raise ValueError(f"Unknown stage node {task.stage}")
 
-        return self.__nodes_map[task.stage_node](task)
+        return self.__nodes_map[task.next_stage_node](task)
 
     def __getitem__(self, node_name: str):
         if node_name not in self.__nodes_map:

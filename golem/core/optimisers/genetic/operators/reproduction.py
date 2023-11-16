@@ -2,6 +2,7 @@ import time
 from copy import deepcopy, copy
 from dataclasses import dataclass
 from enum import Enum
+from itertools import chain
 from multiprocessing.managers import DictProxy
 from multiprocessing import Manager
 from queue import Empty, Queue
@@ -22,6 +23,7 @@ from golem.core.optimisers.genetic.operators.node import GeneticPipeline, TaskSt
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.graph import OptGraph
+from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.utilities.random import RandomStateHandler
@@ -81,16 +83,14 @@ class ReproductionController:
                     return evaluated_individuals[0].graph, None
                 raise ValueError('evaluator error')
 
-            empty_task = GeneticOperatorTask([x.graph for x in population],
-                                              stage_node='crossover')
+            empty_task = GeneticOperatorTask(population, next_stage_node='crossover')
 
             crossover = GeneticNode(name='crossover', operator=self.crossover,
-                                    success_outputs=['mutation_1', 'mutation_2'],
-                                    task_params_if_success={'operation_type': None})
+                                    success_outputs=['mutation_1', 'mutation_2'])
             mutation_1 = GeneticNode(name='mutation_1', operator=self.mutation,
-                                     success_outputs=['evaluation'])
+                                     success_outputs=['evaluation'], individuals_input_count=1)
             mutation_2 = GeneticNode(name='mutation_2', operator=self.mutation,
-                                     success_outputs=['mutation_1'])
+                                     success_outputs=['mutation_1'], individuals_input_count=1)
             evaluation = GeneticNode(name='evaluation', operator=evaluate)
 
             pipeline = GeneticPipeline('main', [crossover, mutation_1, mutation_2, evaluation])
@@ -117,9 +117,9 @@ class ReproductionController:
                 left_tries = self.parameters.pop_size * MAX_GRAPH_GEN_ATTEMPTS_PER_IND * n_jobs
                 while left_tries > 0 and len(finished_tasks) < self.parameters.pop_size:
                     # main thread is fast
-                    # frequent queues blocking with qsize is not good idea
+                    # frequent queue.qsize() is not good idea
                     time.sleep(1)
-                    while result_queue.qsize() > 0:
+                    for _ in range(result_queue.qsize()):
                         left_tries -= 1
                         task = result_queue.get()
                         if task.stage is TaskStagesEnum.FINISH:
@@ -141,37 +141,42 @@ class ReproductionController:
                                              failed_tasks=failed_tasks)
         return new_population
 
+    def _rebuild_individual(self, individual: Individual,
+                            known_uid_to_population_map: Dict[str, Individual]):
+        # TODO add test
+        if individual.uid in known_uid_to_population_map:
+            # if individual is known, then no need to rebuild it
+            new_individual = known_uid_to_population_map[individual.uid]
+        else:
+            parent_operator = None
+            if individual.parent_operator:
+                operator = individual.parent_operator
+                parent_individuals = [self._rebuild_individual(ind) for ind in operator.parent_individuals]
+                parent_operator = ParentOperator(type_=operator.type_,
+                                                 operators=operator.operators,
+                                                 parent_individuals=parent_individuals)
+
+            new_individual = Individual(individual.graph,
+                                        parent_operator,
+                                        fitness=individual.fitness,
+                                        # TODO get requirements from self, not from mutation
+                                        metadata=self.mutation.requirements.static_individual_metadata)
+            # add new individual to known individuals
+            known_uid_to_population_map[individual.uid] = individual
+        return new_individual
+
     def _process_tasks(self,
                        population: PopulationT,
                        finished_tasks: List['ReproducerWorkerTask'],
                        failed_tasks: List['ReproducerWorkerTask']):
         population_uid_map = {ind.uid: ind for ind in population}
 
-        individuals = list()
         new_population = list()
-        for task in finished_tasks + failed_tasks:
-            if task.stage > ReproducerWorkerStageEnum.MUTATION:
-                uids = (task.graph_1_uid, task.graph_2_uid)
-                # create individuals, generated by crossover
-                if uids not in crossover_individuals:
-                    individuals = self.crossover._get_individuals(new_graphs=[task.graph_for_mutation],
-                                                                  parent_individuals=[population_uid_map[uid]
-                                                                                      for uid in uids],
-                                                                  crossover_type=task.crossover_type,
-                                                                  fitness=task.crossover_fitness)
-                    crossover_individuals[uids] = individuals[0]
-
-                # create individuals, generated by mutation
-                if uids in crossover_individuals:
-                    individual = self.mutation._get_individual(new_graph=task.final_graph,
-                                                               mutation_type=task.mutation_type,
-                                                               parent=crossover_individuals[uids],
-                                                               fitness=task.final_fitness)
-                    if task.stage is ReproducerWorkerStageEnum.FINISH:
-                        new_population.append(individual)
-                    elif task.failed_stage is ReproducerWorkerStageEnum.MUTATION_VERIFICATION:
-                        # experience for mab
-                        self.mutation.agent_experience.collect_experience(individual, task.mutation_type, reward=-1.0)
+        for task in finished_tasks:
+            new_inds = [self._rebuild_individual(ind, population_uid_map) for ind in task.individuals]
+            new_population.extend(new_inds)
+        # experience for mab
+        # self.mutation.agent_experience.collect_experience(individual, task.mutation_type, reward=-1.0)
         return new_population
 
     def _check_final_population(self, population: PopulationT) -> None:

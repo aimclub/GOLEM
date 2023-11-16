@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import random
-from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional
+from typing import Callable, Union, Tuple, TYPE_CHECKING, Mapping, Hashable, Optional, List
 
 import numpy as np
 
@@ -173,8 +173,12 @@ class SinglePredefinedGraphMutation(Mutation):
     """ Mutation that tries to create new graph (not individual) from the only graph in one attempt
         without any checks
     """
-    def __call__(self, graph: Graph, mutation_type: Optional[MutationType] = None) -> Tuple[Graph, MutationIdType]:
-        new_graph = deepcopy(graph)
+    def __call__(self, individuals: List[Individual], mutation_type: Optional[MutationType] = None) -> Tuple[Graph, MutationIdType]:
+        if len(individuals) != 1:
+            raise ValueError('individuals should be len 1')
+
+        individual = individuals[0]
+        new_graph = deepcopy(individual.graph)
         mutation_type = mutation_type or self._operator_agent.choose_action(new_graph)
         if mutation_type is MutationTypesEnum.none:
             return None, None
@@ -182,4 +186,5 @@ class SinglePredefinedGraphMutation(Mutation):
         new_graph = mutation_func(new_graph, requirements=self.requirements,
                                   graph_gen_params=self.graph_generation_params,
                                   parameters=self.parameters)
-        return new_graph, mutation_type
+        new_individual = self._get_individual(new_graph=new_graph, mutation_type=mutation_type, parent=individual)
+        return new_individual, mutation_type

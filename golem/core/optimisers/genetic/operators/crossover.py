@@ -114,21 +114,24 @@ class SinglePredefinedGraphCrossover(Crossover):
         in one attempt without any checks
     """
     def __call__(self,
-                 graphs: List[OptGraph],
-                 crossover_type: Optional[CrossoverTypesEnum] = None) -> Tuple[OptGraph, CrossoverTypesEnum]:
-        if len(graphs) < 2:
-            raise ValueError(f"Crossover needs 2 graphs, get {len(graphs)}")
-        elif len(graphs) > 2:
-            graphs = sample(graphs, 2)
-        graphs = list(map(deepcopy, graphs))
+                 individuals: List[Individual],
+                 crossover_type: Optional[CrossoverTypesEnum] = None) -> Tuple[List[Individual], CrossoverTypesEnum]:
+        if len(individuals) < 2:
+            raise ValueError(f"Crossover needs 2 individuals, get {len(individuals)}")
+        elif len(individuals) > 2:
+            individuals = sample(individuals, 2)
+        graphs = [deepcopy(ind.graph) for ind in individuals]
 
         crossover_type = crossover_type or choice(self.parameters.crossover_types)
         if crossover_type is CrossoverTypesEnum.none:
-            return graphs, crossover_type
+            return individuals, crossover_type
         crossover_func = self._get_crossover_function(crossover_type)
 
         new_graphs = crossover_func(*graphs, max_depth=self.requirements.max_depth)
-        return new_graphs, crossover_type
+        new_individuals = self._get_individuals(new_graphs=new_graphs,
+                                                parent_individuals=individuals,
+                                                crossover_type=crossover_type)
+        return new_individuals, crossover_type
 
 
 @register_native
