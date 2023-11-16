@@ -104,7 +104,7 @@ class GeneticNode:
             if max_length is not None and length > max_length:
                 individuals_groups = [task.individuals[i * max_length:min(length, (i + 1) * max_length)]
                                       for i in range(ceil(length / max_length))]
-                for individuals_group in individuals_groups:
+                for individuals_group in reversed(individuals_groups):
                     final_tasks.append(task.copy(individuals=individuals_group))
                 # get task for current run
                 task = final_tasks.pop()
@@ -112,8 +112,7 @@ class GeneticNode:
             # repeat each task if it is allowed
             if self.repeat_count > 1:
                 final_tasks.append(task)
-                for _ in range(self.repeat_count - 1):
-                    final_tasks.extend([task.copy() for task in final_tasks])
+                final_tasks = [task.copy() for task in final_tasks * self.repeat_count]
                 # get task for current run
                 task = final_tasks.pop()
 

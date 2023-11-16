@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 from math import ceil
 from itertools import product
 from typing import Optional
@@ -35,13 +36,14 @@ class MockOperator(Mock, Operator):
         self.individuals_output_count = individuals_output_count
 
     def __call__(self, individuals, operation_type = None):
-        if len(individuals) > self.individuals_input_count or len(individuals) == 0:
+        if ((self.individuals_input_count is not None and len(individuals) > self.individuals_input_count) or
+             len(individuals) == 0):
             raise UncorrectIndividualsCount()
         super().__call__()
         if self.individuals_output_count is None:
             return individuals, operation_type
         else:
-            return individuals[self.individuals_output_count], operation_type
+            return individuals[:1] * self.individuals_output_count, operation_type
 
 
 class MockEvaluator(Mock, EvaluationOperator):
@@ -142,7 +144,8 @@ def test_genetic_node_with_nonfailed_task(stage, success_outputs, left_tries, in
     node_name = 'test'
 
     task = get_random_task(pop_size=pop_size, stage=stage, left_tries=left_tries)
-    operator = MockOperator(success_prob=1, individuals_input_count=individuals_input_count)
+    operator = MockOperator(success_prob=1, individuals_input_count=individuals_input_count,
+                            individuals_output_count=individuals_output_count)
     node = GeneticNode(name=node_name, operator=operator, success_outputs=success_outputs,
                        individuals_input_count=individuals_input_count,
                        repeat_count=repeat_count, tries_count=tries_count)
@@ -160,9 +163,9 @@ def test_genetic_node_with_nonfailed_task(stage, success_outputs, left_tries, in
     incoming_tasks_count = ceil(pop_size / _individuals_input_count) * repeat_count
     # then only one task may be processed
     incoming_tasks_count -= 1
-    processed_tasks_count = 1 * _individuals_output_count * len(success_outputs)
-
+    processed_tasks_count = 1 * len(success_outputs)
     assert len(final_tasks) == (incoming_tasks_count + processed_tasks_count)
+
 
     # check tasks stage
     processed_task_stage = TaskStagesEnum.FINISH if success_outputs == [None] else TaskStagesEnum.SUCCESS
@@ -178,5 +181,39 @@ def test_genetic_node_with_nonfailed_task(stage, success_outputs, left_tries, in
     # check left_tries
     assert all(_task.left_tries == tries_count for _task in final_tasks)
 
-    # check success task
+    # check prev and next nodes
     assert sum(_task.prev_stage_node == node_name for _task in final_tasks) == processed_tasks_count
+    next_nodes = Counter(_task.next_stage_node for _task in final_tasks)
+    if success_outputs == [None]:
+        assert next_nodes[None] == len(final_tasks)
+    else:
+        assert set(next_nodes[name] for name in success_outputs) == {1}
+
+    # check that processed task has correct individuals count
+    assert all(len(_task.individuals) == (individuals_output_count or _individuals_input_count)
+               for _task in final_tasks if _task.prev_stage_node == node.name)
+
+
+@pytest.mark.parametrize(['success_outputs', 'left_tries',
+                          'individuals_input_count', 'individuals_output_count',
+                          'repeat_count', 'tries_count'],
+                         product([[None], ['1', '2', '3']],  # success_outputs
+                                 [1, 3],  # left_tries
+                                 [1, 3, None],  # individuals_input_count
+                                 [1, 3, None],  # individuals_output_count
+                                 [1, 3],  # repeat_count
+                                 [1, 3],  # tries_count
+                                 ))
+def test_genetic_node_with_nonfailed_task(success_outputs, left_tries, individuals_input_count,
+                                          individuals_output_count, repeat_count, tries_count):
+    pop_size = 10
+    node_name = 'test'
+
+    task = get_random_task(pop_size=pop_size, stage=TaskStagesEnum.FAIL, left_tries=left_tries)
+    operator = MockOperator(success_prob=1, individuals_input_count=individuals_input_count,
+                            individuals_output_count=individuals_output_count)
+    node = GeneticNode(name=node_name, operator=operator, success_outputs=success_outputs,
+                       individuals_input_count=individuals_input_count,
+                       repeat_count=repeat_count, tries_count=tries_count)
+
+    final_tasks = node(task)

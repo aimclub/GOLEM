@@ -8,7 +8,7 @@ from golem.core.optimisers.genetic.operators.inheritance import Inheritance
 from golem.core.optimisers.genetic.operators.mutation import Mutation, SinglePredefinedGraphMutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.regularization import Regularization
-from golem.core.optimisers.genetic.operators.reproduction import ReproductionController, ReproducerWorkerStageEnum
+from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
