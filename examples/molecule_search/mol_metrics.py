@@ -297,7 +297,7 @@ class CocrystalsMetrics:
 
         clf_data_h_bond_bridging = pd.DataFrame(clf_data[self.features_h_bond_bridging])
         clf_prediction_h_bond_bridging = self.gbc_h_bond_bridging.predict_proba(clf_data_h_bond_bridging)
-        return -clf_prediction_h_bond_bridging[0][1]
+        return clf_prediction_h_bond_bridging[0][1]
 
 
 # init_drug = 'CN1C2=C(C(=O)N(C1=O)C)NC=N2'

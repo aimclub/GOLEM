@@ -58,7 +58,7 @@ def molecule_search_setup(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimize
                           initial_molecules: Optional[Sequence[MolGraph]] = None):
     requirements = MolGraphRequirements(
         max_heavy_atoms=max_heavy_atoms,
-        available_atom_types=atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'],
+        available_atom_types=atom_types or ['С', 'O', 'N', 'S', 'Cl', 'Br', 'F', 'I', 'P'],
         bond_types=bond_types,
         early_stopping_timeout=np.inf,
         early_stopping_iterations=np.inf,
@@ -231,5 +231,5 @@ if __name__ == '__main__':
                    pop_size=50,
                    visualize=True,
                    num_trials=5,
-                   pretrain_dir=os.path.join(project_root(), 'examples', 'molecule_search', 'histories')
+                   # pretrain_dir=os.path.join(project_root(), 'examples', 'molecule_search', 'histories')
                    )
