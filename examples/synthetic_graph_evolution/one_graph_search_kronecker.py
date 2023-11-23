@@ -27,15 +27,13 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 import numpy as np
-from golem.core.dag.verification_rules import has_no_self_cycled_nodes
+
 import random
 
 import pickle
 from functools import partial
 import math
 from itertools import combinations
-
-
 
 class GeneratorModel(GraphDelegate):
     def __init__(self, nodes: Optional[Union[LinkedGraphNode, List[LinkedGraphNode]]] = None):
@@ -200,7 +198,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     def lab_assort_count(des_label_assort, G):
 
         fact_label = label_assortativity(G)
-        return (des_label_assort - fact_label) * (des_label_assort - fact_label)
+        return (des_label_assort/fact_label - 1) * (des_label_assort/fact_label - 1)
 
     def asp_count(des_shortest_paths, G):
 
@@ -211,13 +209,12 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         return (des_shortest_paths - fact_asp) * (des_shortest_paths - fact_asp)
 
     def avg_deg_count(des_d, G):
-        G_new = nx.Graph()
-        G_new.add_nodes_from(G.nodes)
-        G_new.add_edges_from(G.get_edges())
+
+        G_new = G.to_networkx()
         G_new.add_edges_from(list(map(lambda x: (x, x), range(len(G_new.nodes())))))
         G = nx.tensor_product(G_new, G_new)
         d = np.mean(list(zip(*nx.degree(G)))[1])
-        return (d - des_d) * (d - des_d)
+        return (des_d - d) * (des_d - d)
 
     def avg_cluster_count(des_cl, G):
         G_new = nx.Graph()
@@ -227,12 +224,12 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         G = nx.tensor_product(G_new, G_new)
         d = nx.average_clustering(G.to_undirected())
 
-        return (d - des_cl) * (d - des_cl)
+        return (des_cl - d) * (des_cl - d)
 
     # Generate initial population with random graphs
     initial_graphs = []
 
-    for i in range(20):
+    for i in range(100):
         Init2 = GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
                                                     content={'name': vertex,
                                                              'label': random.choices([0, 1], weights=[
@@ -287,16 +284,16 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
     requirements = GraphRequirements(
         max_arity=max_graph_size,
         max_depth=max_graph_size * 10000,
-        num_of_generations=600,
-        early_stopping_iterations=100,
+        num_of_generations=200,
+        early_stopping_iterations=30,
         timeout=timedelta(minutes=timeout),
         n_jobs=-1,
         num_edges=num_edges
     )
 
     mutation_types = [MutationTypesEnum.single_edge,
-                      MutationTypesEnum.single_edge_add,
-                      MutationTypesEnum.single_edge_del,
+                      #MutationTypesEnum.single_edge_add,
+                     #MutationTypesEnum.single_edge_del,
                       MutationTypesEnum.batch_edge_5,
                       MutationTypesEnum.star_edge_5,
                       MutationTypesEnum.path_edge_5,
@@ -323,7 +320,7 @@ def run_graph_search(dense, cycle, path, star, size, num_edges, des_degree, des_
         adaptive_mutation_type=MutationAgentTypeEnum.default,
         context_agent_type=ContextAgentTypeEnum.adjacency_matrix,
 
-        crossover_types=[CrossoverTypesEnum.none]
+        crossover_types=[CrossoverTypesEnum.exchange_edges,CrossoverTypesEnum.exchange_parents_one, CrossoverTypesEnum.exchange_parents_both]
     )
 
     graph_gen_params = GraphGenerationParams(adapter=BaseNetworkxAdapter())
