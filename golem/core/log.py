@@ -173,7 +173,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             self, level: Union[int, Literal['debug', 'info', 'warning', 'error', 'critical', 'message']],
             exc: Union[BaseException, object],
             **log_kwargs):
-        """ This function logs the given exception with the given logging level or raises it if the current
+        """ Logs the given exception with the given logging level or raises it if the current
         session is a test one.
 
         The given exception is logged with its traceback. If this method is called inside an ``except`` block,

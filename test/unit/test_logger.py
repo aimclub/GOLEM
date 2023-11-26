@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 from importlib import reload
 from pathlib import Path
 
@@ -128,21 +129,25 @@ def test_reset_logging_level():
     if Path(DEFAULT_LOG_PATH).exists():
         content = Path(DEFAULT_LOG_PATH).read_text()
 
-    assert (lambda message: message in content, ['test_message_1', 'test_message_4', 'test_message_5'])
-    assert (lambda message: message not in content, ['test_message_2', 'test_message_3'])
+    assert all(map(lambda message: message in content, ['test_message_1', 'test_message_4', 'test_message_5']))
+    assert all(map(lambda message: message not in content, ['test_message_2', 'test_message_3']))
 
 
-@pytest.mark.parametrize('msg',
-                         ['And therefore I could not continue.', ValueError('And therefore I could not continue.')])
-def test_log_or_raise(msg):
+@pytest.mark.parametrize('cause',
+                         [ArithmeticError('Something went wrong.'), ValueError('Unbelievable!')])
+@pytest.mark.parametrize('exc_message, exc_type',
+                         [('And therefore could not continue.', Exception),
+                          (ValueError('And therefore could not continue.'), ValueError)])
+def test_log_or_raise(cause, exc_message, exc_type):
     try:
-        raise ArithmeticError('Something went wrong.')
-    except ArithmeticError:
-        with pytest.raises(Exception):
-            default_log().log_or_raise('message', msg)
+        raise cause
+    except type(cause):
+        cause_formatted = traceback.format_exc()
+        with pytest.raises(exc_type) as exc_info:
+            default_log().log_or_raise('message', exc_message)
 
-    content = ''
-    if Path(DEFAULT_LOG_PATH).exists():
-        content = Path(DEFAULT_LOG_PATH).read_text()
-
-    assert (lambda message: message in content, ['Something went wrong.', str(msg)])
+    exception_output = ''.join(traceback.format_exception(exc_type, exc_info.value, exc_info.tb))
+    assert all(map(lambda text: text in exception_output,
+                   [cause_formatted,
+                    'The above exception was the direct cause of the following exception:',
+                    str(exc_message)]))
