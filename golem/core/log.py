@@ -8,8 +8,10 @@ from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler
 from typing import Optional, Tuple, Union
 
-from golem.utilities.singleton_meta import SingletonMeta
+from typing_extensions import Literal
+
 from golem.core.paths import default_data_dir
+from golem.utilities.singleton_meta import SingletonMeta
 
 DEFAULT_LOG_PATH = pathlib.Path(default_data_dir(), 'log.log')
 
@@ -156,61 +158,49 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.logging_level = logger.level
         self.setLevel(self.logging_level)
 
+    def log_or_raise(
+            self, level: Union[int, Literal['debug', 'info', 'warning', 'error', 'critical', 'message']],
+            exc: Exception,
+            from_: Optional[Exception] = None,
+            **log_kwargs):
+        # Raise if test session
+        is_test_session_ = is_test_session()
+        if is_test_session_ and from_ is not None:
+            raise exc from from_
+        elif is_test_session_:
+            raise exc
+        # Log otherwise
+        level_map = {
+            'debug': logging.DEBUG,
+            'info': logging.INFO,
+            'warning': logging.WARNING,
+            'error': logging.ERROR,
+            'critical': logging.CRITICAL,
+            'message': 45,
+        }
+        if isinstance(level, str):
+            level = level_map[level]
+        super().log(level, exc,
+                    exc_info=log_kwargs.pop('exc_info', None) or from_ or exc,
+                    stacklevel=log_kwargs.pop('stacklevel', 2),
+                    **log_kwargs)
+
     def process(self, msg, kwargs):
         self.logger.setLevel(self.logging_level)
         return '%s - %s' % (self.extra['prefix'], msg), kwargs
-
-    def debug(self, msg, *args, **kwargs):
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().debug(msg, *args, **kwargs)
-
-    def info(self, msg, *args, **kwargs):
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().info(msg, *args, **kwargs)
-
-    def warning(self, msg, *args, **kwargs):
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().warning(msg, *args, **kwargs)
-
-    def error(self, msg, *args, **kwargs):
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().error(msg, *args, **kwargs)
-
-    def exception(self, msg, *args, exc_info=True, **kwargs):
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().exception(msg, *args, **kwargs)
-
-    def critical(self, msg, *args, **kwargs):
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().critical(msg, *args, **kwargs)
-
-    def log(self, level, msg, *args, **kwargs):
-        """
-        Delegate a log call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        super().log(level, msg, *args, **kwargs)
 
     def message(self, msg: str, **kwargs):
         """ Record the message to user.
         Message is an intermediate logging level between info and warning
         to display main info about optimization process """
-        raise_if_test(msg, kwargs.pop('raise_if_test', False))
-        message_logging_level = 45
-        if message_logging_level >= self.logging_level:
-            self.critical(msg=msg)
+        level = 45
+        self.log(level, msg, **kwargs)
 
     def __str__(self):
         return f'LoggerAdapter object for {self.extra["prefix"]} module'
 
     def __repr__(self):
         return self.__str__()
-
-
-def raise_if_test(msg: object, __raise_if_test: bool):
-    if __raise_if_test and is_test_session():
-        raise Exception(msg)
 
 
 def is_test_session():
