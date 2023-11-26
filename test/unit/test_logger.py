@@ -122,7 +122,7 @@ def test_reset_logging_level():
 
     log.reset_logging_level(20)
     b.message('test_message_4')  # should be shown since logging level is info now
-    c.message('test_message_5')   # should be shown since logging level is info now
+    c.message('test_message_5')  # should be shown since logging level is info now
 
     content = ''
     if Path(DEFAULT_LOG_PATH).exists():
@@ -130,3 +130,19 @@ def test_reset_logging_level():
 
     assert (lambda message: message in content, ['test_message_1', 'test_message_4', 'test_message_5'])
     assert (lambda message: message not in content, ['test_message_2', 'test_message_3'])
+
+
+@pytest.mark.parametrize('msg',
+                         ['And therefore I could not continue.', ValueError('And therefore I could not continue.')])
+def test_log_or_raise(msg):
+    try:
+        raise ArithmeticError('Something went wrong.')
+    except ArithmeticError:
+        with pytest.raises(Exception):
+            default_log().log_or_raise('message', msg)
+
+    content = ''
+    if Path(DEFAULT_LOG_PATH).exists():
+        content = Path(DEFAULT_LOG_PATH).read_text()
+
+    assert (lambda message: message in content, ['Something went wrong.', str(msg)])
