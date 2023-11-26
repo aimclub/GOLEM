@@ -160,30 +160,48 @@ class LoggerAdapter(logging.LoggerAdapter):
 
     def log_or_raise(
             self, level: Union[int, Literal['debug', 'info', 'warning', 'error', 'critical', 'message']],
-            exc: Exception,
-            from_: Optional[Exception] = None,
+            exc: Union[BaseException, object],
             **log_kwargs):
-        # Raise if test session
-        is_test_session_ = is_test_session()
-        if is_test_session_ and from_ is not None:
-            raise exc from from_
-        elif is_test_session_:
-            raise exc
-        # Log otherwise
-        level_map = {
-            'debug': logging.DEBUG,
-            'info': logging.INFO,
-            'warning': logging.WARNING,
-            'error': logging.ERROR,
-            'critical': logging.CRITICAL,
-            'message': 45,
-        }
-        if isinstance(level, str):
-            level = level_map[level]
-        super().log(level, exc,
-                    exc_info=log_kwargs.pop('exc_info', None) or from_ or exc,
-                    stacklevel=log_kwargs.pop('stacklevel', 2),
-                    **log_kwargs)
+        """ This function logs the given exception with the given logging level or raises it if the current
+        session is a test one.
+
+        The given exception is logged with its traceback. If this method is called inside an ``except`` block,
+        the exception caught earlier is used as a cause for the given exception.
+
+        Args:
+
+            level: the same as in :py:func:`logging.log`, but may be specified as a lower-case string literal
+                for convenience. For example, the value ``warning`` is equivalent for ``logging.WARNING``.
+                This includes a custom "message" logging level that equals to 45.
+            exc: the exception/message to log/raise. Given a message, an ``Exception`` instance is initialized
+                based on the message.
+            log_kwargs: keyword arguments for :py:func:`logging.log`.
+        """
+        _, recent_exc, _ = sys.exc_info()  # Catch the most recent exception
+        if not isinstance(exc, BaseException):
+            exc = Exception(exc)
+        try:
+            # Raise anyway to combine tracebacks
+            raise exc from recent_exc
+        except Exception as exc:
+            # Raise further if test session
+            if is_test_session():
+                raise
+            # Log otherwise
+            level_map = {
+                'debug': logging.DEBUG,
+                'info': logging.INFO,
+                'warning': logging.WARNING,
+                'error': logging.ERROR,
+                'critical': logging.CRITICAL,
+                'message': 45,
+            }
+            if isinstance(level, str):
+                level = level_map[level]
+            self.log(level, exc,
+                     exc_info=exc,
+                     stacklevel=log_kwargs.pop('stacklevel', 2),
+                     **log_kwargs)
 
     def process(self, msg, kwargs):
         self.logger.setLevel(self.logging_level)
