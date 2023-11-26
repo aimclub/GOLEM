@@ -158,6 +158,17 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.logging_level = logger.level
         self.setLevel(self.logging_level)
 
+    def process(self, msg, kwargs):
+        self.logger.setLevel(self.logging_level)
+        return '%s - %s' % (self.extra['prefix'], msg), kwargs
+
+    def message(self, msg: str, **kwargs):
+        """ Record the message to user.
+        Message is an intermediate logging level between info and warning
+        to display main info about optimization process """
+        level = 45
+        self.log(level, msg, **kwargs)
+
     def log_or_raise(
             self, level: Union[int, Literal['debug', 'info', 'warning', 'error', 'critical', 'message']],
             exc: Union[BaseException, object],
@@ -199,20 +210,9 @@ class LoggerAdapter(logging.LoggerAdapter):
             if isinstance(level, str):
                 level = level_map[level]
             self.log(level, exc,
-                     exc_info=exc,
+                     exc_info=log_kwargs.pop('exc_info', exc),
                      stacklevel=log_kwargs.pop('stacklevel', 2),
                      **log_kwargs)
-
-    def process(self, msg, kwargs):
-        self.logger.setLevel(self.logging_level)
-        return '%s - %s' % (self.extra['prefix'], msg), kwargs
-
-    def message(self, msg: str, **kwargs):
-        """ Record the message to user.
-        Message is an intermediate logging level between info and warning
-        to display main info about optimization process """
-        level = 45
-        self.log(level, msg, **kwargs)
 
     def __str__(self):
         return f'LoggerAdapter object for {self.extra["prefix"]} module'
