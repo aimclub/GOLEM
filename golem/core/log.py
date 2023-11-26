@@ -194,7 +194,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         try:
             # Raise anyway to combine tracebacks
             raise exc from recent_exc
-        except Exception as exc:
+        except type(exc) as exc_info:
             # Raise further if test session
             if is_test_session():
                 raise
@@ -210,7 +210,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             if isinstance(level, str):
                 level = level_map[level]
             self.log(level, exc,
-                     exc_info=log_kwargs.pop('exc_info', exc),
+                     exc_info=log_kwargs.pop('exc_info', exc_info),
                      stacklevel=log_kwargs.pop('stacklevel', 2),
                      **log_kwargs)
 
