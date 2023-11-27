@@ -1,9 +1,11 @@
 import os.path
 from itertools import chain
-from typing import Tuple, Optional, Sequence
+from typing import Tuple, Optional, Sequence, List
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 import networkx as nx
 import numpy as np
 from matplotlib import cm
@@ -120,6 +122,31 @@ def draw_graphs_subplots(*graphs: nx.Graph,
         plt.show()
     if path_to_save:
         plt.savefig(os.path.join(path_to_save, 'graphs_subplots.png'))
+
+
+def animate_graph_evolution(target_graph: nx.Graph, evolution_history: List[nx.Graph], path_to_save_gif: str):
+    fig, (target_ax, evo_ax) = plt.subplots(1, 2)
+
+    def draw_graph(graph, ax, title):
+        ax.clear()
+        ax.set_title(title)
+        colors, labeldict, legend_handles = _get_node_colors_and_labels(graph, False)
+        nx.draw(graph, ax=ax, arrows=True, node_color=colors, with_labels=False, labels=labeldict)
+        return legend_handles
+
+    legend_handles = draw_graph(target_graph, target_ax, "Target graph")
+    fig.legend(handles=legend_handles)
+
+    def render_frame(frame_index):
+        draw_graph(evolution_history[frame_index], evo_ax, "Evolution process")
+        return evo_ax,
+
+    target_time_s = 3.
+    frames = len(evolution_history)
+    anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000 * target_time_s / frames)
+
+    anim.save('evolution_process.gif', fps=30)
+    plt.show()
 
 
 def _get_node_colors_and_labels(graph: nx.Graph,
