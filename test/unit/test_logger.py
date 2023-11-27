@@ -1,8 +1,10 @@
 import logging
 import os
 import traceback
+from copy import copy
 from importlib import reload
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -133,21 +135,42 @@ def test_reset_logging_level():
     assert all(map(lambda message: message not in content, ['test_message_2', 'test_message_3']))
 
 
+def get_log_or_raise_output(exc_message, exc_type, imitate_non_test_launch):
+    if imitate_non_test_launch:
+        environ_mock = copy(os.environ)
+        del environ_mock['PYTEST_CURRENT_TEST']
+        with mock.patch.dict(os.environ, environ_mock, clear=True):
+            default_log().log_or_raise('message', exc_message)
+        output = Path(DEFAULT_LOG_PATH).read_text()
+    else:
+        with pytest.raises(exc_type, match=str(exc_message)) as exc_info:
+            default_log().log_or_raise('message', exc_message)
+        output = ''.join(traceback.format_exception(exc_type, exc_info.value, exc_info.tb))
+    return output
+
+
+@pytest.mark.parametrize('exc_message, exc_type',
+                         [('And therefore could not continue.', Exception),
+                          (ValueError('And therefore could not continue.'), ValueError)])
+@pytest.mark.parametrize('imitate_non_test_launch', [False, True])
+def test_log_or_raise(exc_message, exc_type, imitate_non_test_launch):
+    output = get_log_or_raise_output(exc_message, exc_type, imitate_non_test_launch)
+    assert str(exc_message) in output
+
+
 @pytest.mark.parametrize('cause',
                          [ArithmeticError('Something went wrong.'), ValueError('Unbelievable!')])
 @pytest.mark.parametrize('exc_message, exc_type',
                          [('And therefore could not continue.', Exception),
                           (ValueError('And therefore could not continue.'), ValueError)])
-def test_log_or_raise(cause, exc_message, exc_type):
+@pytest.mark.parametrize('imitate_non_test_launch', [False, True])
+def test_log_or_raise_with_cause_exception(cause, exc_message, exc_type, imitate_non_test_launch):
     try:
         raise cause
     except type(cause):
         cause_formatted = traceback.format_exc()
-        with pytest.raises(exc_type) as exc_info:
-            default_log().log_or_raise('message', exc_message)
-
-    exception_output = ''.join(traceback.format_exception(exc_type, exc_info.value, exc_info.tb))
-    assert all(map(lambda text: text in exception_output,
+        output = get_log_or_raise_output(exc_message, exc_type, imitate_non_test_launch)
+    assert all(map(lambda text: text in output,
                    [cause_formatted,
                     'The above exception was the direct cause of the following exception:',
                     str(exc_message)]))
