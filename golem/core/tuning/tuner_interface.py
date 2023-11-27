@@ -7,12 +7,13 @@ import numpy as np
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.adapter import IdentityAdapter
-from golem.core.constants import MAX_TUNING_METRIC_VALUE
+from golem.core.constants import MAX_TUNING_METRIC_VALUE, MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
 from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
+from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
@@ -43,7 +44,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
                  early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 deviation: float = 0.05):
+                 deviation: float = 0.05, **kwargs):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
         self.search_space = search_space
@@ -54,6 +55,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.deviation = deviation
 
         self.timeout = timeout
+        self.timer = Timer()
         self.early_stopping_rounds = early_stopping_rounds
 
         self._default_metric_value = MAX_TUNING_METRIC_VALUE
@@ -62,9 +64,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.init_metric = None
         self.obtained_metric = None
         self.log = default_log(self)
+        self.objectives_number = 1
 
-    @abstractmethod
-    def tune(self, graph: DomainGraphForTune) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
+    def tune(self, graph: DomainGraphForTune, **kwargs) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         """
         Function for hyperparameters tuning on the graph
 
@@ -75,7 +77,22 @@ class BaseTuner(Generic[DomainGraphForTune]):
           Graph with optimized hyperparameters
           or pareto front of optimized graphs in case of multi-objective optimization
         """
-        raise NotImplementedError()
+        graph = self.adapter.adapt(graph)
+        self.was_tuned = False
+        with self.timer:
+
+            # Check source metrics for data
+            self.init_check(graph)
+            final_graph = self._tune(graph, **kwargs)
+            # Validate if optimisation did well
+            final_graph = self.final_check(final_graph, self.objectives_number > 1)
+
+        final_graph = self.adapter.restore(final_graph)
+        return final_graph
+
+    @abstractmethod
+    def _tune(self, graph: DomainGraphForTune, **kwargs):
+        raise NotImplementedError
 
     def init_check(self, graph: OptGraph) -> None:
         """
@@ -163,6 +180,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
             final_graphs = self.init_graph
+            self.obtained_metric = self.init_metric
         return final_graphs
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
@@ -232,6 +250,29 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         return graph
 
+    def _check_if_tuning_possible(self, graph: OptGraph,
+                                  parameters_to_optimize: bool,
+                                  remaining_time: Optional[float] = None,
+                                  supports_multi_objective: bool = False) -> bool:
+        if len(ensure_wrapped_in_sequence(self.init_metric)) > 1 and not supports_multi_objective:
+            self._stop_tuning_with_message(f'{self.__class__.__name__} does not support multi-objective optimization.')
+            return False
+        elif not parameters_to_optimize:
+            self._stop_tuning_with_message(f'Graph "{graph.graph_description}" has no parameters to optimize')
+            return False
+        elif remaining_time is not None:
+            if remaining_time <= MIN_TIME_FOR_TUNING_IN_SEC:
+                self._stop_tuning_with_message('Tunner stopped after initial assumption due to the lack of time')
+                return False
+        return True
+
     def _stop_tuning_with_message(self, message: str):
         self.log.message(message)
         self.obtained_metric = self.init_metric
+
+    def _get_remaining_time(self) -> Optional[float]:
+        if self.timeout is not None:
+            remaining_time = self.timeout.seconds - self.timer.seconds_from_start
+            return remaining_time
+        else:
+            return None
