@@ -65,7 +65,7 @@ def get_search_space():
 if __name__ == '__main__':
     search_space = get_search_space()
     graph = opt_graph_with_params()
-    # ищем такие параметры, чтобы их сумма была максимальна
+    # search for parameters that will maximize their sum
     obj_eval = ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
 
     tuner = IOptTuner(obj_eval, search_space, iterations=10, n_jobs=-1)
