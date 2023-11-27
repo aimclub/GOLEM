@@ -124,7 +124,12 @@ def draw_graphs_subplots(*graphs: nx.Graph,
         plt.savefig(os.path.join(path_to_save, 'graphs_subplots.png'))
 
 
-def animate_graph_evolution(target_graph: nx.Graph, evolution_history: List[nx.Graph], path_to_save_gif: str):
+def animate_graph_evolution(target_graph: nx.Graph, evolution_history: List[nx.Graph], dir_to_save_gif: str):
+    target_frames = 10
+    target_time_s = 3.
+
+    evolution_history = evolution_history[::len(evolution_history) // target_frames]
+
     fig, (target_ax, evo_ax) = plt.subplots(1, 2)
 
     def draw_graph(graph, ax, title):
@@ -141,11 +146,13 @@ def animate_graph_evolution(target_graph: nx.Graph, evolution_history: List[nx.G
         draw_graph(evolution_history[frame_index], evo_ax, "Evolution process")
         return evo_ax,
 
-    target_time_s = 3.
     frames = len(evolution_history)
-    anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000 * target_time_s / frames)
+    seconds_per_frame = target_time_s / frames
+    fps = round(1 / seconds_per_frame)
 
-    anim.save('evolution_process.gif', fps=30)
+    anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000*seconds_per_frame)
+
+    anim.save(os.path.join(dir_to_save_gif, "evolution_process.gif"), fps=fps)
     plt.show()
 
 
