@@ -1,7 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import timedelta
-from random import choice
 from typing import List, Dict, Generic, Tuple, Any, Optional
 
 import numpy as np
@@ -147,14 +146,15 @@ class IOptTuner(BaseTuner):
 
         has_parameters_to_optimize = (len(problem_parameters.discrete_parameters_names) > 0 or
                                       len(problem_parameters.float_parameters_names) > 0)
-        objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
-        is_multi_objective = objectives_number > 1
-        if self._check_if_tuning_possible(graph, has_parameters_to_optimize):
+        self.objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
+        is_multi_objective = self.objectives_number > 1
+
+        if self._check_if_tuning_possible(graph, has_parameters_to_optimize, supports_multi_objective=True):
             if initial_parameters:
                 initial_point = Point(**initial_parameters)
                 self.solver_parameters.start_point = initial_point
 
-            problem = GolemProblem(graph, self.objective_evaluate, problem_parameters, objectives_number)
+            problem = GolemProblem(graph, self.objective_evaluate, problem_parameters, self.objectives_number)
             solver = Solver(problem, parameters=self.solver_parameters)
 
             if show_progress:
@@ -177,6 +177,7 @@ class IOptTuner(BaseTuner):
                     self.was_tuned = True
         else:
             tuned_graphs = graph
+
         return tuned_graphs
 
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[IOptProblemParameters, dict]:
