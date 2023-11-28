@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import timedelta
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 from hyperopt import tpe, fmin, space_eval, Trials
 
@@ -75,6 +75,13 @@ class SequentialTuner(HyperoptTuner):
                     self.log.info(f'"{node.name}" operation has no parameters to optimize')
                 else:
                     # Apply tuning for current node
+                    self._optimize_node(node_id=node_id,
+                                        graph=graph,
+                                        node_params=node_params,
+                                        init_params=init_params,
+                                        iterations_per_node=iterations_per_node,
+                                        seconds_per_node=seconds_per_node)
+
                     graph, metric = self._optimize_node(node_id=node_id,
                                                         graph=graph,
                                                         node_params=node_params,
@@ -174,6 +181,26 @@ class SequentialTuner(HyperoptTuner):
                                                                        trials,
                                                                        remaining_time,
                                                                        init_params)
+
+        remaining_time = self._get_remaining_time()
+        if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
+            fmin(partial(self._objective, graph=graph, node_id=node_id),
+                 node_params,
+                 trials=trials,
+                 algo=self.algo,
+                 max_evals=iterations_per_node,
+                 early_stop_fn=self.early_stop_fn,
+                 timeout=seconds_per_node)
+        remaining_time = self._get_remaining_time()
+        trials = Trials()
+        trials, init_trials_num = self._search_near_initial_parameters(partial(self._objective,
+                                                                               graph=graph,
+                                                                               node_id=node_id,
+                                                                               unchangeable_parameters=init_params),
+                                                                       node_params,
+                                                                       init_params,
+                                                                       trials,
+                                                                       remaining_time)
 
         remaining_time = self._get_remaining_time()
         if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
