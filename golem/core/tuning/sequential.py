@@ -1,10 +1,11 @@
 from datetime import timedelta
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
-from hyperopt import tpe, fmin, space_eval
+from hyperopt import tpe, fmin, space_eval, Trials
 
 from golem.core.adapter import BaseOptimizationAdapter
+from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
@@ -64,18 +65,18 @@ class SequentialTuner(HyperoptTuner):
             nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
             for node_id in nodes_ids:
                 node = graph.nodes[node_id]
-                operation_name = node.name
 
                 # Get node's parameters to optimize
-                node_params = get_node_parameters_for_hyperopt(self.search_space, node_id, operation_name)
+                node_params, init_params = get_node_parameters_for_hyperopt(self.search_space, node_id, node)
 
                 if not node_params:
-                    self.log.info(f'"{operation_name}" operation has no parameters to optimize')
+                    self.log.info(f'"{node.name}" operation has no parameters to optimize')
                 else:
                     # Apply tuning for current node
                     self._optimize_node(node_id=node_id,
                                         graph=graph,
                                         node_params=node_params,
+                                        init_params=init_params,
                                         iterations_per_node=iterations_per_node,
                                         seconds_per_node=seconds_per_node)
 
@@ -114,22 +115,22 @@ class SequentialTuner(HyperoptTuner):
             self.init_check(graph)
 
             node = graph.nodes[node_index]
-            operation_name = node.name
 
             # Get node's parameters to optimize
-            node_params = get_node_parameters_for_hyperopt(self.search_space,
-                                                           node_id=node_index,
-                                                           operation_name=operation_name)
+            node_params, init_params = get_node_parameters_for_hyperopt(self.search_space,
+                                                                        node_id=node_index,
+                                                                        node=node)
 
             remaining_time = self._get_remaining_time()
             if self._check_if_tuning_possible(graph, len(node_params) > 1, remaining_time):
                 # Apply tuning for current node
-                self._optimize_node(graph=graph,
-                                    node_id=node_index,
-                                    node_params=node_params,
-                                    iterations_per_node=self.iterations,
-                                    seconds_per_node=remaining_time
-                                    )
+                graph = self._optimize_node(graph=graph,
+                                            node_id=node_index,
+                                            node_params=node_params,
+                                            init_params=init_params,
+                                            iterations_per_node=self.iterations,
+                                            seconds_per_node=remaining_time
+                                            )
                 self.was_tuned = True
 
                 # Validation is the optimization do well
@@ -143,6 +144,7 @@ class SequentialTuner(HyperoptTuner):
     def _optimize_node(self, graph: OptGraph,
                        node_id: int,
                        node_params: dict,
+                       init_params: dict,
                        iterations_per_node: int,
                        seconds_per_node: float) -> OptGraph:
         """
@@ -158,20 +160,40 @@ class SequentialTuner(HyperoptTuner):
         Returns:
             updated graph with tuned parameters in particular node
         """
-        best_parameters = fmin(partial(self._objective, graph=graph, node_id=node_id),
-                               node_params,
-                               algo=self.algo,
-                               max_evals=iterations_per_node,
-                               early_stop_fn=self.early_stop_fn,
-                               timeout=seconds_per_node)
+        remaining_time = self._get_remaining_time()
+        trials = Trials()
+        trials, init_trials_num = self._search_near_initial_parameters(partial(self._objective,
+                                                                               graph=graph,
+                                                                               node_id=node_id,
+                                                                               unchangeable_parameters=init_params),
+                                                                       node_params,
+                                                                       init_params,
+                                                                       trials,
+                                                                       remaining_time)
 
-        best_parameters = space_eval(space=node_params, hp_assignment=best_parameters)
+        remaining_time = self._get_remaining_time()
+        if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
+            fmin(partial(self._objective, graph=graph, node_id=node_id),
+                 node_params,
+                 trials=trials,
+                 algo=self.algo,
+                 max_evals=iterations_per_node,
+                 early_stop_fn=self.early_stop_fn,
+                 timeout=seconds_per_node)
 
+        best = space_eval(space=node_params, hp_assignment=trials.argmin)
+        is_best_trial_with_init_params = trials.best_trial.get('tid') in range(init_trials_num)
+        if is_best_trial_with_init_params:
+            best = {**best, **init_params}
         # Set best params for this node in the graph
-        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best_parameters)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best)
         return graph
 
-    def _objective(self, node_params: dict, graph: OptGraph, node_id: int) -> float:
+    def _objective(self,
+                   node_params: dict,
+                   graph: OptGraph,
+                   node_id: int,
+                   unchangeable_parameters: Optional[dict] = None) -> float:
         """ Objective function for minimization problem
 
         Args:
@@ -182,6 +204,9 @@ class SequentialTuner(HyperoptTuner):
         Returns:
             value of objective function
         """
+        # replace new parameters with parameters
+        if unchangeable_parameters:
+            parameters_dict = {**node_params, **unchangeable_parameters}
 
         # Set hyperparameters for node
         graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)

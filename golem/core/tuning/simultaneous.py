@@ -6,7 +6,6 @@ from hyperopt import Trials, fmin, space_eval
 from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
-from golem.core.tuning.search_space import get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import DomainGraphForTune
 
 
@@ -28,13 +27,15 @@ class SimultaneousTuner(HyperoptTuner):
         parameters_dict, init_parameters = self._get_parameters_for_tune(graph)
         remaining_time = self._get_remaining_time()
 
-        if self._check_if_tuning_possible(graph, parameters_dict, remaining_time):
+        if self._check_if_tuning_possible(graph, len(parameters_dict) > 0, remaining_time):
             trials = Trials()
 
             try:
                 # try searching using initial parameters
                 # (uses original search space with fixed initial parameters)
-                trials, init_trials_num = self._search_near_initial_parameters(graph,
+                trials, init_trials_num = self._search_near_initial_parameters(partial(self._objective,
+                                                                                       graph=graph,
+                                                                                       unchangeable_parameters=init_parameters),
                                                                                parameters_dict,
                                                                                init_parameters,
                                                                                trials,
@@ -70,48 +71,6 @@ class SimultaneousTuner(HyperoptTuner):
             final_graph = graph
         return final_graph
 
-    def _search_near_initial_parameters(self, graph: OptGraph,
-                                        search_space: dict,
-                                        initial_parameters: dict,
-                                        trials: Trials,
-                                        remaining_time: float,
-                                        show_progress: bool = True) -> Tuple[Trials, int]:
-        """ Method to search using the search space where parameters initially set for the graph are fixed.
-        This allows not to lose results obtained while composition process
-
-        Args:
-            graph: graph to be tuned
-            search_space: dict with parameters to be optimized and their search spaces
-            initial_parameters: dict with initial parameters of the graph
-            trials: Trials object to store all the search iterations
-            show_progress: shows progress of tuning if True
-
-        Returns:
-            trials: Trials object storing all the search trials
-            init_trials_num: number of iterations made using the search space with fixed initial parameters
-        """
-        try_initial_parameters = initial_parameters and self.iterations > 1
-        if not try_initial_parameters:
-            init_trials_num = 0
-            return trials, init_trials_num
-
-        is_init_params_full = len(initial_parameters) == len(search_space)
-        if self.iterations < 10 or is_init_params_full:
-            init_trials_num = 1
-        else:
-            init_trials_num = min(int(self.iterations * 0.1), 10)
-
-        # fmin updates trials with evaluation points tried out during the call
-        fmin(partial(self._objective, graph=graph, unchangeable_parameters=initial_parameters),
-             search_space,
-             trials=trials,
-             algo=self.algo,
-             max_evals=init_trials_num,
-             show_progressbar=show_progress,
-             early_stop_fn=self.early_stop_fn,
-             timeout=remaining_time)
-        return trials, init_trials_num
-
     def _get_parameters_for_tune(self, graph: OptGraph) -> Tuple[dict, dict]:
         """ Method for defining the search space
 
@@ -130,16 +89,11 @@ class SimultaneousTuner(HyperoptTuner):
 
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
-            node_params = get_node_parameters_for_hyperopt(self.search_space, node_id=node_id,
-                                                           operation_name=operation_name)
-            parameters_dict.update(node_params)
-
-            tunable_node_params = self.search_space.get_parameters_for_operation(operation_name)
-            if tunable_node_params:
-                tunable_initial_params = {get_node_operation_parameter_label(node_id, operation_name, p):
-                                          node.parameters[p] for p in node.parameters if p in tunable_node_params}
-                if tunable_initial_params:
-                    initial_parameters.update(tunable_initial_params)
+            tunable_node_params, initial_node_params = get_node_parameters_for_hyperopt(self.search_space,
+                                                                                        node_id=node_id,
+                                                                                        node=node)
+            parameters_dict.update(tunable_node_params)
+            initial_parameters.update(initial_parameters)
 
         return parameters_dict, initial_parameters
 
