@@ -49,7 +49,6 @@ class SequentialTuner(HyperoptTuner):
         remaining_time = self._get_remaining_time()
         if self._check_if_tuning_possible(graph, parameters_to_optimize=True, remaining_time=remaining_time):
             # Calculate amount of iterations we can apply per node
-            initial_graph = deepcopy(graph)
             nodes_amount = graph.length
             iterations_per_node = round(self.iterations / nodes_amount)
             iterations_per_node = int(iterations_per_node)
@@ -71,24 +70,21 @@ class SequentialTuner(HyperoptTuner):
                 # Get node's parameters to optimize
                 node_params, init_params = get_node_parameters_for_hyperopt(self.search_space, node_id, node)
                 best_metric = self.init_metric
-                best_parameters = {}
+                final_graph = deepcopy(self.init_graph)
                 if not node_params:
                     self.log.info(f'"{node.name}" operation has no parameters to optimize')
                 else:
                     # Apply tuning for current node
-                    graph, metric, parameters = self._optimize_node(node_id=node_id,
-                                                                    graph=graph,
-                                                                    node_params=node_params,
-                                                                    init_params=init_params,
-                                                                    iterations_per_node=iterations_per_node,
-                                                                    seconds_per_node=seconds_per_node)
+                    graph, metric = self._optimize_node(node_id=node_id,
+                                                        graph=graph,
+                                                        node_params=node_params,
+                                                        init_params=init_params,
+                                                        iterations_per_node=iterations_per_node,
+                                                        seconds_per_node=seconds_per_node)
                     if metric < best_metric:
-                        best_metric = metric
-                        best_parameters.update(parameters)
-                if best_parameters:
-                    self.set_arg_graph(initial_graph, parameters)
+                        final_graph = deepcopy(graph)
             self.was_tuned = True
-        return graph
+        return final_graph
 
     def get_nodes_order(self, nodes_number: int) -> range:
         """ Method returns list with indices of nodes in the graph
@@ -131,13 +127,13 @@ class SequentialTuner(HyperoptTuner):
             remaining_time = self._get_remaining_time()
             if self._check_if_tuning_possible(graph, len(node_params) > 1, remaining_time):
                 # Apply tuning for current node
-                graph, _, _ = self._optimize_node(graph=graph,
-                                                  node_id=node_index,
-                                                  node_params=node_params,
-                                                  init_params=init_params,
-                                                  iterations_per_node=self.iterations,
-                                                  seconds_per_node=remaining_time
-                                                  )
+                graph, _ = self._optimize_node(graph=graph,
+                                               node_id=node_index,
+                                               node_params=node_params,
+                                               init_params=init_params,
+                                               iterations_per_node=self.iterations,
+                                               seconds_per_node=remaining_time
+                                               )
 
                 self.was_tuned = True
 
@@ -195,7 +191,7 @@ class SequentialTuner(HyperoptTuner):
             best = {**best, **init_params}
         # Set best params for this node in the graph
         graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best)
-        return graph, trials.best_trial['result']['loss'], best
+        return graph, trials.best_trial['result']['loss']
 
     def _objective(self,
                    node_params: dict,
