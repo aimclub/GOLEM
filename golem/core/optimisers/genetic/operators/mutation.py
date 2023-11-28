@@ -118,9 +118,10 @@ class Mutation(Operator):
                                'Please check optimization parameters for correctness.')
         return individual, is_applied
 
-    def _sample_num_of_mutations(self) -> int:
+    def _sample_num_of_mutations(self, mutation_type: MutationIdType) -> int:
         # most of the time returns 1 or rarely several mutations
-        if self.parameters.variable_mutation_num:
+        is_custom_mutation = isinstance(mutation_type, Callable)
+        if self.parameters.variable_mutation_num and not is_custom_mutation:
             num_mut = max(int(round(np.random.lognormal(0, sigma=0.5))), 1)
         else:
             num_mut = 1
@@ -128,20 +129,11 @@ class Mutation(Operator):
 
     def _apply_mutations(self, new_graph: Graph, mutation_type: MutationIdType) -> Graph:
         """Apply mutation 1 or few times iteratively"""
-        for _ in range(self._sample_num_of_mutations()):
-            new_graph = self._adapt_and_apply_mutation(new_graph, mutation_type)
-
-            is_custom_mutation = isinstance(mutation_type, Callable)
-            if is_custom_mutation:  # custom mutation occurs once
-                break
-        return new_graph
-
-    def _adapt_and_apply_mutation(self, new_graph: Graph, mutation_type: MutationIdType) -> Graph:
-        # get the mutation function and adapt it
-        mutation_func = self._get_mutation_func(mutation_type)
-        new_graph = mutation_func(new_graph, requirements=self.requirements,
-                                  graph_gen_params=self.graph_generation_params,
-                                  parameters=self.parameters)
+        for _ in range(self._sample_num_of_mutations(mutation_type)):
+            mutation_func = self._get_mutation_func(mutation_type)
+            new_graph = mutation_func(new_graph, requirements=self.requirements,
+                                      graph_gen_params=self.graph_generation_params,
+                                      parameters=self.parameters)
         return new_graph
 
     def _will_mutation_be_applied(self, mutation_type: MutationIdType) -> bool:

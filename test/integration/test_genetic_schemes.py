@@ -1,9 +1,8 @@
-from functools import partial
+from typing import Sequence
 
 import numpy as np
 import pytest
 
-from examples.synthetic_graph_evolution.experiment_setup import run_trial
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -17,7 +16,7 @@ def set_up_params(genetic_scheme: GeneticSchemeTypesEnum):
         multi_objective=False,
         mutation_types=[
             MutationTypesEnum.single_add,
-            MutationTypesEnum.single_drop,
+            MutationTypesEnum.single_drop
         ],
         crossover_types=[CrossoverTypesEnum.none],
         genetic_scheme_type=genetic_scheme
@@ -27,13 +26,16 @@ def set_up_params(genetic_scheme: GeneticSchemeTypesEnum):
 
 @pytest.mark.parametrize('genetic_type', GeneticSchemeTypesEnum)
 def test_genetic_scheme_types(genetic_type):
-    target_graph = generate_labeled_graph('tree', 4, node_labels=['x'])
+    target_graph = generate_labeled_graph('tree', 30, node_labels=['x'])
     num_iterations = 30
 
     gp_params = set_up_params(genetic_type)
-    found_graph, history = run_trial(target_graph=target_graph,
-                                     optimizer_setup=partial(tree_search_setup, algorithm_parameters=gp_params),
-                                     num_iterations=num_iterations)
+    optimizer, objective = tree_search_setup(target_graph,
+                                             num_iterations=num_iterations,
+                                             algorithm_parameters=gp_params)
+    found_graphs = optimizer.optimise(objective)
+    found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
+    history = optimizer.history
     assert found_graph is not None
     # at least 20% more generation than early_stopping_iterations were evaluated
     # (+2 gen for initial assumption and final choice)
