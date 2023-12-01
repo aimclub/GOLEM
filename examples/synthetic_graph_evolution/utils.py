@@ -10,6 +10,7 @@ import networkx as nx
 import numpy as np
 from matplotlib import cm
 
+from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
@@ -124,10 +125,14 @@ def draw_graphs_subplots(*graphs: nx.Graph,
         plt.savefig(os.path.join(path_to_save, 'graphs_subplots.png'))
 
 
-def animate_graph_evolution(target_graph: nx.Graph, evolution_history: List[nx.Graph], dir_to_save_gif: str):
+def animate_graph_evolution(target_graph: nx.Graph, evolution_history: OptHistory, adapter: BaseOptimizationAdapter, dir_to_save_gif: str):
+    archive_graphs = [adapter.restore(g[0].graph) for g in evolution_history.archive_history]
+    print(repr(adapter.restore(evolution_history.archive_history[-1][0].parents[0])))
+
     target_frames = 10
     target_time_s = 3.
 
+    # TODO: Make work for len(evolution_history) smaller than target frames, analyze typical situation
     evolution_history = evolution_history[::len(evolution_history) // target_frames]
 
     fig, (target_ax, evo_ax) = plt.subplots(1, 2)

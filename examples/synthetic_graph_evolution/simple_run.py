@@ -16,7 +16,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.metrics.edit_distance import tree_edit_dist
 
 
-def run_graph_search(size=16, timeout=1, visualize=True):
+def run_graph_search(size=16, timeout=0.2, visualize=True):
     # Generate target graph that will be sought by optimizer
     node_types = ('a', 'b')
     target_graph = generate_labeled_graph('tree', size, node_labels=node_types)
@@ -54,8 +54,7 @@ def run_graph_search(size=16, timeout=1, visualize=True):
 
     if visualize:
         # Restore the NetworkX graph back from internal Graph representation
-        archive_graphs = [graph_gen_params.adapter.restore(g[0].graph) for g in optimiser.history.archive_history]
-        animate_graph_evolution(target_graph, archive_graphs, "./")
+        animate_graph_evolution(target_graph, optimiser.history, graph_gen_params.adapter, "./")
 
         optimiser.history.show.fitness_line()
     return found_graphs
