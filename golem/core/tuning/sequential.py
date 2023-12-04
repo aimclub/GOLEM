@@ -64,13 +64,13 @@ class SequentialTuner(HyperoptTuner):
 
             # Tuning performed sequentially for every node - so get ids of nodes
             nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
+            final_graph = deepcopy(self.init_graph)
             for node_id in nodes_ids:
                 node = graph.nodes[node_id]
 
                 # Get node's parameters to optimize
                 node_params, init_params = get_node_parameters_for_hyperopt(self.search_space, node_id, node)
                 best_metric = self.init_metric
-                final_graph = deepcopy(self.init_graph)
                 if not node_params:
                     self.log.info(f'"{node.name}" operation has no parameters to optimize')
                 else:
