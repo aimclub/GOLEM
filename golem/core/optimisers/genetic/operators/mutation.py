@@ -118,7 +118,7 @@ class Mutation(Operator):
                                'Please check optimization parameters for correctness.')
         return individual, is_applied
 
-    def _sample_num_of_mutations(self, mutation_type: MutationIdType) -> int:
+    def _sample_num_of_mutations(self, mutation_type: Union[MutationTypesEnum, Callable]) -> int:
         # most of the time returns 1 or rarely several mutations
         is_custom_mutation = isinstance(mutation_type, Callable)
         if self.parameters.variable_mutation_num and not is_custom_mutation:
@@ -127,7 +127,7 @@ class Mutation(Operator):
             num_mut = 1
         return num_mut
 
-    def _apply_mutations(self, new_graph: Graph, mutation_type: MutationIdType) -> Graph:
+    def _apply_mutations(self, new_graph: Graph, mutation_type: Union[MutationTypesEnum, Callable]) -> Graph:
         """Apply mutation 1 or few times iteratively"""
         for _ in range(self._sample_num_of_mutations(mutation_type)):
             mutation_func = self._get_mutation_func(mutation_type)
@@ -136,10 +136,10 @@ class Mutation(Operator):
                                       parameters=self.parameters)
         return new_graph
 
-    def _will_mutation_be_applied(self, mutation_type: MutationIdType) -> bool:
+    def _will_mutation_be_applied(self, mutation_type: Union[MutationTypesEnum, Callable]) -> bool:
         return random() <= self.parameters.mutation_prob and mutation_type is not MutationTypesEnum.none
 
-    def _get_mutation_func(self, mutation_type: MutationIdType) -> Callable:
+    def _get_mutation_func(self, mutation_type: Union[MutationTypesEnum, Callable]) -> Callable:
         if isinstance(mutation_type, Callable):
             mutation_func = mutation_type
         else:
