@@ -86,6 +86,8 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
 
     def plot_multiple_fitness_lines(self, ax: plt.axis, metric_id: int = 0, with_confidence: bool = True):
         for histories, label in zip(list(self.historical_fitnesses.values()), list(self.historical_fitnesses.keys())):
+            if len(self.metric_names) == 1:
+                histories = [[gen_fit] for gen_fit in histories]
             plot_average_fitness_line_per_generations(ax, histories, label,
                                                       with_confidence=with_confidence,
                                                       metric_id=metric_id)
