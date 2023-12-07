@@ -1,14 +1,15 @@
-from typing import Callable
+from dataclasses import dataclass
+from typing import Callable, Union, List
 
 from golem.core.optimisers.common_optimizer.task import Task
 
 
+@dataclass
 class Node:
     """ Node with operation """
 
-    def __init__(self, name: str, operation: Callable[[Task], Task]):
-        self.name = name
-        self.operation = operation
+    name: str
+    operation: Callable[[Task], Union[Task, List[Task]]]
 
     def __call__(self, *args, **kwargs):
         results = self.operation(*args, **kwargs)

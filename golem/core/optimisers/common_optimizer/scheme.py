@@ -7,6 +7,10 @@ from golem.utilities.utilities import determine_n_jobs
 
 
 class Scheme:
+    """ Contain pipeline for task flow between nodes """
+    # TODO create real pipelines with `show` method
+    # TODO support for multioutput
+
     def __init__(self, scheme_map: Optional[Dict[str, Dict[TaskStatusEnum, str]]] = None):
         self._map = scheme_map or dict()
         self.nodes = None
