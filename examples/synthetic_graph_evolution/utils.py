@@ -125,42 +125,6 @@ def draw_graphs_subplots(*graphs: nx.Graph,
         plt.savefig(os.path.join(path_to_save, 'graphs_subplots.png'))
 
 
-def animate_graph_evolution(target_graph: nx.Graph, evolution_history: OptHistory, adapter: BaseOptimizationAdapter, dir_to_save_gif: str):
-    archive_graphs = [adapter.restore(g[0].graph) for g in evolution_history.archive_history]
-    print(repr(adapter.restore(evolution_history.archive_history[-1][0].parents[0])))
-
-    target_frames = 10
-    target_time_s = 3.
-
-    # TODO: Make work for len(evolution_history) smaller than target frames, analyze typical situation
-    evolution_history = evolution_history[::len(evolution_history) // target_frames]
-
-    fig, (target_ax, evo_ax) = plt.subplots(1, 2)
-
-    def draw_graph(graph, ax, title):
-        ax.clear()
-        ax.set_title(title)
-        colors, labeldict, legend_handles = _get_node_colors_and_labels(graph, False)
-        nx.draw(graph, ax=ax, arrows=True, node_color=colors, with_labels=False, labels=labeldict)
-        return legend_handles
-
-    legend_handles = draw_graph(target_graph, target_ax, "Target graph")
-    fig.legend(handles=legend_handles)
-
-    def render_frame(frame_index):
-        draw_graph(evolution_history[frame_index], evo_ax, "Evolution process")
-        return evo_ax,
-
-    frames = len(evolution_history)
-    seconds_per_frame = target_time_s / frames
-    fps = round(1 / seconds_per_frame)
-
-    anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000*seconds_per_frame)
-
-    anim.save(os.path.join(dir_to_save_gif, "evolution_process.gif"), fps=fps)
-    plt.show()
-
-
 def _get_node_colors_and_labels(graph: nx.Graph,
                                 color_degrees: bool = True,
                                 cmap_name='viridis'):
