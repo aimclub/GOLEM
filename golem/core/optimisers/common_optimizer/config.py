@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from copy import deepcopy
 from enum import Enum, auto
@@ -83,6 +84,7 @@ def mock_crossover(task):
     return tasks
 
 def mock_mutation(task):
+    time.sleep(0.02)
     if random() > 0.5:
         if task.generation[0][-1] == 'c':
             task.generation[0] = task.generation[0] + 'm0'
@@ -114,32 +116,34 @@ def reproducer_parameter_updater(results, parameters):
     return parameters
 
 stage2 = Stage(runner=OneThreadRunner(), nodes=nodes, scheme=Scheme(scheme_map),
-               task_builder=PopulationReproducerTask, stop_fun=lambda f, a: len(f) > 10,
+               task_builder=PopulationReproducerTask, stop_fun=lambda f, a: len(f) > 20,
                parameter_updater=reproducer_parameter_updater)
-# res = stage2.run(optimizer.parameters)
-
-
-nodes = [Node('stopper', lambda x: x)]
-def stopper_parameter_updater(results, parameters):
-    if len(parameters.generations) > 3:
-        parameters._run = False
-    return parameters
-
-stage3 = Stage(runner=OneThreadRunner(), nodes=nodes, scheme=SequentialScheme(nodes=[x.name for x in nodes]),
-               task_builder=Task, stop_fun=lambda f, a: bool(f),
-               parameter_updater=stopper_parameter_updater)
-# res = stage3.run(optimizer.parameters)
+res = stage2.run(optimizer.parameters)
 
 
 
-optimizer = CommonOptimizer(objective=objective,
-                            graph_generation_params=graph_generation_params,
-                            requirements=requirements,
-                            initial_graphs=initial_graphs,
-                            graph_optimizer_params=graph_optimizer_params,
-                            stages=[stage1, stage2, stage3])
-optimizer.generations = [[f"g{i}" for i in range(10)]]
-optimizer.optimise(1)
-
-print(*optimizer.generations, sep='\n')
+#
+# nodes = [Node('stopper', lambda x: x)]
+# def stopper_parameter_updater(results, parameters):
+#     if len(parameters.generations) > 3:
+#         parameters._run = False
+#     return parameters
+#
+# stage3 = Stage(runner=OneThreadRunner(), nodes=nodes, scheme=SequentialScheme(nodes=[x.name for x in nodes]),
+#                task_builder=Task, stop_fun=lambda f, a: bool(f),
+#                parameter_updater=stopper_parameter_updater)
+# # res = stage3.run(optimizer.parameters)
+#
+#
+#
+# optimizer = CommonOptimizer(objective=objective,
+#                             graph_generation_params=graph_generation_params,
+#                             requirements=requirements,
+#                             initial_graphs=initial_graphs,
+#                             graph_optimizer_params=graph_optimizer_params,
+#                             stages=[stage1, stage2, stage3])
+# optimizer.generations = [[f"g{i}" for i in range(10)]]
+# optimizer.optimise(1)
+#
+# print(*optimizer.generations, sep='\n')
 
