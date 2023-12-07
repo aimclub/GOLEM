@@ -1,7 +1,7 @@
 from copy import deepcopy
 from enum import Enum, auto
 
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Any
 
 
 class TaskStatusEnum(Enum):
@@ -9,23 +9,37 @@ class TaskStatusEnum(Enum):
     SUCCESS = auto()
     FAIL = auto()
     FINISH = auto()
-    FINISH_RUNNER = auto()
 
 
 class Task:
-    def __init__(self):
-        self.__stages: List[Tuple[Optional[str], TaskStatusEnum]] = [(None, TaskStatusEnum.NEXT)]
+    def __init__(self, parameters: Optional[Any] = None):
+        self._stages: List[Tuple[Optional[str], TaskStatusEnum]] = [(None, TaskStatusEnum.NEXT)]
+
+    def __repr__(self):
+        params = [f"{name}={val}"for name, val in self.__dict__.items()
+                  if not name.startswith('_')]
+        return (f"{self.__class__.__name__}({', '.join(params)})"
+                f"(status={self.status.name},node={self.node},history={len(self._stages)})")
 
     @property
     def status(self):
-        return self.__stages[-1][-1]
+        return self._stages[-1][-1]
 
-    def set_next_node(self, next_node: Optional[str] = None):
-        status = TaskStatusEnum.FINISH if next_node is None else TaskStatusEnum.NEXT
-        self.__stages.append((next_node, status))
+    @status.setter
+    def status(self, item: TaskStatusEnum):
+        if not isinstance(item, TaskStatusEnum):
+            raise TypeError(f"status should be `TaskStatusEnum`, got {type(item)} instead")
+        self._stages.append((self.node, item))
 
-    def get_next_node(self):
-        self.__stages[-1][0]
+    @property
+    def node(self):
+        return self._stages[-1][0]
+
+    @node.setter
+    def node(self, item: Optional[str]):
+        if not isinstance(item, str) and item is not None:
+            raise TypeError(f"node should be `str` or `None`, got {type(item)} instead")
+        self._stages.append((item, TaskStatusEnum.FINISH if item is None else TaskStatusEnum.NEXT))
 
     def copy(self):
         return deepcopy(self)
