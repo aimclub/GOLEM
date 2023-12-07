@@ -81,6 +81,8 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         obs, arms, processed_rewards = self._get_experience(experience)
         contexts = self.get_context(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=processed_rewards, contexts=contexts)
+        if self._path_to_save:
+            self.save()
 
     def _get_experience(self, experience: ExperienceBuffer):
         """ Get experience from ExperienceBuffer, process rewards and log. """
