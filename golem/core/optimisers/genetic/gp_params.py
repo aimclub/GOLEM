@@ -83,8 +83,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
     context_agent_type: Union[ContextAgentTypeEnum, Callable] = ContextAgentTypeEnum.nodes_num
 
-    selection_types: Sequence[SelectionTypesEnum] = \
-        (SelectionTypesEnum.tournament,)
+    selection_types: Sequence[Union[SelectionTypesEnum, Any]] = None
     crossover_types: Sequence[Union[CrossoverTypesEnum, Any]] = \
         (CrossoverTypesEnum.one_point,)
     mutation_types: Sequence[Union[MutationTypesEnum, Any]] = simple_mutation_set
@@ -96,7 +95,9 @@ class GPAlgorithmParameters(AlgorithmParameters):
     window_size: Optional[int] = None
 
     def __post_init__(self):
+        if not self.selection_types:
+            self.selection_types = (SelectionTypesEnum.spea2,) if self.multi_objective \
+                else (SelectionTypesEnum.tournament,)
         if self.multi_objective:
-            self.selection_types = (SelectionTypesEnum.spea2,)
             # TODO add possibility of using regularization in MO alg
             self.regularization_type = RegularizationTypesEnum.none
