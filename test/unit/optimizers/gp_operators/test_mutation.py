@@ -79,13 +79,12 @@ def test_add_as_parent_node(graph):
     Test correctness of adding as a parent
     """
     new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
-    add_separate_parent_node(new_graph, node_to_mutate, node_factory)
+    add_separate_parent_node(new_graph, node_factory)
 
-    assert len(node_to_mutate.nodes_from) > len(graph.nodes[1].nodes_from)
+    assert new_graph.length > graph.length
 
 
 @pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
@@ -94,14 +93,12 @@ def test_add_as_child_node(graph):
     Test correctness of adding as a child
     """
     new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
-    add_as_child(new_graph, node_to_mutate, node_factory)
+    add_as_child(new_graph, node_factory)
 
     assert new_graph.length > graph.length
-    assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
 
 
 @pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
@@ -110,14 +107,12 @@ def test_add_as_intermediate_node(graph):
     Test correctness of adding as an intermediate node
     """
     new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
-    add_intermediate_node(new_graph, node_to_mutate, node_factory)
+    add_intermediate_node(new_graph, node_factory)
 
     assert new_graph.length > graph.length
-    assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
 
 
 @pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])

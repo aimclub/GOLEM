@@ -67,4 +67,4 @@ def graph_growth(graph: OptGraph,
         if not is_max_depth_exceeded:
             # lower proba of further growth reduces time of graph generation
             if choices([0, 1], weights=[1 - growth_proba, growth_proba])[0]:
-                graph_growth(graph, node, node_factory, requirements, max_depth, growth_proba)
+                graph_growth(graph, node, node_factory, requirements, max_depth, growth_proba / max_depth)

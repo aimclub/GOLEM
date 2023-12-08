@@ -103,7 +103,7 @@ class Mutation(Operator):
 
                 new_graph = self._apply_mutations(new_graph, mutation_type)
                 is_correct_graph = self.graph_generation_params.verifier(new_graph)
-                if is_correct_graph and graph != new_graph:
+                if is_correct_graph:
                     parent_operator = ParentOperator(type_='mutation',
                                                      operators=mutation_type,
                                                      parent_individuals=individual)
