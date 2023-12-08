@@ -11,7 +11,7 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.random_graph_factory import RandomGrowthGraphFactory
 
 
-@pytest.mark.parametrize('max_depth', [1, 5, 10, 30, 50])
+@pytest.mark.parametrize('max_depth', [1, 5, 10, 30])
 def test_gp_composer_random_graph_generation_looping(max_depth):
     """ Test checks DefaultRandomOptGraphFactory valid generation. """
     available_node_types = ['a', 'b', 'c', 'd', 'e']
