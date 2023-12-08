@@ -33,14 +33,15 @@ class SimultaneousTuner(HyperoptTuner):
             try:
                 # try searching using initial parameters
                 # (uses original search space with fixed initial parameters)
-                trials, init_trials_num = self._search_near_initial_parameters(partial(self._objective,
-                                                                                       graph=graph,
-                                                                                       unchangeable_parameters=init_parameters),
-                                                                               parameters_dict,
-                                                                               init_parameters,
-                                                                               trials,
-                                                                               remaining_time,
-                                                                               show_progress)
+                trials, init_trials_num = self._search_near_initial_parameters(
+                    partial(self._objective,
+                            graph=graph,
+                            unchangeable_parameters=init_parameters),
+                    parameters_dict,
+                    init_parameters,
+                    trials,
+                    remaining_time,
+                    show_progress)
                 remaining_time = self._get_remaining_time()
                 if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
                     fmin(partial(self._objective, graph=graph),
@@ -85,8 +86,6 @@ class SimultaneousTuner(HyperoptTuner):
         parameters_dict = {}
         initial_parameters = {}
         for node_id, node in enumerate(graph.nodes):
-            operation_name = node.name
-
             # Assign unique prefix for each model hyperparameter
             # label - number of node in the graph
             tunable_node_params, initial_node_params = get_node_parameters_for_hyperopt(self.search_space,

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import timedelta
 from functools import partial
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 from hyperopt import tpe, fmin, space_eval, Trials
 
@@ -213,7 +213,7 @@ class SequentialTuner(HyperoptTuner):
             parameters_dict = {**node_params, **unchangeable_parameters}
 
         # Set hyperparameters for node
-        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=parameters_dict)
 
         metric_value = self.get_metric_value(graph=graph)
         return metric_value
