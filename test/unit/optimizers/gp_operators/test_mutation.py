@@ -82,8 +82,13 @@ def test_add_as_parent_node(graph):
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
+    prev_nodes = new_graph.nodes[:]
     add_separate_parent_node(new_graph, node_factory)
+    new_nodes = [node for node in new_graph.nodes if node not in prev_nodes]
 
+    assert len(new_nodes) == 1
+    assert not new_nodes[0].nodes_from
+    assert new_graph.node_children(new_nodes[0])
     assert new_graph.length > graph.length
 
 
@@ -96,8 +101,12 @@ def test_add_as_child_node(graph):
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
+    prev_nodes = new_graph.nodes[:]
     add_as_child(new_graph, node_factory)
+    new_nodes = [node for node in new_graph.nodes if node not in prev_nodes]
 
+    assert len(new_nodes) == 1
+    assert new_nodes[0].nodes_from
     assert new_graph.length > graph.length
 
 
@@ -109,9 +118,13 @@ def test_add_as_intermediate_node(graph):
     new_graph = deepcopy(graph)
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
-
+    prev_nodes = new_graph.nodes[:]
     add_intermediate_node(new_graph, node_factory)
+    new_nodes = [node for node in new_graph.nodes if node not in prev_nodes]
 
+    assert len(new_nodes) == 1
+    assert new_nodes[0].nodes_from
+    assert new_graph.node_children(new_nodes[0])
     assert new_graph.length > graph.length
 
 

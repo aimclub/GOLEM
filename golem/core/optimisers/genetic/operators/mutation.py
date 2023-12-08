@@ -94,8 +94,7 @@ class Mutation(Operator):
 
     def _mutation(self, individual: Individual) -> Tuple[Individual, bool]:
         """ Function applies mutation operator to graph """
-        graph = deepcopy(individual.graph)
-        mutation_type = self._operator_agent.choose_action(graph)
+        mutation_type = self._operator_agent.choose_action(individual.graph)
         is_applied = self._will_mutation_be_applied(mutation_type)
         if is_applied:
             for _ in range(self.parameters.max_num_of_operator_attempts):
