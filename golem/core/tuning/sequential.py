@@ -210,10 +210,10 @@ class SequentialTuner(HyperoptTuner):
         """
         # replace new parameters with parameters
         if unchangeable_parameters:
-            parameters_dict = {**node_params, **unchangeable_parameters}
+            node_params = {**node_params, **unchangeable_parameters}
 
         # Set hyperparameters for node
-        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=parameters_dict)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)
 
         metric_value = self.get_metric_value(graph=graph)
         return metric_value
