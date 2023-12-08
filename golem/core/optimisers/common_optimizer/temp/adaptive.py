@@ -18,7 +18,7 @@ class AdaptiveParametersTask(Task):
         self.parameters = {}
         for attribute, values in parameters.__dict__.items():
             if isinstance(values, (OptimizationParameters, GraphGenerationParams, AlgorithmParameters)):
-                parameters[attribute] = dict(values.__dict__.items())
+                self.parameters[attribute] = dict(values.__dict__.items())
 
     def update_parameters(self, parameters: CommonOptimizerParameters) -> CommonOptimizerParameters:
         """
