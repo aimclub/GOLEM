@@ -35,6 +35,11 @@ def search_space():
                 'hyperopt-dist': hp.loguniform,
                 'sampling-scope': [1e-3, 1],
                 'type': 'continuous'
+            },
+            'a3': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [['A', 'B', 'C']],
+                'type': 'categorical'
             }
         },
         'b': {
@@ -109,7 +114,7 @@ def test_node_tuning(search_space, graph):
         assert tuner.init_metric >= tuner.obtained_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [OptunaTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, IOptTuner])
 @pytest.mark.parametrize('init_graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
