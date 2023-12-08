@@ -11,7 +11,7 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.random_graph_factory import RandomGrowthGraphFactory
 
 
-@pytest.mark.parametrize('max_depth', [1, 5, 10, 30])
+@pytest.mark.parametrize('max_depth', [1, 5, 10, 30, 50])
 def test_gp_composer_random_graph_generation_looping(max_depth):
     """ Test checks DefaultRandomOptGraphFactory valid generation. """
     available_node_types = ['a', 'b', 'c', 'd', 'e']
@@ -31,4 +31,4 @@ def test_gp_composer_random_graph_generation_looping(max_depth):
         assert verifier(graph) is True
         assert graph.depth <= requirements.max_depth
     # at least one graph has depth greater than a max_depth quarter
-    assert np.any([graph.depth >= math.ceil(max_depth / 4) for graph in graphs])
+    assert np.any([graph.depth >= math.ceil(max_depth * 0.25) for graph in graphs])
