@@ -5,15 +5,18 @@ from typing import Optional, Sequence, Union, Any, Dict, List, Callable
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.common_optimizer.node import Node
+from golem.core.optimisers.common_optimizer.old_config import default_stages
 from golem.core.optimisers.common_optimizer.scheme import Scheme
 from golem.core.optimisers.common_optimizer.stage import Stage
 from golem.core.optimisers.common_optimizer.task import Task, TaskStatusEnum
-from golem.core.optimisers.genetic.operators.operator import PopulationT
+from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import Objective, ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.optimizer import GraphOptimizer, GraphGenerationParams, AlgorithmParameters
+from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 from golem.core.optimisers.timer import OptimisationTimer
 
 
@@ -21,6 +24,8 @@ from golem.core.optimisers.timer import OptimisationTimer
 class CommonOptimizerParameters:
     _run: bool
     generations: List[PopulationT]
+    population: PopulationT
+    evaluator: Any
 
     objective: Objective
     initial_graphs: Sequence[Union[Graph, Any]]
@@ -31,11 +36,12 @@ class CommonOptimizerParameters:
     history: OptHistory
 
 
-class CommonOptimizer(GraphOptimizer):
+class CommonOptimizer(PopulationalOptimizer):
     __parameters_attrs = ('objective', 'initial_graphs', 'requirements', 'graph_generation_params',
-                          'graph_optimizer_params', 'history', 'stages', '_run', 'generations')
+                          'graph_optimizer_params', 'history', 'stages', '_run',
+                          'generations', 'population', 'evaluator')
     __parameters_allowed_to_change = ('requirements', 'graph_generation_params',
-                                      'graph_optimizer_params', 'stages', '_run', 'generations')
+                                      'graph_optimizer_params', 'stages', '_run')
 
     def __init__(self,
                  objective: Objective,
@@ -51,10 +57,13 @@ class CommonOptimizer(GraphOptimizer):
                          graph_generation_params=graph_generation_params,
                          graph_optimizer_params=graph_optimizer_params)
 
-        self.timer = OptimisationTimer(timeout=self.requirements.timeout)
-        self.generations = list()
-        self.stages = stages
+        self.stages = default_stages
         self._run = True
+
+        self.requirements.max_depth = 100  # TODO fix
+        self.graph_optimizer_params.pop_size = graph_optimizer_params.pop_size
+        self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
+                                    for graph in self.initial_graphs]
 
     @property
     def parameters(self):
@@ -67,7 +76,19 @@ class CommonOptimizer(GraphOptimizer):
         for attr in self.__parameters_allowed_to_change:
             setattr(self, attr, getattr(parameters, attr))
 
-    def optimise(self, objective: ObjectiveFunction):
-        while self._run:
-            for i_stage in range(len(self.stages)):
-                self.parameters = self.stages[i_stage].run(self.parameters)
+    # def optimise(self, objective: ObjectiveFunction):
+    #     while self._run:
+    #         for i_stage in range(len(self.stages)):
+    #             self.parameters = self.stages[i_stage].run(self.parameters)
+
+    def _initial_population(self, evaluator: EvaluationOperator):
+        self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
+
+    def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
+        """ Method realizing full evolution cycle """
+
+        self.evaluator = evaluator
+
+        for i_stage in range(len(self.stages)):
+            self.parameters = self.stages[i_stage].run(self.parameters)
+        print(1)

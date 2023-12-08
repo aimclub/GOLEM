@@ -8,8 +8,9 @@ from golem.core.optimisers.common_optimizer.task import Task
 class Node:
     """ Node with operation """
 
-    name: str
-    operation: Callable[[Task], Union[Task, List[Task]]]
+    def __init__(self, name: str, operation: Callable[[Task], Union[Task, List[Task]]]):
+        self.name = name
+        self.operation = operation
 
     def __call__(self, *args, **kwargs):
         results = self.operation(*args, **kwargs)

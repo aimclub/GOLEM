@@ -2,8 +2,10 @@ from random import choice
 from golem.core.optimisers.common_optimizer.node import Node
 from golem.core.optimisers.common_optimizer.task import Task, TaskStatusEnum, TaskMixin
 from golem.core.optimisers.genetic.operators.base_mutations import base_mutations_repo
+from golem.core.optimisers.genetic.operators.mutation import Mutation as OldMutation
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
+
 
 class MutationTask(TaskMixin):
     def __init__(self, parameters: 'CommonOptimizerParameters'):
