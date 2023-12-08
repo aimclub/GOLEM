@@ -1,17 +1,26 @@
 from abc import ABC
 from datetime import timedelta
-from typing import Optional, Callable, Dict
+from typing import Callable, Dict, Optional
 
 import numpy as np
-from hyperopt import tpe, hp
+from hyperopt import hp, tpe
 from hyperopt.early_stop import no_progress_loss
-from hyperopt.pyll import Apply
+from hyperopt.pyll import Apply, scope
+from hyperopt.pyll_utils import validate_label
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.log import default_log
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner
+
+
+@validate_label
+def hp_randint(label, *args, **kwargs):
+    return scope.int(scope.hyperopt_param(label, scope.randint(*args, **kwargs)))
+
+
+hp.randint = hp_randint
 
 
 class HyperoptTuner(BaseTuner, ABC):
