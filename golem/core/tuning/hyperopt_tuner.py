@@ -1,6 +1,5 @@
 from abc import ABC
 from datetime import timedelta
-from functools import partial
 from typing import Optional, Callable, Dict, Tuple, Any
 from typing import Callable, Dict, Optional, Tuple, Any
 
@@ -13,7 +12,6 @@ from hyperopt.pyll_utils import validate_label
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.log import default_log
-from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner
