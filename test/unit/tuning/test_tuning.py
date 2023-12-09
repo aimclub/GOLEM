@@ -40,7 +40,7 @@ def search_space():
                 'hyperopt-dist': hp.choice,
                 'sampling-scope': [['A', 'B', 'C']],
                 'type': 'categorical'
-            }        },
+            }},
         'b': {
             'b1': {
                 'hyperopt-dist': hp.choice,
