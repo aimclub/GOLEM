@@ -59,16 +59,23 @@ def run_graph_search(size=16, timeout=0.2, visualize=True):
     # Build and run the optimizer
     optimiser = EvoGraphOptimizer(objective, initial_graphs, *all_parameters)
     found_graphs = optimiser.optimise(objective)
-
+    print(found_graphs[0].descriptive_id)
+    print(found_graphs[0].graph_description)
 
     if visualize:
         # vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
         # vis.visualise_history()
-        optimiser.history.show()
-        # Restore the NetworkX graph back from internal Graph representation
-        animate_graph_evolution(target_graph, optimiser.history, graph_gen_params.adapter, "./")
 
+        optimiser.history.show.fitness_box()
         optimiser.history.show.fitness_line()
+        optimiser.history.show.fitness_line_interactive()
+        optimiser.history.show.operations_kde()
+        optimiser.history.show.operations_animated_bar()
+        optimiser.history.show.diversity_line()
+        optimiser.history.show.diversity_population(save_path="diversity.mp4")
+        # Restore the NetworkX graph back from internal Graph representation
+        # animate_graph_evolution(target_graph, optimiser.history, graph_gen_params.adapter, "./")
+
     return found_graphs
 
 
