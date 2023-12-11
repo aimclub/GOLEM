@@ -1,9 +1,10 @@
 from typing import Any, Dict, List
 
-from golem.core.optimisers.common_optimizer.common_optimizer import CommonOptimizerParameters
 from golem.core.optimisers.common_optimizer.node import Node
 from golem.core.optimisers.common_optimizer.task import Task
 from golem.core.optimisers.optimizer import OptimizationParameters, GraphGenerationParams, AlgorithmParameters
+from golem.core.optimisers.genetic.parameters.population_size import AdaptivePopulationSize as OldAdaptivePopulationSize
+from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size
 
 
 class AdaptiveParametersTask(Task):
@@ -13,14 +14,15 @@ class AdaptiveParametersTask(Task):
     :param parameters: instance of CommonOptimizerParameters containing the initial parameters
     """
 
-    def __init__(self, parameters: CommonOptimizerParameters):
+    def __init__(self, parameters: 'CommonOptimizerParameters'):
         super().__init__()
         self.parameters = {}
         for attribute, values in parameters.__dict__.items():
             if isinstance(values, (OptimizationParameters, GraphGenerationParams, AlgorithmParameters)):
                 self.parameters[attribute] = dict(values.__dict__.items())
+        self.parameters['population'] = parameters.population
 
-    def update_parameters(self, parameters: CommonOptimizerParameters) -> CommonOptimizerParameters:
+    def update_parameters(self, parameters: 'CommonOptimizerParameters') -> 'CommonOptimizerParameters':
         """
         Update the parameters in CommonOptimizerParameters with stored
         OptimizationParameters, GraphGenerationParams and AlgorithmParameters values.
@@ -46,7 +48,7 @@ class AdaptiveParameters(Node):
         self.name = name
         self.parameters = parameters
 
-    def update_parameters(self, task: AdaptiveParametersTask) -> List[AdaptiveParametersTask]:
+    def __call__(self, task: AdaptiveParametersTask) -> List[AdaptiveParametersTask]:
         """
         Set the parameters in AdaptiveParametersTask state.
         :param parameters: instance of AdaptiveParametersTask task to set new parameters
@@ -60,4 +62,23 @@ class AdaptiveParameters(Node):
                 for subattribute, subvalues in values.items():
                     if subattribute in parameters_dict:
                         parameters_dict[subattribute] = subvalues
+        return [task]
+
+
+class AdaptivePopulationSize(Node):
+    def __init__(self, name: str = 'pop_size'):
+        self.name = name
+        self._pop_size = None
+
+    def __call__(self, task: AdaptiveParametersTask) -> List[AdaptiveParametersTask]:
+        if not isinstance(task, AdaptiveParametersTask):
+            raise TypeError(f"task should be `AdaptiveParametersTask`, got {type(task)} instead")
+        if self._pop_size is None:
+            self._pop_size: OldAdaptivePopulationSize = init_adaptive_pop_size(
+                    task.parameters['graph_optimizer_params'],
+                    task.parameters['population']
+                )
+        pop_size = self._pop_size.next(task.parameters['population'])
+
+        task.parameters['graph_generation_params']['pop_size'] = pop_size
         return [task]
