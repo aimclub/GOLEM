@@ -12,14 +12,24 @@ from golem.core.optimisers.common_optimizer.nodes.old_mutation import Mutation, 
 from golem.core.optimisers.common_optimizer.nodes.old_regularization import Regularization, RegularizationTask
 from golem.core.optimisers.common_optimizer.nodes.old_selection import Selection, SelectionTask
 from golem.core.optimisers.common_optimizer.runner import ParallelRunner, OneThreadRunner
-from golem.core.optimisers.common_optimizer.scheme import Scheme
+from golem.core.optimisers.common_optimizer.scheme import Scheme, SequentialScheme
 from golem.core.optimisers.common_optimizer.stage import Stage
 from golem.core.optimisers.common_optimizer.task import Task, TaskStatusEnum
+from golem.core.optimisers.common_optimizer.temp.adaptive import AdaptivePopulationSize, AdaptiveParametersTask
 
 default_stages = list()
 
 
 # adaptive parameters
+nodes = [AdaptivePopulationSize()]
+scheme = SequentialScheme(nodes=nodes)
+def adaptive_parameter_updater(finished_tasks, parameters):
+    parameters = finished_tasks[0].update_parameters(parameters)
+    return parameters
+
+default_stages.append(Stage(runner=OneThreadRunner(), nodes=nodes, task_builder=AdaptiveParametersTask,
+                            scheme=scheme, stop_fun=lambda f, a: bool(f),
+                            parameter_updater=adaptive_parameter_updater))
 
 # main evolution process
 class EvolvePopulationTask(ElitismTask, MutationTask,
@@ -41,7 +51,14 @@ scheme = Scheme(scheme_map=scheme_map)
 nodes = [Elitism(), Mutation(), Crossover(), Regularization(),
          Selection(), Inheritance(), Evaluator()]
 
-stop_fun = lambda f, a: a and len(f) >= a[0].graph_optimizer_params.pop_size
+def stop_fun(finished_tasks, all_tasks):
+    if all_tasks:
+        pop_size = all_tasks[0].graph_generation_params.pop_size
+        if len(finished_tasks) >= pop_size:
+            return True
+    return False
+
+
 
 def parameter_updater(finished_tasks, parameters):
     parameters.new_population = list(chain(*[task.generation for task in finished_tasks]))

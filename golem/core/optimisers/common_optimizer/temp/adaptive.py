@@ -16,11 +16,9 @@ class AdaptiveParametersTask(Task):
 
     def __init__(self, parameters: 'CommonOptimizerParameters'):
         super().__init__()
-        self.parameters = {}
-        for attribute, values in parameters.__dict__.items():
-            if isinstance(values, (OptimizationParameters, GraphGenerationParams, AlgorithmParameters)):
-                self.parameters[attribute] = dict(values.__dict__.items())
-        self.parameters['population'] = parameters.population
+        self.graph_optimizer_params = parameters.graph_optimizer_params
+        self.graph_generation_params = parameters.graph_generation_params
+        self.population = parameters.population
 
     def update_parameters(self, parameters: 'CommonOptimizerParameters') -> 'CommonOptimizerParameters':
         """
@@ -29,11 +27,7 @@ class AdaptiveParametersTask(Task):
         :param parameters: instance of CommonOptimizerParameters to update
         :return: updated parameters object
         """
-        for attribute, values in self.parameters.items():
-            parameters_obj = getattr(parameters, attribute, None)
-            if parameters_obj:
-                for subattribute, subvalues in values.items():
-                    setattr(parameters_obj, subattribute, subvalues)
+        parameters.graph_generation_params = self.graph_generation_params
         return parameters
 
 
@@ -75,10 +69,10 @@ class AdaptivePopulationSize(Node):
             raise TypeError(f"task should be `AdaptiveParametersTask`, got {type(task)} instead")
         if self._pop_size is None:
             self._pop_size: OldAdaptivePopulationSize = init_adaptive_pop_size(
-                    task.parameters['graph_optimizer_params'],
-                    task.parameters['population']
+                    task.graph_optimizer_params,
+                    task.population
                 )
-        pop_size = self._pop_size.next(task.parameters['population'])
+        pop_size = self._pop_size.next(task.population)
 
-        task.parameters['graph_generation_params']['pop_size'] = pop_size
+        task.graph_generation_params.pop_size = pop_size
         return [task]
