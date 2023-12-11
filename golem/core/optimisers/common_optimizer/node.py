@@ -6,7 +6,14 @@ from golem.core.optimisers.common_optimizer.task import Task
 
 @dataclass
 class Node:
-    """ Node with operation """
+    """
+    Represents a lightweight node in a computational graph.
+    Implemented to support an adaptive approach to task completion.
+
+    Args:
+        name: node identificator
+        operation: action performed within the node call
+    """
 
     def __init__(self, name: str, operation: Callable[[Task], Union[Task, List[Task]]]):
         self.name = name

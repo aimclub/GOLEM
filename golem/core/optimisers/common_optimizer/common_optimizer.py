@@ -22,6 +22,7 @@ from golem.core.optimisers.timer import OptimisationTimer
 
 @dataclass
 class CommonOptimizerParameters:
+    """ This class is for storing a state of all CommonOptimizer parameters """
     _run: bool
     generations: List[PopulationT]
     population: PopulationT
@@ -37,6 +38,16 @@ class CommonOptimizerParameters:
 
 
 class CommonOptimizer(PopulationalOptimizer):
+    """
+    This class implements a common optimizer.
+
+    Args:
+        objective: objective for optimization
+        initial_graphs: graphs which were initialized outside the optimizer
+        requirements: implementation-independent requirements for graph optimizer
+        graph_generation_params: parameters for new graph generation
+        graph_optimizer_params: parameters for specific implementation of graph optimizer
+    """
     __parameters_attrs = ('objective', 'initial_graphs', 'requirements', 'graph_generation_params',
                           'graph_optimizer_params', 'history', 'stages', '_run',
                           'generations', 'population', 'evaluator')
@@ -82,6 +93,7 @@ class CommonOptimizer(PopulationalOptimizer):
     #             self.parameters = self.stages[i_stage].run(self.parameters)
 
     def _initial_population(self, evaluator: EvaluationOperator):
+        """ Initializes the initial population """
         self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:

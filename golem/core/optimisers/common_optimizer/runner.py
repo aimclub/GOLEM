@@ -19,6 +19,18 @@ from golem.utilities.utilities import determine_n_jobs
 
 @dataclass
 class Worker:
+    """
+    Represents a worker that executes tasks within the optimization process.
+
+    Args:
+        scheme: optimization scheme of nodes execution.
+        origin_task: task to start the execution from.
+        node_map: mapping of node names to Node objects.
+        queued_tasks: queue to store the queued tasks.
+        processed_tasks: queue to store the processed tasks.
+        sleep_time: sleep time in seconds between each task execution.
+    """
+
     scheme: Scheme
     origin_task: Task
     node_map: Dict[str, Node]
@@ -45,12 +57,23 @@ class Worker:
 
 
 class Runner:
+    """
+    Abstract base class for runners in the optimization process.
+    """
     @abstractmethod
     def run(self, scheme: Scheme, task: Task, nodes: List[Node], stop_fun: Callable):
         raise NotImplementedError('It is abstract method')
 
 
 class ParallelRunner(Runner):
+    """
+    Runner that executes tasks in parallel using multiple processes.
+    Args:
+        n_jobs: number of processes to use for parallel execution. Defaults to -1.
+        main_cycle_sleep_seconds: sleep time in seconds between each main cycle. Defaults to 1.
+        worker_cycle_sleep_seconds: sleep time in seconds between each worker cycle. Defaults to 0.02.
+    """
+
     # TODO test for same results from Parallel and OneThread
     def __init__(self,
                  *args,
@@ -83,6 +106,10 @@ class ParallelRunner(Runner):
 
 
 class OneThreadRunner(Runner):
+    """
+    Runner that executes tasks in a single thread.
+    """
+
     def run(self, scheme: Scheme, task: Task, nodes: List[Node], stop_fun: Callable):
         origin_task = task
         node_map = {node.name: node for node in nodes}

@@ -36,11 +36,22 @@ class AdaptiveParametersTask(Task):
 
 
 class AdaptiveParameters(Node):
+    """
+    This class is a field-setter for a list of AdaptiveParametersTask,
+    new parameters should be passed in a form of double mested dictionaary with
+    OptimizationParameters, GraphGenerationParams or AlgorithmParameters specification.
+    :param parameters: dictionary with specified parameters and their values
+    """
     def __init__(self, name: str, parameters: Dict[str, Dict[str, Any]]):
         self.name = name
         self.parameters = parameters
 
     def update_parameters(self, task: AdaptiveParametersTask) -> List[AdaptiveParametersTask]:
+        """
+        Set the parameters in AdaptiveParametersTask state.
+        :param parameters: instance of AdaptiveParametersTask task to set new parameters
+        :return: updated AdaptiveParametersTask wrapped in a list
+        """
         if not isinstance(task, AdaptiveParametersTask):
             raise TypeError(f"task should be `AdaptiveParametersTask`, got {type(task)} instead")
         for attribute, values in self.parameters:

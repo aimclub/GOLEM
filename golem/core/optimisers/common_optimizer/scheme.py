@@ -7,7 +7,10 @@ from golem.utilities.utilities import determine_n_jobs
 
 
 class Scheme:
-    """ Contain pipeline for task flow between nodes """
+    """
+    Base class of a Scheme.
+    Specific scheme should define a pipeline for task flow between nodes.
+    """
     # TODO create real pipelines with `show` method
     # TODO support for multioutput
 
@@ -21,6 +24,10 @@ class Scheme:
 
 
 class SequentialScheme(Scheme):
+    """
+    Represents a scheme where nodes are executed sequentially.
+    """
+
     def __init__(self, *args, nodes: Optional[List[Union[str, Node]]] = None, **kwargs):
         if nodes is None:
             raise ValueError('nodes should be list with nodes')
