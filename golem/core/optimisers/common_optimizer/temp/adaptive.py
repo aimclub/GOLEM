@@ -5,6 +5,9 @@ from golem.core.optimisers.common_optimizer.task import Task
 from golem.core.optimisers.optimizer import OptimizationParameters, GraphGenerationParams, AlgorithmParameters
 from golem.core.optimisers.genetic.parameters.population_size import AdaptivePopulationSize as OldAdaptivePopulationSize
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size
+from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth as OldAdaptiveGraphDepth
+from golem.core.optimisers.genetic.parameters.operators_prob import AdaptiveVariationProb as OldAdaptiveVariationProb
+from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
 
 
 class AdaptiveParametersTask(Task):
@@ -16,6 +19,7 @@ class AdaptiveParametersTask(Task):
 
     def __init__(self, parameters: 'CommonOptimizerParameters'):
         super().__init__()
+        self.requirements = parameters.requirements
         self.graph_optimizer_params = parameters.graph_optimizer_params
         self.graph_generation_params = parameters.graph_generation_params
         self.population = parameters.population
@@ -27,6 +31,9 @@ class AdaptiveParametersTask(Task):
         :param parameters: instance of CommonOptimizerParameters to update
         :return: updated parameters object
         """
+        parameters.population = self.population
+        parameters.requirements = self.requirements
+        parameters.graph_optimizer_params = self.graph_optimizer_params
         parameters.graph_generation_params = self.graph_generation_params
         return parameters
 
@@ -74,5 +81,45 @@ class AdaptivePopulationSize(Node):
                 )
         pop_size = self._pop_size.next(task.population)
 
-        task.graph_generation_params.pop_size = pop_size
+        task.graph_optimizer_params.pop_size = pop_size
+        return [task]
+
+
+class AdaptiveGraphDepth(Node):
+    def __init__(self, name: str = 'max_depth'):
+        self.name = name
+        self._max_depth = None
+
+    def __call__(self, task: AdaptiveParametersTask) -> List[AdaptiveParametersTask]:
+        if not isinstance(task, AdaptiveParametersTask):
+            raise TypeError(f"task should be `AdaptiveParametersTask`, got {type(task)} instead")
+        if self._max_depth is None:
+            self._max_depth: OldAdaptiveGraphDepth = AdaptiveGraphDepth(
+                    task.population,
+                    start_depth=task.requirements.start_depth,
+                    max_depth=task.requirements.max_depth,
+                    max_stagnation_gens=task.graph_optimizer_params.adaptive_depth_max_stagnation,
+                    adaptive=task.graph_optimizer_params.adaptive_depth
+                )
+        max_depth = self._max_depth.next()
+
+        task.requirements.max_depth = max_depth
+        return [task]
+
+
+class AdaptiveOperatorsProb(Node):
+    def __init__(self, name: str = 'operators_prob'):
+        self.name = name
+        self._operators_prob = None
+
+    def __call__(self, task: AdaptiveParametersTask) -> List[AdaptiveParametersTask]:
+        if not isinstance(task, AdaptiveParametersTask):
+            raise TypeError(f"task should be `AdaptiveParametersTask`, got {type(task)} instead")
+        if self._operators_prob is None:
+            self._operators_prob: OldAdaptiveVariationProb = init_adaptive_operators_prob(
+                    task.graph_optimizer_params
+                )
+        probs = self._operators_prob.next(task.population)
+
+        task.graph_optimizer_params.mutation_prob, task.graph_optimizer_params.crossover_prob = probs
         return [task]
