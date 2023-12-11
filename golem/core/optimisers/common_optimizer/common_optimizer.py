@@ -52,7 +52,7 @@ class CommonOptimizer(PopulationalOptimizer):
                           'graph_optimizer_params', 'history', 'stages', '_run',
                           'generations', 'population', 'evaluator')
     __parameters_allowed_to_change = ('requirements', 'graph_generation_params',
-                                      'graph_optimizer_params', 'stages', '_run')
+                                      'graph_optimizer_params', 'stages', '_run', 'new_population')
 
     def __init__(self,
                  objective: Objective,
@@ -85,7 +85,8 @@ class CommonOptimizer(PopulationalOptimizer):
         if not isinstance(parameters, CommonOptimizerParameters):
             raise TypeError(f"parameters should be `CommonOptimizerParameters`, got {type(parameters)} instead")
         for attr in self.__parameters_allowed_to_change:
-            setattr(self, attr, getattr(parameters, attr))
+            if hasattr(parameters, attr):
+                setattr(self, attr, getattr(parameters, attr))
 
     # def optimise(self, objective: ObjectiveFunction):
     #     while self._run:
@@ -98,9 +99,10 @@ class CommonOptimizer(PopulationalOptimizer):
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """
+        # TODO rebuild population
 
         self.evaluator = evaluator
 
         for i_stage in range(len(self.stages)):
             self.parameters = self.stages[i_stage].run(self.parameters)
-        print(1)
+        return self.new_population

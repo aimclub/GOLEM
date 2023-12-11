@@ -7,6 +7,7 @@ class EvaluatorTask(TaskMixin):
     def __init__(self, parameters: 'CommonOptimizerParameters'):
         super().__init__(parameters)
         self.evaluator = parameters.evaluator
+        self.generation = parameters.population
 
     def update_parameters(self, parameters: 'CommonOptimizerParameters'):
         return super().update_parameters(parameters)

@@ -1,6 +1,7 @@
 import time
 from abc import abstractmethod
 from collections import deque
+from copy import copy
 from dataclasses import dataclass
 from multiprocessing import Manager
 from queue import Empty
@@ -82,7 +83,7 @@ class ParallelRunner(Runner):
                  worker_cycle_sleep_seconds: float = 0.02,
                  **kwargs):
         super().__init__(*args, **kwargs)
-        self.n_jobs = n_jobs
+        self.n_jobs = determine_n_jobs(n_jobs)
         self.main_cycle_sleep_seconds = main_cycle_sleep_seconds
         self.worker_cycle_sleep_seconds = worker_cycle_sleep_seconds
 
@@ -93,7 +94,7 @@ class ParallelRunner(Runner):
                             queued_tasks=queued_tasks, processed_tasks=processed_tasks,
                             sleep_time=self.worker_cycle_sleep_seconds)
             with Parallel(n_jobs=self.n_jobs, prefer='processes', return_as='generator') as parallel:
-                _ = parallel(delayed(worker)(randint(0, int(2 ** 32 - 1))) for _ in range(self.n_jobs))
+                gen = parallel(delayed(worker)(randint(0, int(2 ** 32 - 1))) for _ in range(self.n_jobs))
                 finished_tasks, all_tasks = list(), list()
                 while not stop_fun(finished_tasks, all_tasks):
                     time.sleep(self.main_cycle_sleep_seconds)

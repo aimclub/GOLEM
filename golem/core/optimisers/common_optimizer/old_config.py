@@ -2,6 +2,7 @@
     that reproduces behavior of default GOLEM
     genetic optimization """
 from collections import defaultdict
+from itertools import chain
 
 from golem.core.optimisers.common_optimizer.nodes.evaluator import Evaluator
 from golem.core.optimisers.common_optimizer.nodes.old_crossover import Crossover, CrossoverTask
@@ -43,10 +44,10 @@ nodes = [Elitism(), Mutation(), Crossover(), Regularization(),
 stop_fun = lambda f, a: a and len(f) >= a[0].graph_optimizer_params.pop_size
 
 def parameter_updater(finished_tasks, parameters):
-    parameters.new_population = [task.generation for task in finished_tasks]
+    parameters.new_population = list(chain(*[task.generation for task in finished_tasks]))
     return parameters
 
 runner = OneThreadRunner()
-# runner = ParallelRunner()
+runner = ParallelRunner()
 default_stages.append(Stage(runner=runner, nodes=nodes, task_builder=EvolvePopulationTask,
                             scheme=scheme, stop_fun=stop_fun, parameter_updater=parameter_updater))
