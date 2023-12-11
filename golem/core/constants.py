@@ -7,3 +7,4 @@ MIN_TIME_FOR_TUNING_IN_SEC = 3
 EVALUATION_ATTEMPTS_NUMBER = 5
 # Min pop size to avoid getting stuck in local maximum during optimization.
 MIN_POP_SIZE = 5
+DEFAULT_API_TIMEOUT_MINUTES = 10.0

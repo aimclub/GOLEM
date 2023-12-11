@@ -1,4 +1,10 @@
+from typing import Optional
+
+import numpy as np
 from joblib import cpu_count
+
+from golem.utilities import random
+from golem.utilities.random import RandomStateHandler
 
 
 def determine_n_jobs(n_jobs=-1, logger=None):
@@ -13,3 +19,11 @@ def determine_n_jobs(n_jobs=-1, logger=None):
     if logger:
         logger.info(f"Number of used CPU's: {n_jobs}")
     return n_jobs
+
+
+def set_random_seed(seed: Optional[int]):
+    """ Sets random seed for evaluation of models"""
+    if seed is not None:
+        np.random.seed(seed)
+        random.seed(seed)
+        RandomStateHandler.MODEL_FITTING_SEED = seed
