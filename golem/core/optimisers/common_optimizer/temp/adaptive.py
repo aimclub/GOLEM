@@ -8,6 +8,7 @@ from golem.core.optimisers.genetic.parameters.population_size import init_adapti
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth as OldAdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import AdaptiveVariationProb as OldAdaptiveVariationProb
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
+from golem.core.optimisers.genetic.operators.mutation import Mutation as OldMutation
 
 
 class AdaptiveParametersTask(Task):
@@ -24,6 +25,7 @@ class AdaptiveParametersTask(Task):
         self.graph_generation_params = parameters.graph_generation_params
         self.population = parameters.population
         self.generations = parameters.generations
+        self.stages = parameters.stages
 
     def update_parameters(self, parameters: 'CommonOptimizerParameters') -> 'CommonOptimizerParameters':
         """
@@ -87,10 +89,13 @@ class AdaptiveOperatorsProb(Node):
         if not isinstance(task, AdaptiveParametersTask):
             raise TypeError(f"task should be `AdaptiveParametersTask`, got {type(task)} instead")
         if self._operators_prob is None:
-            self._operators_prob: OldAdaptiveVariationProb = init_adaptive_operators_prob(
-                    task.graph_optimizer_params
-                )
+            self._operators_prob: OldAdaptiveVariationProb = init_adaptive_operators_prob(task.graph_optimizer_params)
         probs = self._operators_prob.next(task.population)
-
         task.graph_optimizer_params.mutation_prob, task.graph_optimizer_params.crossover_prob = probs
+
+        for stage in task.stages:
+            for node in stage.nodes:
+                if node.__class__.__name__ == 'Mutation':
+                    if hasattr(node, '_mutation'):
+                        node._mutation = None
         return [task]

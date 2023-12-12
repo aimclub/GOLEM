@@ -100,7 +100,6 @@ class CommonOptimizer(PopulationalOptimizer):
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """
-        # TODO rebuild population
         # TODO add iterations limit
 
         self.evaluator = evaluator
