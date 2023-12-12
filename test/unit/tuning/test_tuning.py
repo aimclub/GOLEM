@@ -148,5 +148,5 @@ def test_hyperopt_returns_native_types(search_space, tuner_cls):
     tuned_graph = tuner.tune(deepcopy(graph))
     for node in tuned_graph.nodes:
         for param, val in node.parameters.items():
-            assert not hasattr(val, 'shape'), (f'The parameter "{param}" should not be a numpy type. '
-                                               f'Got "{type(val)}".')
+            assert val.__class__.__module__ != 'numpy', (f'The parameter "{param}" should not be a numpy type. '
+                                                         f'Got "{type(val)}".')
