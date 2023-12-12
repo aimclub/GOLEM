@@ -26,6 +26,7 @@ class CommonOptimizerParameters:
     _run: bool
     generations: List[PopulationT]
     population: PopulationT
+    new_population: PopulationT
     evaluator: Any
 
     objective: Objective
@@ -50,7 +51,7 @@ class CommonOptimizer(PopulationalOptimizer):
     """
     __parameters_attrs = ('objective', 'initial_graphs', 'requirements', 'graph_generation_params',
                           'graph_optimizer_params', 'history', 'stages', '_run',
-                          'generations', 'population', 'evaluator')
+                          'generations', 'population', 'evaluator', 'new_population')
     __parameters_allowed_to_change = ('requirements', 'graph_generation_params',
                                       'graph_optimizer_params', 'stages', '_run', 'new_population')
 
@@ -103,6 +104,7 @@ class CommonOptimizer(PopulationalOptimizer):
         # TODO add iterations limit
 
         self.evaluator = evaluator
+        self.new_population = None
 
         for i_stage in range(len(self.stages)):
             self.parameters = self.stages[i_stage].run(self.parameters)

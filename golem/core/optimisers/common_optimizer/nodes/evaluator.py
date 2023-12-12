@@ -12,7 +12,7 @@ class EvaluatorTask(TaskMixin):
     def update_parameters(self, parameters: 'CommonOptimizerParameters'):
         return super().update_parameters(parameters)
 
-
+from golem.core.optimisers.fitness import null_fitness
 class Evaluator(Node):
     def __init__(self, name: str = 'evaluator'):
         self.name = name

@@ -7,8 +7,8 @@ class InheritanceTask(TaskMixin):
     def __init__(self, parameters: 'CommonOptimizerParameters'):
         super().__init__(parameters)
         self.graph_optimizer_params = parameters.graph_optimizer_params
-        self.generation = parameters.population
-        self.origin_generation = parameters.population
+        self.new_population = parameters.new_population
+        self.old_population = parameters.population
 
     def update_parameters(self, parameters: 'CommonOptimizerParameters'):
         return super().update_parameters(parameters)
@@ -23,6 +23,6 @@ class Inheritance(Node):
         if self._inheritance is None:
             selection = OldSelection(task.graph_optimizer_params)
             self._inheritance = OldInheritance(task.graph_optimizer_params, selection)
-        task.generation = self._inheritance(task.origin_generation, task.generation)
+        task.generation = self._inheritance(task.old_population, task.new_population)
         task.status = TaskStatusEnum.SUCCESS
         return [task]

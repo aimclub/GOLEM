@@ -8,8 +8,8 @@ class ElitismTask(TaskMixin):
     def __init__(self, parameters: 'CommonOptimizerParameters'):
         super().__init__(parameters)
         self.graph_optimizer_params = parameters.graph_optimizer_params
-        self.generation = parameters.population
-        self.best_individuals = None  # TODO
+        self.new_population = parameters.new_population
+        self.best_individuals = parameters.generations.best_individuals
 
     def update_parameters(self, parameters: 'CommonOptimizerParameters'):
         return super().update_parameters(parameters)
@@ -23,6 +23,6 @@ class Elitism(Node):
     def __call__(self, task: ElitismTask):
         if self._regularization is None:
             self._regularization = OldElitism(task.graph_optimizer_params)
-        task.generation = self._regularization(task.best_individuals, task.generation)
+        task.new_population = self._regularization(task.best_individuals, task.new_population)
         task.status = TaskStatusEnum.SUCCESS
         return [task]
