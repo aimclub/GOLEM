@@ -34,7 +34,7 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         super().__init__(actions=actions, n_jobs=n_jobs, enable_logging=enable_logging,
                          decaying_factor=decaying_factor, is_initial_fit=False)
         self._agent = MAB(arms=self._indices,
-                          learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.3),
+                          learning_policy=LearningPolicy.UCB1(1.15),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
         self._context_agent = context_agent_type if isinstance(context_agent_type, Callable) else \
