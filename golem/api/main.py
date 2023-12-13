@@ -125,13 +125,13 @@ class GOLEM:
         graph_generation_parameters = self.graph_generation_parameters
         gp_algorithm_parameters = self.gp_algorithm_parameters
 
-        optimiser = optimizer_cls(objective,
-                                  initial_graphs,
-                                  graph_requirements,
-                                  graph_generation_parameters,
-                                  gp_algorithm_parameters)
+        self.optimiser = optimizer_cls(objective,
+                                       initial_graphs,
+                                       graph_requirements,
+                                       graph_generation_parameters,
+                                       gp_algorithm_parameters)
 
-        found_graphs = optimiser.optimise(objective)
+        found_graphs = self.optimiser.optimise(objective)
         return found_graphs
 
     @staticmethod
