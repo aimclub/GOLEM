@@ -10,7 +10,7 @@ from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.utilities.utilities import determine_n_jobs
+from golem.utilities.utilities import determine_n_jobs, log_parameters_with_message
 
 
 class ApiParams(UserDict):
@@ -27,8 +27,7 @@ class ApiParams(UserDict):
         self._default_common_params = self.get_default_common_params()
         super().__init__(self._input_params)
 
-    @staticmethod
-    def get_default_common_params():
+    def get_default_common_params(self):
         """ Common params that do not belong to any category
         (from `GPAlgorithmParameters`, `GraphGenerationParams`, `GraphRequirements`). """
         default_common_params = {
@@ -36,10 +35,11 @@ class ApiParams(UserDict):
             'initial_graphs': list(),
             'objective': None
         }
+        self.log.info("EvoGraphOptimizer was used as default optimizer, "
+                      "will be overwritten by specified one if there is any.")
         return default_common_params
 
-    @staticmethod
-    def get_default_graph_generation_params():
+    def get_default_graph_generation_params(self):
         """ Default graph generations params to minimize the number of arguments that must be specified in API.
         Need to be hardcoded like that since the list of input arguments is not the same as the class fields list. """
         default_graph_generation_params = {
@@ -51,6 +51,8 @@ class ApiParams(UserDict):
             'available_node_types': None,
             'remote_evaluator': None
         }
+        self.log.info("BaseNetworkxAdapter was used as default adapter, "
+                      "will be overwritten by specified one if there is any.")
         return default_graph_generation_params
 
     def get_gp_algorithm_parameters(self) -> GPAlgorithmParameters:

@@ -31,7 +31,7 @@ class GOLEM:
     def __init__(self,
                  timeout: Optional[float] = DEFAULT_API_TIMEOUT_MINUTES,
                  seed: Optional[int] = None,
-                 logging_level: int = logging.ERROR,
+                 logging_level: int = logging.INFO,
                  n_jobs: int = -1,
                  **all_parameters):
         set_random_seed(seed)
@@ -49,9 +49,9 @@ class GOLEM:
         optimizer_cls = common_params['optimizer']
         objective = common_params['objective']
         initial_graphs = common_params['initial_graphs']
-        graph_requirements = self.api_params.get_graph_requirements()
-        graph_generation_parameters = self.api_params.get_graph_generation_parameters()
-        gp_algorithm_parameters = self.api_params.get_gp_algorithm_parameters()
+        graph_requirements = self.graph_requirements
+        graph_generation_parameters = self.graph_generation_parameters
+        gp_algorithm_parameters = self.gp_algorithm_parameters
 
         optimiser = optimizer_cls(objective,
                                   initial_graphs,
