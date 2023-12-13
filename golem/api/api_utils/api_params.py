@@ -10,7 +10,7 @@ from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.utilities.utilities import determine_n_jobs, log_parameters_with_message
+from golem.utilities.utilities import determine_n_jobs
 
 
 class ApiParams(UserDict):

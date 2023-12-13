@@ -28,9 +28,3 @@ def set_random_seed(seed: Optional[int]):
         np.random.seed(seed)
         random.seed(seed)
         RandomStateHandler.MODEL_FITTING_SEED = seed
-
-
-def log_parameters_with_message(message: str, log: logging.LoggerAdapter, log_dict: dict):
-    log.debug(message)
-    for key, value in log_dict.items():
-        log.debug(key, ' : ', value)
