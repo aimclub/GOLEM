@@ -16,8 +16,6 @@ from examples.molecule_search.mol_metrics import normalized_sa_score, penalised_
 from golem.api.main import GOLEM
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
     has_no_isolated_nodes
-from golem.core.optimisers.adaptive.agent_trainer import AgentTrainer
-from golem.core.optimisers.adaptive.history_collector import HistoryReader
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
@@ -75,16 +73,6 @@ def visualize_results(molecules: Iterable[MolGraph],
     image.save(save_path / 'best_molecules.png')
     if show:
         image.show()
-
-
-def pretrain_agent(optimizer: EvoGraphOptimizer, objective: Objective, results_dir: str) -> AgentTrainer:
-    agent = optimizer.mutation.agent
-    trainer = AgentTrainer(objective, optimizer.mutation, agent)
-    # load histories
-    history_reader = HistoryReader(Path(results_dir))
-    # train agent
-    trainer.fit(histories=history_reader.load_histories(), validate_each=1)
-    return trainer
 
 
 def run_experiment(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,

@@ -12,9 +12,9 @@ class GOLEM:
     Main class for GOLEM API.
 
     Args:
-        timeout: timeout for optimization.
-        seed: value for a fixed random seed.
-        logging_level: logging levels are the same as in `logging <https://docs.python.org/3/library/logging.html>`_.
+        :param timeout: timeout for optimization.
+        :param seed: value for a fixed random seed.
+        :param logging_level: logging levels are the same as in `logging <https://docs.python.org/3/library/logging.html>`_.
 
             .. details:: Possible options:
 
@@ -24,8 +24,8 @@ class GOLEM:
                 - ``20`` -> info
                 - ``10`` -> debug
                 - ``0`` -> nonset
-        n_jobs: num of ``n_jobs`` for parallelization (set to ``-1`` to use all cpu's). Defaults to ``-1``.
-        graph_requirements_class: class to specify custom graph requirements.
+        :param n_jobs: num of ``n_jobs`` for parallelization (set to ``-1`` to use all cpu's). Defaults to ``-1``.
+        :param graph_requirements_class: class to specify custom graph requirements.
         Must be inherited from GraphRequirements class.
 
         :param crossover_prob: crossover probability (chance that two individuals will be mated).
