@@ -409,6 +409,8 @@ class ExperimentAnalyzer:
         for setup in os.listdir(self.path_to_root):
             if setup in self._folders_to_ignore:
                 continue
+            if setup != 'FEDOT_MAB_UCB' and setup != 'FEDOT_MAB' and setup != 'FEDOT_Classic':
+                continue
             path_to_setup = os.path.join(self.path_to_root, setup)
             for dataset in os.listdir(path_to_setup):
                 if dataset in self._folders_to_ignore:
