@@ -25,7 +25,7 @@ class AdaptiveParametersTask(Task):
         self.graph_generation_params = parameters.graph_generation_params
         self.population = parameters.population
         self.generations = parameters.generations
-        self.stages = parameters.stages
+        self.stages = parameters.graph_optimizer_params.stages
 
     def update_parameters(self, parameters: 'CommonOptimizerParameters') -> 'CommonOptimizerParameters':
         """
@@ -37,6 +37,7 @@ class AdaptiveParametersTask(Task):
         parameters.population = self.population
         parameters.requirements = self.requirements
         parameters.graph_optimizer_params = self.graph_optimizer_params
+        parameters.graph_optimizer_params.stages = self.stages
         parameters.graph_generation_params = self.graph_generation_params
         return parameters
 
