@@ -112,7 +112,8 @@ class Individual:
                 f'| graph: {self.graph}>')
 
     def __eq__(self, other: Individual):
-        return self.uid == other.uid
+        return self.uid == other.uid and self.fitness.value == other.fitness.value and \
+            self.native_generation == other.native_generation and self.graph == other.graph
 
     def __copy__(self):
         default_log(self).warning(INDIVIDUAL_COPY_RESTRICTION_MESSAGE, raise_if_test=True)
