@@ -23,7 +23,7 @@ def determine_n_jobs(n_jobs=-1, logger=None):
 
 
 def set_random_seed(seed: Optional[int]):
-    """ Sets random seed for evaluation of models"""
+    """ Sets random seed for evaluation of models. """
     if seed is not None:
         np.random.seed(seed)
         random.seed(seed)

@@ -1,18 +1,16 @@
 import os.path
 from datetime import timedelta
 from pathlib import Path
-from typing import Type, Optional, Sequence, List, Iterable, Callable, Dict
+from typing import Type, Optional, Sequence, List
 
 import numpy as np
-from rdkit.Chem import Draw
 from rdkit.Chem.rdchem import BondType
 
+from examples.molecule_search.experiment import visualize_results, get_methane, get_all_mol_metrics
 from examples.molecule_search.mol_adapter import MolAdapter
 from examples.molecule_search.mol_advisor import MolChangeAdvisor
 from examples.molecule_search.mol_graph import MolGraph
 from examples.molecule_search.mol_mutations import CHEMICAL_MUTATIONS
-from examples.molecule_search.mol_metrics import normalized_sa_score, penalised_logp, qed_score, \
-    normalized_logp, CLScorer
 from golem.api.main import GOLEM
 from golem.core.dag.verification_rules import has_no_self_cycled_nodes, has_no_isolated_components, \
     has_no_isolated_nodes
@@ -26,53 +24,6 @@ from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimizer import GraphOptimizer
 from golem.core.paths import project_root
 from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnessLines
-from golem.visualisation.opt_viz_extra import visualise_pareto
-
-
-def get_methane() -> MolGraph:
-    methane = 'C'
-    return MolGraph.from_smiles(methane)
-
-
-def get_all_mol_metrics() -> Dict[str, Callable]:
-    metrics = {'qed_score': qed_score,
-               'cl_score': CLScorer(),
-               'norm_sa_score': normalized_sa_score,
-               'penalised_logp': penalised_logp,
-               'norm_log_p': normalized_logp}
-    return metrics
-
-
-def visualize_results(molecules: Iterable[MolGraph],
-                      objective: Objective,
-                      history: OptHistory,
-                      save_path: Path,
-                      show: bool = False):
-    save_path.mkdir(parents=True, exist_ok=True)
-
-    # Plot pareto front (if multi-objective)
-    if objective.is_multi_objective:
-        visualise_pareto(history.archive_history[-1],
-                         objectives_names=objective.metric_names[:2],
-                         folder=str(save_path))
-
-    # Plot fitness convergence
-    history.show.fitness_line(dpi=100, save_path=save_path / 'fitness_line.png')
-    # Plot diversity
-    history.show.diversity_population(save_path=save_path / 'diversity.gif')
-    history.show.diversity_line(save_path=save_path / 'diversity_line.png')
-
-    # Plot found molecules
-    rw_molecules = [mol.get_rw_molecule() for mol in set(molecules)]
-    objectives = [objective.format_fitness(objective(mol)) for mol in set(molecules)]
-    image = Draw.MolsToGridImage(rw_molecules,
-                                 legends=objectives,
-                                 molsPerRow=min(4, len(rw_molecules)),
-                                 subImgSize=(1000, 1000),
-                                 legendFontSize=50)
-    image.save(save_path / 'best_molecules.png')
-    if show:
-        image.show()
 
 
 def run_experiment(optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,

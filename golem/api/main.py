@@ -40,8 +40,8 @@ class GOLEM:
 
         Used in `ReproductionController` to compensate for invalid individuals. See the class for details.
 
-        :param adaptive_mutation_type: Experimental feature! Enables adaptive Mutation agent.
-        :param context_agent_type: Experimental feature! Enables graph encoding for Mutation agent.
+        :param adaptive_mutation_type: enables adaptive Mutation agent.
+        :param context_agent_type: enables graph encoding for Mutation agent.
 
         Adaptive mutation agent uses specified algorithm. 'random' type is the default non-adaptive version.
         Requires crossover_types to be CrossoverTypesEnum.none for correct adaptive learning,
@@ -52,6 +52,12 @@ class GOLEM:
 
         Parameter `context_agent_type` specifies implementation of graph/node encoder for adaptive
         mutation agent. It is relevant for contextual and neural bandits.
+
+        :param decaying_factor: decaying factor for Multi-Armed Bandits for managing the profit from operators
+        The smaller the value of decaying_factor, the larger the influence for the best operator.
+        :param window_size: the size of sliding window for Multi-Armed Bandits to decrease variance.
+        The window size is measured by the number of individuals to consider.
+
 
         :param selection_types: Sequence of selection operators types
         :param crossover_types: Sequence of crossover operators types
@@ -69,19 +75,10 @@ class GOLEM:
         The `generational` scheme is a standard scheme of the evolutionary algorithm.
         It specifies that at each iteration the entire generation is updated.
 
-        In the `steady_state` scheme at each iteration only one individual is updated.
+        In the `steady_state` individuals from previous populations are mixed with the ones from new population.
+        UUIDs of individuals do not repeat within one population.
 
-        The `parameter_free` scheme is an adaptive variation of the `steady_state` scheme.
-        It specifies that the population size and the probability of mutation and crossover
-        change depending on the success of convergence. If there are no improvements in fitness,
-        then the size and the probabilities increase. When fitness improves, the size and the
-        probabilities decrease. That is, the algorithm choose a more stable and conservative
-        mode when optimization seems to converge.
-
-        :param decaying_factor: decaying factor for Multi-Armed Bandits for managing the profit from operators
-            The smaller the value of decaying_factor, the larger the influence for the best operator.
-        :param window_size: the size of sliding window for Multi-Armed Bandits to decrease variance.
-            The window size is measured by the number of individuals to consider.
+        The `parameter_free` scheme is same as `steady_state` for now.
 
         ``GraphGenerationParams`` parameters
         :param adapter: instance of domain graph adapter for adaptation
@@ -116,7 +113,10 @@ class GOLEM:
         self.graph_generation_parameters = self.api_params.get_graph_generation_parameters()
         self.graph_requirements = self.api_params.get_graph_requirements()
 
-    def optimise(self):
+    def optimise(self, **custom_optimiser_parameters):
+        """ Method to start optimisation process.
+        `custom_optimiser_parameters` parameters can be specified additionally to use it directly in optimiser.
+        """
         common_params = self.api_params.get_actual_common_params()
         optimizer_cls = common_params['optimizer']
         objective = common_params['objective']
@@ -126,7 +126,8 @@ class GOLEM:
                                        initial_graphs,
                                        self.graph_requirements,
                                        self.graph_generation_parameters,
-                                       self.gp_algorithm_parameters)
+                                       self.gp_algorithm_parameters,
+                                       custom_optimiser_parameters)
 
         found_graphs = self.optimiser.optimise(objective)
         return found_graphs
