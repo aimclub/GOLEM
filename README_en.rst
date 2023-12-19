@@ -225,11 +225,11 @@ There are various cases solved with GOLEM's algorithms:
 .. |rus| image:: https://img.shields.io/badge/lang-ru-yellow.svg
             :target: /README.rst
 
-.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
+.. |ITMO| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/ITMO_badge.svg
    :alt: Acknowledgement to ITMO
    :target: https://en.itmo.ru/en/
 
-.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
