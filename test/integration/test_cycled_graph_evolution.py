@@ -14,6 +14,7 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.metrics.graph_metrics import spectral_dist
+from golem.utilities.utils import set_random_seed
 
 
 def nxgraph_with_cycle(nodes_num):
@@ -65,6 +66,7 @@ def test_cycled_graphs_evolution():
     initial_graphs = [nxgraph_with_cycle(i) for i in range(4, 20)]
 
     optimiser = EvoGraphOptimizer(objective, initial_graphs, requirements, graph_gen_params, gp_params)
+    set_random_seed(42)
     found_graphs = optimiser.optimise(objective)
     found_graph: nx.DiGraph = graph_gen_params.adapter.restore(found_graphs[0])
     assert found_graph is not None
