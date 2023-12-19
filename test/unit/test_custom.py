@@ -42,7 +42,7 @@ def custom_metric(custom_model: CustomModel):
 
 def test_custom_graph_opt():
     """Test checks for the use case of custom graph optimisation:
-    that it can be initialised without problem and returns sane result."""
+    that it can be initialised without problem and returns same result."""
 
     nodes_types = ['A', 'B', 'C', 'D']
     rules = [has_no_self_cycled_nodes]

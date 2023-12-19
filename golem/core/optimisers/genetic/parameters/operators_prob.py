@@ -16,8 +16,10 @@ class AdaptiveVariationProb(VariationOperatorProb):
     def __init__(self, mutation_prob: float = 0.5, crossover_prob: float = 0.5):
         self._mutation_prob_param = AdaptiveMutationProb(mutation_prob)
         self._mutation_prob = self._mutation_prob_param.initial
+        if crossover_prob is None or not (0 <= crossover_prob <= 1):
+            raise ValueError(f"Uncorrect probability value: {crossover_prob}. It should be between 0 and 1")
         self._crossover_prob_init = crossover_prob
-        self._crossover_prob = crossover_prob
+        self._crossover_prob = self._crossover_prob_init
 
     @property
     def mutation_prob(self):
