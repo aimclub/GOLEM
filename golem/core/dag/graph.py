@@ -22,11 +22,6 @@ class Graph(ABC):
     """Defines abstract graph interface that's required by graph optimisation process.
     """
 
-    def __init__(self):
-        """ Define some properties that relate to graph """
-        self.node_factory = None
-        self.random_graph_factory = None
-
     @abstractmethod
     def add_node(self, node: GraphNode):
         """Adds new node to the graph together with its parent nodes.

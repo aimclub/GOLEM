@@ -16,6 +16,8 @@ class GraphDelegate(Graph):
 
     def __init__(self, *args, delegate_cls: Type[Graph] = LinkedGraph, **kwargs):
         self.operator = delegate_cls(*args, **kwargs)
+        self.node_factory = None
+        self.random_graph_factory = None
 
     def add_node(self, node: GraphNode):
         self.operator.add_node(node)
