@@ -1,3 +1,4 @@
+import datetime
 from collections import UserDict
 
 from typing import Dict, Any
@@ -24,6 +25,7 @@ class ApiParams(UserDict):
         self.timeout = timeout
 
         self._input_params = input_params
+        self._input_params['timeout'] = timeout if isinstance(timeout, datetime.timedelta) else datetime.timedelta(minutes=timeout)
         self._default_common_params = self.get_default_common_params()
         super().__init__(self._input_params)
 
@@ -57,16 +59,24 @@ class ApiParams(UserDict):
 
     def get_gp_algorithm_parameters(self) -> GPAlgorithmParameters:
         default_gp_algorithm_params_dict = dict(list(vars(GPAlgorithmParameters()).items()))
+        k_pop = []
         for k, v in self._input_params.items():
             if k in default_gp_algorithm_params_dict:
                 default_gp_algorithm_params_dict[k] = self._input_params[k]
+                k_pop.append(k)
+        for k in k_pop:
+            self._input_params.pop(k)
         return GPAlgorithmParameters(**default_gp_algorithm_params_dict)
 
     def get_graph_generation_parameters(self) -> GraphGenerationParams:
         default_graph_generation_params_dict = self.get_default_graph_generation_params()
+        k_pop = []
         for k, v in self._input_params.items():
             if k in default_graph_generation_params_dict:
                 default_graph_generation_params_dict[k] = self._input_params[k]
+                k_pop.append(k)
+        for k in k_pop:
+            self._input_params.pop(k)
         ggp = GraphGenerationParams(**default_graph_generation_params_dict)
         return ggp
 
