@@ -69,8 +69,8 @@ def simple_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-
-    exchange_node = graph_gen_params.node_factory.exchange_node
+    node_factory = graph.node_factory or graph_gen_params.node_factory
+    exchange_node = node_factory.exchange_node
     visited_nodes = set()
 
     def replace_node_to_random_recursive(node: OptNode) -> OptGraph:
@@ -214,7 +214,8 @@ def single_add_mutation(graph: OptGraph,
         single_add_strategies.append(add_intermediate_node)
     strategy = choice(single_add_strategies)
 
-    result = strategy(graph, node_to_mutate, graph_gen_params.node_factory)
+    node_factory = graph.node_factory or graph_gen_params.node_factory
+    result = strategy(graph, node_to_mutate, node_factory)
     return result
 
 
@@ -230,7 +231,8 @@ def single_change_mutation(graph: OptGraph,
     :param graph: graph to mutate
     """
     node = choice(graph.nodes)
-    new_node = graph_gen_params.node_factory.exchange_node(node)
+    node_factory = graph.node_factory or graph_gen_params.node_factory
+    new_node = node_factory.exchange_node(node)
     if not new_node:
         return graph
     graph.update_node(node, new_node)
@@ -289,6 +291,8 @@ def tree_growth(graph: OptGraph,
     selected random node, if false then previous depth of selected node doesn't affect to
     new subtree depth, maximal depth of new subtree just should satisfy depth constraint in parent tree
     """
+    node_factory = graph.node_factory or graph_gen_params.node_factory
+    random_graph_factory = graph.random_graph_factory or graph_gen_params.random_graph_factory
     node_from_graph = choice(graph.nodes)
     if local_growth:
         max_depth = distance_to_primary_level(node_from_graph)
@@ -299,11 +303,11 @@ def tree_growth(graph: OptGraph,
         is_primary_node_selected = \
             distance_to_root_level(graph, node_from_graph) >= requirements.max_depth and randint(0, 1)
     if is_primary_node_selected:
-        new_subtree = graph_gen_params.node_factory.get_node(is_primary=True)
+        new_subtree = node_factory.get_node(is_primary=True)
         if not new_subtree:
             return graph
     else:
-        new_subtree = graph_gen_params.random_graph_factory(requirements, max_depth).root_node
+        new_subtree = random_graph_factory(requirements, max_depth).root_node
     graph.update_subtree(node_from_graph, new_subtree)
     return graph
 
@@ -348,6 +352,7 @@ def reduce_mutation(graph: OptGraph,
     if len(graph.nodes) == 1:
         return graph
 
+    node_factory = graph.node_factory or graph_gen_params.node_factory
     nodes = [node for node in graph.nodes if node is not graph.root_node]
     node_to_del = choice(nodes)
     children = graph.node_children(node_to_del)
@@ -355,7 +360,7 @@ def reduce_mutation(graph: OptGraph,
     if is_possible_to_delete:
         graph.delete_subtree(node_to_del)
     else:
-        primary_node = graph_gen_params.node_factory.get_node(is_primary=True)
+        primary_node = node_factory.get_node(is_primary=True)
         if not primary_node:
             return graph
         graph.update_subtree(node_to_del, primary_node)
