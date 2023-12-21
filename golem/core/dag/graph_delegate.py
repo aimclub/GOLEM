@@ -1,8 +1,12 @@
-from typing import Union, Sequence, List, Optional, Tuple, Type
+from typing import Union, Sequence, List, Optional, Tuple, Type, TYPE_CHECKING
 
 from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.linked_graph import LinkedGraph
+
+if TYPE_CHECKING:
+    from golem.core.optimisers.opt_node_factory import OptNodeFactory
+    from golem.core.optimisers.random_graph_factory import RandomGraphFactory
 
 
 class GraphDelegate(Graph):
@@ -14,10 +18,14 @@ class GraphDelegate(Graph):
     - hide Graph implementation details from inheritors.
     """
 
-    def __init__(self, *args, delegate_cls: Type[Graph] = LinkedGraph, **kwargs):
+    def __init__(self, *args,
+                 delegate_cls: Type[Graph] = LinkedGraph,
+                 node_factory: Optional['OptNodeFactory'] = None,
+                 random_graph_factory: Optional['RandomGraphFactory'] = None,
+                 **kwargs):
         self.operator = delegate_cls(*args, **kwargs)
-        self.node_factory = None
-        self.random_graph_factory = None
+        self.node_factory = node_factory
+        self.random_graph_factory = random_graph_factory
 
     def add_node(self, node: GraphNode):
         self.operator.add_node(node)
