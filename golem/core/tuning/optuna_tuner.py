@@ -60,7 +60,7 @@ class OptunaTuner(BaseTuner):
                                 n_trials=self.iterations,
                                 n_jobs=self.n_jobs,
                                 timeout=remaining_time,
-                                callbacks=[self.early_stopping_callback],
+                                callbacks=[self.early_stopping_callback] if not is_multi_objective else None,
                                 show_progress_bar=show_progress)
 
             if not is_multi_objective:
