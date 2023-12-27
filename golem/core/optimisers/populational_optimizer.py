@@ -96,7 +96,7 @@ class PopulationalOptimizer(GraphOptimizer):
                                                        elapsed_time.total_seconds() / 60
             self.requirements.timeout = self.requirements.timeout - timedelta(seconds=elapsed_time.total_seconds())
 
-            self._edit_time_vars(self.__dict__, saved_state_timestamp)
+            self._edit_time_vars(self.__dict__, saved_state_timestamp, downtime, elapsed_time)
             # stag_time_delta = saved_state_timestamp - self.generations._stagnation_start_time
             # self.generations._stagnation_start_time = datetime.now() - stag_time_delta
         else:
@@ -244,17 +244,28 @@ class PopulationalOptimizer(GraphOptimizer):
             bar = EmptyProgressBar()
         return bar
 
-    def _edit_time_vars(self, var, saved_state_timestamp, varname=None):
+    def _edit_time_vars(self, var, saved_state_timestamp, downtime, prev_run_len, varname=None, parent=None):
+        '''
+        @param var: initial object    can be any type
+        @param saved_state_timestamp: the timecode of the saved state file     datetime.datetime
+        @param downtime: the amount of time between runs   downtime datetime.timedelta
+        @param prev_run_len: the amount of time the previous run took    downtime datetime.timedelta
+        @param varname: name of the dict or object element that is passed as var   str
+        @param parent: the dict or object that contains var
+        @return: nothing, modifies the var object in place
+        '''
         if isinstance(var, dict):
             for key, item in var.items():
                 if isinstance(item, GraphRequirements):
                     var[key] = self.requirements
+                elif isinstance(item, OptimisationTimer):
+                    var[key] = self.timer
                 else:
-                    self._edit_time_vars(item, saved_state_timestamp, key)
+                    self._edit_time_vars(item, saved_state_timestamp, downtime, prev_run_len, key, var)
 
-        elif isinstance(var, list) or isinstance(var, tuple):  # set
+        elif isinstance(var, list) or isinstance(var, tuple) or isinstance(var, set):
             for el in var:
-                self._edit_time_vars(el, saved_state_timestamp)
+                self._edit_time_vars(el, saved_state_timestamp, downtime, prev_run_len)
 
         else:
             try:
@@ -262,12 +273,22 @@ class PopulationalOptimizer(GraphOptimizer):
             except Exception:
                 var_dict = None
             if var_dict:
-                self._edit_time_vars(var_dict, saved_state_timestamp)
+                self._edit_time_vars(var_dict, saved_state_timestamp, downtime, prev_run_len)
             elif varname:
-                print(varname, type(var))
-                if isinstance(var, str) and 'stagnation_start_time' in varname:
+                # try:
+                #     if ('time' in varname) and (varname != 'computation_time_in_seconds') and (varname != 'evaluation_time_iso'):
+                #         print(varname, type(varname), var, type(var))
+                # except Exception:
+                #     pass
+                if isinstance(varname, str) and 'stagnation_start_time' in varname:
                     stag_time_delta = saved_state_timestamp - var
-                    var = datetime.now() - stag_time_delta  # probably won't work
+                    parent[varname] = datetime.now() - stag_time_delta
+                elif isinstance(varname, str) and 'evaluation_time_iso' in varname:
+                    parent[varname] = datetime.isoformat(datetime.fromisoformat(var) + downtime)
+                # elif isinstance(varname, str) and 'init_time' in varname:
+                #     parent[varname] = var + downtime
+                # elif isinstance(varname, str) and 'timeout' in varname:
+                #     parent[varname] = var - prev_run_len
 
 
 # TODO: remove this hack (e.g. provide smth like FitGraph with fit/unfit interface)
