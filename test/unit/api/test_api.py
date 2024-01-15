@@ -1,103 +1,68 @@
 import datetime
-import numpy as np
-import pickle
-from rdkit.Chem.rdchem import BondType
+import logging
+from functools import partial
 
-from examples.molecule_search.experiment import get_methane, get_all_mol_metrics
-from examples.molecule_search.mol_adapter import MolAdapter
-from examples.molecule_search.mol_advisor import MolChangeAdvisor
-from examples.molecule_search.mol_graph_parameters import MolGraphRequirements
-from examples.molecule_search.mol_mutations import CHEMICAL_MUTATIONS
+import pickle
+
+from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.api.main import GOLEM
-from golem.core.dag.verification_rules import has_no_isolated_components, has_no_self_cycled_nodes, \
-    has_no_isolated_nodes
-from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
-from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
+from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
+from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
-from golem.core.optimisers.genetic.operators.elitism import ElitismTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.metrics.edit_distance import tree_edit_dist
 
 
 def test_specifying_parameters_through_api():
     """ Tests that parameters for optimizer are specified correctly. """
 
-    metrics = ['qed_score']
+    timeout = 1
+    size = 16
+    node_types = ('a', 'b')
+    target_graph = generate_labeled_graph('tree', size, node_labels=node_types)
 
-    atom_types = ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br']
-    all_metrics = get_all_mol_metrics()
-    objective = Objective(
-        quality_metrics={metric_name: all_metrics[metric_name] for metric_name in metrics},
-        is_multi_objective=len(metrics) > 1
-    )
-    max_heavy_atoms = 50
-    pop_size = 10
-    num_of_generations = 5
-    bond_types = (BondType.SINGLE, BondType.DOUBLE, BondType.TRIPLE)
-    adaptive_kind = MutationAgentTypeEnum.bandit
-    timeout = datetime.timedelta(minutes=4)
+    # Generate initial population with small tree graphs
+    initial_graphs = [generate_labeled_graph('tree', 5, node_types) for _ in range(10)]
+    # Setup objective: edit distance to target graph
+    objective = Objective(partial(tree_edit_dist, target_graph))
 
-    initial_graphs = [get_methane()]
-    initial_graphs = MolAdapter().adapt(initial_graphs)
+    golem = GOLEM(timeout=timeout,
+                  logging_level=logging.INFO,
+                  early_stopping_iterations=100,
+                  initial_graphs=initial_graphs,
+                  objective=objective,
+                  genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
+                  max_pop_size=50,
+                  mutation_types=[MutationTypesEnum.single_add,
+                                  MutationTypesEnum.single_drop,
+                                  MutationTypesEnum.single_change],
+                  crossover_types=[CrossoverTypesEnum.subtree],
+                  available_node_types=node_types  # Node types that can appear in graphs
+                  )
 
-    golem = GOLEM(
+    # setup with externally specifying params
+    requirements = GraphRequirements(
+        early_stopping_iterations=100,
+        timeout=datetime.timedelta(minutes=timeout),
         n_jobs=1,
-        timeout=4,
-        objective=objective,
-        optimizer=EvoGraphOptimizer,
-        initial_graphs=initial_graphs,
-        pop_size=pop_size,
-        max_pop_size=pop_size,
-        multi_objective=True,
-        genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
-        elitism_type=ElitismTypesEnum.replace_worst,
-        mutation_types=CHEMICAL_MUTATIONS,
-        crossover_types=[CrossoverTypesEnum.none],
-        adaptive_mutation_type=adaptive_kind,
-        adapter=MolAdapter(),
-        rules_for_constraint=[has_no_self_cycled_nodes, has_no_isolated_components, has_no_isolated_nodes],
-        advisor=MolChangeAdvisor(),
-        max_heavy_atoms=max_heavy_atoms,
-        available_atom_types=atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'],
-        bond_types=bond_types,
-        early_stopping_timeout=np.inf,
-        early_stopping_iterations=np.inf,
-        keep_n_best=4,
-        num_of_generations=5,
-        keep_history=True,
-        history_dir=None,
-    )
-
-    # if specify each param class without API
-    requirements = MolGraphRequirements(
-        max_heavy_atoms=max_heavy_atoms,
-        available_atom_types=atom_types or ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br'],
-        bond_types=bond_types,
-        early_stopping_timeout=np.inf,
-        early_stopping_iterations=np.inf,
-        keep_n_best=4,
-        timeout=timeout,
-        num_of_generations=num_of_generations,
-        keep_history=True,
-        n_jobs=1,
-        history_dir=None,
     )
     gp_params = GPAlgorithmParameters(
-        pop_size=pop_size,
-        max_pop_size=pop_size,
-        multi_objective=True,
-        genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
-        elitism_type=ElitismTypesEnum.replace_worst,
-        mutation_types=CHEMICAL_MUTATIONS,
-        crossover_types=[CrossoverTypesEnum.none],
-        adaptive_mutation_type=adaptive_kind,
+        genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
+        max_pop_size=50,
+        mutation_types=[MutationTypesEnum.single_add,
+                        MutationTypesEnum.single_drop,
+                        MutationTypesEnum.single_change],
+        crossover_types=[CrossoverTypesEnum.subtree]
     )
     graph_gen_params = GraphGenerationParams(
-        adapter=MolAdapter(),
-        rules_for_constraint=[has_no_self_cycled_nodes, has_no_isolated_components, has_no_isolated_nodes],
-        advisor=MolChangeAdvisor(),
+        adapter=BaseNetworkxAdapter(),  # Example works with NetworkX graphs
+        rules_for_constraint=DEFAULT_DAG_RULES,  # We don't want cycles in the graph
+        available_node_types=node_types  # Node types that can appear in graphs
     )
 
     assert golem.gp_algorithm_parameters == gp_params
