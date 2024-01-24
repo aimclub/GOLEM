@@ -7,7 +7,7 @@
 
     |sai| |itmo|
 
-    |python| |pypi| |build| |docs| |license| |tg| |eng| |mirror|
+    |python| |pypi| |build| |integration| |coverage| |docs| |license| |tg| |eng| |mirror|
 
 
 Оптимизация и обучение графовых моделей эволюционными методами
@@ -57,7 +57,7 @@ GOLEM потенциально применим к любой структуре
 Примеры применения GOLEM:
 
 - Автоматическое машинное обучение (AutoML) для поиска оптимальных пайплайнов машинного обучения в `фреймворке FEDOT <https://github.com/aimclub/FEDOT>`_
-- Поиск структуры при помощи байесовской сети в `фреймворке BAMT <https://github.com/ITMO-NSS-team/BAMT>`_
+- Поиск структуры при помощи байесовской сети в `фреймворке BAMT <https://github.com/aimclub/BAMT>`_
 - Поиск дифференциальных уравнений для физических моделей в рамках `фреймворка EPDE <https://github.com/ITMO-NSS-team/EPDE>`_
 - Геометрический дизайн физических объектов в рамках `фреймворка GEFEST <https://github.com/aimclub/GEFEST>`_
 - `Поиск архитектуры нейронных сетей <https://github.com/ITMO-NSS-team/nas-fedot>`_
@@ -82,7 +82,7 @@ GOLEM можно установить с помощью ``pip``:
 
 Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
 
-.. code-block::
+.. code-block:: python
 
     def run_graph_search(size=16, timeout=8):
         # Генерируем целевой граф и целевую функцию в виде edit distance
@@ -192,6 +192,10 @@ GOLEM можно установить с помощью ``pip``:
    :alt: Build Status
    :target: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml
 
+.. |integration| image:: https://github.com/aimclub/GOLEM/actions/workflows/integration-build.yml/badge.svg?branch=main
+   :alt: Integration Build Status
+   :target: https://github.com/aimclub/GOLEM/actions/workflows/integration-build.yml
+
 .. |coverage| image:: https://codecov.io/gh/aimclub/GOLEM/branch/main/graph/badge.svg
    :alt: Coverage Status
    :target: https://codecov.io/gh/aimclub/GOLEM
@@ -222,14 +226,14 @@ GOLEM можно установить с помощью ``pip``:
 .. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
             :target: /README_en.rst
 
-.. |ITMO| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
+.. |ITMO| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/ITMO_badge_rus.svg
    :alt: Acknowledgement to ITMO
    :target: https://itmo.ru
 
-.. |SAI| image:: https://github.com/ITMO-NSS-team/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
-.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+.. |mirror| image:: https://img.shields.io/badge/mirror-GitLab-orange
    :alt: GitLab mirror for this repository
    :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

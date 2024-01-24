@@ -1,20 +1,19 @@
 from copy import deepcopy
-from random import choice, random, sample
-from math import ceil
 from itertools import chain
+from math import ceil
+from random import choice, random, sample
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
-from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import nodes_from_layer, node_depth
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.graph import OptGraph
+from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -161,13 +160,13 @@ def exchange_edges_crossover(graph_first: OptGraph, graph_second: OptGraph, max_
             if parent_new:
                 parent_new = parent_new[0]
             else:
-                parent_new = GraphNode(str(parent))
+                parent_new = OptNode(str(parent))
                 graph.add_node(parent_new)
             child_new = graph.get_nodes_by_name(str(child))
             if child_new:
                 child_new = child_new[0]
             else:
-                child_new = GraphNode(str(child))
+                child_new = OptNode(str(child))
                 graph.add_node(child_new)
             new_edges.append((parent_new, child_new))
         return new_edges
@@ -212,7 +211,7 @@ def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph
             if new_node:
                 new_node = new_node[0]
             else:
-                new_node = GraphNode(str(node))
+                new_node = OptNode(str(node))
                 graph.add_node(new_node)
             new_nodes.append(new_node)
         return new_nodes
@@ -254,7 +253,7 @@ def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGrap
             if new_node:
                 new_node = new_node[0]
             else:
-                new_node = GraphNode(str(node))
+                new_node = OptNode(str(node))
                 graph.add_node(new_node)
             new_nodes.append(new_node)
         return new_nodes

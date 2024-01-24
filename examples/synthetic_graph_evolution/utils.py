@@ -1,3 +1,4 @@
+import os.path
 from itertools import chain
 from typing import Tuple, Optional, Sequence
 
@@ -9,7 +10,7 @@ from matplotlib import cm
 
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 from golem.visualisation.graph_viz import GraphVisualizer
 
 
@@ -71,9 +72,10 @@ def plot_fitness_comparison(histories: Sequence[OptHistory],
 
 def plot_nx_graph(g: nx.DiGraph, ax: plt.Axes = None):
     adapter = BaseNetworkxAdapter()
-    GraphVisualizer.draw_nx_dag(adapter.adapt(g), ax,
-                                node_size_scale=0.2, font_size_scale=0.25,
-                                edge_curvature_scale=0.5)
+    GraphVisualizer(adapter.adapt(g)).draw_nx_dag(ax,
+                                                  node_size_scale=0.2,
+                                                  font_size_scale=0.25,
+                                                  edge_curvature_scale=0.5)
 
 
 def draw_graphs_subplots(*graphs: nx.Graph,
@@ -82,7 +84,8 @@ def draw_graphs_subplots(*graphs: nx.Graph,
                          with_labels: bool = False,
                          draw_fn=nx.draw,
                          size: int = 10,
-                         show: bool = True):
+                         show: bool = True,
+                         path_to_save: Optional[str] = None):
     """Draw 1 or several NetworkX graphs
     with coloring of roots, sources and node degrees.
 
@@ -94,10 +97,11 @@ def draw_graphs_subplots(*graphs: nx.Graph,
         draw_fn: nx.draw_* primitive for drawing graph subplots
         size: figure size, passed to plt.subplots(figsize=...)
         show: if plt.show() is necessary
+        path_to_save: path to dir where to save results
     """
 
     graphs = ensure_wrapped_in_sequence(graphs)
-    titles = [f'Graph #{i+1}' for i in range(len(graphs))] if not titles else titles
+    titles = [f'Graph #{i + 1}' for i in range(len(graphs))] if not titles else titles
     # Setup subplots
     ncols = int(np.ceil(np.sqrt(len(graphs))))
     nrows = len(graphs) // ncols
@@ -114,6 +118,8 @@ def draw_graphs_subplots(*graphs: nx.Graph,
     fig.legend(handles=legend_handles)
     if show:
         plt.show()
+    if path_to_save:
+        plt.savefig(os.path.join(path_to_save, 'graphs_subplots.png'))
 
 
 def _get_node_colors_and_labels(graph: nx.Graph,

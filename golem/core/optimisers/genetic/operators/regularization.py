@@ -7,7 +7,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -45,8 +45,8 @@ class Regularization(Operator):
             subtree_inds = [Individual(OptGraph(deepcopy(ordered_subnodes_hierarchy(node))), parent_operator,
                                        metadata=self.requirements.static_individual_metadata)
                             for node in ind.graph.nodes
-                            if Regularization._is_fitted_subtree(self.graph_generation_params.adapter.restore(node))
-                            and node.descriptive_id not in prev_nodes_ids]
+                            if Regularization._is_fitted_subtree(self.graph_generation_params.adapter.restore(node)) and
+                            node.descriptive_id not in prev_nodes_ids]
 
             additional_inds.extend(subtree_inds)
             prev_nodes_ids.update(subtree.graph.root_node.descriptive_id for subtree in subtree_inds)
@@ -55,7 +55,7 @@ class Regularization(Operator):
         evaluator(additional_inds)
         additional_inds.extend(population)
         if len(additional_inds) > size:
-            additional_inds = sorted(additional_inds, key=lambda ind: ind.fitness)[:size]
+            additional_inds = sorted(additional_inds, key=lambda ind: ind.fitness, reverse=True)[:size]
 
         return additional_inds
 

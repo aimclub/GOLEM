@@ -9,20 +9,21 @@ from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters, Mutat
 from golem.core.optimisers.genetic.operators.base_mutations import (
     no_mutation,
     simple_mutation,
-    growth_mutation,
     reduce_mutation,
-    single_add_mutation,
     single_edge_mutation,
     single_drop_mutation,
-    single_change_mutation, add_separate_parent_node, add_as_child, add_intermediate_node, MutationTypesEnum
+    single_change_mutation,
+    add_separate_parent_node,
+    add_as_child,
+    add_intermediate_node,
+    MutationTypesEnum
 )
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from test.unit.utils import simple_linear_graph, tree_graph, graph_with_single_node, graph_first, \
-    graph_fifth
-
+    graph_fifth, simple_cycled_graph
 
 available_node_types = ['a', 'b', 'c', 'd', 'e', 'f']
 
@@ -52,136 +53,96 @@ def test_mutation_none():
     assert new_graph == graph
 
 
-def test_simple_mutation():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_simple_mutation(graph):
     """
     Test correctness of simple mutation
     """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
     new_graph = simple_mutation(new_graph, **get_mutation_params())
     for i in range(len(graph.nodes)):
         assert graph.nodes[i] != new_graph.nodes[i]
 
 
-def test_drop_node():
-    graph = simple_linear_graph()
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_drop_node(graph):
     new_graph = deepcopy(graph)
     params = get_mutation_params()
     for _ in range(5):
         new_graph = single_drop_mutation(new_graph, **params)
-    assert len(new_graph) < len(graph)
+    assert new_graph.length < graph.length
 
 
-def test_add_as_parent_node_linear():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_add_as_parent_node(graph):
     """
-    Test correctness of adding as a parent in simple case
+    Test correctness of adding as a parent
     """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
-    add_separate_parent_node(new_graph, node_to_mutate, node_factory)
+    prev_nodes = new_graph.nodes[:]
+    add_separate_parent_node(new_graph, node_factory)
+    new_nodes = [node for node in new_graph.nodes if node not in prev_nodes]
 
-    assert len(node_to_mutate.nodes_from) > len(graph.nodes[1].nodes_from)
+    assert len(new_nodes) == 1
+    assert not new_nodes[0].nodes_from
+    assert new_graph.node_children(new_nodes[0])
+    assert new_graph.length > graph.length
 
 
-def test_add_as_parent_node_tree():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_add_as_child_node(graph):
     """
-    Test correctness of adding as a parent in complex case
+    Test correctness of adding as a child
     """
-    graph = tree_graph()
     new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
 
-    add_separate_parent_node(new_graph, node_to_mutate, node_factory)
+    prev_nodes = new_graph.nodes[:]
+    add_as_child(new_graph, node_factory)
+    new_nodes = [node for node in new_graph.nodes if node not in prev_nodes]
 
-    assert len(node_to_mutate.nodes_from) > len(graph.nodes[1].nodes_from)
+    assert len(new_nodes) == 1
+    assert new_nodes[0].nodes_from
+    assert new_graph.length > graph.length
 
 
-def test_add_as_child_node_linear():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_add_as_intermediate_node(graph):
     """
-    Test correctness of adding as a child in simple case
+    Test correctness of adding as an intermediate node
     """
-    graph = simple_linear_graph()
     new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
     params = get_mutation_params()
     node_factory = params['graph_gen_params'].node_factory
+    prev_nodes = new_graph.nodes[:]
+    add_intermediate_node(new_graph, node_factory)
+    new_nodes = [node for node in new_graph.nodes if node not in prev_nodes]
 
-    add_as_child(new_graph, node_to_mutate, node_factory)
-
-    assert len(new_graph) > len(graph)
-    assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
-
-
-def test_add_as_child_node_tree():
-    """
-    Test correctness of adding as a child in complex case
-    """
-    graph = tree_graph()
-    new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[2]
-    params = get_mutation_params()
-    node_factory = params['graph_gen_params'].node_factory
-
-    add_as_child(new_graph, node_to_mutate, node_factory)
-
-    assert len(new_graph) > len(graph)
-    assert new_graph.node_children(node_to_mutate) != graph.node_children(node_to_mutate)
+    assert len(new_nodes) == 1
+    assert new_nodes[0].nodes_from
+    assert new_graph.node_children(new_nodes[0])
+    assert new_graph.length > graph.length
 
 
-def test_add_as_intermediate_node_linear():
-    """
-    Test correctness of adding as an intermediate node in simple case
-    """
-    graph = simple_linear_graph()
-    new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
-    params = get_mutation_params()
-    node_factory = params['graph_gen_params'].node_factory
-
-    add_intermediate_node(new_graph, node_to_mutate, node_factory)
-
-    assert len(new_graph) > len(graph)
-    assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
-
-
-def test_add_as_intermediate_node_tree():
-    """
-    Test correctness of adding as intermediate node in complex case
-    """
-    graph = tree_graph()
-    new_graph = deepcopy(graph)
-    node_to_mutate = new_graph.nodes[1]
-    params = get_mutation_params()
-    node_factory = params['graph_gen_params'].node_factory
-
-    add_intermediate_node(new_graph, node_to_mutate, node_factory)
-
-    assert len(new_graph) > len(graph)
-    assert node_to_mutate.nodes_from[0] != graph.nodes[1].nodes_from[0]
-
-
-def test_edge_mutation_for_graph():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_edge_mutation_for_graph(graph):
     """
     Tests edge mutation can add edge between nodes
     """
+    new_graph = deepcopy(graph)
+    new_graph = single_edge_mutation(new_graph, **get_mutation_params())
+    assert len(new_graph.get_edges()) > len(graph.get_edges())
 
-    graph_without_edge = simple_linear_graph()
-    graph_with_edge = single_edge_mutation(graph_without_edge, **get_mutation_params())
-    assert graph_with_edge.nodes[0].nodes_from == graph_with_edge.nodes[1:]
 
-
-def test_replace_mutation_for_linear_graph():
+@pytest.mark.parametrize('graph', [simple_linear_graph(), tree_graph(), simple_cycled_graph()])
+def test_replace_mutation(graph):
     """
     Tests single_change mutation can change node to another
     """
-    graph = simple_linear_graph()
-
     new_graph = single_change_mutation(graph, **get_mutation_params())
     operations = [node.content['name'] for node in new_graph.nodes]
 
@@ -213,8 +174,26 @@ def test_mutation_with_zero_prob(mutation_type):
     new_ind = mutation(ind)
 
     assert new_ind.graph == ind.graph
+    assert new_ind.uid == ind.uid
 
     ind = Individual(adapter.adapt(graph_fifth()))
     new_ind = mutation(ind)
 
     assert new_ind.graph == ind.graph
+    assert new_ind.uid == ind.uid
+
+
+def test_mutation_with_max_prob():
+    """ Checks that individual is not included in next population if mutation was not applied
+    due to inability to do this, not the probability  """
+    adapter = DirectAdapter()
+    params = get_mutation_params([MutationTypesEnum.reduce], mutation_prob=1)
+    mutation = Mutation(**params)
+
+    ind = Individual(adapter.adapt(graph_with_single_node()))
+    new_ind = mutation(ind)
+    assert new_ind == []
+
+    population = [ind, ind]
+    new_population = mutation(population)
+    assert new_population == []

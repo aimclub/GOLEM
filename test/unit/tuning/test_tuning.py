@@ -1,16 +1,17 @@
 from copy import deepcopy
 
-import numpy as np
 import pytest
 from hyperopt import hp
 
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
+from golem.core.tuning.iopt_tuner import IOptTuner
+from golem.core.tuning.optuna_tuner import OptunaTuner
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultaneous import SimultaneousTuner
-from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
-    opt_graph_with_params, MockNode, MockDomainStructure
-from test.unit.utils import CustomMetric
+from test.unit.mocks.common_mocks import (MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate,
+                                          mock_graph_with_params, opt_graph_with_params)
+from test.unit.utils import ParamsProductMetric, ParamsSumMetric
 
 
 def not_tunable_mock_graph():
@@ -25,60 +26,127 @@ def not_tunable_mock_graph():
 def search_space():
     params_per_operation = {
         'a': {
-            'a1': (hp.uniformint, [2, 7]),
-            'a2': (hp.loguniform, [np.log(1e-3), np.log(1)])
-        },
+            'a1': {
+                'hyperopt-dist': hp.uniformint,
+                'sampling-scope': [2, 7],
+                'type': 'discrete'
+            },
+            'a2': {
+                'hyperopt-dist': hp.loguniform,
+                'sampling-scope': [1e-3, 1],
+                'type': 'continuous'
+            },
+            'a3': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [['A', 'B', 'C']],
+                'type': 'categorical'
+            }},
         'b': {
-            'b1': (hp.choice, [["first", "second", "third"]]),
-            'b2': (hp.uniform, [0.05, 1.0]),
+            'b1': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [["first", "second", "third"]],
+                'type': 'categorical'
+            },
+            'b2': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            },
+            'b3': {
+                'hyperopt-dist': hp.randint,
+                'sampling-scope': [1, 1000],
+                'type': 'discrete'
+            }
         },
         'e': {
-            'e1': (hp.uniform, [0.05, 1.0]),
-            'e2': (hp.uniform, [0.05, 1.0])
+            'e1': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            },
+            'e2': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [0.05, 1.0],
+                'type': 'continuous'
+            }
         },
         'k': {
-            'k': (hp.uniform, [1e-2, 10.0])
+            'k': {
+                'hyperopt-dist': hp.uniform,
+                'sampling-scope': [1e-2, 10.0],
+                'type': 'continuous'
+            }
         }}
     return SearchSpace(params_per_operation)
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
-                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))),
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))),
                           (opt_graph_with_params(), None,
-                           ObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
+                           ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value})))])
 def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval):
-    init_metric = obj_eval.evaluate(graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
     tuned_graph = tuner.tune(deepcopy(graph))
-    final_metric = obj_eval.evaluate(tuned_graph)
-    assert final_metric is not None
-    assert init_metric < final_metric
+    assert tuned_graph is not None
+    assert tuner.obtained_metric is not None
+    assert tuner.init_metric > tuner.obtained_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [SimultaneousTuner, SequentialTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(not_tunable_mock_graph(), MockAdapter(),
-                           MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value})))])
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value})))])
 def test_tuner_with_no_tunable_params(search_space, tuner_cls, graph, adapter, obj_eval):
-    init_metric = obj_eval.evaluate(graph)
     tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
     tuned_graph = tuner.tune(deepcopy(graph))
-    final_metric = obj_eval.evaluate(tuned_graph)
-    assert final_metric is not None
-    assert init_metric == final_metric
+    assert tuned_graph is not None
+    assert tuner.obtained_metric is not None
+    assert tuner.init_metric == tuner.obtained_metric
 
 
 @pytest.mark.parametrize('graph', [mock_graph_with_params(), opt_graph_with_params(), not_tunable_mock_graph()])
 def test_node_tuning(search_space, graph):
-    obj_eval = MockObjectiveEvaluate(Objective({'random_metric': CustomMetric.get_value}))
+    obj_eval = MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
     adapter = MockAdapter()
-    init_metric = obj_eval.evaluate(graph)
     for node_idx in range(graph.length):
         tuner = SequentialTuner(obj_eval, search_space, adapter, iterations=10)
         tuned_graph = tuner.tune_node(graph, node_idx)
-        final_metric = obj_eval.evaluate(tuned_graph)
-        assert final_metric is not None
-        assert init_metric <= final_metric
+        assert tuned_graph is not None
+        assert tuner.obtained_metric is not None
+        assert tuner.init_metric >= tuner.obtained_metric
 
+
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, IOptTuner])
+@pytest.mark.parametrize('init_graph, adapter, obj_eval',
+                         [(mock_graph_with_params(), MockAdapter(),
+                           MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
+                                                            'prod_metric': ParamsProductMetric.get_value},
+                                                           is_multi_objective=True))),
+                          (opt_graph_with_params(), None,
+                           ObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
+                                                        'prod_metric': ParamsProductMetric.get_value},
+                                                       is_multi_objective=True)))])
+def test_multi_objective_tuning(search_space, tuner_cls, init_graph, adapter, obj_eval):
+    init_metric = obj_eval.evaluate(init_graph)
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, early_stopping_rounds=3)
+    tuned_graphs = tuner.tune(deepcopy(init_graph), show_progress=False)
+    for graph in tuned_graphs:
+        assert type(graph) == type(init_graph)
+        final_metric = obj_eval.evaluate(graph)
+        assert final_metric is not None
+        assert not init_metric.dominates(final_metric)
+
+
+@pytest.mark.parametrize('tuner_cls', [SequentialTuner, SimultaneousTuner])
+def test_hyperopt_returns_native_types(search_space, tuner_cls):
+    obj_eval = MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
+    adapter = MockAdapter()
+    graph = opt_graph_with_params()
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
+    tuned_graph = tuner.tune(deepcopy(graph))
+    for node in tuned_graph.nodes:
+        for param, val in node.parameters.items():
+            assert val.__class__.__module__ != 'numpy', (f'The parameter "{param}" should not be a numpy type. '
+                                                         f'Got "{type(val)}".')

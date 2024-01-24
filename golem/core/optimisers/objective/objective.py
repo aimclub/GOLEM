@@ -19,6 +19,9 @@ class ObjectiveInfo:
     is_multi_objective: bool = False
     metric_names: Sequence[str] = ()
 
+    def __str__(self):
+        return f'{self.__class__.__name__}(multi={self.is_multi_objective}, metrics={self.metric_names})'
+
     def format_fitness(self, fitness: Union[Fitness, Sequence[float]]) -> str:
         """Returns formatted fitness string.
         Example for 3 metrics: `<roc_auc=0.542 f1=0.72 complexity=0.8>`"""

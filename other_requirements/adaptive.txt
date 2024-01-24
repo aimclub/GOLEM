@@ -1,0 +1,5 @@
+# heavy requirements needed for bandits and adaptive learning
+torch~=2.0.0
+# karateclub has some outdated dependencies that sometimes
+# can cause conflicts without a good reason
+karateclub>=1.3.3

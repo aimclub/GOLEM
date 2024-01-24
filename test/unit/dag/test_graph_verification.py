@@ -73,4 +73,3 @@ def test_graph_with_isolated_components_raise_exception():
     with pytest.raises(Exception) as exc:
         assert has_no_isolated_components(graph)
     assert str(exc.value) == f'{ERROR_PREFIX} Graph has isolated components'
-

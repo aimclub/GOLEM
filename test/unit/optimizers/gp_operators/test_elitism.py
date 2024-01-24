@@ -25,7 +25,8 @@ def test_keep_n_best_elitism(set_up):
     elitism = Elitism(GPAlgorithmParameters(elitism_type=ElitismTypesEnum.keep_n_best))
     new_population = elitism(best_individuals, population)
     for best_ind in best_individuals:
-        assert best_ind in new_population
+        # checks that new population contains the best individuals and `keep_n_best_elitism` does not duplicate it
+        assert new_population.count(best_ind) == 1
     assert len(population) == len(new_population)
 
 

@@ -1,0 +1,47 @@
+name: Integration
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  push:
+    branches: [ stable, release ]
+  pull_request:
+    branches: [ stable, release ]
+  workflow_dispatch:
+
+jobs:
+  integration_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      matrix:
+        python-version: [ 3.8, '3.10' ]
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install .[profilers]
+          pip install .[molecules]
+          pip install .[adaptive]
+          pip install pytest-cov
+      - name: Test with pytest
+        run: |
+          pytest --cov=golem -s test/integration
+      - name: Notify telegram bot
+        uses: appleboy/telegram-action@master
+        if: ${{ failure() && github.event_name == 'schedule' }}
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "${{ github.event.repository.name }}: scheduled integration tests 
+          [were failed](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          format: markdown
+          disable_web_page_preview: true

@@ -1,18 +1,19 @@
 from abc import abstractmethod
+from random import choice
 from typing import Any, Optional, Sequence, Dict
 
-from tqdm import tqdm
-
+from golem.core.constants import MIN_POP_SIZE
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.objective.objective import Objective
+from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.core.utilities.grouped_condition import GroupedCondition
+from golem.utilities.grouped_condition import GroupedCondition
 
 
 class PopulationalOptimizer(GraphOptimizer):
@@ -56,7 +57,7 @@ class PopulationalOptimizer(GraphOptimizer):
         max_stagnation_time = requirements.early_stopping_timeout or self.timer.timeout
         self.stop_optimization = \
             GroupedCondition(results_as_message=True).add_condition(
-                lambda: self.timer.is_time_limit_reached(self.current_generation_num),
+                lambda: self.timer.is_time_limit_reached(self.current_generation_num - 1),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
                 lambda: (requirements.num_of_generations is not None and
@@ -70,6 +71,8 @@ class PopulationalOptimizer(GraphOptimizer):
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
                 'Optimisation finished: Early stopping timeout criteria was satisfied'
             )
+        # in how many generations structural diversity check should be performed
+        self.gen_structural_diversity_check = self.graph_optimizer_params.structural_diversity_frequency_check
 
     @property
     def current_generation_num(self) -> int:
@@ -84,18 +87,24 @@ class PopulationalOptimizer(GraphOptimizer):
         # eval_dispatcher defines how to evaluate objective on the whole population
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
 
-        with self.timer, self._progressbar:
+        with self.timer, self._progressbar as pbar:
 
             self._initial_population(evaluator)
 
             while not self.stop_optimization():
                 try:
                     new_population = self._evolve_population(evaluator)
+                    if self.gen_structural_diversity_check != -1 \
+                            and self.generations.generation_num % self.gen_structural_diversity_check == 0 \
+                            and self.generations.generation_num != 0:
+                        new_population = self.get_structure_unique_population(new_population, evaluator)
+                    pbar.update()
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
-                    return [ind.graph for ind in self.best_individuals]
+                    break
                 # Adding of new population to history
                 self._update_population(new_population)
+        pbar.close()
         self._update_population(self.best_individuals, 'final_choices')
         return [ind.graph for ind in self.best_individuals]
 
@@ -113,10 +122,18 @@ class PopulationalOptimizer(GraphOptimizer):
         """ Method realizing full evolution cycle """
         raise NotImplementedError()
 
+    def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
+        """ Extends population to specified `target_pop_size`. """
+        n = target_pop_size - len(pop)
+        extended_population = list(pop)
+        extended_population.extend([Individual(graph=choice(pop).graph) for _ in range(n)])
+        return extended_population
+
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
                            metadata: Optional[Dict[str, Any]] = None):
         self.generations.append(next_population)
-        self._log_to_history(next_population, label, metadata)
+        if self.requirements.keep_history:
+            self._log_to_history(next_population, label, metadata)
         self._iteration_callback(next_population, self)
         self.population = next_population
 
@@ -131,32 +148,24 @@ class PopulationalOptimizer(GraphOptimizer):
         self.history.add_to_history(population, label, metadata)
         self.history.add_to_archive_history(self.generations.best_individuals)
         if self.requirements.history_dir:
-            self.history.save_current_results()
+            self.history.save_current_results(self.requirements.history_dir)
 
-    @property
-    def _progressbar(self):
-        if self.requirements.show_progress:
-            bar = tqdm(total=self.requirements.num_of_generations,
-                       desc='Generations', unit='gen', initial=1)
-        else:
-            # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
-            # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
-            bar = EmptyProgressBar()
-        return bar
+    def get_structure_unique_population(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:
+        """ Increases structurally uniqueness of population to prevent stagnation in optimization process.
+        Returned population may be not entirely unique, if the size of unique population is lower than MIN_POP_SIZE. """
+        unique_population_with_ids = {ind.graph.descriptive_id: ind for ind in population}
+        unique_population = list(unique_population_with_ids.values())
+
+        # if size of unique population is too small, then extend it to MIN_POP_SIZE by repeating individuals
+        if len(unique_population) < MIN_POP_SIZE:
+            unique_population = self._extend_population(pop=unique_population, target_pop_size=MIN_POP_SIZE)
+        return evaluator(unique_population)
 
 
 # TODO: remove this hack (e.g. provide smth like FitGraph with fit/unfit interface)
 def _try_unfit_graph(graph: Any):
     if hasattr(graph, 'unfit'):
         graph.unfit()
-
-
-class EmptyProgressBar:
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return True
 
 
 class EvaluationAttemptsError(Exception):

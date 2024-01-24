@@ -97,6 +97,30 @@ def test_delete_root_node():
     assert graph.depth == 2
 
 
+def test_delete_root_node_multiple():
+    first = GraphNode(content='n1')
+    second = GraphNode(content='n2')
+    third = GraphNode(content='n3', nodes_from=[first])
+    final_first = GraphNode(content='n4', nodes_from=[second, third])
+    final_second = GraphNode(content='n5', nodes_from=[first, third])
+    roots = [final_first, final_second]
+    graph = GraphImpl(roots)
+
+    assert graph.root_node == roots
+    assert graph.length == 5
+
+    graph.delete_node(first)
+
+    assert graph.root_nodes() == roots
+    assert graph.length == 4
+    assert first not in graph.nodes
+
+    graph.delete_node(final_second)
+
+    assert graph.root_nodes() == [final_first]
+    assert graph.length == 3
+
+
 def test_delete_intermediate_node():
     first = GraphNode(content='n1')
     second = GraphNode(content='n2')

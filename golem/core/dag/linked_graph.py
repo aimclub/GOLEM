@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union, Callable, Sequence
 
 from networkx import graph_edit_distance, set_node_attributes
 
+from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph import Graph, ReconnectType
 from golem.core.dag.graph_node import GraphNode
-from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth
-from golem.core.dag.convert import graph_structure_as_nx_graph
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
+from golem.core.dag.graph_utils import ordered_subnodes_hierarchy, node_depth, graph_has_cycle
 from golem.core.paths import copy_doc
+from golem.utilities.data_structures import ensure_wrapped_in_sequence, Copyable, remove_items
 
 NodePostprocessCallable = Callable[[Graph, Sequence[GraphNode]], Any]
 
@@ -69,7 +69,7 @@ class LinkedGraph(Graph, Copyable):
         self.actualise_old_node_children(old_node, new_node)
         new_node.nodes_from.extend(old_node.nodes_from)
         self._nodes.remove(old_node)
-        self._nodes.append(new_node)
+        self.add_node(new_node)
         self.sort_nodes()
         self._postprocess_nodes(self, self._nodes)
 
@@ -101,7 +101,7 @@ class LinkedGraph(Graph, Copyable):
 
     def sort_nodes(self):
         """ Layer by layer sorting """
-        if not isinstance(self.root_node, Sequence):
+        if not isinstance(self.root_node, Sequence) and not graph_has_cycle(self):
             self._nodes = ordered_subnodes_hierarchy(self.root_node)
 
     @copy_doc(Graph.node_children)
@@ -162,12 +162,23 @@ class LinkedGraph(Graph, Copyable):
     @copy_doc(Graph.descriptive_id)
     @property
     def descriptive_id(self) -> str:
-        return ''.join([r.descriptive_id for r in self.root_nodes()])
+        if self.length == 0:
+            return 'EMPTY'
+        elif self.root_nodes():
+            return ''.join([r.descriptive_id for r in self.root_nodes()])
+        else:
+            return sorted(self.nodes, key=lambda x: x.uid)[0].descriptive_id
 
     @copy_doc(Graph.depth)
     @property
     def depth(self) -> int:
-        return 0 if not self._nodes else max(map(node_depth, self.root_nodes()))
+        if not self._nodes:
+            return 0
+        elif not self.root_nodes() or graph_has_cycle(self):
+            return -1
+        else:
+            depths = node_depth(self.root_nodes())
+            return max(ensure_wrapped_in_sequence(depths))
 
     @copy_doc(Graph.get_edges)
     def get_edges(self) -> Sequence[Tuple[GraphNode, GraphNode]]:

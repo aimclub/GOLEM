@@ -3,7 +3,7 @@ from functools import partial
 from io import StringIO
 from itertools import product
 from pathlib import Path
-from typing import Sequence, Type, Callable, Optional
+from typing import Sequence, Type, Callable, Optional, List
 
 import networkx as nx
 import numpy as np
@@ -42,12 +42,12 @@ def run_experiments(optimizer_setup: Callable,
                     trial_iterations: Optional[int] = None,
                     visualize: bool = False,
                     ):
-    Path("results").mkdir(exist_ok=True)
     log = StringIO()
     if not node_types:
         node_types = ['X']
     for graph_name, num_nodes in product(graph_names, graph_sizes):
         experiment_id = f'Experiment [graph={graph_name} graph_size={num_nodes}]'
+        file_name = f'{optimizer_cls.__name__[:-9]}_{graph_name}_n{num_nodes}_iter{trial_iterations}'
         trial_results = []
         for i in range(num_trials):
             start_time = datetime.now()
@@ -55,11 +55,12 @@ def run_experiments(optimizer_setup: Callable,
 
             # Generate random target graph and run the optimizer
             target_graph = generate_labeled_graph(graph_name, num_nodes, node_types)
+            target_graph = target_graph.reverse()
             # Run optimizer setup
             optimizer, objective = optimizer_setup(target_graph,
                                                    optimizer_cls=optimizer_cls,
                                                    node_types=node_types,
-                                                   timeout=timedelta(minutes=trial_timeout),
+                                                   timeout=timedelta(minutes=trial_timeout) if trial_timeout else None,
                                                    num_iterations=trial_iterations)
             found_graphs = optimizer.optimise(objective)
             found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs
@@ -74,9 +75,14 @@ def run_experiments(optimizer_setup: Callable,
             print('found graph stats: ', nxgraph_stats(found_nx_graph), file=log)
             if visualize:
                 draw_graphs_subplots(target_graph, found_nx_graph,
-                                     titles=['Target Graph', 'Found Graph'])
+                                     titles=['Target Graph', 'Found Graph'], show=False)
+                diversity_filename = f'./results/diversity_hist_{graph_name}_n{num_nodes}.gif'
+                history.show.diversity_population(save_path=diversity_filename)
+                history.show.diversity_line(show=False)
                 history.show.fitness_line()
-            history.save(f'./results/hist_{graph_name}_n{num_nodes}_trial{i}.json')
+            result_dir = Path('results') / file_name
+            result_dir.mkdir(parents=True, exist_ok=True)
+            history.save(result_dir / f'history_trial_{i}.json')
 
         # Compute mean & std for metrics of trials
         ff = objective.format_fitness
@@ -95,10 +101,12 @@ def run_trial(target_graph: nx.DiGraph,
               optimizer_setup: Callable,
               optimizer_cls: Type[GraphOptimizer] = EvoGraphOptimizer,
               timeout: Optional[timedelta] = None,
-              num_iterations: Optional[int] = None):
+              num_iterations: Optional[int] = None,
+              node_types: Optional[List[str]] = None):
     optimizer, objective = optimizer_setup(target_graph,
                                            optimizer_cls=optimizer_cls,
                                            timeout=timeout,
+                                           node_types=node_types,
                                            num_iterations=num_iterations)
     found_graphs = optimizer.optimise(objective)
     found_graph = found_graphs[0] if isinstance(found_graphs, Sequence) else found_graphs

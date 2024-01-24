@@ -1,13 +1,16 @@
 import logging
 import os
+import traceback
+from copy import copy
 from importlib import reload
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
 from golem.core.log import DEFAULT_LOG_PATH, Log, default_log
-from golem.core.utilities.grouped_condition import GroupedCondition
-from golem.core.utilities.singleton_meta import SingletonMeta
+from golem.utilities.grouped_condition import GroupedCondition
+from golem.utilities.singleton_meta import SingletonMeta
 
 
 @pytest.fixture()
@@ -122,11 +125,52 @@ def test_reset_logging_level():
 
     log.reset_logging_level(20)
     b.message('test_message_4')  # should be shown since logging level is info now
-    c.message('test_message_5')   # should be shown since logging level is info now
+    c.message('test_message_5')  # should be shown since logging level is info now
 
     content = ''
     if Path(DEFAULT_LOG_PATH).exists():
         content = Path(DEFAULT_LOG_PATH).read_text()
 
-    assert (lambda message: message in content, ['test_message_1', 'test_message_4', 'test_message_5'])
-    assert (lambda message: message not in content, ['test_message_2', 'test_message_3'])
+    assert all(map(lambda message: message in content, ['test_message_1', 'test_message_4', 'test_message_5']))
+    assert all(map(lambda message: message not in content, ['test_message_2', 'test_message_3']))
+
+
+def get_log_or_raise_output(exc_message, exc_type, imitate_non_test_launch):
+    if imitate_non_test_launch:
+        environ_mock = copy(os.environ)
+        del environ_mock['PYTEST_CURRENT_TEST']
+        with mock.patch.dict(os.environ, environ_mock, clear=True):
+            default_log().log_or_raise('message', exc_message)
+        output = Path(DEFAULT_LOG_PATH).read_text()
+    else:
+        with pytest.raises(exc_type, match=str(exc_message)) as exc_info:
+            default_log().log_or_raise('message', exc_message)
+        output = ''.join(traceback.format_exception(exc_type, exc_info.value, exc_info.tb))
+    return output
+
+
+@pytest.mark.parametrize('exc_message, exc_type',
+                         [('And therefore could not continue.', Exception),
+                          (ValueError('And therefore could not continue.'), ValueError)])
+@pytest.mark.parametrize('imitate_non_test_launch', [False, True])
+def test_log_or_raise(exc_message, exc_type, imitate_non_test_launch):
+    output = get_log_or_raise_output(exc_message, exc_type, imitate_non_test_launch)
+    assert str(exc_message) in output
+
+
+@pytest.mark.parametrize('cause',
+                         [ArithmeticError('Something went wrong.'), ValueError('Unbelievable!')])
+@pytest.mark.parametrize('exc_message, exc_type',
+                         [('And therefore could not continue.', Exception),
+                          (ValueError('And therefore could not continue.'), ValueError)])
+@pytest.mark.parametrize('imitate_non_test_launch', [False, True])
+def test_log_or_raise_with_cause_exception(cause, exc_message, exc_type, imitate_non_test_launch):
+    try:
+        raise cause
+    except type(cause):
+        cause_formatted = traceback.format_exc()
+        output = get_log_or_raise_output(exc_message, exc_type, imitate_non_test_launch)
+    assert all(map(lambda text: text in output,
+                   [cause_formatted,
+                    'The above exception was the direct cause of the following exception:',
+                    str(exc_message)]))

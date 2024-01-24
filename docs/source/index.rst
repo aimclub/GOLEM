@@ -4,7 +4,7 @@ Welcome to GOLEM's documentation!
 .. container::
 
    | |logo|
-   | There is contained main documentation for the `GOLEM framework <https://github.com/ITMO-NSS-team/GOLEM>`__.
+   | There is contained main documentation for the `GOLEM framework <https://github.com/aimclub/GOLEM>`__.
    |
    | **GOLEM**: Graph Optimization and Learning by Evolutionary Methods
 

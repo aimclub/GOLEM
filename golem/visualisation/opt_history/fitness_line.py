@@ -2,7 +2,7 @@ import functools
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Sequence, Tuple
 
 import matplotlib as mpl
 import numpy as np
@@ -44,7 +44,7 @@ def setup_fitness_plot(axis: plt.Axes, xlabel: str, title: Optional[str] = None,
     axis.grid(axis='y')
 
 
-def plot_fitness_line_per_time(axis: plt.Axes, generations: List[List[Individual]], label: Optional[str] = None,
+def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str] = None,
                                with_generation_limits: bool = True) \
         -> Dict[int, Individual]:
     best_fitness = null_fitness()
@@ -106,28 +106,7 @@ def plot_fitness_line_per_time(axis: plt.Axes, generations: List[List[Individual
 
 def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Optional[str] = None) \
         -> Dict[int, Individual]:
-    best_fitness = null_fitness()
-    best_individuals = {}
-
-    for gen_num, gen in enumerate(generations):
-        for ind in gen:
-            if ind.native_generation != gen_num:
-                continue
-            if ind.fitness > best_fitness:
-                best_individuals[gen_num] = ind
-                best_fitness = ind.fitness
-
-    best_generations, best_fitnesses = np.transpose(
-        [(gen_num, abs(individual.fitness.value))
-         for gen_num, individual in best_individuals.items()])
-
-    best_generations = list(best_generations)
-    best_fitnesses = list(best_fitnesses)
-
-    if best_generations[-1] != len(generations) - 1:
-        best_fitnesses.append(abs(best_fitness.value))
-        best_generations.append(len(generations) - 1)
-
+    best_fitnesses, best_generations, best_individuals = find_best_running_fitness(generations, metric_id=0)
     axis.step(best_generations, best_fitnesses, where='post', label=label)
     axis.set_xticks(range(len(generations)))
     axis.locator_params(nbins=10)
@@ -150,10 +129,10 @@ class FitnessLine(HistoryVisualization):
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         if per_time:
             xlabel = 'Time, s'
-            plot_fitness_line_per_time(ax, self.history.individuals)
+            plot_fitness_line_per_time(ax, self.history.generations)
         else:
             xlabel = 'Generation'
-            plot_fitness_line_per_generations(ax, self.history.individuals)
+            plot_fitness_line_per_generations(ax, self.history.generations)
         setup_fitness_plot(ax, xlabel)
         show_or_save_figure(fig, save_path, dpi)
 
@@ -162,7 +141,7 @@ class FitnessLineInteractive(HistoryVisualization):
 
     @with_alternate_matplotlib_backend
     def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None,
-                  per_time: Optional[bool] = None,  graph_show_kwargs: Optional[Dict[str, Any]] = None):
+                  per_time: Optional[bool] = None, graph_show_kwargs: Optional[Dict[str, Any]] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
         Additionally, shows the structure of the best individuals and the moment of their discovering.
         :param save_path: path to save the visualization. If set, then the image will be saved, and if not,
@@ -191,7 +170,7 @@ class FitnessLineInteractive(HistoryVisualization):
             x_template = 'generation {}'
             plot_func = plot_fitness_line_per_generations
 
-        best_individuals = plot_func(ax_fitness, self.history.individuals)
+        best_individuals = plot_func(ax_fitness, self.history.generations)
         setup_fitness_plot(ax_fitness, x_label)
 
         ax_graph.axis('off')
@@ -247,3 +226,38 @@ class FitnessLineInteractive(HistoryVisualization):
             b_prev.on_clicked(callback.prev)
 
         show_or_save_figure(fig, save_path, dpi)
+
+
+def find_best_running_fitness(generations: Sequence[Sequence[Individual]],
+                              metric_id: int = 0,
+                              ) -> Tuple[List[float], List[int], Dict[int, Individual]]:
+    """For each trial history per each generation find the best fitness *seen so far*.
+    Returns tuple:
+    - list of best seen metric up to that generation,
+    - list of indices where current best individual belongs.
+    - dict mapping of best index to best individuals
+    """
+    best_metric = np.inf  # Assuming metric minimization
+    best_individuals = {}
+
+    # Core logic
+    for gen_num, gen in enumerate(generations):
+        for ind in gen:
+            if ind.native_generation != gen_num:
+                continue
+            target_metric = ind.fitness.values[metric_id]
+            if target_metric <= best_metric:
+                best_individuals[gen_num] = ind
+                best_metric = target_metric
+
+    # Additional unwrapping of the data for simpler plotting
+    best_generations, best_metrics = np.transpose(
+        [(gen_num, abs(individual.fitness.values[metric_id]))
+         for gen_num, individual in best_individuals.items()])
+    best_generations = list(best_generations)
+    best_metrics = list(best_metrics)
+    if best_generations[-1] != len(generations) - 1:
+        best_metrics.append(abs(best_metric))
+        best_generations.append(len(generations) - 1)
+
+    return best_metrics, best_generations, best_individuals

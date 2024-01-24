@@ -1,4 +1,4 @@
-from golem.core.utilities.data_structures import UniqueList, ensure_wrapped_in_sequence
+from golem.utilities.data_structures import UniqueList, ensure_wrapped_in_sequence
 
 
 def test_init():

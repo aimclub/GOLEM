@@ -2,6 +2,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Sequence, Union
 
+from tqdm import tqdm
+
 from golem.core.adapter import BaseOptimizationAdapter, IdentityAdapter
 from golem.core.dag.graph import Graph
 from golem.core.dag.graph_verifier import GraphVerifier, VerifierRuleType
@@ -16,6 +18,9 @@ from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveF
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
+from golem.utilities.random import RandomStateHandler
+
+STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
 
 
 def do_nothing_callback(*args, **kwargs):
@@ -41,6 +46,7 @@ class AlgorithmParameters:
     max_pop_size: Optional[int] = 55
     adaptive_depth: bool = False
     adaptive_depth_max_stagnation: int = 3
+    structural_diversity_frequency_check: int = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 
 
 @dataclass
@@ -107,13 +113,17 @@ class GraphOptimizer:
                  graph_optimizer_params: Optional[AlgorithmParameters] = None):
         self.log = default_log(self)
         self._objective = objective
-        self.initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
+        initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
+        self.initial_graphs = [graph for graph in initial_graphs if graph_generation_params.verifier(graph)] \
+            if initial_graphs else None
         self.requirements = requirements or OptimizationParameters()
         self.graph_generation_params = graph_generation_params or GraphGenerationParams()
         self.graph_optimizer_params = graph_optimizer_params or AlgorithmParameters()
         self._iteration_callback: IterationCallback = do_nothing_callback
         self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
+        # Log random state for reproducibility of runs
+        RandomStateHandler.log_random_state()
 
     @property
     def objective(self) -> Objective:
@@ -145,5 +155,29 @@ class GraphOptimizer:
         that's called on each graph after its evaluation."""
         pass
 
+    @property
+    def _progressbar(self):
+        if self.requirements.show_progress:
+            bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
+        else:
+            # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
+            # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
+            bar = EmptyProgressBar()
+        return bar
+
 
 IterationCallback = Callable[[PopulationT, GraphOptimizer], Any]
+
+
+class EmptyProgressBar:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return True
+
+    def close(self):
+        return
+
+    def update(self):
+        return

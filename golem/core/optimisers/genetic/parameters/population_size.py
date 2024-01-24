@@ -1,18 +1,16 @@
 import math
 from typing import Optional
 
-from .parameter import AdaptiveParameter
-from golem.core.utilities.data_structures import BidirectionalIterator
-from golem.core.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
-from ..gp_params import GPAlgorithmParameters
+from golem.core.constants import MIN_POP_SIZE
 from golem.core.optimisers.archive.generation_keeper import ImprovementWatcher
+from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.genetic.operators.operator import PopulationT
+from golem.core.optimisers.genetic.parameters.parameter import AdaptiveParameter
+from golem.utilities.data_structures import BidirectionalIterator
+from golem.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
 
 PopulationSize = AdaptiveParameter[int]
-
-# min pop size to avoid getting stuck in local maximum during optimization
-MIN_POP_SIZE = 5
 
 
 class ConstRatePopulationSize(PopulationSize):
@@ -50,18 +48,13 @@ class AdaptivePopulationSize(PopulationSize):
         return self._initial
 
     def next(self, population: PopulationT) -> int:
-        fitness_improved = self._improvements.is_quality_improved
-        complexity_decreased = self._improvements.is_complexity_improved
-        progress_in_both_goals = fitness_improved and complexity_decreased
-        no_progress = not fitness_improved and not complexity_decreased
         pop_size = len(population)
-        too_many_fitness_eval_errors = \
-            pop_size/self._iterator.current() < 0.5
+        too_many_fitness_eval_errors = pop_size / self._iterator.current() < 0.5
 
-        if too_many_fitness_eval_errors or no_progress:
+        if too_many_fitness_eval_errors or not self._improvements.is_any_improved:
             if self._iterator.has_next():
                 pop_size = self._iterator.next()
-        elif progress_in_both_goals and pop_size > 0:
+        elif self._improvements.is_quality_improved and self._improvements.is_complexity_improved and pop_size > 0:
             if self._iterator.has_prev():
                 pop_size = self._iterator.prev()
 

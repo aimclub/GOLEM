@@ -13,6 +13,7 @@ graph_generators: Dict[str, DiGraphGenerator] = {
     'line': lambda n: nx.path_graph(n, create_using=nx.DiGraph),
     'tree': lambda n: nx.random_tree(n, create_using=nx.DiGraph),
     'gnp': lambda n: nx.gnp_random_graph(n, p=0.1),
+    'dag': lambda n: generate_dag(n),
     'star': nx.star_graph,
     '2ring': nx.circular_ladder_graph,
     'grid2d': lambda n: nx.grid_2d_graph(int(np.sqrt(n)), int(np.sqrt(n))),
@@ -20,6 +21,13 @@ graph_generators: Dict[str, DiGraphGenerator] = {
 }
 
 graph_kinds: Sequence[str] = tuple(graph_generators.keys())
+
+
+def generate_dag(n):
+    """ Works good for small graphs (up to n=100000) """
+    g = nx.gnp_random_graph(n, p=0.5, directed=True)
+    g = nx.DiGraph([(u, v) for (u, v) in g.edges() if u < v])
+    return g
 
 
 def nx_to_directed(graph: nx.Graph) -> nx.DiGraph:
@@ -90,9 +98,11 @@ def generate_labeled_graph(kind: str,
                            connected: bool = True,
                            directed: bool = True):
     """Generate randomly labeled graph of the specified kind and size,
-    optionally enforce connectedness and direction."""
-    graph = graph_generators[kind](size)
-    return postprocess_nx_graph(graph, node_labels, connected, directed)
+    optionally enforce connectedness and direction. Important! With small specified size
+    some methods can generate smaller graphs due to removal of unconnected components."""
+    nx_graph = graph_generators[kind](size)
+    graph = postprocess_nx_graph(nx_graph, node_labels, connected, directed)
+    return graph
 
 
 def _draw_sample_graphs(kind: str = 'gnp', sizes=tuple(range(5, 50, 5))):

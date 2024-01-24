@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import partial
 from typing import List, Optional, Sequence, Tuple, TypeVar, Dict
 
-from joblib import Parallel, cpu_count, delayed
+from joblib import Parallel, delayed
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph import Graph
@@ -18,15 +18,15 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 from golem.core.optimisers.timer import Timer, get_forever_timer
-from golem.core.utilities.serializable import Serializable
+from golem.utilities.serializable import Serializable
 from golem.utilities.memory import MemoryAnalytics
+from golem.utilities.utilities import determine_n_jobs
 
 # the percentage of successful evaluations,
 # at which evolution is not threatened with stagnation at the moment
 STAGNATION_EVALUATION_PERCENTAGE = 0.5
 
-OptionalEvalResult = Optional[GraphEvalResult]
-EvalResultsList = List[OptionalEvalResult]
+EvalResultsList = List[GraphEvalResult]
 G = TypeVar('G', bound=Serializable)
 
 
@@ -143,21 +143,22 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         """ Shows the amount of successfully evaluated individuals and total number of individuals in population.
          If there are more that 50% of successful evaluations than it's more likely
          there is no problem in optimization process. """
-        if evaluated_pop_size / pop_size > STAGNATION_EVALUATION_PERCENTAGE:
+        if pop_size == 0 or evaluated_pop_size / pop_size <= STAGNATION_EVALUATION_PERCENTAGE:
+            success_rate = evaluated_pop_size / pop_size if pop_size != 0 else 0
+            self.logger.warning(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
+                                f"were evaluated successfully. {success_rate}% "
+                                f"is a fairly small percentage of successful evaluation.")
+        else:
             self.logger.message(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
                                 f"were evaluated successfully.")
-        else:
-            self.logger.warning(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
-                                f"were evaluated successfully. {evaluated_pop_size / pop_size}% "
-                                f"is a fairly small percentage of successful evaluation.")
 
     @abstractmethod
-    def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
+    def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         raise NotImplementedError()
 
     def evaluate_single(self, graph: OptGraph, uid_of_individual: str, with_time_limit: bool = True,
                         cache_key: Optional[str] = None,
-                        logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> OptionalEvalResult:
+                        logs_initializer: Optional[Tuple[int, pathlib.Path]] = None) -> GraphEvalResult:
 
         graph = self.evaluation_cache.get(cache_key, graph)
 
@@ -192,7 +193,7 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
 
         return fitness, domain_graph
 
-    def evaluate_with_cache(self, population: PopulationT) -> Optional[PopulationT]:
+    def evaluate_with_cache(self, population: PopulationT) -> PopulationT:
         reversed_population = list(reversed(population))
         self._remote_compute_cache(reversed_population)
         evaluated_population = self.evaluate_population(reversed_population)
@@ -238,7 +239,7 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         super().dispatch(objective, timer)
         return self.evaluate_with_cache
 
-    def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
+    def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
         # Evaluate individuals without valid fitness in parallel.
         n_jobs = determine_n_jobs(self._n_jobs, self.logger)
@@ -255,7 +256,7 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         if not successful_evals:
             for single_ind in individuals:
                 evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
-                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result]) or None
+                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result])
                 if successful_evals:
                     break
         MemoryAnalytics.log(self.logger,
@@ -270,17 +271,9 @@ class SequentialDispatcher(BaseGraphEvaluationDispatcher):
         Usage: call `dispatch(objective_function)` to get evaluation function.
     """
 
-    def evaluate_population(self, individuals: PopulationT) -> Optional[PopulationT]:
+    def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
         evaluation_results = [self.evaluate_single(ind.graph, ind.uid) for ind in individuals_to_evaluate]
         individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
-        evaluated_population = individuals_evaluated + individuals_to_skip or None
+        evaluated_population = individuals_evaluated + individuals_to_skip
         return evaluated_population
-
-
-def determine_n_jobs(n_jobs=-1, logger=None):
-    if n_jobs > cpu_count() or n_jobs == -1:
-        n_jobs = cpu_count()
-    if logger:
-        logger.info(f"Number of used CPU's: {n_jobs}")
-    return n_jobs

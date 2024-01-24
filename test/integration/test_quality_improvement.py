@@ -45,7 +45,7 @@ def test_multiobjective_improvement(optimizer_cls, run_fun):
 
 
 def check_improvement(history: OptHistory):
-    first_pop = history.individuals[1]
+    first_pop = history.generations[1]
     pareto_front = history.archive_history[-1]
     first_pop_metrics = get_mean_metrics(first_pop)
     pareto_front_metrics = get_mean_metrics(pareto_front)

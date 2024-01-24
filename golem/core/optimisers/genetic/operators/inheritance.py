@@ -1,9 +1,8 @@
-from functools import partial
-from typing import (Callable, TYPE_CHECKING)
+from typing import TYPE_CHECKING
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.genetic.operators.selection import Selection
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -16,32 +15,34 @@ class GeneticSchemeTypesEnum(Enum):
 
 
 class Inheritance(Operator):
-    def __init__(self, parameters: 'GPAlgorithmParameters',
-                 selection: Selection):
+    def __init__(self, parameters: 'GPAlgorithmParameters', selection: Selection):
         super().__init__(parameters=parameters)
         self.selection = selection
 
     def __call__(self, previous_population: PopulationT, new_population: PopulationT) -> PopulationT:
-        return self._inheritance_type_by_genetic_scheme(previous_population, new_population)()
+        gp_scheme = self.parameters.genetic_scheme_type
+        if gp_scheme == GeneticSchemeTypesEnum.generational:
+            # Previous population is completely substituted
+            next_population = self.direct_inheritance(new_population)
+        elif gp_scheme == GeneticSchemeTypesEnum.steady_state:
+            # Previous population is mixed with new one
+            next_population = self.steady_state_inheritance(previous_population, new_population)
+        elif gp_scheme == GeneticSchemeTypesEnum.parameter_free:
+            # Same as steady-state
+            next_population = self.steady_state_inheritance(previous_population, new_population)
+        else:
+            raise ValueError(f'Unknown genetic scheme {gp_scheme}!')
+        return next_population
 
-    def _inheritance_type_by_genetic_scheme(self, previous_population: PopulationT,
-                                            new_population: PopulationT) -> Callable:
-        steady_state_scheme = partial(steady_state_inheritance, previous_population,
-                                      new_population, self.selection)
-        generational_scheme = partial(direct_inheritance, new_population, self.parameters.pop_size)
-        inheritance_type_by_genetic_scheme = {
-            GeneticSchemeTypesEnum.generational: generational_scheme,
-            GeneticSchemeTypesEnum.steady_state: steady_state_scheme,
-            GeneticSchemeTypesEnum.parameter_free: steady_state_scheme
-        }
-        return inheritance_type_by_genetic_scheme[self.parameters.genetic_scheme_type]
+    def steady_state_inheritance(self,
+                                 prev_population: PopulationT,
+                                 new_population: PopulationT
+                                 ) -> PopulationT:
+        # use individuals with non-repetitive uid
+        not_repetitive_inds = [ind for ind in prev_population if ind not in new_population]
+        full_population = new_population + not_repetitive_inds
+        return self.selection(full_population,
+                              pop_size=self.parameters.pop_size)
 
-
-def steady_state_inheritance(prev_population: PopulationT, new_population: PopulationT, selection: Selection) \
-        -> PopulationT:
-    selected_individuals = selection.individuals_selection(individuals=prev_population + new_population)
-    return selected_individuals
-
-
-def direct_inheritance(new_population: PopulationT, pop_size: int) -> PopulationT:
-    return new_population[:pop_size]
+    def direct_inheritance(self, new_population: PopulationT) -> PopulationT:
+        return new_population[:self.parameters.pop_size]

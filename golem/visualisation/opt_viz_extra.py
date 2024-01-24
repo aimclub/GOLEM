@@ -4,7 +4,7 @@ from copy import deepcopy
 from datetime import datetime
 from glob import glob
 from os import remove
-from typing import Any, List, Sequence, Tuple
+from typing import Any, List, Sequence, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -17,41 +17,42 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.paths import default_data_dir
 from golem.visualisation.graph_viz import GraphVisualizer
-from golem.utilities.requirements_notificator import warn_requirement
-
-try:
-    import PIL
-    from PIL import Image
-except ModuleNotFoundError:
-    warn_requirement('Pillow')
-    PIL = None
+from PIL import Image
+from imageio import get_writer, v2
 
 
 class OptHistoryExtraVisualizer:
-    """ Implements legacy history visualizations that are not available via `history.show()` """
+    """ Implements legacy history visualizations that are not available via `history.show()`
+    Args:
+        history: history of optimisation
+        folder: path to folder to save results of visualization
+    """
 
-    def __init__(self):
-        data_dir = default_data_dir()
+    def __init__(self, history: OptHistory, folder: Optional[str] = None):
+        data_dir = folder or default_data_dir()
 
-        self.temp_path = os.path.join(data_dir, 'composing_history')
+        self.save_path = os.path.join(data_dir, 'composing_history')
         if 'composing_history' not in os.listdir(data_dir):
-            os.mkdir(self.temp_path)
+            os.mkdir(self.save_path)
+        self.history = history
         self.log = default_log(self)
         self.graphs_imgs = []
         self.convergence_imgs = []
         self.best_graphs_imgs = []
         self.merged_imgs = []
-        self.graph_visualizer = GraphVisualizer()
+        self.graph_visualizer = GraphVisualizer
 
-    def pareto_gif_create(self, pareto_fronts: List[List[Any]], individuals: List[List[Any]] = None,
-                          objectives_numbers: Tuple[int] = (1, 0),
-                          objectives_names: Tuple[str] = ('Complexity', 'ROC-AUC')):
+    def pareto_gif_create(self,
+                          objectives_numbers: Tuple[int, int] = (0, 1),
+                          objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
         files = []
+        pareto_fronts = self.history.archive_history
+        individuals = self.history.generations
         array_for_analysis = individuals if individuals else pareto_fronts
         all_objectives = extract_objectives(array_for_analysis, objectives_numbers)
         min_x, max_x = min(all_objectives[0]) - 0.01, max(all_objectives[0]) + 0.01
         min_y, max_y = min(all_objectives[1]) - 0.01, max(all_objectives[1]) + 0.01
-        folder = f'{self.temp_path}'
+        folder = f'{self.save_path}'
         for i, front in enumerate(pareto_fronts):
             file_name = f'pareto{i}.png'
             visualise_pareto(front, file_name=file_name, save=True, show=False,
@@ -71,7 +72,7 @@ class OptHistoryExtraVisualizer:
         prev_fit = fitnesses[0]
         fig = plt.figure(figsize=(10, 10))
         for ch_id, graph in enumerate(graphs):
-            self.graph_visualizer.draw_nx_dag(graph)
+            self.graph_visualizer(graph).draw_nx_dag()
             fig.canvas.draw()
             img = figure_to_array(fig)
             self.graphs_imgs.append(img)
@@ -82,7 +83,7 @@ class OptHistoryExtraVisualizer:
                 last_best_graph = graph
             prev_fit = fitnesses[ch_id]
             plt.clf()
-            self.graph_visualizer.draw_nx_dag(last_best_graph)
+            self.graph_visualizer(last_best_graph).draw_nx_dag()
             fig.canvas.draw()
             img = figure_to_array(fig)
             self.best_graphs_imgs.append(img)
@@ -115,12 +116,12 @@ class OptHistoryExtraVisualizer:
             plt.clf()
         plt.close('all')
 
-    def visualise_history(self, history: OptHistory, metric_index: int = 0):
+    def visualise_history(self, metric_index: int = 0):
         try:
             self._clean(with_gif=True)
-            all_historical_fitness = history.all_historical_quality(metric_index)
+            all_historical_fitness = self.history.all_historical_quality(metric_index)
             historical_graphs = [ind.graph
-                                 for ind in list(itertools.chain(*history.individuals))]
+                                 for ind in list(itertools.chain(*self.history.generations))]
             self._visualise_graphs(historical_graphs, all_historical_fitness)
             self._visualise_convergence(all_historical_fitness)
             self._merge_images()
@@ -130,8 +131,6 @@ class OptHistoryExtraVisualizer:
             self.log.error(f'Visualisation failed with {ex}')
 
     def _merge_images(self):
-        from PIL import Image
-
         for i in range(1, len(self.graphs_imgs)):
             im1 = self.graphs_imgs[i]
             im2 = self.best_graphs_imgs[i]
@@ -141,24 +140,24 @@ class OptHistoryExtraVisualizer:
             self.merged_imgs.append(Image.fromarray(np.uint8(merged)))
 
     def _combine_gifs(self):
-        date_time = datetime.now().strftime('%B-%d-%Y,%H-%M-%S,%p')
-        save_path = f'{self.temp_path}\\final_{date_time}.gif'
+        date_time = datetime.now().strftime('%B-%d-%Y_%H-%M-%S_%p')
+        save_path = os.path.join(self.save_path, f'history_visualisation_{date_time}.gif')
         imgs = self.merged_imgs[1:]
         self.merged_imgs[0].save(save_path, save_all=True, append_images=imgs,
                                  optimize=False, duration=0.5, loop=0)
         self.log.info(f"Visualizations were saved to {save_path}")
 
     def _clean(self, with_gif=False):
-        files = glob(f'{self.temp_path}*.png')
+        files = glob(f'{self.save_path}*.png')
         if with_gif:
-            files += glob(f'{self.temp_path}*.gif')
+            files += glob(f'{self.save_path}*.gif')
         for file in files:
             remove(file)
 
     def _create_boxplot(self, individuals: List[Any], generation_num: int = None,
                         objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity'), file_name: str = 'obj_boxplots.png',
                         folder: str = None, y_limits: Tuple[float] = None):
-        folder = f'{self.temp_path}/boxplots' if folder is None else folder
+        folder = f'{self.save_path}/boxplots' if folder is None else folder
         fig, ax = plt.subplots()
         ax.set_title(f'Generation: {generation_num}', fontsize=15)
         objectives = objectives_lists(individuals)
@@ -173,14 +172,13 @@ class OptHistoryExtraVisualizer:
         path = f'{folder}/{file_name}'
         plt.savefig(path, bbox_inches='tight')
 
-    def boxplots_gif_create(self, individuals: List[List[Any]],
-                            objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity'),
-                            folder: str = None):
+    def boxplots_gif_create(self, objectives_names: Tuple[str] = ('ROC-AUC', 'Complexity')):
+        individuals = self.history.generations
         objectives = extract_objectives(individuals)
         objectives = list(itertools.chain(*objectives))
         min_y, max_y = min(objectives), max(objectives)
         files = []
-        folder = f'{self.temp_path}' if folder is None else folder
+        folder = f'{self.save_path}'
         for generation_num, individuals_in_genaration in enumerate(individuals):
             file_name = f'{generation_num}.png'
             self._create_boxplot(individuals_in_genaration, generation_num, objectives_names,
@@ -198,7 +196,7 @@ def visualise_pareto(front: Sequence[Individual],
                      objectives_numbers: Tuple[int, int] = (0, 1),
                      objectives_names: Sequence[str] = ('ROC-AUC', 'Complexity'),
                      file_name: str = 'result_pareto.png', show: bool = False, save: bool = True,
-                     folder: str = f'../../tmp/pareto',
+                     folder: str = '../../tmp/pareto',
                      generation_num: int = None,
                      individuals: Sequence[Individual] = None,
                      minmax_x: List[float] = None,
@@ -254,15 +252,13 @@ def visualise_pareto(front: Sequence[Individual],
 
 
 def create_gif_using_images(gif_path: str, files: List[str]):
-    from imageio import get_writer, imread
-
     with get_writer(gif_path, mode='I', duration=0.5) as writer:
         for filename in files:
-            image = imread(filename)
+            image = v2.imread(filename)
             writer.append_data(image)
 
 
-def extract_objectives(individuals: List[List[Any]], objectives_numbers: Tuple[int] = None,
+def extract_objectives(individuals: List[List[Any]], objectives_numbers: Tuple[int, ...] = None,
                        transform_from_minimization=True):
     if not objectives_numbers:
         objectives_numbers = [i for i in range(len(individuals[0][0].fitness.values))]

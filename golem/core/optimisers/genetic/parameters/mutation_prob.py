@@ -9,6 +9,7 @@ class AdaptiveMutationProb(AdaptiveParameter[float]):
     def __init__(self, default_prob: float = 0.5):
         self._current_std = 0.
         self._max_std = 0.
+        self._min_proba = 0.1
         self._default_prob = default_prob
 
     @property
@@ -23,7 +24,7 @@ class AdaptiveMutationProb(AdaptiveParameter[float]):
         elif self._max_std == 0:
             mutation_prob = self._default_prob
         else:
-            mutation_prob = 1. - (self._current_std / self._max_std)
+            mutation_prob = max(1. - (self._current_std / self._max_std), self._min_proba)
         return mutation_prob
 
     def _update_std(self, population: PopulationT):

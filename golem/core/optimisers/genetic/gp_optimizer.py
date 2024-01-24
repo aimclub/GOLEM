@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Callable, Union, Any
+from typing import Sequence, Union, Any
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -11,17 +11,16 @@ from golem.core.optimisers.genetic.operators.inheritance import Inheritance
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.regularization import Regularization
+from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
-from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, EvaluationAttemptsError
-
-EVALUATION_ATTEMPTS_NUMBER = 5
+from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 
 
 class EvoGraphOptimizer(PopulationalOptimizer):
@@ -45,6 +44,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,
                           self.mutation, self.inheritance, self.elitism]
+        self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
 
         # Define adaptive parameters
         self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
@@ -65,42 +65,59 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         """ Initializes the initial population """
         # Adding of initial assumptions to history as zero generation
         self._update_population(evaluator(self.initial_individuals), 'initial_assumptions')
+        pop_size = self.graph_optimizer_params.pop_size
 
-        if len(self.initial_individuals) < self.graph_optimizer_params.pop_size:
-            self.initial_individuals = self._extend_population(self.initial_individuals)
+        if len(self.initial_individuals) < pop_size:
+            self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
             # Adding of extended population to history
             self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
 
-    def _extend_population(self, initial_individuals: PopulationT) -> PopulationT:
-        initial_individuals = list(initial_individuals)
-        initial_graphs = [ind.graph for ind in initial_individuals]
+    def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
+        verifier = self.graph_generation_params.verifier
+        extended_pop = list(pop)
+        pop_graphs = [ind.graph for ind in extended_pop]
+
+        # Set mutation probabilities to 1.0
         initial_req = deepcopy(self.requirements)
-        initial_req.mutation_prob = 1
+        initial_req.mutation_prob = 1.0
         self.mutation.update_requirements(requirements=initial_req)
 
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
-            if len(initial_individuals) == self.graph_optimizer_params.pop_size:
+            if len(extended_pop) == target_pop_size:
                 break
-            new_ind = self.mutation(choice(self.initial_individuals))
-            new_graph = new_ind.graph
-            if new_graph not in initial_graphs and self.graph_generation_params.verifier(new_graph):
-                initial_individuals.append(new_ind)
-                initial_graphs.append(new_graph)
+            new_ind = self.mutation(choice(pop))
+            if new_ind:
+                new_graph = new_ind.graph
+                if new_graph not in pop_graphs and verifier(new_graph):
+                    extended_pop.append(new_ind)
+                    pop_graphs.append(new_graph)
         else:
             self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
-                             f'Current size {len(self.initial_individuals)} '
-                             f'instead of {self.graph_optimizer_params.pop_size} graphs.')
+                             f'Current size {len(pop)}, required {target_pop_size} graphs.')
 
+        # Reset mutation probabilities to default
         self.mutation.update_requirements(requirements=self.requirements)
-        return initial_individuals
+        return extended_pop
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:
         """ Method realizing full evolution cycle """
+
+        # Defines adaptive changes to algorithm parameters
+        #  like pop_size and operator probabilities
         self._update_requirements()
 
+        # Regularize previous population
         individuals_to_select = self.regularization(self.population, evaluator)
-        selected_individuals = self.selection(individuals_to_select)
-        new_population = self._spawn_evaluated_population(selected_individuals, evaluator)
+        # Reproduce from previous pop to get next population
+        new_population = self.reproducer.reproduce(individuals_to_select, evaluator)
+
+        # Adaptive agent experience collection & learning
+        # Must be called after reproduction (that collects the new experience)
+        experience = self.mutation.agent_experience
+        experience.collect_results(new_population)
+        self.mutation.agent.partial_fit(experience)
+
+        # Use some part of previous pop in the next pop
         new_population = self.inheritance(self.population, new_population)
         new_population = self.elitism(self.generations.best_individuals, new_population)
 
@@ -110,6 +127,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         if not self.generations.is_any_improved:
             self.graph_optimizer_params.mutation_prob, self.graph_optimizer_params.crossover_prob = \
                 self._operators_prob.next(self.population)
+            self.log.info(
+                f'Next mutation proba: {self.graph_optimizer_params.mutation_prob}; '
+                f'Next crossover proba: {self.graph_optimizer_params.crossover_prob}')
         self.graph_optimizer_params.pop_size = self._pop_size.next(self.population)
         self.requirements.max_depth = self._graph_depth.next()
         self.log.info(
@@ -119,24 +139,3 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         # update requirements in operators
         for operator in self.operators:
             operator.update_requirements(self.graph_optimizer_params, self.requirements)
-
-    def _spawn_evaluated_population(self, selected_individuals: PopulationT,
-                                    evaluator: EvaluationOperator) -> PopulationT:
-        """Reproduce and evaluate new population. If at least one of received individuals
-        can not be evaluated then mutate and evaluate selected individuals until a new
-        population is obtained or the number of attempts is exceeded."""
-        experience = self.mutation.agent_experience
-        for i in range(EVALUATION_ATTEMPTS_NUMBER):
-            new_population = self.crossover(selected_individuals)
-            new_population = self.mutation(new_population)
-            new_population = evaluator(new_population)
-            if new_population:
-                # Perform adaptive learning
-                experience.collect_results(new_population)
-                self.mutation.agent.partial_fit(experience)
-                return new_population
-            else:
-                experience.reset()
-        else:
-            # Could not generate valid population; raise an error
-            raise EvaluationAttemptsError()

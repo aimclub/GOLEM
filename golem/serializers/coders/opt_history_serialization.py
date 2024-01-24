@@ -44,8 +44,8 @@ def _archive_to_uids(generations_list: List[List[Individual]]) -> List[List[str]
 
 def opt_history_to_json(obj: OptHistory) -> Dict[str, Any]:
     serialized = any_to_json(obj)
-    serialized['individuals_pool'] = _flatten_generations_list(serialized['individuals'])
-    serialized['individuals'] = _generations_list_to_uids(serialized['individuals'])
+    serialized['individuals_pool'] = _flatten_generations_list(serialized['_generations'])
+    serialized['_generations'] = _generations_list_to_uids(serialized['_generations'])
     serialized['archive_history'] = _archive_to_uids(serialized['archive_history'])
     return serialized
 
@@ -99,19 +99,25 @@ def opt_history_from_json(cls: Type[OptHistory], json_obj: Dict[str, Any]) -> Op
         json_obj['_objective'] = ObjectiveInfo(json_obj['_is_multi_objective'])
         del json_obj['_is_multi_objective']
 
+    # OptHistory.individuals are now OptHistory._generations
+    if 'individuals' in json_obj:
+        json_obj['_generations'] = json_obj.pop('individuals')
+
     history = any_from_json(cls, json_obj)
     # Read all individuals from history.
     individuals_pool = history.individuals_pool
     uid_to_individual_map = {ind.uid: ind for ind in individuals_pool}
     # The attributes `individuals` and `archive_history` at the moment contain uid strings that must be converted
     # to `Individual` instances.
-    _deserialize_generations_list(history.individuals, uid_to_individual_map)
+    _deserialize_generations_list(history.generations, uid_to_individual_map)
     _deserialize_generations_list(history.archive_history, uid_to_individual_map)
-    # Process older histories to wrap generations into the new class.
-    if isinstance(history.individuals[0], list):
-        history.individuals = [Generation(gen, gen_num) for gen_num, gen in enumerate(history.individuals)]
+    # Process histories with zero generations.
+    if len(history.generations) > 0:
+        # Process older histories to wrap generations into the new class.
+        if isinstance(history.generations[0], list):
+            history.generations = [Generation(gen, gen_num) for gen_num, gen in enumerate(history.generations)]
     # Deserialize parents for all generations.
-    _deserialize_parent_individuals(list(chain(*history.individuals)), uid_to_individual_map)
+    _deserialize_parent_individuals(list(chain(*history.generations)), uid_to_individual_map)
     # The attribute is used only for serialization.
     del history.individuals_pool
     return history

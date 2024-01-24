@@ -1,0 +1,7 @@
+rdkit>=2018.09.1.0
+guacamol>=0.5.4
+joblib>=0.12.5
+requests>=2.30.0
+mol2vec==0.2.2
+gensim>=4.3.2
+torch>=2.0.1

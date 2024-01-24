@@ -1,18 +1,18 @@
 import itertools
 import os
 from pathlib import Path
+from random import random
 
 import numpy as np
 import pytest
 
-from golem.core.optimisers.fitness.fitness import SingleObjFitness
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
 from golem.core.optimisers.genetic.operators.mutation import Mutation
-from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -20,7 +20,9 @@ from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
+from golem.core.paths import project_root
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
+from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 from test.unit.mocks.common_mocks import MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate
 from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth, graph_fifth
 
@@ -31,7 +33,7 @@ def create_mock_graph_individual():
     node_3 = MockNode(content={'name': 'knn'})
     mock_graph = MockDomainStructure([node_1, node_2, node_3])
     individual = Individual(graph=mock_graph)
-    individual.set_evaluation_result(SingleObjFitness(1))
+    individual.set_evaluation_result(MultiObjFitness([random(), random()]))
     return individual
 
 
@@ -43,7 +45,7 @@ def create_individual(evaluated=True):
 
     individual = Individual(graph=OptGraph(final))
     if evaluated:
-        individual.set_evaluation_result(SingleObjFitness(1))
+        individual.set_evaluation_result(MultiObjFitness([random(), random()]))
     return individual
 
 
@@ -58,14 +60,16 @@ def generate_history(request) -> OptHistory:
             ind.set_native_generation(gen_num)
             new_pop.append(ind)
         history.add_to_history(new_pop)
+        # since only n best individuals need to be added to archive history
+        history.add_to_archive_history([sorted(new_pop,  key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
     return history
 
 
 def _test_individuals_in_history(history: OptHistory):
     uids = set()
     ids = set()
-    for ind in itertools.chain(*history.individuals):
-        # All individuals in `history.individuals` must have a native generation.
+    for ind in itertools.chain(*history.generations):
+        # All individuals in `history.generations` must have a native generation.
         assert ind.has_native_generation
         assert ind.fitness
         if ind.native_generation == 0:
@@ -95,9 +99,9 @@ def test_history_adding(generate_history):
     pop_size = 10
     history = generate_history
 
-    assert len(history.individuals) == generations_quantity
+    assert len(history.generations) == generations_quantity
     for gen in range(generations_quantity):
-        assert len(history.individuals[gen]) == pop_size
+        assert len(history.generations[gen]) == pop_size
 
 
 @pytest.mark.parametrize('generate_history', [[2, 10, create_individual]], indirect=True)
@@ -107,7 +111,7 @@ def test_individual_graph_type_is_optgraph(generate_history):
     history = generate_history
     for gen in range(generations_quantity):
         for ind in range(pop_size):
-            assert type(history.individuals[gen][ind].graph) == OptGraph
+            assert type(history.generations[gen][ind].graph) == OptGraph
 
 
 def test_ancestor_for_crossover():
@@ -136,7 +140,7 @@ def test_ancestor_for_mutation():
 
     requirements = GraphRequirements()
     graph_params = GraphGenerationParams(available_node_types=['a'])
-    parameters = GPAlgorithmParameters(mutation_types=[MutationTypesEnum.simple], mutation_prob=1)
+    parameters = GPAlgorithmParameters(mutation_types=[MutationTypesEnum.single_add], mutation_prob=1)
     mutation = Mutation(parameters, requirements, graph_params)
 
     mutation_result = mutation(parent_ind)
@@ -187,7 +191,7 @@ def test_history_save_custom_nodedata():
 
     saved = history.save()
     reloaded = OptHistory.load(saved)
-    reloaded_inds = list(itertools.chain(*reloaded.individuals))
+    reloaded_inds = list(itertools.chain(*reloaded.generations))
 
     for i, ind in enumerate(reloaded_inds):
         ind_content = ind.graph.root_node.content
@@ -218,7 +222,7 @@ def test_all_historical_quality(generate_history):
     history = generate_history
     eval_fitness = [[0.9, 0.8], [0.8, 0.6], [0.2, 0.4], [0.9, 0.9]]
     weights = (-1, 1)
-    for pop_num, population in enumerate(history.individuals):
+    for pop_num, population in enumerate(history.generations):
         if pop_num != 0:
             eval_fitness = [[fit[0] + 0.5, fit[1]] for fit in eval_fitness]
         for ind_num, individual in enumerate(population):
@@ -242,7 +246,7 @@ def test_newly_generated_history(n_jobs: int):
     history = opt.history
 
     assert history is not None
-    assert len(history.individuals) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
+    assert len(history.generations) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
     assert len(history.archive_history) == num_of_gens + 2  # initial_assumptions + num_of_gens + final_choices
     assert len(history.initial_assumptions) == 5
     assert len(history.final_choices) == 1
@@ -262,7 +266,9 @@ def test_newly_generated_history(n_jobs: int):
 @pytest.mark.parametrize('plot_type', PlotTypesEnum)
 def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_history):
     save_path = Path(tmp_path, plot_type.name)
-    save_path = save_path.with_suffix('.gif') if plot_type is PlotTypesEnum.operations_animated_bar \
+    gif_plots = [PlotTypesEnum.operations_animated_bar,
+                 PlotTypesEnum.diversity_population]
+    save_path = save_path.with_suffix('.gif') if plot_type in gif_plots \
         else save_path.with_suffix('.png')
     history: OptHistory = generate_history
     visualizer = OptHistoryVisualizer(history)
@@ -270,6 +276,18 @@ def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_
     visualization.visualize(save_path=str(save_path), best_fraction=0.1, dpi=100)
     if plot_type is not PlotTypesEnum.fitness_line_interactive:
         assert save_path.exists()
+
+
+@pytest.mark.parametrize('generate_history', [[3, 4, create_individual],
+                                              [3, 4, create_mock_graph_individual]],
+                         indirect=True)
+def test_extra_history_visualizer(tmp_path, generate_history):
+    history: OptHistory = generate_history
+    visualizer = OptHistoryExtraVisualizer(history, str(tmp_path))
+    visualizer.visualise_history()
+    visualizer.pareto_gif_create()
+    visualizer.boxplots_gif_create()
+    assert len(os.listdir(os.path.join(str(tmp_path), 'composing_history'))) == 3
 
 
 def test_history_correct_serialization():
@@ -280,7 +298,7 @@ def test_history_correct_serialization():
     dumped_history_json = history.save()
     reloaded_history = OptHistory.load(dumped_history_json)
 
-    assert history.individuals == reloaded_history.individuals
+    assert history.generations == reloaded_history.generations
     assert dumped_history_json == reloaded_history.save(), 'The history is not equal to itself after reloading!'
     _test_individuals_in_history(reloaded_history)
 
@@ -300,6 +318,48 @@ def test_collect_intermediate_metric():
     restored_graph = graph_gen_params.adapter.restore(evaluated_graph)
 
     assert_intermediate_metrics(restored_graph)
+
+
+def test_load_zero_generations_history():
+    """ Test to load histories with zero generations, since it still can contain info about
+    objective, tuning result, etc. """
+    path_to_history = os.path.join(project_root(), 'test', 'data', 'zero_gen_history.json')
+    history = OptHistory.load(path_to_history)
+    assert isinstance(history, OptHistory)
+    assert len(history.archive_history) == 0
+    assert history.objective is not None
+
+
+@pytest.mark.parametrize('generate_history', [[100, 100, create_individual]], indirect=True)
+def test_save_load_light_history(generate_history):
+    history = generate_history
+    file_name = 'light_history.json'
+    path_to_dir = os.path.join(project_root(), 'test', 'data')
+    path_to_history = os.path.join(path_to_dir, file_name)
+    history.save(json_file_path=path_to_history, is_save_light=True)
+    assert file_name in os.listdir(path_to_dir)
+    loaded_history = OptHistory().load(path_to_history)
+    assert isinstance(loaded_history, OptHistory)
+    assert len(loaded_history.archive_history) == len(loaded_history.generations) == 100
+    for i, _ in enumerate(loaded_history.generations):
+        assert len(loaded_history.generations[i]) == len(loaded_history.archive_history[i]) == 1
+    os.remove(path=os.path.join(path_to_dir, file_name))
+
+
+@pytest.mark.parametrize('generate_history', [[50, 30, create_individual]], indirect=True)
+def test_light_history_is_significantly_lighter(generate_history):
+    """ Checks if light version of history weights signif """
+    history = generate_history
+    file_name_light = 'light_history.json'
+    file_name_heavy = 'heavy_history.json'
+    path_to_dir = os.path.join(project_root(), 'test', 'data')
+    history.save(json_file_path=os.path.join(path_to_dir, file_name_light), is_save_light=True)
+    history.save(json_file_path=os.path.join(path_to_dir, file_name_heavy), is_save_light=False)
+    light_history_size = os.stat(os.path.join(path_to_dir, file_name_light)).st_size
+    heavy_history_size = os.stat(os.path.join(path_to_dir, file_name_heavy)).st_size
+    assert light_history_size * 25 <= heavy_history_size
+    os.remove(path=os.path.join(path_to_dir, file_name_light))
+    os.remove(path=os.path.join(path_to_dir, file_name_heavy))
 
 
 def assert_intermediate_metrics(graph: MockDomainStructure):
