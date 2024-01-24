@@ -13,7 +13,7 @@ from golem.core.dag.linked_graph import LinkedGraph
 import numpy as np
 import pandas as pd
 from gmr import GMM
-from random import choice, random,randint, sample
+from random import choice, random,randint, sample, uniform
 import math
 from datetime import timedelta
 from golem.core.optimisers.objective.objective import Objective
@@ -27,16 +27,15 @@ from golem.core.adapter import DirectAdapter
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from itertools import repeat
 import networkx as nx
-from pmi_sampler.data_preparing import encode_data, get_node_value_index, get_node_value_list
-from pmi_sampler.node_preprocess import NodeProcessor
-from pmi_sampler.pmi_matrix import get_pmi_matrix
-from pmi_sampler.node_embeddings import get_embedding_matrix
-from pmi_sampler.sampling import sample
-from pmi_sampler.similarity_evaluation import get_similarity_matrix
 from sklearn.preprocessing import LabelEncoder, KBinsDiscretizer
-from generator_model import GeneratorModel, GeneratorNode, optimisation_metric, custom_mutation_change_mean_i, custom_mutation_change_var_i, custom_mutation_change_mean, custom_mutation_change_var, custom_crossover_exchange_mean, custom_crossover_exchange_var, custom_crossover_exchange_mean_i, custom_crossover_exchange_var_i, save_in_bn
-
+from generator_model_two_crit import GeneratorModel, GeneratorNode, optimisation_metric_assort, custom_mutation_change_cov, custom_mutation_change_mean, custom_mutation_change_var, \
+    custom_crossover_exchange_mean, custom_crossover_exchange_var, \
+    save_in_bn, optimisation_metric_correlaion, attr_correlation, model_assortativity, optimisation_metric_assort
+from functools import partial
 import time
+from scipy.spatial import distance
+
+
 
 
 
@@ -53,11 +52,11 @@ import time
 
 def run_example():
 
-    number_of_components = 3
-    number_of_atr = [16]
-    p_edge = [0.05, 0.8]
-    target_assort = [0.1, 0.3, 0.5, 0.7, 0.9]
-    df_result = pd.DataFrame(columns=['Number of atr', 'P_edge', 'Target assort', 'Time', 'Deviation'])
+    number_of_atr = [5, 8, 10, 20]
+    p_edge = [0.05]
+    target_assort = [0.2, 0.9]
+    corr = ['low', 'high']
+    df_result = pd.DataFrame(columns=['Number of atr', 'P_edge', 'Target assort', 'Target correlation', 'Calculated_corr', 'Time', 'Deviation_assort'])
     for _ in range(5):
         for n in number_of_atr:
             vertices = []
@@ -66,9 +65,9 @@ def run_example():
             for p_i in p_edge:
                 initial = [GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
                                                                         content={'name': vertex,
-                                                                                'w':[1/number_of_components]*number_of_components,
-                                                                                'mean':[[randint(0,10)] for _ in range(number_of_components)],
-                                                                                'var':[[[randint(1,50)]] for _ in range(number_of_components)]
+                                                                                'mean':randint(0,10),
+                                                                                'var':randint(1,50),
+                                                                                'cov':[]
                                                                                 }) 
                                                                         for vertex in vertices])]
                 is_all = True
@@ -81,7 +80,6 @@ def run_example():
                 structure_parents = {}
                 for v in DAG:
                     structure_parents['A'+str(v)] = ['A'+str(i) for i in DAG.pred[v].keys()]
-
                 
                 for node in initial[0].nodes:
                     parents_names = structure_parents[node.content['name']]
@@ -89,56 +87,87 @@ def run_example():
                         for node_p in initial[0].nodes:
                             if node_p.content['name'] == name_p:
                                 node.nodes_from.append(node_p)
-                                break
-                for target in target_assort:
-                    objective = Objective({'custom': optimisation_metric})
-                    objective_eval = ObjectiveEvaluate(objective, target_assortativity=target)    
+                           
+                graph_index = dict()
+                for cor in corr:
+                    target_correlation = []
+                    if cor == 'high':
+                        for k, node in enumerate(initial[0].nodes):
+                            graph_index[node.content['name']] = k
+                            if node.nodes_from:
+                                for __ in node.nodes_from:
+                                    target_correlation.append(uniform(0.7, 0.9))
+                                    node.content['cov'].append(randint(-100,100))
+                    else:
+                        for k, node in enumerate(initial[0].nodes):
+                            graph_index[node.content['name']] = k
+                            if node.nodes_from:
+                                for __ in node.nodes_from:
+                                    target_correlation.append(uniform(0.0, 0.3))
+                                    node.content['cov'].append(randint(-100,100))
 
+                    for target in target_assort:
+
+                        objective = Objective(quality_metrics={'assort':optimisation_metric_assort}, complexity_metrics={'corr':optimisation_metric_correlaion}, is_multi_objective=True)
+                        
+                        objective_eval = ObjectiveEvaluate(objective, target_assortativity=target, target_correlation=target_correlation, graph_index=graph_index)    
                     
+                        
 
-                    requirements = GraphRequirements(
-                        max_arity=100,
-                        max_depth=100, 
-                        early_stopping_iterations=10,
-                        num_of_generations=n_generation,
-                        timeout=timedelta(minutes=time_m),
-                        history_dir = None
+
+                        
+
+                        requirements = GraphRequirements(
+                            max_arity=100,
+                            max_depth=100, 
+                            early_stopping_iterations=10,
+                            num_of_generations=n_generation,
+                            timeout=timedelta(minutes=time_m),
+                            history_dir = None
+                            )
+
+                        optimiser_parameters = GPAlgorithmParameters(
+                            multi_objective=objective.is_multi_objective,
+                            max_pop_size=55,
+                            pop_size=pop_size,
+                            crossover_prob=0.8, 
+                            mutation_prob=0.9,
+                            genetic_scheme_type = GeneticSchemeTypesEnum.steady_state,
+                            selection_types = [SelectionTypesEnum.tournament],
+                            mutation_types = [custom_mutation_change_cov,
+                            custom_mutation_change_mean, custom_mutation_change_var],
+                            crossover_types = [custom_crossover_exchange_mean, custom_crossover_exchange_var]
                         )
+                        rules = []
+                        graph_generation_params = GraphGenerationParams(
+                            adapter=DirectAdapter(base_graph_class=GeneratorModel, base_node_class=GeneratorNode),
+                            rules_for_constraint=rules,
+                            # node_factory=DefaultOptNodeFactory(available_node_types=nodes_types)
+                            )
 
-                    optimiser_parameters = GPAlgorithmParameters(
-                        max_pop_size=55,
-                        pop_size=pop_size,
-                        crossover_prob=0.8, 
-                        mutation_prob=0.9,
-                        genetic_scheme_type = GeneticSchemeTypesEnum.steady_state,
-                        selection_types = [SelectionTypesEnum.tournament],
-                        mutation_types = [custom_mutation_change_mean_i, custom_mutation_change_var_i,
-                        custom_mutation_change_mean, custom_mutation_change_var],
-                        crossover_types = [custom_crossover_exchange_mean, custom_crossover_exchange_var, custom_crossover_exchange_mean_i, custom_crossover_exchange_var_i]
-                    )
-                    rules = []
-                    graph_generation_params = GraphGenerationParams(
-                        adapter=DirectAdapter(base_graph_class=GeneratorModel, base_node_class=GeneratorNode),
-                        rules_for_constraint=rules,
-                        # node_factory=DefaultOptNodeFactory(available_node_types=nodes_types)
-                        )
+                        optimiser = EvoGraphOptimizer(
+                            graph_generation_params=graph_generation_params,
+                            graph_optimizer_params=optimiser_parameters,
+                            requirements=requirements,
+                            initial_graphs=initial,
+                            objective=objective)
+                        
 
-                    optimiser = EvoGraphOptimizer(
-                        graph_generation_params=graph_generation_params,
-                        graph_optimizer_params=optimiser_parameters,
-                        requirements=requirements,
-                        initial_graphs=initial,
-                        objective=objective)
+                        
 
 
-                    start = time.time()
-                    # запуск оптимизатора
-                    optimized_graph = optimiser.optimise(objective_eval)[0]
-                    end = time.time()
-                    df_dict = pd.DataFrame({'Number of atr': n, 'P_edge': p_i, 'Target assort':target, 'Time':round((end-start)/60), 'Deviation':round(optimisation_metric(optimized_graph, target),2)}, index=[0])
-                    df_result = pd.concat([df_result, df_dict], ignore_index=True)
-                    df_result.to_csv('examples/BN_generator_learning/results/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' exp1.csv', index=False)
-                    save_in_bn(optimized_graph, 'examples/BN_generator_learning/results/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' exp1.json')
+
+                        start = time.time()
+                        # # запуск оптимизатора
+                        optimized_graph = optimiser.optimise(objective_eval)
+                        optimiser.history.save('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' exp2_history.json')
+                        optimiser.history.show.visuals_params(save_path='examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' exp2_fig.png')
+                        end = time.time()
+                        for g_i, g in enumerate(optimized_graph):
+                            df_dict = pd.DataFrame({'Number of atr':[n], 'P_edge':[p_i], 'Target assort':[target], 'Target correlation':[str(target_correlation)], 'Calculated_corr':[str(attr_correlation(g,graph_index))], 'Time':[round(end-start)], 'Deviation_assort':[abs(target-model_assortativity(g, graph_index))]})
+                            df_result = pd.concat([df_result, df_dict], ignore_index=True)
+                            df_result.to_csv('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' exp2.csv', index=False)
+                            save_in_bn(g, 'examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(g_i)+' exp2.json', graph_index)
 
     
 
@@ -147,6 +176,6 @@ if __name__ == '__main__':
 
 
     n_generation=500
-    time_m=60
+    time_m=100
     pop_size = 10
     run_example()

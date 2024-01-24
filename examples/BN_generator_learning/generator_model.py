@@ -4,7 +4,7 @@ import sys
 
 parentdir = os.getcwd()
 sys.path.insert(0, parentdir)
-
+from scipy.stats import pearsonr
 from typing import Optional, Union, List
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.dag.graph_delegate import GraphDelegate
@@ -35,7 +35,7 @@ from pmi_sampler.node_embeddings import get_embedding_matrix
 from pmi_sampler.sampling import sample
 from pmi_sampler.similarity_evaluation import get_similarity_matrix
 from sklearn.preprocessing import LabelEncoder, KBinsDiscretizer
-
+from scipy.spatial import distance
 
 def get_similarities(fs_data):
     discrete_data, node_value = encode_data(fs_data)
@@ -209,12 +209,11 @@ def custom_crossover_exchange_var(graph1: GeneratorModel, graph2: GeneratorModel
 #                     'variance': var,
 #                     'serialization': 'pickle'}
 
-def model_assortativity(graph:GeneratorModel):
+def model_assortativity(graph:GeneratorModel, synthetic_graph=None):
     sample_data = pd.DataFrame()
     sample_data.index = [i for i in range(5000)]
     structure = []
     info = {'types':{}, 'signs':{}}
-    evidence = {}
     for node in graph.nodes:
         info['types'][node.content['name']] = 'cont'
         info['signs'][node.content['name']] = 'neg'
@@ -233,22 +232,61 @@ def model_assortativity(graph:GeneratorModel):
     bn.add_nodes(info)
     bn.set_structure(edges=structure)
     bn.fit_parameters(sample_data)
-    data = bn.sample(500)
-    # similarity_matrix, node_value_index, encoded_data = get_similarities(disc_data)
-    # node_processor = NodeProcessor(bn, evidence)
-    # node_processor = set_node_processor(node_processor, similarity_matrix, node_value_index, encoded_data)
-    # data = sample(500, node_processor)
-    # data = pd.DataFrame(columns=data.columns, data=discretizer.inverse_transform(data), dtype=float)
-    data['norm'] = data.apply(np.linalg.norm, axis=1)
-    for c in data.columns[0:-1]:
-        data[c] = data[c] / data['norm']
-    data = data.drop(columns=['norm'])
-    mean_assort = []
-    data = data.values
-    for attr_i in data:
-        for attr_j in data:
-            mean_assort.append((np.dot(attr_i,attr_j)))
+    if synthetic_graph is None:
+        data = bn.sample(100)
+        data['norm'] = data.apply(np.linalg.norm, axis=1)
+        for c in data.columns[0:-1]:
+            data[c] = data[c] / data['norm']
+        data = data.drop(columns=['norm'])
+        mean_assort = []
+        data = data.values
+        for attr_i in data:
+            for attr_j in data:
+                mean_assort.append(np.dot(attr_i,attr_j))
+    else:
+        data = bn.sample(50)
+        data['norm'] = data.apply(np.linalg.norm, axis=1)
+        for c in data.columns[0:-1]:
+            data[c] = data[c] / data['norm']
+        data = data.drop(columns=['norm'])
+        mean_assort = []
+        data = data.values
+        for edge in synthetic_graph:
+            i = edge[0]
+            j = edge[1]
+            mean_assort.append(np.dot(data[i], data[j]))
     return round(np.mean(mean_assort), 1)
+
+def attr_correlation(graph:GeneratorModel):
+    sample_data = pd.DataFrame()
+    sample_data.index = [i for i in range(5000)]
+    structure = []
+    info = {'types':{}, 'signs':{}}
+    for node in graph.nodes:
+        info['types'][node.content['name']] = 'cont'
+        info['signs'][node.content['name']] = 'neg'
+        w = node.content['w']
+        mean = node.content['mean']
+        var = node.content['var']
+        gmm = GMM(n_components=len(w), priors=w, means=mean, covariances=var)
+        sample_data[node.content['name']] = gmm.sample(5000)
+        for parent in node.nodes_from:
+            structure.append((parent.content['name'], node.content['name']))
+    bn = ContinuousBN(use_mixture=False)
+    bn.add_nodes(info)
+    bn.set_structure(edges=structure)
+    bn.fit_parameters(sample_data)
+    
+    correlation_vector = []
+    data = bn.sample(100)
+    for node in graph.nodes:
+        if node.nodes_from:
+            for parent in node.nodes_from:
+                correlation_vector.append(pearsonr(data[node.content['name']].values, data[parent.content['name']].values)[0])
+        
+    return correlation_vector
+    
+
 
 def save_in_bn(graph:GeneratorModel, name):
     sample_data = pd.DataFrame()
@@ -280,7 +318,16 @@ def save_in_bn(graph:GeneratorModel, name):
     
 
     
-def optimisation_metric(generator:GeneratorModel, target_assortativity):
-    generator_assort = model_assortativity(generator)
+def optimisation_metric_assort(generator:GeneratorModel, target_assortativity, target_correlation, synthetic_graph=None):
+    generator_assort = model_assortativity(generator, synthetic_graph)
     return math.fabs(generator_assort - target_assortativity)
 
+
+def optimisation_metric_correlaion(generator:GeneratorModel, target_assortativity, target_correlation, synthetic_graph=None):
+    generator_correlation = attr_correlation(generator)
+    return distance.euclidean(target_correlation, generator_correlation)
+
+# def optimisation_metric_multi(generator:GeneratorModel, target_assortativity, target_correlation, synthetic_graph=None):
+#     assort_metric = optimisation_metric_assort(generator, target_assortativity, synthetic_graph)
+#     corr_metric = optimisation_metric_correlaion(generator, target_correlation, synthetic_graph)
+#     return (assort_metric+corr_metric) / 2

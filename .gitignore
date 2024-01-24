@@ -77,3 +77,13 @@ test/unit/test_log.log
 test/unit/catboost_info
 
 local/
+examples/BN_generator_learning/img/0.1.jpg
+examples/BN_generator_learning/img/
+examples/BN_generator_learning/results/0 3 0.1 0.3 exp1.csv
+examples/BN_generator_learning/results/
+examples/nets/G_40_2.csv
+examples/nets/
+examples/BN_generator_learning/G_40_1.csv
+examples/BN_generator_learning/G_40_2.csv
+examples/BN_generator_learning/G_40_3.csv
+examples/BN_generator_learning/G_40_4.csv
