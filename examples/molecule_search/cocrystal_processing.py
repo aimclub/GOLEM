@@ -226,30 +226,30 @@ def plot_experiment_comparison(experiment_ids: Sequence[str], metric_id: int = 0
 if __name__ == '__main__':
     # initial_smiles = pd.read_csv(
     #     r"C:\Users\admin\PycharmProjects\GOLEM\examples\molecule_search\all_cocrystals_GOLEM_result.csv",
-    #     delimiter=',').generated_coformers
-    #
-    # print('loaded')
-    initial_smiles = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\rnn_data_10k.csv")['0']
-    #
-    adapter = MolAdapter()
-    initial_molecules = []
-    for smiles in initial_smiles:
-        try:
-            mol = Individual(adapter.adapt(MolGraph.from_smiles(smiles)))
-            initial_molecules.append(mol)
-        except Exception:
-            continue
-    # # print('adapted')
-    metrics = CocrystalsMetrics('CN1C2=C(C(=O)N(C1=O)C)NC=N2')
-    objective = Objective(
-        quality_metrics={'orthogonal_planes': metrics.orthogonal_planes,
-                         'unobstructed': metrics.unobstructed,
-                         'h_bond_bridging': metrics.h_bond_bridging,
-                         'sa_score': sa_score},
-        is_multi_objective=True)
-    evaluator = MultiprocessingDispatcher(adapter=adapter, n_jobs=-1).dispatch(objective)
+    #     delimiter=',')['0']
 
-    initial_molecules = evaluator(initial_molecules)
+    print('loaded')
+    initial_smiles = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\generated_mols_VAE_ep3_no_wu_ft6_lr00005_10k_rnd(352).csv")['0']
+
+    adapter = MolAdapter()
+    # initial_molecules = []
+    # for smiles in initial_smiles:
+    #     try:
+    #         mol = Individual(adapter.adapt(MolGraph.from_smiles(smiles)))
+    #         initial_molecules.append(mol)
+    #     except Exception:
+    #         continue
+    # print('adapted')
+    # metrics = CocrystalsMetrics('CN1C2=C(C(=O)N(C1=O)C)NC=N2')
+    # objective = Objective(
+    #     quality_metrics={'orthogonal_planes': metrics.orthogonal_planes,
+    #                      'unobstructed': metrics.unobstructed,
+    #                      'h_bond_bridging': metrics.h_bond_bridging,
+    #                      'sa_score': sa_score},
+    #     is_multi_objective=True)
+    # evaluator = MultiprocessingDispatcher(adapter=adapter, n_jobs=-1).dispatch(objective)
+
+    # initial_molecules = evaluator(initial_molecules)
     # print('evaluated')
     # pareto_front = ParetoFront(maxsize=128000)
     # pareto_front.update(initial_molecules)
@@ -259,9 +259,9 @@ if __name__ == '__main__':
     best_smiles = dict()
     # print('Initial pareto: ', pareto_front.items)
 
-    for ind in initial_molecules:
-        if ind.fitness.getValues()[0] <= -0.333 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
-            best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
+    # for ind in initial_molecules:
+    #     if ind.fitness.getValues()[0] <= -0.333 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
+    #         best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
     # for i in range(20):
     #     print(i)
     #     history = OptHistory.load(fr"D:\Лаба\molecule_seacrh\cocrysals_data\results\evo_random_popsize200_min60_from_VAE_2\history_trial_{i}.json")
@@ -270,25 +270,43 @@ if __name__ == '__main__':
     #                 for gen in history.generations
     #                 for ind in reversed(list(gen))}.values())
     #     for ind in individuals:
-    #         if ind.fitness.getValues()[0] <= -0.332 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
+    #         if ind.fitness.getValues()[0] < -0.332 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
     #             best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
-    result = {'drug': ['CN1C2=C(C(=O)N(C1=O)C)NC=N2'] * len(best_smiles), 'generated_coformers': [],
-              'orthogonal_planes': [], 'unobstructed': [], 'h_bond_bridging': [], 'sa_score': []}
-
-    for smiles, ind in best_smiles.items():
-        result['unobstructed'].append(abs(ind.fitness.values[1]))
-        result['generated_coformers'].append(smiles)
-        result['orthogonal_planes'].append(abs(ind.fitness.values[0]))
-        result['h_bond_bridging'].append(1 - ind.fitness.values[2])
-        result['sa_score'].append(ind.fitness.values[3])
-    print(len(result['unobstructed']))
-
-    df = pd.DataFrame.from_dict(result)
-    print(len(df))
-    # df.to_csv('all_cocrystals_GOLEM_result_from_VAE_2.csv', index=False)
-
+    # root = r'D:\Лаба\molecule_seacrh\cocrysals_data\CVAE_all'
+    # for file in os.listdir(root):
+    #     initial_smiles = pd.read_csv(os.path.join(root, file))['0']
+    #     adapter = MolAdapter()
+    #     individuals = []
+    #     for smiles in initial_smiles:
+    #         try:
+    #             mol = Individual(adapter.adapt(MolGraph.from_smiles(smiles)))
+    #             individuals.append(mol)
+    #         except Exception:
+    #             continue
+    #     evaluator(individuals)
+    #     count = 0
+    #     for ind in individuals:
+    #         if ind.fitness.getValues()[0] < -0.332 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[
+    #             2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
+    #             count += 1
+    #             best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
+    #     print(count)
+    # result = {'drug': ['CN1C2=C(C(=O)N(C1=O)C)NC=N2'] * len(best_smiles), 'generated_coformers': [],
+    #           'orthogonal_planes': [], 'unobstructed': [], 'h_bond_bridging': [], 'sa_score': []}
+    #
+    # for smiles, ind in best_smiles.items():
+    #     result['unobstructed'].append(abs(ind.fitness.values[1]))
+    #     result['generated_coformers'].append(smiles)
+    #     result['orthogonal_planes'].append(abs(ind.fitness.values[0]))
+    #     result['h_bond_bridging'].append(1 - ind.fitness.values[2])
+    #     result['sa_score'].append(ind.fitness.values[3])
+    #
+    # df = pd.DataFrame.from_dict(result)
+    # print(len(df))
+    # df.to_csv('CVAE_all_valid.csv', index=False)
+    #
     # initial_selected = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\GAN_selected_proba_(sa_le_3).csv")
-    n = len(df)
+    # n = len(initial_selected)
     # print(n)
     # filtered_vae =
     # filtered_golem_gan = all_golem_from_gan[all_golem_from_gan.sa_score <= 3]
@@ -298,7 +316,7 @@ if __name__ == '__main__':
     #
     #
     # from paretoset import paretoset
-    #
+    # all_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\all_cocrystals_GOLEM_result_from_VAE_2.csv")
     # remaining_mols = all_vae[all_vae.sa_score <=3]
     # collected = 0
     # pareto_fronts = []
@@ -314,13 +332,13 @@ if __name__ == '__main__':
     #     # print(collected)
     #
     # filtered_golem_vae = pd.concat(pareto_fronts, ignore_index=True)
-    # filtered_golem_vae.to_csv('pareto_best_golem_vae_sa_3.csv')
+    # filtered_golem_vae.to_csv('pareto_best_golem_vae_2_sa_3.csv')
 
 
     # filtered_golem_methane = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_methane_sa_3.csv")
     # filtered_golem_gan = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_gan_sa_3.csv")
-    # filtered_golem_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_vae_sa_3.csv")
-    # filtered_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\VAE_selected_proba_(sa_le_3).csv")
+    # filtered_golem_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_vae_2_sa_3.csv")
+    # filtered_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\VAE_2_selected_proba_(sa_le_3).csv")
     #
     # #
     # print('vae', len(filtered_vae))
