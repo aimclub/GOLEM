@@ -234,10 +234,6 @@ def optimisation_metric_assort(generator:GeneratorModel, target_assortativity, t
 
 def optimisation_metric_correlaion(generator:GeneratorModel, target_assortativity, target_correlation, graph_index, synthetic_graph=None):
     generator_correlation = attr_correlation(generator, graph_index)
-    try:
-        x = distance.euclidean(target_correlation, generator_correlation)
-    except:
-        print('ALARM ALARM')
     return distance.euclidean(target_correlation, generator_correlation)
 
 # def optimisation_metric_multi(generator:GeneratorModel, target_assortativity, target_correlation, synthetic_graph=None):

@@ -88,9 +88,9 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             new_ind = self.mutation(choice(pop))
             if new_ind:
                 new_graph = new_ind.graph
-                if new_graph not in pop_graphs and verifier(new_graph):
-                    extended_pop.append(new_ind)
-                    pop_graphs.append(new_graph)
+                #if new_graph not in pop_graphs and verifier(new_graph):
+                extended_pop.append(new_ind)
+                pop_graphs.append(new_graph)
         else:
             self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
                              f'Current size {len(pop)}, required {target_pop_size} graphs.')
