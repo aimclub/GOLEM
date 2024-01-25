@@ -59,7 +59,7 @@ def run_example():
     target_assort = [0.2, 0.9]
     corr = ['low', 'high']
     df_result = pd.DataFrame(columns=['Number of atr', 'P_edge', 'Target assort', 'Target correlation', 'Calculated_corr', 'Time', 'Deviation_assort', 'Corr_type', 'Sheme', 'Mutation'])
-    mutation_types = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
+    mutation_types = [MutationAgentTypeEnum.default, MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
     schemes = [GeneticSchemeTypesEnum.steady_state]
     for mut in mutation_types:
         for schem in schemes:
