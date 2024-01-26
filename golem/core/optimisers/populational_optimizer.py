@@ -3,6 +3,7 @@ from typing import Any, Optional, Sequence, Dict
 
 from tqdm import tqdm
 import numpy as np
+import matplotlib.pyplot as plt
 
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.archive import GenerationKeeper
@@ -70,7 +71,7 @@ class PopulationalOptimizer(GraphOptimizer):
             ).add_condition(
                 lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
                 'Optimisation finished: Early stopping timeout criteria was satisfied'
-            ).add_condition(lambda: self.stop_when_fitness_zero(self.best_individuals, [1,0.000001,0.0001,0.001]) , 'fitness achieved lowest value')
+            ).add_condition(lambda: self.stop_when_fitness_zero(self.best_individuals, [0.0001,0.00001]) , 'fitness achieved lowest value')
 
     def stop_when_fitness_zero(self, best_individuals, treshs):
         final_flag = []
@@ -96,7 +97,6 @@ class PopulationalOptimizer(GraphOptimizer):
         self.eval_dispatcher.set_graph_evaluation_callback(callback)
 
     def optimise(self, objective: ObjectiveFunction) -> Sequence[Graph]:
-
         # eval_dispatcher defines how to evaluate objective on the whole population
         evaluator = self.eval_dispatcher.dispatch(objective, self.timer)
 
@@ -106,7 +106,6 @@ class PopulationalOptimizer(GraphOptimizer):
 
             while not self.stop_optimization():
                 try:
-                    print('fitness values',self.best_individuals[0].fitness.getValues())
                     new_population = self._evolve_population(evaluator)
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')

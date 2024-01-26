@@ -1,63 +1,122 @@
-from one_graph_search_k2 import run_graph_search
+from one_graph_search import run_graph_search
 import pandas as pd
-import random
-import pickle
+from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
+from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
+from golem.core.optimisers.genetic.operators.elitism import ElitismTypesEnum
+from golem.core.optimisers.genetic.operators.regularization import RegularizationTypesEnum
+from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
+from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
+import numpy as np
+import os
+from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnessLines
 
 if __name__ == '__main__':
-    # задаю параметры
 
-    des_num_nodes = max_graph_size = 40# int(math.sqrt(700))
-    des_degree = 5
     num_edges = 5
-    des_cluster = .01
-    des_asp  = 2
 
-    des_label_assort = 1
+    l=0
+    des_num_nodes = max_graph_size = 30
+    for des_degree in [3,5,10,15]:
+        for des_cluster in [0.1,0.15,0.2,0.25,0.3,0.35]:
+            for adaptive_scheme in ['default', 'bandit', 'context']:
+                if adaptive_scheme == 'default':
+                    adaptive_mutation_type = MutationAgentTypeEnum.default
+                elif adaptive_scheme == 'bandit':
+                    adaptive_mutation_type = MutationAgentTypeEnum.bandit
+                elif adaptive_scheme == 'context':
+                    adaptive_mutation_type = MutationAgentTypeEnum.contextual_bandit
+                for specific in [False,True]:
+                    if specific:
+                        dense = cycle = path = star = True
+                    else:
+                        dense = cycle = path = star = False
 
-    cycle = False
-    path = False
-    dense = False
-    star = False
+                    for genetic_scheme_type_str in ['generational','steady_state', 'parameter_free']:
+                        if genetic_scheme_type_str == 'generational':
+                            genetic_scheme_type = GeneticSchemeTypesEnum.generational
+                        elif genetic_scheme_type_str == 'steady_state':
+                            genetic_scheme_type = GeneticSchemeTypesEnum.steady_state
+                        else:
+                            genetic_scheme_type = GeneticSchemeTypesEnum.parameter_free
+                        #name = str(specific) + '_' + 'none' + '_' + elitism_type_str + '_' + regularization_type_str + '_' + genetic_scheme_type_str + '.npy'
+                        #if not os.path.exists(name):
+                        df = pd.read_csv('CEC_2.csv')
+                        df = df.drop(columns='Unnamed: 0')
+                        #df = pd.DataFrame(columns=['adaptive_mutation_type', 'context_type', 'added_patterns_mutations','selection_type','elitism_type','regularization_type','genetic_scheme_type','num_nodes', 'desired_degree','desired_cl','actual_degree','actual_cl'])
 
+                        if len(df[(df['num_nodes'] == des_num_nodes) & (df['desired_degree'] == des_degree) & (
+                                df['desired_cl'] == des_cluster) & (df['adaptive_mutation_type'] == adaptive_scheme) & (
+                                          df['added_patterns_mutations'] == specific) & (
+                                          df['genetic_scheme_type'] == genetic_scheme_type_str)]) == 0:
+                            l+=1
+                            try:
+                                time, act_cl, act_ad, history = run_graph_search(adaptive_mutation_type, SelectionTypesEnum.tournament, ElitismTypesEnum.none, RegularizationTypesEnum.none, genetic_scheme_type, dense=dense,cycle=cycle,path=path,star=star,  num_edges=num_edges, des_degree=des_degree,
+                                                                                                  des_cluster=des_cluster, des_num_nodes=des_num_nodes)
+                                name = str(des_degree) +'_' + str(des_cluster) +'_' + str(des_num_nodes) + '_'+ str(
+                                    adaptive_scheme) +'_' + str(genetic_scheme_type_str) + str(specific)
+                                fitn = MultipleFitnessLines.from_histories({'0': [history]})
+                                fitn.visualize(metric_id=0, dpi=1000,
+                                               save_path='graphics\\' + str(name) + '_1' + '.png')
+                                fitn.visualize(metric_id=1, dpi=1000,
+                                               save_path='graphics\\' + str(name) + '_2' + '.png')
+                                if adaptive_scheme=='context':
+                                    df.loc[len(df)] = [adaptive_scheme, 'nodes_num', specific, 'tournament', 'none', 'none', genetic_scheme_type_str, des_num_nodes, des_degree, des_cluster, act_ad , act_cl]
+                                else:
+                                    df.loc[len(df)] = [adaptive_scheme, None, specific, 'tournament', 'none',
+                                                       'none', genetic_scheme_type_str, des_num_nodes, des_degree,
+                                                       des_cluster, act_ad, act_cl]
 
-    def funad(nn):
-        if nn == 16:
-            return [2, 5, 10]
-        if nn == 32:
-            return [2, 5, 10, 15,20]
-        if nn == 64:
-            return [2, 5, 10, 15, 20,25,30]
+                                df.to_csv('CEC_2.csv')
+                            except:
+                                pass
 
-    all_combinations = []
-    for nn in [64]:
-        for dd in [35]:#funad(nn):
-            for cl in [0.1]:
-                for asp in [2.5]:
-                    all_combinations.append((nn,dd,cl,asp))
+    print(l)
+    k=0
+    des_num_nodes = max_graph_size = 40
+    for des_degree in [3,5,10,15,20,25]:
+        for des_cluster in [0.1,0.15,0.2,0.25,0.3,0.35]:
+            for adaptive_scheme in ['default', 'bandit', 'context']:
+                if adaptive_scheme == 'default':
+                    adaptive_mutation_type = MutationAgentTypeEnum.default
+                elif adaptive_scheme == 'bandit':
+                    adaptive_mutation_type = MutationAgentTypeEnum.bandit
+                elif adaptive_scheme == 'context':
+                    adaptive_mutation_type = MutationAgentTypeEnum.contextual_bandit
+                for specific in [False,True]:
+                    if specific:
+                        dense = cycle = path = star = True
+                    else:
+                        dense = cycle = path = star = False
 
-    #df = pd.read_csv('analysis_data_for_AAAI_workshop_1_3_edges.csv')
-    #while 1>0:
-    (nn,dd,cl,asp) = random.choice(all_combinations)
-    des_cluster =cl
-    des_num_nodes = nn
-    des_degree = dd
-    des_asp =asp
-    print(des_num_nodes, des_cluster, des_asp, des_degree)
-    #if len(df[(df['num nodes']==des_num_nodes) & (df['des cl']==des_cluster) & (df['des asp']==des_asp) & (df['des ad']==des_degree)])==0:
-    G_new, time_after, time_before, act_cl, act_asp,act_ad = run_graph_search(dense=dense,cycle=cycle,path=path,star=star, size=16, num_edges=num_edges, des_degree=des_degree,
-                                                                      des_cluster=des_cluster, des_num_nodes=des_num_nodes,
-                                                              des_label_assort=des_label_assort, des_asp=des_asp, visualize=True)
+                    for genetic_scheme_type_str in ['generational','steady_state', 'parameter_free']:
+                        if genetic_scheme_type_str == 'generational':
+                            genetic_scheme_type = GeneticSchemeTypesEnum.generational
+                        elif genetic_scheme_type_str == 'steady_state':
+                            genetic_scheme_type = GeneticSchemeTypesEnum.steady_state
+                        else:
+                            genetic_scheme_type = GeneticSchemeTypesEnum.parameter_free
+                        #name = str(specific) + '_' + 'none' + '_' + elitism_type_str + '_' + regularization_type_str + '_' + genetic_scheme_type_str + '.npy'
+                        #if not os.path.exists(name):
+                        df = pd.read_csv('CEC_2.csv')
+                        df = df.drop(columns='Unnamed: 0')
+                        #df = pd.DataFrame(columns=['adaptive_mutation_type', 'context_type', 'added_patterns_mutations','selection_type','elitism_type','regularization_type','genetic_scheme_type','num_nodes', 'desired_degree','desired_cl','actual_degree','actual_cl'])
 
-        #new_row = pd.Series([des_num_nodes, des_cluster, des_asp, des_degree, act_cl, act_asp, act_ad,
-        #                 time_after - time_before, False], index=df.columns)
+                        if len(df[(df['num_nodes'] == des_num_nodes) & (df['desired_degree'] == des_degree) & (
+                                df['desired_cl'] == des_cluster) & (df['adaptive_mutation_type'] == adaptive_scheme) & (
+                                          df['added_patterns_mutations'] == specific) & (
+                                          df['genetic_scheme_type'] == genetic_scheme_type_str)]) == 0:
 
-        # df = pd.concat([df, new_row], ignore_index=True)
-        #df = df.append(new_row, ignore_index=True)
+                            try:
+                                time, act_cl, act_ad = run_graph_search(adaptive_mutation_type, SelectionTypesEnum.tournament, ElitismTypesEnum.none, RegularizationTypesEnum.none, genetic_scheme_type, dense=dense,cycle=cycle,path=path,star=star,  num_edges=num_edges, des_degree=des_degree,
+                                                                                                 des_cluster=des_cluster, des_num_nodes=des_num_nodes)
+                                if adaptive_scheme=='context':
+                                    df.loc[len(df)] = [adaptive_scheme, 'nodes_num', specific, 'tournament', 'none', 'none', genetic_scheme_type_str, des_num_nodes, des_degree, des_cluster, act_ad , act_cl]
+                                else:
+                                    df.loc[len(df)] = [adaptive_scheme, None, specific, 'tournament', 'none',
+                                                       'none', genetic_scheme_type_str, des_num_nodes, des_degree,
+                                                       des_cluster, act_ad, act_cl]
 
-        #df.to_csv('analysis_data_for_AAAI_workshop_1_3_edges.csv')
-
-       # with open('G_' + str(des_num_nodes) + '_' + str(des_cluster) + '_' + str(des_asp) + '_' + str(
-        #        des_degree) + '_1_3_edges.txt', 'a') as f:
-         #   for edge in (G_new.edges()):
-          #      f.write(str(edge[0]) + ',' + str(edge[1]) + '\n')
-
+                                df.to_csv('CEC_2.csv')
+                            except:
+                                pass
+    print(k)

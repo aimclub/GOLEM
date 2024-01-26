@@ -4,7 +4,7 @@ from os import PathLike
 from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
 
 from golem.core.dag.graph_node import GraphNode
-from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
+#from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
 
 NodeType = TypeVar('NodeType', bound=GraphNode, covariant=False, contravariant=False)
 
@@ -202,12 +202,12 @@ class Graph(ABC):
 
         return len(self.nodes)
 
-    def show(self, save_path: Optional[Union[PathLike, str]] = None, engine: Optional[str] = None,
-             node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
-             node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
-             edge_curvature_scale: Optional[float] = None,
-             title: Optional[str] = None,
-             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
+    #def show(self, save_path: Optional[Union[PathLike, str]] = None, engine: Optional[str] = None,
+     #        node_color: Optional[NodeColorType] = None, dpi: Optional[int] = None,
+      #       node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
+       #      edge_curvature_scale: Optional[float] = None,
+        #     title: Optional[str] = None,
+         #    nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
         """Visualizes graph or saves its picture to the specified ``path``
 
         Args:
@@ -222,12 +222,12 @@ class Graph(ABC):
             nodes_labels: labels to display near nodes
             edges_labels: labels to display near edges
         """
-        GraphVisualizer(graph=self)\
-            .visualise(save_path=save_path, engine=engine, node_color=node_color, dpi=dpi,
-                       node_size_scale=node_size_scale, font_size_scale=font_size_scale,
-                       edge_curvature_scale=edge_curvature_scale,
-                       title=title,
-                       nodes_labels=nodes_labels, edges_labels=edges_labels)
+      #  GraphVisualizer(graph=self)\
+       #     .visualise(save_path=save_path, engine=engine, node_color=node_color, dpi=dpi,
+        #               node_size_scale=node_size_scale, font_size_scale=font_size_scale,
+         #              edge_curvature_scale=edge_curvature_scale,
+          #             title=title,
+           #            nodes_labels=nodes_labels, edges_labels=edges_labels)
 
     @property
     def graph_description(self) -> Dict:
