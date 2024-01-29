@@ -2,9 +2,10 @@ import itertools
 import os
 from copy import deepcopy
 from datetime import datetime
+from functools import partial
 from glob import glob
 from os import remove
-from typing import Any, List, Sequence, Tuple, Optional
+from typing import Any, List, Sequence, Tuple, Optional, Callable
 
 import numpy as np
 import pandas as pd
@@ -191,17 +192,49 @@ class OptHistoryExtraVisualizer:
         plt.clf()
         plt.close('all')
 
-    def visualize_best_genealogical_path(self):
+    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float]):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
-        taking each the most similar parent each time.
-        That makes the picture more stable (and hence conceivable) and the evolution process more apparent.
+        taking the most similar parent each time.
+        That makes the picture more stable (and hence comprehensible) and the evolution process more apparent.
 
-        Saves the result as a gif with 
-        - graphs laid out on the left from the first generation to the last,
-        - and the fitness plot in the right showing fitness dynamics as the graphs evolve.
+        Saves the result as a GIF with the following layout:
+        - graphs are displayed on the left from the first generation to the last,
+        - and the fitness plot on the right shows fitness dynamics as the graphs evolve.
         """
-        pass
+        last_internal_graph = self.history.archive_history[-1][0]
+        genealogical_path = trace_genealogical_path(last_internal_graph, graph_dist)
+
+        target_frames = 10
+        target_time_s = 3.
+
+        # TODO: Make work for len(evolution_history) smaller than target frames, analyze typical situation
+        # evolution_history = evolution_history[::len(evolution_history) // target_frames]
+
+        fig, (target_ax, evo_ax, fitness_ax) = plt.subplots(1, 3)
+
+        # def draw_graph(graph, ax, title):
+        #     ax.clear()
+        #     ax.set_title(title)
+        #     colors, labeldict, legend_handles = _get_node_colors_and_labels(graph, False)
+        #     nx.draw(graph, ax=ax, arrows=True, node_color=colors, with_labels=False, labels=labeldict)
+        #     return legend_handles
+        # 
+        # legend_handles = draw_graph(target_graph, target_ax, "Target graph")
+        # fig.legend(handles=legend_handles)
+        # 
+        # def render_frame(frame_index):
+        #     draw_graph(domain_evolutionary_path[frame_index], evo_ax, "Evolution process")
+        #     return evo_ax,
+        # 
+        # frames = len(domain_evolutionary_path)
+        # seconds_per_frame = target_time_s / frames
+        # fps = round(1 / seconds_per_frame)
+        # 
+        # anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000*seconds_per_frame)
+        # 
+        # anim.save(os.path.join(dir_to_save_gif, "evolution_process.gif"), fps=fps)
+        # plt.show()
 
 
 def visualise_pareto(front: Sequence[Individual],
@@ -305,3 +338,17 @@ def objectives_lists(individuals: List[Any], objectives_numbers: Tuple[int] = No
             value = individual.fitness.values[objectives_numbers[obj_num]]
             objectives_values_set[obj_num].append(value if value > 0 else -value)
     return objectives_values_set
+
+
+# Implementation details for genealogical path visualisation:
+def trace_genealogical_path(individual: Individual, graph_dist: Callable[[Graph, Graph], float]) -> List[Individual]:
+    # Choose nearest parent each time:
+    genealogical_path: List[Individual] = [individual]
+    while genealogical_path[-1].parents_from_prev_generation:
+        genealogical_path.append(max(
+            genealogical_path[-1].parents_from_prev_generation,
+            key=partial(graph_dist, genealogical_path[-1])
+        ))
+        print(f"Generation: {genealogical_path[-1].native_generation}")
+
+    return list(reversed(genealogical_path))

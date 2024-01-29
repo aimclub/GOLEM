@@ -64,7 +64,8 @@ def run_graph_search(size=16, timeout=0.4, visualize=True):
 
     if visualize:
         vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
-        vis.visualise_history()
+        vis.visualize_best_genealogical_path(graph_gen_params.adapter.adapt_func(tree_edit_dist))
+        # vis.visualise_history()
         # vis.pareto_gif_create()
         # vis.boxplots_gif_create()
 
@@ -82,52 +83,7 @@ def run_graph_search(size=16, timeout=0.4, visualize=True):
     return found_graphs
 
 
-def animate_graph_evolution(target_graph: nx.Graph, evolution_history: OptHistory, adapter: BaseOptimizationAdapter, dir_to_save_gif: str):
-    last_internal_graph = evolution_history.archive_history[-1][0]
-
-    # Choose nearest parent each time:
-    genealogical_path: List[Individual] = [last_internal_graph]
-    while genealogical_path[-1].parents:
-        genealogical_path.append(max(
-            genealogical_path[-1].parents,
-            key=partial(adapter.adapt_func(tree_edit_dist), genealogical_path[-1])
-        ))
-        print(f"Generation: {genealogical_path[-1].native_generation}")
-
-    print(genealogical_path)
-    domain_evolutionary_path = list(reversed(adapter.restore(genealogical_path)))
-    print(domain_evolutionary_path)
-
-    target_frames = 10
-    target_time_s = 3.
-
-    # TODO: Make work for len(evolution_history) smaller than target frames, analyze typical situation
-    # evolution_history = evolution_history[::len(evolution_history) // target_frames]
-
-    fig, (target_ax, evo_ax) = plt.subplots(1, 2)
-
-    def draw_graph(graph, ax, title):
-        ax.clear()
-        ax.set_title(title)
-        colors, labeldict, legend_handles = _get_node_colors_and_labels(graph, False)
-        nx.draw(graph, ax=ax, arrows=True, node_color=colors, with_labels=False, labels=labeldict)
-        return legend_handles
-
-    legend_handles = draw_graph(target_graph, target_ax, "Target graph")
-    fig.legend(handles=legend_handles)
-
-    def render_frame(frame_index):
-        draw_graph(domain_evolutionary_path[frame_index], evo_ax, "Evolution process")
-        return evo_ax,
-
-    frames = len(domain_evolutionary_path)
-    seconds_per_frame = target_time_s / frames
-    fps = round(1 / seconds_per_frame)
-
-    anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000*seconds_per_frame)
-
-    anim.save(os.path.join(dir_to_save_gif, "evolution_process.gif"), fps=fps)
-    plt.show()
+# def animate_graph_evolution(target_graph: nx.Graph, evolution_history: OptHistory, adapter: BaseOptimizationAdapter, dir_to_save_gif: str):
 
 if __name__ == '__main__':
     """
