@@ -28,7 +28,7 @@ from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from itertools import repeat
 import networkx as nx
 from sklearn.preprocessing import LabelEncoder, KBinsDiscretizer
-from generator_model_two_crit import GeneratorModel, GeneratorNode, optimisation_metric_assort, custom_mutation_change_cov, custom_mutation_change_mean, custom_mutation_change_var, \
+from generator_model_two_crit import GeneratorModel, GeneratorNode, optimisation_metric_assort, change_cov, change_mean, change_var, \
     custom_crossover_exchange_mean, custom_crossover_exchange_var, \
     save_in_bn, optimisation_metric_correlaion, attr_correlation, model_assortativity, optimisation_metric_assort
 from functools import partial
@@ -38,11 +38,11 @@ from golem.visualisation.opt_history.multiple_fitness_line import MultipleFitnes
 from golem.visualisation.opt_viz_extra import visualise_pareto
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
+from golem.core.optimisers.genetic.operators.operator import PopulationT
 
+from examples.adaptive_optimizer.utils import plot_action_values
 
-
-
-
+from matplotlib import pyplot as plt
 
 
 
@@ -54,12 +54,14 @@ from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 
 def run_example():
 
+    
+
     number_of_atr = [5, 8, 10, 20]
     p_edge = [0.05]
     target_assort = [0.2, 0.9]
     corr = ['low', 'high']
     df_result = pd.DataFrame(columns=['Number of atr', 'P_edge', 'Target assort', 'Target correlation', 'Calculated_corr', 'Time', 'Deviation_assort', 'Corr_type', 'Sheme', 'Mutation'])
-    mutation_types = [MutationAgentTypeEnum.default, MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
+    mutation_types = [MutationAgentTypeEnum.bandit, MutationAgentTypeEnum.contextual_bandit]
     schemes = [GeneticSchemeTypesEnum.steady_state]
     for mut in mutation_types:
         for schem in schemes:
@@ -136,8 +138,8 @@ def run_example():
                                     adaptive_mutation_type=mut,
                                     genetic_scheme_type = schem,
                                     selection_types = [SelectionTypesEnum.tournament],
-                                    mutation_types = [custom_mutation_change_cov,
-                                    custom_mutation_change_mean, custom_mutation_change_var],
+                                    mutation_types = [change_cov,
+                                    change_mean, change_var],
                                     crossover_types = [CrossoverTypesEnum.none]#[custom_crossover_exchange_mean, custom_crossover_exchange_var]
                                 )
                                 rules = []
@@ -159,13 +161,21 @@ def run_example():
 
 
                                 start = time.time()
+                                stats_action_value_log: List[List[float]] = []
+                                def log_action_values(next_pop: PopulationT, optimiser: EvoGraphOptimizer):
+                                    values = optimiser.mutation.agent.get_action_values(obs=next_pop[0])
+                                    stats_action_value_log.append(list(values))
                                 # # запуск оптимизатора
+                                optimiser.set_iteration_callback(log_action_values)
                                 optimized_graph = optimiser.optimise(objective_eval)
+                                agent = optimiser.mutation.agent
+                                plot_action_values(stats_action_value_log, action_tags=agent.actions)
+                                plt.savefig('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut) + ' exp5_mut_prob.png')
                                 history = optimiser.history
-                                history.save('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut) + ' exp4_history.json')
+                                history.save('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut) + ' exp5_history.json')
                                 fitn = MultipleFitnessLines.from_histories({'0':[history]})
-                                fitn.visualize(metric_id=0, dpi=1000, save_path='examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut)+' exp4_fig1.png')
-                                fitn.visualize(metric_id=1, dpi=1000, save_path='examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut)+' exp4_fig2.png')
+                                fitn.visualize(metric_id=0, dpi=1000, save_path='examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut)+' exp5_fig1.png')
+                                fitn.visualize(metric_id=1, dpi=1000, save_path='examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut)+' exp5_fig2.png')
                                 # visualise_pareto(history.archive_history[-1],
                                 #  objectives_names=['assort', 'corr'],
                                 #  folder=str('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' exp2_pareto.png'))
@@ -174,8 +184,8 @@ def run_example():
                                 for g_i, g in enumerate(optimized_graph):
                                     df_dict = pd.DataFrame({'Number of atr':[n], 'P_edge':[p_i], 'Target assort':[target], 'Target correlation':[str(target_correlation)], 'Calculated_corr':[str(attr_correlation(g,graph_index))], 'Time':[round(end-start)], 'Deviation_assort':[abs(target-model_assortativity(g, graph_index))], 'Corr_type':[cor], 'Sheme':[str(schem)], 'Mutation':[str(mut)]})
                                     df_result = pd.concat([df_result, df_dict], ignore_index=True)
-                                    df_result.to_csv('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut)+' exp4.csv', index=False)
-                                    save_in_bn(g, 'examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(g_i)+' '+str(schem)+' '+str(mut)+' exp4.json', graph_index)
+                                    df_result.to_csv('examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(schem)+' '+str(mut)+' exp5.csv', index=False)
+                                    save_in_bn(g, 'examples/BN_generator_learning/results/paper_cec/'+str(_)+' '+str(n)+' '+str(p_i)+' '+str(target)+' '+cor+' '+str(g_i)+' '+str(schem)+' '+str(mut)+' exp5.json', graph_index)
 
         
 

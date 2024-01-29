@@ -77,7 +77,7 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
         save_path = save_path or self.get_predefined_value('save_path')
         dpi = dpi or self.get_predefined_value('dpi')
 
-        fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
+        fig, ax = plt.subplots(figsize=(5, 5), facecolor='w')
         xlabel = 'Generation'
         self.plot_multiple_fitness_lines(ax, metric_id, with_confidence)
         setup_fitness_plot(ax, xlabel, title=f'Fitness lines for {self.metric_names[metric_id]}')

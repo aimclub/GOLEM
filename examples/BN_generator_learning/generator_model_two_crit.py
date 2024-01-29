@@ -41,7 +41,7 @@ class GeneratorNode(LinkedGraphNode):
     def __str__(self):
         return self.content["name"]
 
-def custom_mutation_change_mean(graph: GeneratorModel, **kwargs):
+def change_mean(graph: GeneratorModel, **kwargs):
     try:
         node = choice(graph.nodes)
         node.content['mean'] = randint(-1000,1000)
@@ -50,7 +50,7 @@ def custom_mutation_change_mean(graph: GeneratorModel, **kwargs):
     return graph
 
 
-def custom_mutation_change_var(graph: GeneratorModel, **kwargs):
+def change_var(graph: GeneratorModel, **kwargs):
     try:
         node = choice(graph.nodes)
         node.content['var'] = randint(1,100)
@@ -59,7 +59,7 @@ def custom_mutation_change_var(graph: GeneratorModel, **kwargs):
     return graph
 
 
-def custom_mutation_change_cov(graph: GeneratorModel, **kwargs):
+def change_cov(graph: GeneratorModel, **kwargs):
    
     flag = True
     while flag:
