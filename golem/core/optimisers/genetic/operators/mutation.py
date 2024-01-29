@@ -84,8 +84,8 @@ class Mutation(Operator):
         final_population, application_attempts = tuple(zip(*map(self._mutation, population)))
 
         # drop individuals to which mutations could not be applied
-        final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)
-                            if not(attempt and ind.graph == init_ind.graph)]
+        final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)]
+                            #if not(attempt and ind.graph == init_ind.graph)]
 
         if len(population) == 1:
             return final_population[0] if final_population else final_population

@@ -88,7 +88,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
             new_ind = self.mutation(choice(pop))
             if new_ind:
                 new_graph = new_ind.graph
-                if new_graph not in pop_graphs and verifier(new_graph):
+                #if new_graph not in pop_graphs and verifier(new_graph):
+                if verifier(new_graph):
                     extended_pop.append(new_ind)
                     pop_graphs.append(new_graph)
         else:
