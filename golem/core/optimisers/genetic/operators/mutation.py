@@ -103,8 +103,9 @@ class Mutation(Operator):
                 new_graph = self._apply_mutations(new_graph, mutation_type)
                 is_correct_graph = self.graph_generation_params.verifier(new_graph)
                 if is_correct_graph:
+                    # str for custom mutations serialisation
                     parent_operator = ParentOperator(type_='mutation',
-                                                     operators=mutation_type,
+                                                     operators=str(mutation_type),
                                                      parent_individuals=individual)
                     individual = Individual(new_graph, parent_operator,
                                             metadata=self.requirements.static_individual_metadata)

@@ -25,7 +25,8 @@ class MultiArmedBanditAgent(OperatorAgent):
         super().__init__(actions=actions, enable_logging=enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
-        self._arm_by_action = dict(zip(actions, self._indices))
+        # str because parent operator for mutation is stored as string for custom mutations serialisation
+        self._arm_by_action = dict(map(lambda x, y: (str(x), y), actions, self._indices))
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.4),
                           n_jobs=n_jobs)
@@ -64,7 +65,7 @@ class MultiArmedBanditAgent(OperatorAgent):
     def _get_experience(self, experience: ExperienceBuffer):
         """ Get experience from ExperienceBuffer, process rewards and log. """
         obs, actions, rewards = experience.retrieve_experience()
-        arms = [self._arm_by_action[action] for action in actions]
+        arms = [self._arm_by_action[str(action)] for action in actions]
         processed_rewards = self._reward_agent.get_rewards_for_arms(rewards, arms)
         self._dbg_log(obs, actions, processed_rewards)
         return obs, arms, processed_rewards

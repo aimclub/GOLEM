@@ -231,5 +231,5 @@ if __name__ == '__main__':
                    pop_size=50,
                    visualize=True,
                    num_trials=5,
-                   pretrain_dir=os.path.join(project_root(), 'examples', 'molecule_search', 'histories')
+                   # pretrain_dir=os.path.join(project_root(), 'examples', 'molecule_search', 'histories')
                    )
