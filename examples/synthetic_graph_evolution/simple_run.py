@@ -25,7 +25,7 @@ from golem.metrics.edit_distance import tree_edit_dist
 from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 
 
-def run_graph_search(size=16, timeout=0.2, visualize=True):
+def run_graph_search(size=16, timeout=0.4, visualize=True):
     # Generate target graph that will be sought by optimizer
     node_types = ('a', 'b')
     target_graph = generate_labeled_graph('tree', size, node_labels=node_types)
@@ -66,7 +66,7 @@ def run_graph_search(size=16, timeout=0.2, visualize=True):
         vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
         vis.visualise_history()
         # vis.pareto_gif_create()
-        vis.boxplots_gif_create()
+        # vis.boxplots_gif_create()
 
 
         # optimiser.history.show.fitness_box()

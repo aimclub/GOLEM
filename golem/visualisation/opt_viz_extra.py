@@ -191,6 +191,18 @@ class OptHistoryExtraVisualizer:
         plt.clf()
         plt.close('all')
 
+    def visualize_best_genealogical_path(self):
+        """
+        Takes the best individual from the resultant generation and traces its genealogical path
+        taking each the most similar parent each time.
+        That makes the picture more stable (and hence conceivable) and the evolution process more apparent.
+
+        Saves the result as a gif with 
+        - graphs laid out on the left from the first generation to the last,
+        - and the fitness plot in the right showing fitness dynamics as the graphs evolve.
+        """
+        pass
+
 
 def visualise_pareto(front: Sequence[Individual],
                      objectives_numbers: Tuple[int, int] = (0, 1),
