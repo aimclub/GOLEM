@@ -63,16 +63,19 @@ def run_graph_search(size=16, timeout=0.2, visualize=True):
     print(found_graphs[0].graph_description)
 
     if visualize:
-        # vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
-        # vis.visualise_history()
+        vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
+        vis.visualise_history()
+        # vis.pareto_gif_create()
+        vis.boxplots_gif_create()
 
-        optimiser.history.show.fitness_box()
-        optimiser.history.show.fitness_line()
-        optimiser.history.show.fitness_line_interactive()
-        optimiser.history.show.operations_kde()
-        optimiser.history.show.operations_animated_bar()
-        optimiser.history.show.diversity_line()
-        optimiser.history.show.diversity_population(save_path="diversity.mp4")
+
+        # optimiser.history.show.fitness_box()
+        # optimiser.history.show.fitness_line()
+        # optimiser.history.show.fitness_line_interactive()
+        # optimiser.history.show.operations_kde()
+        # optimiser.history.show.operations_animated_bar()
+        # optimiser.history.show.diversity_line()
+        # optimiser.history.show.diversity_population(save_path="diversity.mp4")
         # Restore the NetworkX graph back from internal Graph representation
         # animate_graph_evolution(target_graph, optimiser.history, graph_gen_params.adapter, "./")
 
