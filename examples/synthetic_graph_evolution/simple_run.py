@@ -2,13 +2,8 @@ import os
 from datetime import timedelta
 from functools import partial
 
-import networkx as nx
-from matplotlib import pyplot as plt, animation
-from typing import List
-
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
-from examples.synthetic_graph_evolution.utils import _get_node_colors_and_labels, draw_graphs_subplots
-from golem.core.adapter import BaseOptimizationAdapter
+from examples.synthetic_graph_evolution.utils import draw_graphs_subplots
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
@@ -17,8 +12,6 @@ from golem.core.optimisers.genetic.operators.base_mutations import MutationTypes
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective
-from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.metrics.edit_distance import tree_edit_dist
