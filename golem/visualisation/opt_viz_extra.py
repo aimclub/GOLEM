@@ -10,7 +10,7 @@ from typing import Any, List, Sequence, Tuple, Optional, Callable
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, animation
 
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
@@ -192,7 +192,7 @@ class OptHistoryExtraVisualizer:
         plt.clf()
         plt.close('all')
 
-    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float]):
+    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float], target_graph: Graph):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
         taking the most similar parent each time.
@@ -205,36 +205,50 @@ class OptHistoryExtraVisualizer:
         last_internal_graph = self.history.archive_history[-1][0]
         genealogical_path = trace_genealogical_path(last_internal_graph, graph_dist)
 
-        target_frames = 10
         target_time_s = 3.
+        figure_width = 5
+        width_ratios = [1, 1, 0.7]
 
-        # TODO: Make work for len(evolution_history) smaller than target frames, analyze typical situation
-        # evolution_history = evolution_history[::len(evolution_history) // target_frames]
+        fig, (target_ax, evo_ax, fitness_ax) = plt.subplots(
+            1, 3,
+            figsize=(figure_width * sum(width_ratios), figure_width),
+            gridspec_kw={'width_ratios': width_ratios}
+        )
 
-        fig, (target_ax, evo_ax, fitness_ax) = plt.subplots(1, 3)
+        def draw_graph(graph: Graph, ax, title):
+            ax.clear()
+            ax.set_title(title, fontsize=25)
+            self.graph_visualizer(graph).draw_nx_dag(ax, node_names_placement='legend')
 
-        # def draw_graph(graph, ax, title):
-        #     ax.clear()
-        #     ax.set_title(title)
-        #     colors, labeldict, legend_handles = _get_node_colors_and_labels(graph, False)
-        #     nx.draw(graph, ax=ax, arrows=True, node_color=colors, with_labels=False, labels=labeldict)
-        #     return legend_handles
-        # 
-        # legend_handles = draw_graph(target_graph, target_ax, "Target graph")
-        # fig.legend(handles=legend_handles)
-        # 
-        # def render_frame(frame_index):
-        #     draw_graph(domain_evolutionary_path[frame_index], evo_ax, "Evolution process")
-        #     return evo_ax,
-        # 
-        # frames = len(domain_evolutionary_path)
-        # seconds_per_frame = target_time_s / frames
-        # fps = round(1 / seconds_per_frame)
-        # 
-        # anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames, interval=1000*seconds_per_frame)
-        # 
-        # anim.save(os.path.join(dir_to_save_gif, "evolution_process.gif"), fps=fps)
-        # plt.show()
+        fitnesses_along_path = list(map(lambda ind: ind.fitness.value, genealogical_path))
+        generations_along_path = list(map(lambda ind: ind.native_generation, genealogical_path))
+
+        def render_frame(frame_index):
+            draw_graph(
+                genealogical_path[frame_index].graph, evo_ax,
+                f"Evolution process,\ngeneration {generations_along_path[frame_index]}/{generations_along_path[-1]}"
+            )
+            # Select only the genealogical path
+            fitness_ax.clear()
+            plot_fitness_with_axvline(
+                generations=generations_along_path,
+                fitnesses=fitnesses_along_path,
+                ax=fitness_ax,
+                axvline_x=generations_along_path[frame_index],
+                current_fitness=fitnesses_along_path[frame_index]
+            )
+            return evo_ax, fitness_ax
+
+        frames = len(genealogical_path)
+        seconds_per_frame = target_time_s / frames
+        fps = round(1 / seconds_per_frame)
+
+        draw_graph(target_graph, target_ax, "Target graph")  # Persists throughout the animation
+        anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames,
+                                       interval=1000 * seconds_per_frame)
+
+        anim.save(os.path.join(self.save_path, "evolution_process.gif"), fps=fps)
+        plt.show()
 
 
 def visualise_pareto(front: Sequence[Individual],
@@ -344,11 +358,23 @@ def objectives_lists(individuals: List[Any], objectives_numbers: Tuple[int] = No
 def trace_genealogical_path(individual: Individual, graph_dist: Callable[[Graph, Graph], float]) -> List[Individual]:
     # Choose nearest parent each time:
     genealogical_path: List[Individual] = [individual]
+    print(f"Starting from: {genealogical_path[-1].native_generation}, fitness: {genealogical_path[-1].fitness.value}")
     while genealogical_path[-1].parents_from_prev_generation:
         genealogical_path.append(max(
             genealogical_path[-1].parents_from_prev_generation,
             key=partial(graph_dist, genealogical_path[-1])
         ))
-        print(f"Generation: {genealogical_path[-1].native_generation}")
+        print(f"Generation: {genealogical_path[-1].native_generation}, fitness: {genealogical_path[-1].fitness.value}")
 
     return list(reversed(genealogical_path))
+
+
+def plot_fitness_with_axvline(generations: List[int], fitnesses: List[float], ax: plt.Axes, current_fitness: float,
+                              axvline_x: int = None):
+    ax.plot(generations, fitnesses)
+    ax.set_title(f'Metric dynamic,\ncurrent: {current_fitness}', fontsize=25)
+    ax.set_xlabel('Generation')
+    ax.set_ylabel('Metric')
+    if axvline_x is not None:
+        ax.axvline(x=axvline_x, color='black')
+    return ax
