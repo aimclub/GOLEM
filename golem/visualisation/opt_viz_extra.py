@@ -1,4 +1,5 @@
 import itertools
+import math
 import os
 from copy import deepcopy
 from datetime import datetime
@@ -192,7 +193,8 @@ class OptHistoryExtraVisualizer:
         plt.clf()
         plt.close('all')
 
-    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float] = None, target_graph: Graph = None):
+    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float] = None,
+                                         target_graph: Graph = None):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
         taking the most similar parent each time (or the first parent if no similarity measure is provided).
@@ -206,15 +208,17 @@ class OptHistoryExtraVisualizer:
         # Treating all graphs as equally distant if there's no reasonable way to compare them:
         graph_dist = graph_dist or (lambda g1, g2: 1)
 
-        def draw_graph(graph: Graph, ax, title):
+        def draw_graph(graph: Graph, ax, title, highlight_title=False):
             ax.clear()
-            ax.set_title(title, fontsize=22)
+            ax.set_title(title, fontsize=22, color='green' if highlight_title else 'black')
             self.graph_visualizer(graph).draw_nx_dag(ax, node_names_placement='legend')
 
         last_internal_graph = self.history.archive_history[-1][0]
         genealogical_path = trace_genealogical_path(last_internal_graph, graph_dist)
 
         target_time_s = 5.
+        hold_result_time_s = 2.
+
         figure_width = 5
         width_ratios = [1.3, 0.7]
         if target_graph is not None:
@@ -229,14 +233,17 @@ class OptHistoryExtraVisualizer:
         if target_graph is not None:
             draw_graph(target_graph, axes[0], "Target graph")  # Persists throughout the animation
 
-
         fitnesses_along_path = list(map(lambda ind: ind.fitness.value, genealogical_path))
         generations_along_path = list(map(lambda ind: ind.native_generation, genealogical_path))
 
         def render_frame(frame_index):
+            path_index = min(frame_index, len(genealogical_path) - 1)
+            is_hold_stage = frame_index >= len(genealogical_path)
+
             draw_graph(
-                genealogical_path[frame_index].graph, evo_ax,
-                f"Evolution process,\ngeneration {generations_along_path[frame_index]}/{generations_along_path[-1]}"
+                genealogical_path[path_index].graph, evo_ax,
+                f"Evolution process,\ngeneration {generations_along_path[path_index]}/{generations_along_path[-1]}",
+                highlight_title=is_hold_stage
             )
             # Select only the genealogical path
             fitness_ax.clear()
@@ -244,13 +251,14 @@ class OptHistoryExtraVisualizer:
                 generations=generations_along_path,
                 fitnesses=fitnesses_along_path,
                 ax=fitness_ax,
-                axvline_x=generations_along_path[frame_index],
-                current_fitness=fitnesses_along_path[frame_index]
+                axvline_x=generations_along_path[path_index],
+                current_fitness=fitnesses_along_path[path_index]
             )
             return evo_ax, fitness_ax
 
-        frames = len(genealogical_path)
-        seconds_per_frame = target_time_s / frames
+        frames = len(genealogical_path) + \
+            int(math.ceil(len(genealogical_path) * hold_result_time_s / (hold_result_time_s + target_time_s)))
+        seconds_per_frame = (target_time_s + hold_result_time_s) / frames
         fps = round(1 / seconds_per_frame)
 
         anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames,
