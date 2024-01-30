@@ -194,7 +194,7 @@ class OptHistoryExtraVisualizer:
         plt.close('all')
 
     def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float] = None,
-                                         target_graph: Graph = None):
+                                         target_graph: Graph = None, save_as_gif=False):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
         taking the most similar parent each time (or the first parent if no similarity measure is provided).
@@ -264,7 +264,8 @@ class OptHistoryExtraVisualizer:
         anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames,
                                        interval=1000 * seconds_per_frame)
 
-        anim.save(os.path.join(self.save_path, "evolution_process.gif"), fps=fps)
+        if save_as_gif:
+            anim.save(os.path.join(self.save_path, "evolution_process.gif"), fps=fps)
         plt.show()
 
 
