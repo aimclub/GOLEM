@@ -192,33 +192,43 @@ class OptHistoryExtraVisualizer:
         plt.clf()
         plt.close('all')
 
-    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float], target_graph: Graph):
+    def visualize_best_genealogical_path(self, graph_dist: Callable[[Graph, Graph], float] = None, target_graph: Graph = None):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
-        taking the most similar parent each time.
+        taking the most similar parent each time (or the first parent if no similarity measure is provided).
         That makes the picture more stable (and hence comprehensible) and the evolution process more apparent.
 
         Saves the result as a GIF with the following layout:
-        - graphs are displayed on the left from the first generation to the last,
+        - target graph (if provided) is displayed on the left,
+        - evolving graphs go as the next subplot, they evolve from the first generation to the last,
         - and the fitness plot on the right shows fitness dynamics as the graphs evolve.
         """
+        # Treating all graphs as equally distant if there's no reasonable way to compare them:
+        graph_dist = graph_dist or (lambda g1, g2: 1)
+
+        def draw_graph(graph: Graph, ax, title):
+            ax.clear()
+            ax.set_title(title, fontsize=22)
+            self.graph_visualizer(graph).draw_nx_dag(ax, node_names_placement='legend')
+
         last_internal_graph = self.history.archive_history[-1][0]
         genealogical_path = trace_genealogical_path(last_internal_graph, graph_dist)
 
         target_time_s = 3.
         figure_width = 5
-        width_ratios = [1, 1, 0.7]
+        width_ratios = [1.3, 0.7]
+        if target_graph is not None:
+            width_ratios = [1.3] + width_ratios
 
-        fig, (target_ax, evo_ax, fitness_ax) = plt.subplots(
-            1, 3,
+        fig, axes = plt.subplots(
+            1, len(width_ratios),
             figsize=(figure_width * sum(width_ratios), figure_width),
             gridspec_kw={'width_ratios': width_ratios}
         )
+        evo_ax, fitness_ax = axes[-2:]
+        if target_graph is not None:
+            draw_graph(target_graph, axes, "Target graph")  # Persists throughout the animation
 
-        def draw_graph(graph: Graph, ax, title):
-            ax.clear()
-            ax.set_title(title, fontsize=25)
-            self.graph_visualizer(graph).draw_nx_dag(ax, node_names_placement='legend')
 
         fitnesses_along_path = list(map(lambda ind: ind.fitness.value, genealogical_path))
         generations_along_path = list(map(lambda ind: ind.native_generation, genealogical_path))
@@ -243,7 +253,6 @@ class OptHistoryExtraVisualizer:
         seconds_per_frame = target_time_s / frames
         fps = round(1 / seconds_per_frame)
 
-        draw_graph(target_graph, target_ax, "Target graph")  # Persists throughout the animation
         anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames,
                                        interval=1000 * seconds_per_frame)
 
@@ -372,7 +381,7 @@ def trace_genealogical_path(individual: Individual, graph_dist: Callable[[Graph,
 def plot_fitness_with_axvline(generations: List[int], fitnesses: List[float], ax: plt.Axes, current_fitness: float,
                               axvline_x: int = None):
     ax.plot(generations, fitnesses)
-    ax.set_title(f'Metric dynamic,\ncurrent: {current_fitness}', fontsize=25)
+    ax.set_title(f'Metric dynamic,\ncurrent: {current_fitness}', fontsize=22)
     ax.set_xlabel('Generation')
     ax.set_ylabel('Metric')
     if axvline_x is not None:

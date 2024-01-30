@@ -64,8 +64,9 @@ def run_graph_search(size=16, timeout=8, visualize=True):
 
     if visualize:
         vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
-        vis.visualize_best_genealogical_path(graph_gen_params.adapter.adapt_func(tree_edit_dist),
-                                             graph_gen_params.adapter.adapt(target_graph))
+        # vis.visualize_best_genealogical_path(graph_gen_params.adapter.adapt_func(tree_edit_dist),
+        #                                      graph_gen_params.adapter.adapt(target_graph))
+        vis.visualize_best_genealogical_path()
         # vis.visualise_history()
         # vis.pareto_gif_create()
         # vis.boxplots_gif_create()
