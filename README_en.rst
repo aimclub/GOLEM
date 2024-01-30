@@ -105,6 +105,14 @@ Following example demonstrates graph search using reference graph & edit distanc
         return found_graph
 
 
+Tracing the lineage of the found_graph reveals how mutations are applied to a random graph one after another, eventually leading to the target graph:
+
+.. image:: /docs/source/img/evolution_process.gif
+   :alt: Evolution process
+   :align: center
+
+One can also notice that despite the fact that the edit distance generally decreases along the genealogical path, the optimizer sometimes sacrifices local fitness gain for the sake of getting the best solution at the end.
+
 Project Structure
 =================
 
