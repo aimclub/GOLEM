@@ -141,29 +141,19 @@ def model_topology(graph:GeneratorModel):
     return ()
 
 
-def save_in_bn(graph:GeneratorModel, name, graph_index):
+def save_in_bn(graph:GeneratorModel, name):
     sample_data = pd.DataFrame()
     structure = []
     info = {'types':{}, 'signs':{}}
-    cov_matrix = np.zeros((len(graph.nodes),len(graph.nodes)))
-    means = []
-
     for i, node in enumerate(graph.nodes):
         info['types'][node.content['name']] = 'cont'
         info['signs'][node.content['name']] = 'neg'
         mean = node.content['mean']
         var = node.content['var']
-        cov = node.content['cov']
-        cov_matrix[i,i] = var
-        means.append(mean)
-        if cov:
-            for j, parent in enumerate(node.nodes_from):
-                cov_matrix[i, graph_index[parent.content['name']]] = cov[j]
-                cov_matrix[graph_index[parent.content['name']], i] = cov[j]
+        sample_data[node.content['name']] = np.random.normal(loc=mean, scale=math.sqrt(var), size=100)
+        if node.nodes_from:
+            for parent in node.nodes_from:
                 structure.append((parent.content['name'], node.content['name']))
-    cov_matrix = np.dot(cov_matrix, cov_matrix.transpose())
-    sample_data = pd.DataFrame(np.random.multivariate_normal(means, cov_matrix, 5000))
-    sample_data.columns = list(info['signs'].keys())
     bn = ContinuousBN()
     bn.add_nodes(info)
     bn.set_structure(edges=structure)
