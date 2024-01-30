@@ -5,32 +5,16 @@ import sys
 
 parentdir = os.getcwd()
 sys.path.insert(0, parentdir)
-from scipy.stats import pearsonr
 from typing import Optional, Union, List
-from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.dag.graph_delegate import GraphDelegate
 from golem.core.dag.linked_graph_node import LinkedGraphNode
-from golem.core.dag.linked_graph import LinkedGraph
 import numpy as np
 import pandas as pd
-from gmr import GMM
 from bamt.networks.continuous_bn import ContinuousBN
-from random import choice, random,randint, sample
+from random import choice, randint
 import math
-from datetime import timedelta
-from golem.core.optimisers.objective.objective import Objective
-from golem.core.optimisers.objective.objective_eval import ObjectiveEvaluate
-from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
-from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.adapter import DirectAdapter
-from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
-from itertools import repeat
-import networkx as nx
-from sklearn.preprocessing import LabelEncoder, KBinsDiscretizer
-from scipy.spatial import distance
+import gudhi
+from gudhi.wasserstein import wasserstein_distance
 
 
 class GeneratorModel(GraphDelegate):
@@ -103,7 +87,6 @@ def custom_crossover_exchange_var(graph1: GeneratorModel, graph2: GeneratorModel
     node2.content['var'] = var1
     return graph1, graph2
 
-    
 
 def model_topology(graph:GeneratorModel):
     sample_data = pd.DataFrame()
@@ -122,7 +105,8 @@ def model_topology(graph:GeneratorModel):
     bn.add_nodes(info)
     bn.set_structure(edges=structure)
     bn.fit_parameters(sample_data)
-    sample = bn.sample(100)
+    sample = bn.sample(10)
+    # print(sample)
     new_sample = pd.DataFrame()
     final_columns = ['X1', 'X2']
     for t in range(5):
@@ -133,12 +117,18 @@ def model_topology(graph:GeneratorModel):
         df.columns = final_columns
         new_sample = pd.concat([new_sample, df])
     
-    new_sample = new_sample
-    
-    #тут надо посчитать топлогию на new_sample и вернуть её
+    new_sample = new_sample.reset_index()
+    # print(new_sample)
 
-   
-    return ()
+    rips_points = gudhi.RipsComplex(points=new_sample.to_numpy())
+    simplex_tree_points = rips_points.create_simplex_tree(max_dimension=2)
+    diag_points = simplex_tree_points.persistence(homology_coeff_field=2, min_persistence=0)
+    # diag_pairs_points = np.array([pair[1] for pair in diag_points])
+    diag_pairs_points_1 = np.array([pair[1] for pair in diag_points if pair[0] == 1])
+
+    # print(diag_pairs_points_1)
+
+    return diag_pairs_points_1
 
 
 def save_in_bn(graph:GeneratorModel, name, graph_index):
@@ -171,11 +161,8 @@ def save_in_bn(graph:GeneratorModel, name, graph_index):
     bn.save(name)
 
 
-
-    
-
-    
 def optimisation_metric_topology(generator:GeneratorModel, target_topology):
     generator_topology = model_topology(generator)
-    return 0#math.fabs(generator_topology - target_topology)
+    dist = wasserstein_distance(generator_topology, target_topology)
 
+    return dist

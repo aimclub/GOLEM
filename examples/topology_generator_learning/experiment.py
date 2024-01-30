@@ -11,7 +11,7 @@ from golem.core.dag.linked_graph_node import LinkedGraphNode
 from golem.core.dag.linked_graph import LinkedGraph
 import numpy as np
 import pandas as pd
-from gmr import GMM
+# from gmr import GMM
 from random import choice, random,randint, sample, uniform
 import math
 from datetime import timedelta
@@ -42,22 +42,13 @@ from examples.adaptive_optimizer.utils import plot_action_values
 from matplotlib import pyplot as plt
 
 
-
-
-
-
-
-
-
 def run_example():
-
-    
-
     number_of_atr = [2]
     number_of_times = [5]
     df_result = pd.DataFrame(columns=['Number of nodes', 'Deviation'])
-    target_topology = []
-    for _ in range(5):
+    target_topology = np.array([(2.0, 7.0)])
+
+    for t_1 in range(10):
         for n in number_of_atr:
             for t in number_of_times:
                 one_time_structure = [('X0', 'X1')]
@@ -74,8 +65,7 @@ def run_example():
                     for edge2 in different_time_structure:
                         edge_new = (edge2[0]+'_'+'t'*t1, edge2[0]+'_'+'t'*(t1+1))
                         structure.append(edge_new)
-                    
-                        
+
                 initial = [GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
                                                                         content={'name': vertex,
                                                                                 'mean':randint(0,10),
@@ -93,7 +83,6 @@ def run_example():
                         for node_p in initial[0].nodes:
                             if node_p.content['name'] == name_p:
                                 node.nodes_from.append(node_p)
-                
 
                 objective = Objective(quality_metrics={'topology':optimisation_metric_topology})
                 
@@ -105,7 +94,7 @@ def run_example():
                     early_stopping_iterations=10,
                     num_of_generations=n_generation,
                     timeout=timedelta(minutes=time_m),
-                    history_dir = None
+                    history_dir=None
                     )
 
                 optimiser_parameters = GPAlgorithmParameters(
@@ -114,9 +103,9 @@ def run_example():
                     pop_size=pop_size,
                     crossover_prob=0.8, 
                     mutation_prob=0.9,
-                    selection_types = [SelectionTypesEnum.tournament],
-                    mutation_types = [change_mean, change_var],
-                    crossover_types = [CrossoverTypesEnum.none]#[custom_crossover_exchange_mean, custom_crossover_exchange_var]
+                    selection_types=[SelectionTypesEnum.tournament],
+                    mutation_types=[change_mean, change_var],
+                    crossover_types=[CrossoverTypesEnum.none] #[custom_crossover_exchange_mean, custom_crossover_exchange_var]
                 )
                 rules = []
                 graph_generation_params = GraphGenerationParams(
@@ -130,30 +119,21 @@ def run_example():
                     requirements=requirements,
                     initial_graphs=initial,
                     objective=objective)
-                
 
-                
-
-
-
-                start = time.time()
+                # start = time.time()
                 optimized_graph = optimiser.optimise(objective_eval)
                 history = optimiser.history
-                history.save('examples/topology_generator_learning/results'+str(_)+' '+str(n)+' exp1_history.json')
-                end = time.time()
+                results_path = r"C:\Users\Worker1\PycharmProjects\GOLEM\examples\topology_generator_learning\results"
+                history.save(fr'{results_path}\results_exp1_history.json')
+                # end = time.time()
+
                 for g_i, g in enumerate(optimized_graph):
                     df_dict = pd.DataFrame({'Number of atr':[n], 'Deviation':[optimisation_metric_topology(g, target_topology)]})
                     df_result = pd.concat([df_result, df_dict], ignore_index=True)
-                    df_result.to_csv('examples/topology_generator_learning/results'+str(_)+' '+str(n)+' exp1.csv', index=False)
+                    df_result.to_csv(fr'{results_path}\results_exp1_history.csv', index=False)
                     
 
-            
-
-
-if __name__ == '__main__':
-
-
-    n_generation=500
-    time_m=100
-    pop_size = 20
-    run_example()
+n_generation = 100
+time_m = 10
+pop_size = 20
+run_example()
