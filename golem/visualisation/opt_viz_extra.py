@@ -214,7 +214,7 @@ class OptHistoryExtraVisualizer:
         last_internal_graph = self.history.archive_history[-1][0]
         genealogical_path = trace_genealogical_path(last_internal_graph, graph_dist)
 
-        target_time_s = 3.
+        target_time_s = 5.
         figure_width = 5
         width_ratios = [1.3, 0.7]
         if target_graph is not None:
@@ -227,7 +227,7 @@ class OptHistoryExtraVisualizer:
         )
         evo_ax, fitness_ax = axes[-2:]
         if target_graph is not None:
-            draw_graph(target_graph, axes, "Target graph")  # Persists throughout the animation
+            draw_graph(target_graph, axes[0], "Target graph")  # Persists throughout the animation
 
 
         fitnesses_along_path = list(map(lambda ind: ind.fitness.value, genealogical_path))
@@ -367,13 +367,11 @@ def objectives_lists(individuals: List[Any], objectives_numbers: Tuple[int] = No
 def trace_genealogical_path(individual: Individual, graph_dist: Callable[[Graph, Graph], float]) -> List[Individual]:
     # Choose nearest parent each time:
     genealogical_path: List[Individual] = [individual]
-    print(f"Starting from: {genealogical_path[-1].native_generation}, fitness: {genealogical_path[-1].fitness.value}")
     while genealogical_path[-1].parents_from_prev_generation:
         genealogical_path.append(max(
             genealogical_path[-1].parents_from_prev_generation,
             key=partial(graph_dist, genealogical_path[-1])
         ))
-        print(f"Generation: {genealogical_path[-1].native_generation}, fitness: {genealogical_path[-1].fitness.value}")
 
     return list(reversed(genealogical_path))
 

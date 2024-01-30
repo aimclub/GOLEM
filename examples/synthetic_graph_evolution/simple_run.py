@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt, animation
 from typing import List
 
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
-from examples.synthetic_graph_evolution.utils import _get_node_colors_and_labels
+from examples.synthetic_graph_evolution.utils import _get_node_colors_and_labels, draw_graphs_subplots
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
@@ -49,8 +49,9 @@ def run_graph_search(size=16, timeout=8, visualize=True):
                         MutationTypesEnum.single_change],
         crossover_types=[CrossoverTypesEnum.subtree]
     )
+    adapter = BaseNetworkxAdapter()  # Example works with NetworkX graphs
     graph_gen_params = GraphGenerationParams(
-        adapter=BaseNetworkxAdapter(),  # Example works with NetworkX graphs
+        adapter=adapter,
         rules_for_constraint=DEFAULT_DAG_RULES,  # We don't want cycles in the graph
         available_node_types=node_types  # Node types that can appear in graphs
     )
@@ -59,32 +60,19 @@ def run_graph_search(size=16, timeout=8, visualize=True):
     # Build and run the optimizer
     optimiser = EvoGraphOptimizer(objective, initial_graphs, *all_parameters)
     found_graphs = optimiser.optimise(objective)
-    print(found_graphs[0].descriptive_id)
-    print(found_graphs[0].graph_description)
 
     if visualize:
-        vis = OptHistoryExtraVisualizer(optimiser.history, r"C:\dev\aim\GOLEM\examples\synthetic_graph_evolution\data")
-        # vis.visualize_best_genealogical_path(graph_gen_params.adapter.adapt_func(tree_edit_dist),
-        #                                      graph_gen_params.adapter.adapt(target_graph))
-        vis.visualize_best_genealogical_path()
-        # vis.visualise_history()
-        # vis.pareto_gif_create()
-        # vis.boxplots_gif_create()
-
-        # optimiser.history.show.fitness_box()
-        # optimiser.history.show.fitness_line()
-        # optimiser.history.show.fitness_line_interactive()
-        # optimiser.history.show.operations_kde()
-        # optimiser.history.show.operations_animated_bar()
-        # optimiser.history.show.diversity_line()
-        # optimiser.history.show.diversity_population(save_path="diversity.mp4")
         # Restore the NetworkX graph back from internal Graph representation
-        # animate_graph_evolution(target_graph, optimiser.history, graph_gen_params.adapter, "./")
+        found_graph = adapter.restore(found_graphs[0])
+        draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
+        optimiser.history.show.fitness_line()
+
+        # Animation of genealogical path of the best individual:
+        vis = OptHistoryExtraVisualizer(optimiser.history)
+        vis.visualize_best_genealogical_path(adapter.adapt_func(tree_edit_dist), adapter.adapt(target_graph))
 
     return found_graphs
 
-
-# def animate_graph_evolution(target_graph: nx.Graph, evolution_history: OptHistory, adapter: BaseOptimizationAdapter, dir_to_save_gif: str):
 
 if __name__ == '__main__':
     """
