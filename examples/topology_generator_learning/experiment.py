@@ -27,7 +27,12 @@ from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from itertools import repeat
 import networkx as nx
 from sklearn.preprocessing import LabelEncoder, KBinsDiscretizer
-from generator_model import GeneratorModel, GeneratorNode, change_mean, change_var, custom_crossover_exchange_mean, custom_crossover_exchange_var, optimisation_metric_topology, model_topology
+from generator_model import (GeneratorModel,
+                             GeneratorNode,
+                             change_mean,
+                             change_var,
+                             optimisation_metric_topology,
+                             save_in_bn)
 from functools import partial
 import time
 from scipy.spatial import distance
@@ -46,16 +51,18 @@ def run_example():
     number_of_atr = [2]
     number_of_times = [5]
     df_result = pd.DataFrame(columns=['Number of nodes', 'Deviation'])
-    target_topology = np.array([(2.0, 7.0)])
+    target_topology = np.array([(1.0, 7.0), (2.0, 6.0), (3.0, 7.0)])
 
     for t_1 in range(10):
         for n in number_of_atr:
             for t in number_of_times:
                 one_time_structure = [('X0', 'X1')]
+                # different_time_structure = [('X0', 'X0'), ('X1', 'X1'), ('X0', 'X1'), ('X1', 'X0')]
                 different_time_structure = [('X0', 'X0'), ('X1', 'X1')]
+                # different_time_structure = []
                 structure = []
                 vertices = []
-                for j in range(t): 
+                for j in range(t):
                     for i in range(n):
                         vertices.append('X'+str(i)+'_'+'t'*j)
                 for t1 in range(0, t-1, 1):
@@ -65,18 +72,18 @@ def run_example():
                     for edge2 in different_time_structure:
                         edge_new = (edge2[0]+'_'+'t'*t1, edge2[0]+'_'+'t'*(t1+1))
                         structure.append(edge_new)
+                # structure.append(('X0_tttt', 'X1_tttt'))
 
                 initial = [GeneratorModel(nodes=[GeneratorNode(nodes_from=[],
-                                                                        content={'name': vertex,
-                                                                                'mean':randint(0,10),
-                                                                                'var':randint(1,50),
-                                                                                }) 
-                                                                        for vertex in vertices])]
+                                                               content={'name': vertex,
+                                                                        'mean': randint(0, 10),
+                                                                        'var': randint(1, 50),
+                                                                        }) for vertex in vertices])]
                 DAG = nx.DiGraph(structure)
                 structure_parents = {}
                 for v in DAG:
                     structure_parents[v] = list(DAG.pred[v].keys())
-                
+
                 for node in initial[0].nodes:
                     parents_names = structure_parents[node.content['name']]
                     for name_p in parents_names:
@@ -85,9 +92,9 @@ def run_example():
                                 node.nodes_from.append(node_p)
 
                 objective = Objective(quality_metrics={'topology':optimisation_metric_topology})
-                
+
                 objective_eval = ObjectiveEvaluate(objective, target_topology = target_topology)    
-        
+
                 requirements = GraphRequirements(
                     max_arity=100,
                     max_depth=100, 
@@ -120,20 +127,20 @@ def run_example():
                     initial_graphs=initial,
                     objective=objective)
 
-                # start = time.time()
                 optimized_graph = optimiser.optimise(objective_eval)
                 history = optimiser.history
                 results_path = r"C:\Users\Worker1\PycharmProjects\GOLEM\examples\topology_generator_learning\results"
-                history.save(fr'{results_path}\results_exp1_history.json')
-                # end = time.time()
+                history.save(fr'{results_path}\{t_1}_results_exp1_history.json')
+                history.show.fitness_line(fr'{results_path}\{t_1}_conv.png')
 
                 for g_i, g in enumerate(optimized_graph):
                     df_dict = pd.DataFrame({'Number of atr':[n], 'Deviation':[optimisation_metric_topology(g, target_topology)]})
                     df_result = pd.concat([df_result, df_dict], ignore_index=True)
-                    df_result.to_csv(fr'{results_path}\results_exp1_history.csv', index=False)
-                    
+                    df_result.to_csv(fr'{results_path}\{t_1}_results_exp1_history.csv', index=False)
+                    save_in_bn(g, fr'{results_path}\{t_1}_bn')
+
 
 n_generation = 100
-time_m = 10
+time_m = 100
 pop_size = 20
 run_example()

@@ -22,6 +22,7 @@ class GeneratorModel(GraphDelegate):
         super().__init__(nodes)
         self.unique_pipeline_id = 1
 
+
 class GeneratorNode(LinkedGraphNode):
     def __str__(self):
         return self.content["name"]
@@ -52,19 +53,16 @@ def change_cov(graph: GeneratorModel, **kwargs):
         if node.nodes_from:
             flag = False
             n = len(node.nodes_from)
-            rand_index = randint(0,n-1)
+            rand_index = randint(0, n-1)
             new_cov = []
             for i, c in enumerate(node.content['cov']):
                 if i == rand_index:
-                    new_cov.append(randint(-500,500))
+                    new_cov.append(randint(-500, 500))
                 else:
                     new_cov.append(c)
             node.content['cov'] = new_cov
     
     return graph
-
-
-
 
 
 def custom_crossover_exchange_mean(graph1: GeneratorModel,graph2: GeneratorModel, **kwargs):
@@ -75,7 +73,6 @@ def custom_crossover_exchange_mean(graph1: GeneratorModel,graph2: GeneratorModel
     node1.content['mean'] = mean2
     node2.content['mean'] = mean1
     return graph1, graph2
-
 
 
 def custom_crossover_exchange_var(graph1: GeneratorModel, graph2: GeneratorModel, **kwargs):
@@ -105,8 +102,7 @@ def model_topology(graph:GeneratorModel):
     bn.add_nodes(info)
     bn.set_structure(edges=structure)
     bn.fit_parameters(sample_data)
-    sample = bn.sample(10)
-    # print(sample)
+    sample = bn.sample(100)
     new_sample = pd.DataFrame()
     final_columns = ['X1', 'X2']
     for t in range(5):
@@ -118,42 +114,28 @@ def model_topology(graph:GeneratorModel):
         new_sample = pd.concat([new_sample, df])
     
     new_sample = new_sample.reset_index()
-    # print(new_sample)
 
     rips_points = gudhi.RipsComplex(points=new_sample.to_numpy())
     simplex_tree_points = rips_points.create_simplex_tree(max_dimension=2)
     diag_points = simplex_tree_points.persistence(homology_coeff_field=2, min_persistence=0)
-    # diag_pairs_points = np.array([pair[1] for pair in diag_points])
     diag_pairs_points_1 = np.array([pair[1] for pair in diag_points if pair[0] == 1])
-
-    # print(diag_pairs_points_1)
 
     return diag_pairs_points_1
 
 
-def save_in_bn(graph:GeneratorModel, name, graph_index):
+def save_in_bn(graph: GeneratorModel, name):
     sample_data = pd.DataFrame()
     structure = []
-    info = {'types':{}, 'signs':{}}
-    cov_matrix = np.zeros((len(graph.nodes),len(graph.nodes)))
-    means = []
-
+    info = {'types': {}, 'signs': {}}
     for i, node in enumerate(graph.nodes):
         info['types'][node.content['name']] = 'cont'
         info['signs'][node.content['name']] = 'neg'
         mean = node.content['mean']
         var = node.content['var']
-        cov = node.content['cov']
-        cov_matrix[i,i] = var
-        means.append(mean)
-        if cov:
-            for j, parent in enumerate(node.nodes_from):
-                cov_matrix[i, graph_index[parent.content['name']]] = cov[j]
-                cov_matrix[graph_index[parent.content['name']], i] = cov[j]
+        sample_data[node.content['name']] = np.random.normal(loc=mean, scale=math.sqrt(var), size=100)
+        if node.nodes_from:
+            for parent in node.nodes_from:
                 structure.append((parent.content['name'], node.content['name']))
-    cov_matrix = np.dot(cov_matrix, cov_matrix.transpose())
-    sample_data = pd.DataFrame(np.random.multivariate_normal(means, cov_matrix, 5000))
-    sample_data.columns = list(info['signs'].keys())
     bn = ContinuousBN()
     bn.add_nodes(info)
     bn.set_structure(edges=structure)
