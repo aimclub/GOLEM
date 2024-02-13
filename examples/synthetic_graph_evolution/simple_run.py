@@ -36,7 +36,7 @@ def run_graph_search(size=16, timeout=8, visualize=True):
     )
     gp_params = GPAlgorithmParameters(
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
-        max_pop_size=500,
+        max_pop_size=50,
         mutation_types=[MutationTypesEnum.single_add,
                         MutationTypesEnum.single_drop,
                         MutationTypesEnum.single_change],
@@ -63,7 +63,7 @@ def run_graph_search(size=16, timeout=8, visualize=True):
         # Animation of genealogical path of the best individual:
         optimiser.history.show.genealogical_path(graph_dist=adapter.adapt_func(tree_edit_dist),
                                                  target_graph=adapter.adapt(target_graph),
-                                                 save_path='genealogical_path.gif')
+                                                 show=True)
 
     return found_graphs
 
