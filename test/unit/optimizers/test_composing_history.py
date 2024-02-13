@@ -267,7 +267,8 @@ def test_newly_generated_history(n_jobs: int):
 def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_history):
     save_path = Path(tmp_path, plot_type.name)
     gif_plots = [PlotTypesEnum.operations_animated_bar,
-                 PlotTypesEnum.diversity_population]
+                 PlotTypesEnum.diversity_population,
+                 PlotTypesEnum.genealogical_path]
     save_path = save_path.with_suffix('.gif') if plot_type in gif_plots \
         else save_path.with_suffix('.png')
     history: OptHistory = generate_history

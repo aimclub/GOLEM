@@ -14,7 +14,7 @@ from golem.visualisation.opt_history.history_visualization import HistoryVisuali
 class GenealogicalPath(HistoryVisualization):
     def visualize(self, graph_dist: Callable[[Graph, Graph], float] = None, target_graph: Graph = None,
                   evolution_time_s: float = 8., hold_result_time_s: float = 2.,
-                  save_path: Optional[Union[os.PathLike, str]] = None, show: bool = True):
+                  save_path: Optional[Union[os.PathLike, str]] = None, show: bool = False):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
         taking the most similar parent each time (or the first parent if no similarity measure is provided).
@@ -93,7 +93,7 @@ class GenealogicalPath(HistoryVisualization):
         frames = len(genealogical_path) + \
                  int(math.ceil(len(genealogical_path) * hold_result_time_s / (hold_result_time_s + evolution_time_s)))
         seconds_per_frame = (evolution_time_s + hold_result_time_s) / frames
-        fps = round(1 / seconds_per_frame)
+        fps = math.ceil(1 / seconds_per_frame)
 
         anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames,
                                        interval=1000 * seconds_per_frame)
