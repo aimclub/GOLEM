@@ -39,6 +39,10 @@ class MutationTypesEnum(Enum):
 
     none = 'none'
 
+    @property
+    def __name__(self):
+        return self.name
+
 
 def get_mutation_prob(mut_id: MutationStrengthEnum, node: Optional[GraphNode],
                       default_mutation_prob: float = 0.7) -> float:

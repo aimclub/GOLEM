@@ -85,7 +85,7 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     def _get_experience(self, experience: ExperienceBuffer):
         """ Get experience from ExperienceBuffer, process rewards and log. """
         obs, actions, rewards = experience.retrieve_experience()
-        arms = [self._arm_by_action[str(action)] for action in actions]
+        arms = [self._arm_by_action[action.__name__] for action in actions]
         # there is no need to process rewards as in MAB, since this processing unifies rewards for all contexts
         self._dbg_log(obs, actions, rewards)
         return obs, arms, rewards

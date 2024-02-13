@@ -105,7 +105,7 @@ class Mutation(Operator):
                 if is_correct_graph:
                     # str for custom mutations serialisation
                     parent_operator = ParentOperator(type_='mutation',
-                                                     operators=str(mutation_type),
+                                                     operators=mutation_type.__name__,
                                                      parent_individuals=individual)
                     individual = Individual(new_graph, parent_operator,
                                             metadata=self.requirements.static_individual_metadata)
