@@ -293,5 +293,3 @@ def objectives_lists(individuals: List[Any], objectives_numbers: Tuple[int] = No
             value = individual.fitness.values[objectives_numbers[obj_num]]
             objectives_values_set[obj_num].append(value if value > 0 else -value)
     return objectives_values_set
-
-

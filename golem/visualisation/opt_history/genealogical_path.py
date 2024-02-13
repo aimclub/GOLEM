@@ -90,8 +90,9 @@ class GenealogicalPath(HistoryVisualization):
             )
             return evo_ax, fitness_ax
 
-        frames = len(genealogical_path) + \
-                 int(math.ceil(len(genealogical_path) * hold_result_time_s / (hold_result_time_s + evolution_time_s)))
+        frames = len(genealogical_path) + int(
+            math.ceil(len(genealogical_path) * hold_result_time_s / (hold_result_time_s + evolution_time_s))
+        )
         seconds_per_frame = (evolution_time_s + hold_result_time_s) / frames
         fps = math.ceil(1 / seconds_per_frame)
 

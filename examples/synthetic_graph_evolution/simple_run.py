@@ -1,4 +1,3 @@
-import os
 from datetime import timedelta
 from functools import partial
 
@@ -15,7 +14,6 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.metrics.edit_distance import tree_edit_dist
-from golem.visualisation.opt_viz_extra import OptHistoryExtraVisualizer
 
 
 def run_graph_search(size=16, timeout=8, visualize=True):

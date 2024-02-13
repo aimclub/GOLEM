@@ -1,16 +1,13 @@
 import os.path
 from itertools import chain
-from typing import Tuple, Optional, Sequence, List
+from typing import Tuple, Optional, Sequence
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
 import networkx as nx
 import numpy as np
 from matplotlib import cm
 
-from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
