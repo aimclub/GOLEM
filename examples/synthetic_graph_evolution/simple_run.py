@@ -36,7 +36,7 @@ def run_graph_search(size=16, timeout=8, visualize=True):
     )
     gp_params = GPAlgorithmParameters(
         genetic_scheme_type=GeneticSchemeTypesEnum.parameter_free,
-        max_pop_size=50,
+        max_pop_size=500,
         mutation_types=[MutationTypesEnum.single_add,
                         MutationTypesEnum.single_drop,
                         MutationTypesEnum.single_change],

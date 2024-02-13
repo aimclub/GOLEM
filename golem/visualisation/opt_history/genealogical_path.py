@@ -13,6 +13,7 @@ from golem.visualisation.opt_history.history_visualization import HistoryVisuali
 
 class GenealogicalPath(HistoryVisualization):
     def visualize(self, graph_dist: Callable[[Graph, Graph], float] = None, target_graph: Graph = None,
+                  evolution_time_s: float = 8., hold_result_time_s: float = 2.,
                   save_path: Optional[Union[os.PathLike, str]] = None, show: bool = True):
         """
         Takes the best individual from the resultant generation and traces its genealogical path
@@ -32,6 +33,9 @@ class GenealogicalPath(HistoryVisualization):
             If provided, it will be displayed on the left throughout the animation.
         :param save_path: path to save the visualization (won't be saved if it's None).
             GIF of video extension is expected.
+        :param show: whether to show the visualization.
+        :param evolution_time_s: time in seconds for the part of the animation where the evolution process is shown.
+        :param hold_result_time_s: time in seconds for the part of the animation where the final result is shown.
         """
         # Treating all graphs as equally distant if there's no reasonable way to compare them:
         graph_dist = graph_dist or (lambda g1, g2: 1)
@@ -48,9 +52,6 @@ class GenealogicalPath(HistoryVisualization):
             # At least `Individual.parents_from_prev_generation` my fail
             self.log.error(f"Failed to trace genealogical path: {e}")
             return
-
-        target_time_s = 5.
-        hold_result_time_s = 2.
 
         figure_width = 5
         width_ratios = [1.3, 0.7]
@@ -90,8 +91,8 @@ class GenealogicalPath(HistoryVisualization):
             return evo_ax, fitness_ax
 
         frames = len(genealogical_path) + \
-                 int(math.ceil(len(genealogical_path) * hold_result_time_s / (hold_result_time_s + target_time_s)))
-        seconds_per_frame = (target_time_s + hold_result_time_s) / frames
+                 int(math.ceil(len(genealogical_path) * hold_result_time_s / (hold_result_time_s + evolution_time_s)))
+        seconds_per_frame = (evolution_time_s + hold_result_time_s) / frames
         fps = round(1 / seconds_per_frame)
 
         anim = animation.FuncAnimation(fig, render_frame, repeat=False, frames=frames,
