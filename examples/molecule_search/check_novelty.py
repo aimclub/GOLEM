@@ -75,7 +75,7 @@ def check_validity(exp_name_path):
     evaluator = MultiprocessingDispatcher(adapter=adapter, n_jobs=-1).dispatch(objective)
 
     all_individuals = {'generated_coformers': [], 'unobstucted': [], 'orthogonal_planes': [], 'h_bond_bridging': [], 'sa': []}
-    for i in range(20):
+    for i in range(10):
         print(i)
         history = OptHistory.load(fr"{exp_name_path}\history_trial_{i}.json")
         individuals \
@@ -93,7 +93,7 @@ def check_validity(exp_name_path):
     all_individuals['drug'] = ['CN1C2=C(C(=O)N(C1=O)C)NC=N2'] * len(all_individuals['generated_coformers'])
     all_df = pd.DataFrame(data=all_individuals)
 
-    all_df.to_csv('all_GOLEM_generated_from_methane.csv', index=False)
+    all_df.to_csv('all_GOLEM_generated_from_cvae.csv', index=False)
 
     valid_df = all_df[(all_df.orthogonal_planes >= 0.332) & (all_df.unobstucted >= 0.5) & (all_df.h_bond_bridging <= 0.5) & (all_df.sa <= 3)]
     validity = len(valid_df) / len(all_df)
@@ -132,7 +132,7 @@ if __name__=='__main__':
     #               '0',
     #               'mol')
 
-    check_validity(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\evo_random_popsize200_min60_from_C")
+    check_validity(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\cvae_evo")
 
     # check_novelty('D:\Projects\Cocrystal37pip\AAAI_code\GAN\ChEMBL_training\data\database_ChEMBL.csv',
     #               'D:\Projects\Cocrystal37pip\molGCT\moses_bench2_lat=128_epo=1111111111111_k=4_20231218.csv',

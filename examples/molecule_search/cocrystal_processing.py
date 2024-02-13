@@ -26,6 +26,7 @@ from golem.core.optimisers.adaptive.agent_trainer import AgentTrainer
 from golem.core.optimisers.adaptive.history_collector import HistoryReader
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.archive import ParetoFront
+from golem.core.optimisers.fitness import null_fitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -228,9 +229,9 @@ if __name__ == '__main__':
     #     r"C:\Users\admin\PycharmProjects\GOLEM\examples\molecule_search\all_cocrystals_GOLEM_result.csv",
     #     delimiter=',')['0']
 
-    print('loaded')
-    initial_smiles = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\generated_mols_VAE_ep3_no_wu_ft6_lr00005_10k_rnd(352).csv")['0']
-
+    # print('loaded')
+    # initial_smiles = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\rnn_sa.csv")['generated_coformers']
+    #
     adapter = MolAdapter()
     # initial_molecules = []
     # for smiles in initial_smiles:
@@ -240,14 +241,14 @@ if __name__ == '__main__':
     #     except Exception:
     #         continue
     # print('adapted')
-    # metrics = CocrystalsMetrics('CN1C2=C(C(=O)N(C1=O)C)NC=N2')
-    # objective = Objective(
-    #     quality_metrics={'orthogonal_planes': metrics.orthogonal_planes,
-    #                      'unobstructed': metrics.unobstructed,
-    #                      'h_bond_bridging': metrics.h_bond_bridging,
-    #                      'sa_score': sa_score},
-    #     is_multi_objective=True)
-    # evaluator = MultiprocessingDispatcher(adapter=adapter, n_jobs=-1).dispatch(objective)
+    metrics = CocrystalsMetrics('CN1C2=C(C(=O)N(C1=O)C)NC=N2')
+    objective = Objective(
+        quality_metrics={'orthogonal_planes': metrics.orthogonal_planes,
+                         'unobstructed': metrics.unobstructed,
+                         'h_bond_bridging': metrics.h_bond_bridging,
+                         'sa_score': sa_score},
+        is_multi_objective=True)
+    evaluator = MultiprocessingDispatcher(adapter=adapter, n_jobs=-1).dispatch(objective)
 
     # initial_molecules = evaluator(initial_molecules)
     # print('evaluated')
@@ -256,22 +257,57 @@ if __name__ == '__main__':
     # best_initial = pareto_front.items
     # print('pareto')
     # best_smiles = {adapter.restore(ind.graph).get_smiles(): ind for ind in best_initial}
-    best_smiles = dict()
     # print('Initial pareto: ', pareto_front.items)
 
     # for ind in initial_molecules:
-    #     if ind.fitness.getValues()[0] <= -0.333 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
-    #         best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
-    # for i in range(20):
+    # if ind.fitness.getValues()[0] <= -0.333 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
+    # best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
+    # final = []
+    best_smiles = dict()
+    #
+    # for i in range(10):
     #     print(i)
-    #     history = OptHistory.load(fr"D:\Лаба\molecule_seacrh\cocrysals_data\results\evo_random_popsize200_min60_from_VAE_2\history_trial_{i}.json")
+    #     history = OptHistory.load(fr"C:\Users\admin\Downloads\gan_sa\history_trial_{i}.json")
+    #
     #     individuals \
     #         = list({hash(adapter.restore(ind.graph)): ind
     #                 for gen in history.generations
     #                 for ind in reversed(list(gen))}.values())
     #     for ind in individuals:
-    #         if ind.fitness.getValues()[0] < -0.332 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
+    #         if ind.fitness.getValues()[0] <= -0.332 and ind.fitness.getValues()[1] <= -0.5 and ind.fitness.getValues()[2] <= 0.5 and ind.fitness.getValues()[3] <= 3:
     #             best_smiles.update({adapter.restore(ind.graph).get_smiles(): ind})
+    # result = {'drug': ['CN1C2=C(C(=O)N(C1=O)C)NC=N2'] * len(best_smiles), 'generated_coformers': [],
+    #           'orthogonal_planes': [], 'unobstructed': [], 'h_bond_bridging': [], 'sa_score': []}
+    #
+    # for smiles, ind in best_smiles.items():
+    #     result['unobstructed'].append(abs(ind.fitness.values[1]))
+    #     result['generated_coformers'].append(smiles)
+    #     result['orthogonal_planes'].append(abs(ind.fitness.values[0]))
+    #     result['h_bond_bridging'].append(1 - ind.fitness.values[2])
+    #     result['sa_score'].append(ind.fitness.values[3])
+    # #
+    # print(len(best_smiles))
+    # df = pd.DataFrame.from_dict(result)
+    # df.to_csv(fr"C:\Users\admin\Downloads\gan_sa\all_valid_new.csv", index=False)
+
+        # from paretoset import paretoset
+    #
+    #     remaining_mols = df
+    #     collected = 0
+    #     pareto_fronts = []
+    #     while collected < n and len(remaining_mols) > 0:
+    #         mask = paretoset(remaining_mols[['unobstructed', 'orthogonal_planes', 'h_bond_bridging']],
+    #                          sense=["max", "max", "max", "min"])
+    #         front = remaining_mols[mask]
+    #         remaining_mols = remaining_mols[~mask]
+    #         if collected + len(front) > n:
+    #             front = front.sample(n - collected)
+    #         collected += len(front)
+    #         pareto_fronts.append(front)
+    #     final.append(pd.concat(pareto_fronts, ignore_index=True))
+    # final_df = pd.concat(final, ignore_index=True)
+    # final_df.to_csv(fr"D:\Лаба\molecule_seacrh\cocrysals_data\results\cvae_evo\pareto_best.csv")
+
     # root = r'D:\Лаба\molecule_seacrh\cocrysals_data\CVAE_all'
     # for file in os.listdir(root):
     #     initial_smiles = pd.read_csv(os.path.join(root, file))['0']
@@ -300,11 +336,11 @@ if __name__ == '__main__':
     #     result['orthogonal_planes'].append(abs(ind.fitness.values[0]))
     #     result['h_bond_bridging'].append(1 - ind.fitness.values[2])
     #     result['sa_score'].append(ind.fitness.values[3])
-    #
+    # #
     # df = pd.DataFrame.from_dict(result)
     # print(len(df))
-    # df.to_csv('CVAE_all_valid.csv', index=False)
-    #
+    # df.to_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\rnn_sa.csv", index=False)
+
     # initial_selected = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\GAN_selected_proba_(sa_le_3).csv")
     # n = len(initial_selected)
     # print(n)
@@ -334,23 +370,26 @@ if __name__ == '__main__':
     # filtered_golem_vae = pd.concat(pareto_fronts, ignore_index=True)
     # filtered_golem_vae.to_csv('pareto_best_golem_vae_2_sa_3.csv')
 
+    # filtered_golem_methane = pd.read_csv(fr"D:\Лаба\molecule_seacrh\cocrysals_data\results\evo_from_methane\all_valid_10_runs.csv")
+    filtered_golem_gan = pd.read_csv(fr"C:\Users\admin\Downloads\gan_sa\all_valid_new.csv")
+    filtered_golem_vae = pd.read_csv(fr"C:\Users\admin\Downloads\vae_sa\all_valid_new.csv")
+    filtered_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\vae_sa.csv")
+    filtered_gan = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\rnn_sa.csv")
+    filtered_golem_cvae = pd.read_csv(fr"C:\Users\admin\Downloads\cvae_sa\all_valid_new.csv")
+    filtered_cvae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\cvae_sa.csv")
 
-    # filtered_golem_methane = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_methane_sa_3.csv")
-    # filtered_golem_gan = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_gan_sa_3.csv")
-    # filtered_golem_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\pareto_best_golem_vae_2_sa_3.csv")
-    # filtered_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\VAE_2_selected_proba_(sa_le_3).csv")
-    #
-    # #
     # print('vae', len(filtered_vae))
     # print('gan', len(filtered_golem_gan))
     # print('vae', len(filtered_golem_vae))
     # print('methane', len(filtered_golem_methane))
     # #
-    # results_df = pd.DataFrame(data={'unobstructed_gan_init': initial_selected.unobstructed,
-    #                                 'unobstructed_evo': filtered_golem_methane.unobstructed,
+    # unobstructed_df = pd.DataFrame(data={'unobstructed_gan_init': filtered_gan.unobstructed,
+    #                                 'unobstructed_gan': filtered_golem_gan.unobstructed,
+    #                                 # 'unobstructed_evo': filtered_golem_methane.unobstructed,
     #                                 'unobstructed_vae': filtered_golem_vae.unobstructed,
     #                                 'unobstructed_vae_init': filtered_vae.unobstructed,
-    #                                 'unobstructed_gan': filtered_golem_gan.unobstructed,
+    #                                 'unobstructed_cvae': filtered_golem_cvae.unobstructed,
+    #                                 'unobstructed_cvae_init': filtered_cvae.unobstructed,
     #                                 'orthogonal_planes_gan_init': initial_selected.orthogonal_planes,
     #                                 'orthogonal_planes_evo': filtered_golem_methane.orthogonal_planes,
     #                                 'orthogonal_planes_vae_init': filtered_vae.orthogonal_planes,
@@ -367,99 +406,145 @@ if __name__ == '__main__':
     #                                 'sa_vae_init': filtered_vae.sa_score,
     #                                 'sa_gan': filtered_golem_gan.sa_score,
     #                                 })
+
+    sns.set_theme()
+    sns.set(font_scale=2)
+    plt.figure(figsize=(17, 6))
+    my_pal = {"evo": "darkcyan", "gan": 'lightseagreen', "gan+evo": "darkturquoise",
+              "vae": "mediumturquoise", "vae+evo": 'paleturquoise', "cvae": "lightcyan", "cvae+evo": "aliceblue"}
+    df = pd.DataFrame(data={'gan': filtered_gan.unobstructed,
+                                      'gan+evo': filtered_golem_gan.unobstructed,
+                                      'vae': filtered_vae.unobstructed,
+                                      'vae+evo': filtered_golem_vae.unobstructed,
+                                      'cvae': filtered_cvae.unobstructed,
+                                      'cvae+evo': filtered_golem_cvae.unobstructed,
+                            })
+    sns.violinplot(df,
+                   palette=my_pal)
+    pd.set_option('display.max_columns', None)
+    print('Unobstructed planes')
+    print(df.describe().T)
+    plt.xticks([0, 1, 2, 3, 4, 5], ["GAN", "GAN + EVO", "T-VAE", "T-VAE + EVO", "T-CVAE", "T-CVAE + EVO"])
+    plt.title('Unobstructed planes')
+    plt.savefig("violins_unobstructed_new.png", dpi=250)
+    plt.show()
+
+    sns.set_theme()
+    sns.set(font_scale=2)
+    plt.figure(figsize=(17, 6))
+    my_pal = {"evo": "darkcyan", "gan": 'lightseagreen', "gan+evo": "darkturquoise",
+              "vae": "mediumturquoise", "vae+evo": 'paleturquoise', "cvae": "lightcyan", "cvae+evo": "aliceblue"}
+    df = pd.DataFrame(data={'gan': filtered_gan.orthogonal_planes,
+                                      'gan+evo': filtered_golem_gan.orthogonal_planes,
+                                      'vae': filtered_vae.orthogonal_planes,
+                                      'vae+evo': filtered_golem_vae.orthogonal_planes,
+                                      'cvae': filtered_cvae.orthogonal_planes,
+                                      'cvae+evo': filtered_golem_cvae.orthogonal_planes
+                                      })
+    sns.violinplot(df,
+                   palette=my_pal)
+    pd.set_option('display.max_columns', None)
+    print('Orthogonal planes')
+    print(df.describe().T)
+    plt.xticks([0, 1, 2, 3, 4, 5], ["GAN", "GAN + EVO", "T-VAE", "T-VAE + EVO", "T-CVAE", "T-CVAE + EVO"])
+    plt.title('Orthogonal planes')
+    plt.savefig("violins_orthogonal_planes_new.png", dpi=250)
+    plt.show()
+    sns.set_theme()
+    sns.set(font_scale=2)
+
+    plt.figure(figsize=(17, 6))
+    my_pal = {"evo": "darkcyan", "gan": 'lightseagreen', "gan+evo": "darkturquoise",
+              "vae": "mediumturquoise", "vae+evo": 'paleturquoise', "cvae": "lightcyan", "cvae+evo": "aliceblue"}
+    df = pd.DataFrame(data={'gan': filtered_gan.h_bond_bridging,
+                                      'gan+evo': filtered_golem_gan.h_bond_bridging,
+                                      'vae': filtered_vae.h_bond_bridging,
+                                      'vae+evo': filtered_golem_vae.h_bond_bridging,
+                                      'cvae': filtered_cvae.h_bond_bridging,
+                                      'cvae+evo': filtered_golem_cvae.h_bond_bridging
+                                      })
+    sns.violinplot(df, palette=my_pal)
+    pd.set_option('display.max_columns', None)
+    print('H-bond bridging')
+    print(df.describe().T)
+    plt.xticks([0, 1, 2, 3, 4, 5], ["GAN", "GAN + EVO", "T-VAE", "T-VAE + EVO", "T-CVAE", "T-CVAE + EVO"])
+    plt.title('H-bond bridging')
+    plt.savefig("violins_h_bond_new.png", dpi=250)
+    plt.show()
+    # filtered_golem_methane = pd.read_csv(
+    #     fr"D:\Лаба\molecule_seacrh\cocrysals_data\results\evo_from_methane\all_valid_10_runs.csv")
+    # filtered_golem_gan = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\gan_evo\all_valid_new.csv")
+    # filtered_golem_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\vae_evo\all_valid_new.csv")
+    # filtered_vae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\vae_sa.csv")
+    # filtered_gan = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\rnn_sa.csv")
+    # filtered_golem_cvae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\results\cvae_evo\all_valid_new.csv")
+    # filtered_cvae = pd.read_csv(r"D:\Лаба\molecule_seacrh\cocrysals_data\cvae_sa.csv")
+    # init_dataset = pd.read_csv(r"D:\Лаба\molecule_seacrh\database_CCDC.csv", header = None, squeeze = True)
+    import scipy.stats as stats
+    # print('gan')
+    # print('unobstructed', filtered_gan.unobstructed.median(), filtered_golem_gan.unobstructed.median())
+    # print('orthogonal_planes', filtered_gan.orthogonal_planes.median(), filtered_golem_gan.orthogonal_planes.median())
+    # print('h_bond_bridging', filtered_gan.h_bond_bridging.median(), filtered_golem_gan.h_bond_bridging.median())
+    # print(pd.concat([filtered_gan['generated_coformers'], init_dataset], axis=0))
+    # print((~filtered_golem_gan['generated_coformers'].isin(
+    #     pd.concat([filtered_gan['generated_coformers'], init_dataset], axis=0))).mean())
+
+    # # perform two-sided test. You can use 'greater' or 'less' for one-sided test
+    # res = stats.mannwhitneyu(x=filtered_gan.unobstructed, y=filtered_golem_gan.unobstructed, alternative='less')
+    # print('unobstructed', res)
+    # res = stats.mannwhitneyu(x=filtered_gan.orthogonal_planes, y=filtered_golem_gan.orthogonal_planes,
+    #                          alternative='less')
+    # print('orthogonal_planes', res)
     #
-    # sns.set_theme()
-    # sns.set(font_scale=2.5)
-    # plt.figure(figsize=(15, 8))
-    # my_pal = {"unobstructed_evo": "darkcyan", "unobstructed_gan_init": 'lightseagreen', "unobstructed_gan": 'paleturquoise',
-    #           "unobstructed_vae_init": 'lightcyan', "unobstructed_vae": "aliceblue",
-    #           "orthogonal_planes_evo": "darkcyan", "orthogonal_planes_gan_init": 'lightseagreen', "orthogonal_planes_gan": 'paleturquoise',
-    #           "orthogonal_planes_vae_init": 'lightcyan', "orthogonal_planes_vae": "aliceblue",
-    #           "h_bond_bridging_evo": "darkcyan", "h_bond_bridging_gan_init": 'lightseagreen', "h_bond_bridging_gan": 'paleturquoise',
-    #           "h_bond_bridging_vae_init": 'lightcyan', "h_bond_bridging_vae": "aliceblue",
-    #           "sa_evo": "darkcyan", "sa_gan_init": 'lightseagreen',
-    #           "sa_gan": 'paleturquoise',
-    #           "sa_vae_init": 'lightcyan', "sa_vae": "aliceblue"
-    #           }
-    # sns.violinplot(results_df[['unobstructed_evo', 'unobstructed_gan_init', 'unobstructed_gan', 'unobstructed_vae_init', 'unobstructed_vae']],
-    #                palette=my_pal)
-    # # init_patch = mpatches.Patch(color='powderblue', label='GAN Generated')
-    # # evo_patch = mpatches.Patch(color='cadetblue', label='GOLEM optimized from methane')
-    # # gan_patch = mpatches.Patch(color='paleturquoise', label='GOLEM optimized from GAN')
-    # # vae_patch = mpatches.Patch(color='aliceblue', label='GOLEM optimized from VAE')
-    # # plt.legend(handles=[gan_patch, evo_patch, gan_patch, vae_patch])
-    # plt.xticks([0, 1, 2, 3, 4], ["GOLEM", "GAN", "GOLEM + GAN", "VAE", "GOLEM + VAE"])
-    # plt.title('Unobstructed')
-    # plt.savefig("violins_unobstructed_sa_3.png", dpi=500)
+    # res = stats.mannwhitneyu(x=filtered_gan.h_bond_bridging, y=filtered_golem_gan.h_bond_bridging,
+    #                          alternative='less')
+
+    # print('h_bond_bridging', res)
+
+    # print('vae')
+    # print((~filtered_golem_vae['generated_coformers'].isin(
+    #     pd.concat([filtered_vae['generated_coformers'], init_dataset], axis=0))).mean())
+
+    # print('unobstructed', filtered_vae.unobstructed.median(), filtered_golem_vae.unobstructed.median())
+    # print('orthogonal_planes', filtered_vae.orthogonal_planes.median(), filtered_golem_vae.orthogonal_planes.median())
+    # print('h_bond_bridging', filtered_vae.h_bond_bridging.median(), filtered_golem_vae.h_bond_bridging.median())
+    #
+    # # perform two-sided test. You can use 'greater' or 'less' for one-sided test
+    # res = stats.mannwhitneyu(x=filtered_vae.unobstructed, y=filtered_golem_vae.unobstructed, alternative='less')
+    # print('unobstructed', res)
+    # res = stats.mannwhitneyu(x=filtered_vae.orthogonal_planes, y=filtered_golem_vae.orthogonal_planes,
+    #                          alternative='less')
+    # print('orthogonal_planes', res)
+    #
+    # res = stats.mannwhitneyu(x=filtered_vae.h_bond_bridging, y=filtered_golem_vae.h_bond_bridging,
+    #                          alternative='less')
+    #
+    # print('h_bond_bridging', res)
+
+    # print('cvae')
+    # print((~filtered_golem_cvae['generated_coformers'].isin(
+    #     pd.concat([filtered_cvae['generated_coformers'], init_dataset], axis=0))).mean())
+
+    # print('unobstructed', filtered_cvae.unobstructed.median(), filtered_golem_cvae.unobstructed.median())
+    # print('orthogonal_planes', filtered_cvae.orthogonal_planes.median(), filtered_golem_cvae.orthogonal_planes.median())
+    # print('h_bond_bridging', filtered_cvae.h_bond_bridging.median(), filtered_golem_cvae.h_bond_bridging.median())
+    #
+    # # perform two-sided test. You can use 'greater' or 'less' for one-sided test
+    # res = stats.mannwhitneyu(x=filtered_cvae.unobstructed, y=filtered_golem_cvae.unobstructed, alternative='less')
+    # print('unobstructed', res)
+    # res = stats.mannwhitneyu(x=filtered_cvae.orthogonal_planes, y=filtered_golem_cvae.orthogonal_planes,
+    #                          alternative='less')
+    # print('orthogonal_planes', res)
+    #
+    # res = stats.mannwhitneyu(x=filtered_cvae.h_bond_bridging, y=filtered_golem_cvae.h_bond_bridging,
+    #                          alternative='less')
+    #
+    # print('h_bond_bridging', res)
+
+    # sa_score_data = pd.DataFrame(data={'sa_score_gan': initial_selected.sa_score,
+    #                                    'sa_score_evo': filtered_golem.sa_score})
+    # sns.violinplot(sa_score_data)
     # plt.show()
-    #
-    # sns.set_theme()
-    # sns.set(font_scale=2.5)
-    # plt.figure(figsize=(15, 8))
-    # sns.violinplot(results_df[['orthogonal_planes_evo', 'orthogonal_planes_gan_init', 'orthogonal_planes_gan', 'orthogonal_planes_vae_init',
-    #                            'orthogonal_planes_vae']],
-    #                palette=my_pal)
-    # plt.xticks([0, 1, 2, 3, 4], ["GOLEM", "GAN", "GOLEM + GAN", "VAE", "GOLEM + VAE"])
-    # plt.title('Orthogonal planes')
-    # plt.savefig("violins_orthogonal_planes_sa_3.png", dpi=500)
-    # plt.show()
-    #
-    # sns.set_theme()
-    # sns.set(font_scale=2.5)
-    # plt.figure(figsize=(15, 8))
-    # sns.violinplot(results_df[['h_bond_bridging_evo', 'h_bond_bridging_gan_init', 'h_bond_bridging_gan',
-    #                            'h_bond_bridging_vae_init',
-    #                            'h_bond_bridging_vae']],
-    #                palette=my_pal)
-    # plt.xticks([0, 1, 2, 3, 4], ["GOLEM", "GAN", "GOLEM + GAN", "VAE", "GOLEM + VAE"])
-    # plt.title('H-bond bridging')
-    # plt.savefig("violins_h_bond_bridging_sa_3.png", dpi=500)
-    # plt.show()
-    #
-    # sns.set_theme()
-    # sns.set(font_scale=2.5)
-    # plt.figure(figsize=(15, 8))
-    # sns.violinplot(results_df[['sa_evo', 'sa_gan_init', 'sa_gan',
-    #                            'sa_vae_init',
-    #                            'sa_vae']],
-    #                palette=my_pal)
-    # plt.xticks([0, 1, 2, 3, 4], ["GOLEM", "GAN", "GOLEM + GAN", "VAE", "GOLEM + VAE"])
-    # plt.title('sa')
-    # plt.savefig("violins_sa_sa_3.png", dpi=500)
-    # plt.show()
-    #
-    # pd.set_option('display.max_columns', None)
-    # print(results_df[['unobstructed_evo', 'unobstructed_gan_init', 'unobstructed_gan', 'unobstructed_vae_init', 'unobstructed_vae']].describe().T)
-    #
-    # pd.set_option('display.max_columns', None)
-    # print(results_df[['h_bond_bridging_evo', 'h_bond_bridging_gan_init', 'h_bond_bridging_gan',
-    #                            'h_bond_bridging_vae_init',
-    #                            'h_bond_bridging_vae']].describe().T)
-    #
-    # pd.set_option('display.max_columns', None)
-    # print(results_df[['orthogonal_planes_evo', 'orthogonal_planes_gan_init', 'orthogonal_planes_gan', 'orthogonal_planes_vae_init',
-    #                            'orthogonal_planes_vae']].describe().T)
-    # # import scipy.stats as stats
-    # # print('unobstructed', initial_selected.unobstructed.median(), filtered_golem.unobstructed.median())
-    # # print('orthogonal_planes', initial_selected.orthogonal_planes.median(), filtered_golem.orthogonal_planes.median())
-    # # print('h_bond_bridging', initial_selected.h_bond_bridging.median(), filtered_golem.h_bond_bridging.median())
-    # #
-    # # # perform two-sided test. You can use 'greater' or 'less' for one-sided test
-    # # res = stats.mannwhitneyu(x=initial_selected.unobstructed, y=filtered_golem.unobstructed, alternative='less')
-    # # print('unobstructed', res)
-    # # res = stats.mannwhitneyu(x=initial_selected.orthogonal_planes, y=filtered_golem.orthogonal_planes,
-    # #                          alternative='less')
-    # # print('orthogonal_planes', res)
-    # #
-    # # res = stats.mannwhitneyu(x=initial_selected.h_bond_bridging, y=filtered_golem.h_bond_bridging,
-    # #                          alternative='less')
-    # #
-    # # print('h_bond_bridging', res)
-    # #
-    # # sa_score_data = pd.DataFrame(data={'sa_score_gan': initial_selected.sa_score,
-    # #                                    'sa_score_evo': filtered_golem.sa_score})
-    # # sns.violinplot(sa_score_data)
-    # # plt.show()
     #
     # # molecules = [MolGraph.from_smiles(mol) for mol in filtered_golem.generated_coformers.sample(12)]
     # # rw_molecules = [mol.get_rw_molecule() for mol in molecules]

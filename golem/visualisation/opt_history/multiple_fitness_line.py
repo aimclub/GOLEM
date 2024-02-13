@@ -4,6 +4,7 @@ from statistics import mean, stdev
 from typing import Any, Dict, List, Optional, Union, Sequence
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from golem.core.log import default_log
@@ -89,6 +90,22 @@ class MultipleFitnessLines(metaclass=ArgConstraintWrapper):
             plot_average_fitness_line_per_generations(ax, histories, label,
                                                       with_confidence=with_confidence,
                                                       metric_id=metric_id)
+
+    def save_csv(self, metric_id):
+        for histories, label in zip(list(self.historical_fitnesses.values()), list(self.historical_fitnesses.keys())):
+            trial_fitnesses: List[List[float]] = []
+
+            for fitnesses in histories:
+                best_fitnesses = get_best_fitness_per_generation(fitnesses, metric_id)
+                trial_fitnesses.append(best_fitnesses)
+            max_generations = max(len(i) for i in trial_fitnesses)
+            for i, hist in enumerate(trial_fitnesses):
+                if len(hist) < max_generations:
+                    trial_fitnesses[i].extend([hist[-1]] * (max_generations - len(hist)))
+            data = dict(zip(list(range(len(trial_fitnesses))), trial_fitnesses))
+            df = pd.DataFrame(data=data)
+            df.to_csv(f'{label}_{metric_id}.csv', index=False)
+
 
     def get_predefined_value(self, param: str):
         return self.visuals_params.get(param)
