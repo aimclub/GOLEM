@@ -68,9 +68,9 @@ class HyperoptTuner(BaseTuner, ABC):
     def _search_near_initial_parameters(self,
                                         objective,
                                         search_space: dict,
-                                        initial_parameters: dict,
                                         trials: Trials,
                                         remaining_time: float,
+                                        initial_parameters: Optional[dict] = None,
                                         show_progress: bool = True) -> Tuple[Trials, int]:
         """ Method to search using the search space where parameters initially set for the graph are fixed.
         This allows not to lose results obtained while composition process

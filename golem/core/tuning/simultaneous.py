@@ -38,9 +38,9 @@ class SimultaneousTuner(HyperoptTuner):
                             graph=graph,
                             unchangeable_parameters=init_parameters),
                     parameters_dict,
-                    init_parameters,
                     trials,
                     remaining_time,
+                    init_parameters,
                     show_progress)
                 remaining_time = self._get_remaining_time()
                 if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:

@@ -171,9 +171,9 @@ class SequentialTuner(HyperoptTuner):
                                                                                node_id=node_id,
                                                                                unchangeable_parameters=init_params),
                                                                        node_params,
-                                                                       init_params,
                                                                        trials,
-                                                                       remaining_time)
+                                                                       remaining_time,
+                                                                       init_params)
 
         remaining_time = self._get_remaining_time()
         if remaining_time > MIN_TIME_FOR_TUNING_IN_SEC:
