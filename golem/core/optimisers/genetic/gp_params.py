@@ -83,7 +83,7 @@ class GPAlgorithmParameters(AlgorithmParameters):
     adaptive_mutation_type: MutationAgentTypeEnum = MutationAgentTypeEnum.default
     context_agent_type: Union[ContextAgentTypeEnum, Callable] = ContextAgentTypeEnum.nodes_num
 
-    selection_types: Sequence[Union[SelectionTypesEnum, Any]] = None
+    selection_types: Optional[Sequence[Union[SelectionTypesEnum, Any]]] = None
     crossover_types: Sequence[Union[CrossoverTypesEnum, Any]] = \
         (CrossoverTypesEnum.one_point,)
     mutation_types: Sequence[Union[MutationTypesEnum, Any]] = simple_mutation_set
