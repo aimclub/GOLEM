@@ -61,8 +61,9 @@ def run_graph_search(size=16, timeout=8, visualize=True):
         optimiser.history.show.fitness_line()
 
         # Animation of genealogical path of the best individual:
-        vis = OptHistoryExtraVisualizer(optimiser.history)
-        vis.visualize_best_genealogical_path(adapter.adapt_func(tree_edit_dist), adapter.adapt(target_graph))
+        optimiser.history.show.genealogical_path(graph_dist=adapter.adapt_func(tree_edit_dist),
+                                                 target_graph=adapter.adapt(target_graph),
+                                                 save_path='genealogical_path.gif')
 
     return found_graphs
 
