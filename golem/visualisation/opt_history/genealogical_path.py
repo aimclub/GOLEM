@@ -123,9 +123,9 @@ def trace_genealogical_path(individual: Individual, graph_dist: Callable[[Graph,
 def plot_fitness_with_axvline(generations: List[int], fitnesses: List[float], ax: plt.Axes, current_fitness: float,
                               axvline_x: int = None):
     ax.plot(generations, fitnesses)
-    ax.set_title(f'Metric dynamic,\ncurrent: {current_fitness}', fontsize=22)
+    ax.set_title(f'Fitness dynamic,\ncurrent: {current_fitness}', fontsize=22)
     ax.set_xlabel('Generation')
-    ax.set_ylabel('Metric')
+    ax.set_ylabel('Fitness')
     if axvline_x is not None:
         ax.axvline(x=axvline_x, color='black')
     return ax
