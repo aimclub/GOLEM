@@ -33,6 +33,8 @@ class Selection(Operator):
         }
         if selection_type in selections:
             return selections[selection_type]
+        elif isinstance(selection_type, Callable):
+            return selection_type
         else:
             raise ValueError(f'Required selection not found: {selection_type}')
 
