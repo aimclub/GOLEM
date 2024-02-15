@@ -30,6 +30,8 @@ class PopulationalOptimizer(GraphOptimizer):
          requirements: implementation-independent requirements for graph optimizer
          graph_generation_params: parameters for new graph generation
          graph_optimizer_params: parameters for specific implementation of graph optimizer
+
+    Additional custom params can be specified with `custom_optimizer_params`.
     """
 
     def __init__(self,
@@ -38,8 +40,10 @@ class PopulationalOptimizer(GraphOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: Optional['AlgorithmParameters'] = None,
+                 **custom_optimizer_params
                  ):
-        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+        super().__init__(objective, initial_graphs, requirements,
+                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
         self.population = None
         self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
