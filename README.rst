@@ -80,7 +80,7 @@ GOLEM можно установить с помощью ``pip``:
 Быстрый старт
 =============
 
-Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики редакционного расстояния (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
 
 .. code-block:: python
 
@@ -106,6 +106,13 @@ GOLEM можно установить с помощью ``pip``:
         optimiser.history.show.fitness_line()
         return found_graph
 
+Если проследить предков найденного графа, будет видно, как к нему один за другим применяются генетические операторы (мутации, скрещивания и т.д.), приводящие, в конечном итоге, к целевому графу:
+
+.. image:: /docs/source/img/evolution_process.gif
+   :alt: Процесс эволюции
+   :align: center
+
+Можно также заметить, что, несмотря на общее улучшение фитнеса вдоль генеалогического пути, оптимизатор иногда жертвует локальным уменьшением редакционного расстояния некоторых графов ради поддержания разнообразия и получения таким образом наилучшего решения в конце.
 
 Структура проекта
 =================

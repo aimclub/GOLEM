@@ -40,8 +40,9 @@ def run_graph_search(size=16, timeout=8, visualize=True):
                         MutationTypesEnum.single_change],
         crossover_types=[CrossoverTypesEnum.subtree]
     )
+    adapter = BaseNetworkxAdapter()  # Example works with NetworkX graphs
     graph_gen_params = GraphGenerationParams(
-        adapter=BaseNetworkxAdapter(),  # Example works with NetworkX graphs
+        adapter=adapter,
         rules_for_constraint=DEFAULT_DAG_RULES,  # We don't want cycles in the graph
         available_node_types=node_types  # Node types that can appear in graphs
     )
@@ -50,11 +51,18 @@ def run_graph_search(size=16, timeout=8, visualize=True):
     # Build and run the optimizer
     optimiser = EvoGraphOptimizer(objective, initial_graphs, *all_parameters)
     found_graphs = optimiser.optimise(objective)
+
     if visualize:
         # Restore the NetworkX graph back from internal Graph representation
-        found_graph = graph_gen_params.adapter.restore(found_graphs[0])
+        found_graph = adapter.restore(found_graphs[0])
         draw_graphs_subplots(target_graph, found_graph, titles=['Target Graph', 'Found Graph'])
         optimiser.history.show.fitness_line()
+
+        # Animation of genealogical path of the best individual:
+        optimiser.history.show.genealogical_path(graph_dist=adapter.adapt_func(tree_edit_dist),
+                                                 target_graph=adapter.adapt(target_graph),
+                                                 show=True)
+
     return found_graphs
 
 

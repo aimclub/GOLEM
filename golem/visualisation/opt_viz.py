@@ -7,6 +7,7 @@ from golem.core.log import default_log
 from golem.visualisation.opt_history.diversity import DiversityLine, DiversityPopulation
 from golem.visualisation.opt_history.fitness_box import FitnessBox
 from golem.visualisation.opt_history.fitness_line import FitnessLine, FitnessLineInteractive
+from golem.visualisation.opt_history.genealogical_path import GenealogicalPath
 from golem.visualisation.opt_history.operations_animated_bar import OperationsAnimatedBar
 from golem.visualisation.opt_history.operations_kde import OperationsKDE
 
@@ -22,6 +23,7 @@ class PlotTypesEnum(Enum):
     operations_animated_bar = OperationsAnimatedBar
     diversity_line = DiversityLine
     diversity_population = DiversityPopulation
+    genealogical_path = GenealogicalPath
 
     @classmethod
     def member_names(cls):
@@ -60,6 +62,7 @@ class OptHistoryVisualizer:
         self.operations_animated_bar = OperationsAnimatedBar(history, self.visuals_params).visualize
         self.diversity_line = DiversityLine(history, self.visuals_params).visualize
         self.diversity_population = DiversityPopulation(history, self.visuals_params).visualize
+        self.genealogical_path = GenealogicalPath(history, self.visuals_params).visualize
 
         self.log = default_log(self)
 
