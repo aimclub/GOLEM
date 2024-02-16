@@ -25,7 +25,8 @@ class MultiArmedBanditAgent(OperatorAgent):
         super().__init__(actions=actions, enable_logging=enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
-        self._arm_by_action = dict(zip(actions, self._indices))
+        # str because parent operator for mutation is stored as string for custom mutations serialisation
+        self._arm_by_action = dict(map(lambda x, y: (x.__name__, y), actions, self._indices))
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.4),
                           n_jobs=n_jobs)
