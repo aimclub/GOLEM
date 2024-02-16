@@ -9,10 +9,10 @@ from golem.visualisation.opt_history.history_visualization import HistoryVisuali
 
 
 class FitnessBox(HistoryVisualization):
-    def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None,
+    def visualize(self, metric_id: int = 0, save_path: Optional[Union[os.PathLike, str]] = None,
                   dpi: Optional[int] = None, best_fraction: Optional[float] = None):
         """ Visualizes fitness values across generations in the form of boxplot.
-
+        :params metric_id: numeric index of the metric to visualize (for multi-objective opt-n)
         :param save_path: path to save the visualization. If set, then the image will be saved, and if not,
             it will be displayed.
         :param dpi: DPI of the output figure.
@@ -23,7 +23,7 @@ class FitnessBox(HistoryVisualization):
         dpi = dpi or self.get_predefined_value('dpi')
         best_fraction = best_fraction or self.get_predefined_value('best_fraction')
 
-        df_history = get_history_dataframe(self.history, best_fraction=best_fraction)
+        df_history = get_history_dataframe(self.history, metric_id, best_fraction=best_fraction)
         columns_needed = ['generation', 'individual', 'fitness']
         df_history = df_history[columns_needed].drop_duplicates(ignore_index=True)
         # Get color palette by mean fitness per generation

@@ -10,7 +10,6 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
 
 from golem.core.log import default_log
-from golem.core.optimisers.fitness import null_fitness
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.paths import default_data_dir
 from golem.visualisation.opt_history.history_visualization import HistoryVisualization
@@ -44,10 +43,10 @@ def setup_fitness_plot(axis: plt.Axes, xlabel: str, title: Optional[str] = None,
     axis.grid(axis='y')
 
 
-def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str] = None,
+def plot_fitness_line_per_time(axis: plt.Axes, generations, metric_id: int, label: Optional[str] = None,
                                with_generation_limits: bool = True) \
         -> Dict[int, Individual]:
-    best_fitness = null_fitness()
+    best_metric = np.inf  # Assuming metric minimization
     gen_start_times = []
     best_individuals = {}
 
@@ -65,21 +64,22 @@ def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str]
             if ind.native_generation != gen_num:
                 continue
             evaluation_time = (datetime.fromisoformat(ind.metadata['evaluation_time_iso']) - start_time).seconds
+            target_metric = ind.fitness.values[metric_id]
             if evaluation_time < gen_start_times[gen_num]:
                 gen_start_times[gen_num] = evaluation_time
-            if ind.fitness > best_fitness:
+            if target_metric <= best_metric:
                 best_individuals[evaluation_time] = ind
-                best_fitness = ind.fitness
+                best_metric = target_metric
 
     best_eval_times, best_fitnesses = np.transpose(
-        [(evaluation_time, abs(individual.fitness.value))
+        [(evaluation_time, individual.fitness.value)
          for evaluation_time, individual in best_individuals.items()])
 
     best_eval_times = list(best_eval_times)
     best_fitnesses = list(best_fitnesses)
 
     if best_eval_times[-1] != end_time_seconds:
-        best_fitnesses.append(abs(best_fitness.value))
+        best_fitnesses.append(best_metric)
         best_eval_times.append(end_time_seconds)
     gen_start_times.append(end_time_seconds)
 
@@ -104,9 +104,9 @@ def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str]
     return best_individuals
 
 
-def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Optional[str] = None) \
+def plot_fitness_line_per_generations(axis: plt.Axes, generations, metric_id: int, label: Optional[str] = None) \
         -> Dict[int, Individual]:
-    best_fitnesses, best_generations, best_individuals = find_best_running_fitness(generations, metric_id=0)
+    best_fitnesses, best_generations, best_individuals = find_best_running_fitness(generations, metric_id=metric_id)
     axis.step(best_generations, best_fitnesses, where='post', label=label)
     axis.set_xticks(range(len(generations)))
     axis.locator_params(nbins=10)
@@ -114,9 +114,11 @@ def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Option
 
 
 class FitnessLine(HistoryVisualization):
-    def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None,
-                  per_time: Optional[bool] = None):
+    def visualize(self, metric_id: int = 0, save_path: Optional[Union[os.PathLike, str]] = None,
+                  dpi: Optional[int] = None, per_time: Optional[bool] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
+
+        :params metric_id: numeric index of the metric to visualize (for multi-objective opt-n).
         :param save_path: path to save the visualization. If set, then the image will be saved,
             and if not, it will be displayed.
         :param dpi: DPI of the output figure.
@@ -129,10 +131,10 @@ class FitnessLine(HistoryVisualization):
         fig, ax = plt.subplots(figsize=(6.4, 4.8), facecolor='w')
         if per_time:
             xlabel = 'Time, s'
-            plot_fitness_line_per_time(ax, self.history.generations)
+            plot_fitness_line_per_time(ax, self.history.generations, metric_id)
         else:
             xlabel = 'Generation'
-            plot_fitness_line_per_generations(ax, self.history.generations)
+            plot_fitness_line_per_generations(ax, self.history.generations, metric_id)
         setup_fitness_plot(ax, xlabel)
         show_or_save_figure(fig, save_path, dpi)
 
@@ -140,10 +142,11 @@ class FitnessLine(HistoryVisualization):
 class FitnessLineInteractive(HistoryVisualization):
 
     @with_alternate_matplotlib_backend
-    def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None,
+    def visualize(self, metric_id: int = 0, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None,
                   per_time: Optional[bool] = None, graph_show_kwargs: Optional[Dict[str, Any]] = None):
         """ Visualizes the best fitness values during the evolution in the form of line.
         Additionally, shows the structure of the best individuals and the moment of their discovering.
+        :params metric_id: numeric index of the metric to visualize (for multi-objective opt-n)
         :param save_path: path to save the visualization. If set, then the image will be saved, and if not,
             it will be displayed.
         :param dpi: DPI of the output figure.
@@ -170,7 +173,7 @@ class FitnessLineInteractive(HistoryVisualization):
             x_template = 'generation {}'
             plot_func = plot_fitness_line_per_generations
 
-        best_individuals = plot_func(ax_fitness, self.history.generations)
+        best_individuals = plot_func(ax_fitness, self.history.generations, metric_id)
         setup_fitness_plot(ax_fitness, x_label)
 
         ax_graph.axis('off')

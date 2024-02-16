@@ -36,7 +36,7 @@ class OperationsKDE(HistoryVisualization):
         operation_column_name = 'Operation'
         column_for_operation = 'tag' if tags_map else 'node'
 
-        df_history = get_history_dataframe(self.history, best_fraction, tags_map)
+        df_history = get_history_dataframe(self.history, best_fraction=best_fraction, tags_map=tags_map)
         df_history = df_history.rename({'generation': generation_column_name,
                                         column_for_operation: operation_column_name}, axis='columns')
         operations_found = df_history[operation_column_name].unique()

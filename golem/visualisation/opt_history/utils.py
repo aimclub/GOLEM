@@ -19,7 +19,7 @@ LabelsColorMapType = Dict[str, MatplotlibColorType]
 TagOperationsMap = Dict[str, List[str]]
 
 
-def get_history_dataframe(history: OptHistory, best_fraction: Optional[float] = None,
+def get_history_dataframe(history: OptHistory, metric_id: int = 0, best_fraction: Optional[float] = None,
                           tags_map: Optional[TagOperationsMap] = None):
     history_data = {
         'generation': [],
@@ -41,7 +41,7 @@ def get_history_dataframe(history: OptHistory, best_fraction: Optional[float] = 
             for node in ind.graph.nodes:
                 history_data['generation'].append(gen_num)
                 history_data['individual'].append('_'.join([ind.uid, str(uid_counts[ind.uid])]))
-                fitness = abs(ind.fitness.value)
+                fitness = abs(ind.fitness.values[metric_id])
                 history_data['fitness'].append(fitness)
                 history_data['node'].append(str(node))
                 if not tags_map:

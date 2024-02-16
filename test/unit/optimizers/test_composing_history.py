@@ -265,15 +265,19 @@ def test_newly_generated_history(n_jobs: int):
                          indirect=True)
 @pytest.mark.parametrize('plot_type', PlotTypesEnum)
 def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_history):
-    save_path = Path(tmp_path, plot_type.name)
     gif_plots = [PlotTypesEnum.operations_animated_bar,
                  PlotTypesEnum.diversity_population]
-    save_path = save_path.with_suffix('.gif') if plot_type in gif_plots \
-        else save_path.with_suffix('.png')
+    differ_by_metric_id_plots = [PlotTypesEnum.fitness_box, PlotTypesEnum.fitness_line,
+                                 PlotTypesEnum.fitness_line_interactive]
     history: OptHistory = generate_history
     visualizer = OptHistoryVisualizer(history)
-    visualization = plot_type.value(visualizer.history, visualizer.visuals_params)
-    visualization.visualize(save_path=str(save_path), best_fraction=0.1, dpi=100)
+    num_metrics_to_check = 2 if plot_type in differ_by_metric_id_plots else 1
+    for metric_id in range(num_metrics_to_check):  # check for the first two metrics
+        save_path = Path(tmp_path, f'{plot_type.name}_{metric_id}')
+        save_path = save_path.with_suffix('.gif') if plot_type in gif_plots \
+            else save_path.with_suffix('.png')
+        visualization = plot_type.value(visualizer.history, visualizer.visuals_params)
+        visualization.visualize( metric_id= metric_id, save_path=str(save_path), best_fraction=0.1, dpi=100)
     if plot_type is not PlotTypesEnum.fitness_line_interactive:
         assert save_path.exists()
 
