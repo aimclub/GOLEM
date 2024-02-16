@@ -209,18 +209,8 @@ def run_experiment(optimizer_setup: Callable,
 
 def plot_experiment_comparison(experiment_ids: Sequence[str], metric_id: int = 0, results_dir='./results'):
     root = Path(results_dir)
-    histories = {}
-    for exp_name in experiment_ids:
-        trials = []
-        for history_filename in os.listdir(root / exp_name):
-            if history_filename.startswith('history'):
-                history = OptHistory.load(root / exp_name / history_filename)
-                trials.append(history)
-        histories[exp_name] = trials
-        print(f'Loaded {len(trials)} trial histories for experiment: {exp_name}')
     # Visualize
-    MultipleFitnessLines.from_histories(histories).visualize(metric_id=metric_id)
-    return histories
+    MultipleFitnessLines.from_saved_histories(experiment_ids, root).visualize(metric_id=metric_id)
 
 
 if __name__ == '__main__':
