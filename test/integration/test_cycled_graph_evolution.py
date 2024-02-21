@@ -53,7 +53,7 @@ def test_cycled_graphs_evolution():
             MutationTypesEnum.simple,
             MutationTypesEnum.single_change
         ],
-        crossover_types=[CrossoverTypesEnum.none]
+        crossover_types=[CrossoverTypesEnum.subgraph]
     )
     graph_gen_params = GraphGenerationParams(
         adapter=BaseNetworkxAdapter(),
