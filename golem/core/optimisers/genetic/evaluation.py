@@ -241,7 +241,6 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
 
     def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
-        print('ind to eval', len(individuals_to_evaluate))
         # Evaluate individuals without valid fitness in parallel.
         n_jobs = determine_n_jobs(self._n_jobs, self.logger)
 
