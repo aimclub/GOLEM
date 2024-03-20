@@ -21,8 +21,8 @@ def find_latest_file_in_dir(directory: str) -> str:
 def test_saved_state():
     # Set params
     size = 16
-    num_of_generations_run_1 = 40  # 40 100 10
-    num_of_generations_run_2 = 45  # 45 120 12
+    num_of_generations_run_1 = 40
+    num_of_generations_run_2 = 45
     timeout = 10
     saved_state_path = 'saved_optimisation_state/test'
 
