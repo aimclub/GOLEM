@@ -76,8 +76,6 @@ def test_saved_state():
     # Make sure the second run made it to the end
     assert optimiser2.current_generation_num == num_of_generations_run_2 + 2
 
-    print(time1)
-    print(time2)
     # Check that the run with the saved state takes less time than it would without it
     assert time1 > 2
     assert time2 < 1
