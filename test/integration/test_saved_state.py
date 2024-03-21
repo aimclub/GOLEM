@@ -18,6 +18,7 @@ from functools import partial
 def find_latest_file_in_dir(directory: str) -> str:
     return max(glob.glob(os.path.join(directory, '*')), key=os.path.getmtime)
 
+
 def test_saved_state():
     # Set params
     size = 16
@@ -34,7 +35,7 @@ def test_saved_state():
 
     # Setup optimization parameters
     requirements_run_1 = GraphRequirements(timeout=timedelta(minutes=timeout),
-                                     num_of_generations=num_of_generations_run_1)
+                                           num_of_generations=num_of_generations_run_1)
     requirements_run_2 = GraphRequirements(timeout=timedelta(minutes=timeout),
                                            num_of_generations=num_of_generations_run_2)
 
@@ -43,7 +44,7 @@ def test_saved_state():
 
     # Build and run the optimizer to create a saved state file
     optimiser1 = EvoGraphOptimizer(objective, initial_population, requirements_run_1, gen_params, algo_params,
-                                  saved_state_path=saved_state_path)
+                                   saved_state_path=saved_state_path)
     st = time.time()
     optimiser1.optimise(objective, save_state_delta=1)
     et = time.time()
@@ -56,7 +57,7 @@ def test_saved_state():
 
     # Create the optimizer to check that the saved state was used
     optimiser2 = EvoGraphOptimizer(objective, initial_population, requirements_run_2, gen_params, algo_params,
-                                  use_saved_state=True, saved_state_path=saved_state_path)
+                                   use_saved_state=True, saved_state_path=saved_state_path)
 
     # Check that the restored object has the same main parameters as the original or at least the params are not empty
     assert optimiser1.current_generation_num == optimiser2.current_generation_num + 1, \
@@ -64,8 +65,8 @@ def test_saved_state():
     assert optimiser1.generations.stagnation_iter_count == optimiser2.generations.stagnation_iter_count + 1, \
         f'ERROR: Restored object field \'generations.stagnation_iter_count\' has wrong value: ' \
         f'{optimiser2.generations.stagnation_iter_count}'
-    assert optimiser1.best_individuals != [], f'ERROR: Restored object field \'best_individuals\' is empty'
-    assert optimiser1.population is not None, f'ERROR: Restored object field \'population\' is empty'
+    assert optimiser1.best_individuals != [], 'ERROR: Restored object field \'best_individuals\' is empty'
+    assert optimiser1.population is not None, 'ERROR: Restored object field \'population\' is empty'
     assert optimiser1.timer.timeout > optimiser2.timer.timeout, 'ERROR: timeout was not adjusted correctly'
 
     st = time.time()

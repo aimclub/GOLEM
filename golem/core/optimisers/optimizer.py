@@ -136,6 +136,7 @@ class GraphOptimizer:
 
         self._saved_state_path = saved_state_path
         self._run_id = str(uuid.uuid1())
+
     @property
     def objective(self) -> Objective:
         """Returns Objective of this optimizer with information about metrics used."""
@@ -180,7 +181,6 @@ class GraphOptimizer:
             bar = EmptyProgressBar()
         return bar
 
-
     def save(self, saved_state_path):
         """
         Method for serializing and saving a class object to a file using the dill library
@@ -200,7 +200,6 @@ class GraphOptimizer:
         """
         with open(saved_state_path, 'rb') as f:
             self.__dict__.update(pickle.load(f))
-
 
     def _find_latest_dir(self, directory: str) -> str:
         return max([os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(
