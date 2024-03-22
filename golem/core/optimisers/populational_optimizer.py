@@ -185,7 +185,6 @@ class PopulationalOptimizer(GraphOptimizer):
             if file != filename:
                 os.remove(os.path.join(folder_path, file))
 
-
     @property
     def best_individuals(self):
         return self.generations.best_individuals
