@@ -172,12 +172,19 @@ class PopulationalOptimizer(GraphOptimizer):
                     self.save(save_path)
                     self.log.info(f'State saved to {save_path}')
                     last_write_time = datetime.now()
+                    self._clean_up_old_saved_state_files(save_path)
         pbar.close()
-        save_path = os.path.join(saved_state_path, f'{str(round(time.time()))}.pkl')
-        self.save(save_path)
-        self.log.info(save_path)
         self._update_population(self.best_individuals, 'final_choices')
         return [ind.graph for ind in self.best_individuals]
+
+    @staticmethod
+    def _clean_up_old_saved_state_files(last_saved_state_path: str):
+        folder_path = os.path.dirname(os.path.abspath(last_saved_state_path))
+        filename = os.path.basename(os.path.abspath(last_saved_state_path))
+        for file in os.listdir(folder_path):
+            if file != filename:
+                os.remove(os.path.join(folder_path, file))
+
 
     @property
     def best_individuals(self):

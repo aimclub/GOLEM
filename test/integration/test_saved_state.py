@@ -52,8 +52,7 @@ def test_saved_state():
 
     # Check that the file with saved state was created
     saved_state_full_path = os.path.join(default_data_dir(), saved_state_path, optimiser1._run_id)
-    saved_state_file = find_latest_file_in_dir(saved_state_full_path)
-    assert os.path.isfile(saved_state_file) is True, 'ERROR: Saved state file was not created!'
+    assert len(os.listdir(saved_state_full_path)) == 1, 'ERROR: Wrong number of saved state files!'
 
     # Create the optimizer to check that the saved state was used
     optimiser2 = EvoGraphOptimizer(objective, initial_population, requirements_run_2, gen_params, algo_params,
@@ -70,7 +69,7 @@ def test_saved_state():
     assert optimiser1.timer.timeout > optimiser2.timer.timeout, 'ERROR: timeout was not adjusted correctly'
 
     st = time.time()
-    optimiser2.optimise(objective)
+    optimiser2.optimise(objective, save_state_delta=0)
     et = time.time()
     time2 = int(et - st) / 60
 
