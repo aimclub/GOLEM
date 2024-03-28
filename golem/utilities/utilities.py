@@ -13,7 +13,7 @@ def determine_n_jobs(n_jobs=-1, logger=None):
         n_jobs = cpu_num
     elif n_jobs <= 0:
         if n_jobs <= -cpu_num - 1 or n_jobs == 0:
-            raise ValueError(f"Unproper `n_jobs` = {n_jobs}. "
+            raise ValueError(f"Improper `n_jobs` = {n_jobs}. "
                              f"`n_jobs` should be between ({-cpu_num}, {cpu_num}) except 0")
         n_jobs = cpu_num + 1 + n_jobs
     if logger:
@@ -23,7 +23,7 @@ def determine_n_jobs(n_jobs=-1, logger=None):
 
 def urandom_mock(n):
     # os.random is the source of random used in the uuid library
-    # normally, it's „true“ random, but to stabilize tests,
+    # normally, it's "true" random, but to stabilize tests,
     # seeded `random` library is used instead.
     return bytes(random.getrandbits(8) for _ in range(n))
 
