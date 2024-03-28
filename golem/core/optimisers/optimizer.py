@@ -10,15 +10,16 @@ from golem.core.dag.graph_verifier import GraphVerifier, VerifierRuleType
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.log import default_log
 from golem.core.optimisers.advisor import DefaultChangeAdvisor
-from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.genetic.evaluation import DelegateEvaluator
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
+from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
 from golem.utilities.random import RandomStateHandler
+from golem.utilities.utilities import set_random_seed
 
 STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
 
@@ -47,6 +48,7 @@ class AlgorithmParameters:
     adaptive_depth: bool = False
     adaptive_depth_max_stagnation: int = 3
     structural_diversity_frequency_check: int = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
+    seed = None
 
 
 @dataclass
@@ -102,8 +104,6 @@ class GraphOptimizer:
     :param requirements: implementation-independent requirements for graph optimizer
     :param graph_generation_params: parameters for new graph generation
     :param graph_optimizer_params: parameters for specific implementation of graph optimizer
-
-    Additional custom params can be specified with `custom_optimizer_params`.
     """
 
     def __init__(self,
@@ -112,8 +112,7 @@ class GraphOptimizer:
                  # TODO: rename params to avoid confusion
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_params: Optional[AlgorithmParameters] = None,
-                 **custom_optimizer_params):
+                 graph_optimizer_params: Optional[AlgorithmParameters] = None):
         self.log = default_log(self)
         self._objective = objective
         initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
@@ -125,6 +124,8 @@ class GraphOptimizer:
         self._iteration_callback: IterationCallback = do_nothing_callback
         self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
+
+        set_random_seed(self.graph_optimizer_params.seed)
         # Log random state for reproducibility of runs
         RandomStateHandler.log_random_state()
 
