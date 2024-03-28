@@ -1,10 +1,9 @@
-import logging
+import random
 from typing import Optional
 
 import numpy as np
 from joblib import cpu_count
 
-import random
 from golem.utilities.random import RandomStateHandler
 
 
