@@ -82,6 +82,7 @@ class Mutation(Operator):
             population = [population]
 
         final_population, mutations_applied, application_attempts = tuple(zip(*map(self._mutation, population)))
+        self.log.debug(f"mutations applied: {mutations_applied}")
 
         # drop individuals to which mutations could not be applied
         final_population = [ind for ind, init_ind, attempt in zip(final_population, population, application_attempts)

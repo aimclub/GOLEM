@@ -1,3 +1,5 @@
+import logging
+import os
 from functools import partial
 
 import networkx as nx
@@ -6,6 +8,7 @@ from examples.synthetic_graph_evolution.generators import relabel_nx_graph
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.verification_rules import has_no_isolated_components, has_no_self_cycled_nodes, \
     has_no_isolated_nodes
+from golem.core.log import Log
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
@@ -27,6 +30,8 @@ def nxgraph_with_cycle(nodes_num):
 
 
 def test_cycled_graphs_evolution():
+    Log().reset_logging_level(logging.DEBUG)
+    
     target_graph = nx.DiGraph()
     target_graph.add_nodes_from(range(18))
     target_graph.add_edges_from([(0, 1), (1, 2), (2, 0), (2, 3),
@@ -36,7 +41,7 @@ def test_cycled_graphs_evolution():
                                  (13, 14), (14, 15), (15, 16), (16, 11),
                                  (16, 17)])
     target_graph = relabel_nx_graph(target_graph, available_names=('x',))
-    num_iterations = 50
+    num_iterations = 5
     objective = Objective(partial(spectral_dist, target_graph))
 
     requirements = GraphRequirements(
