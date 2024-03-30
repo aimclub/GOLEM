@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from os import PathLike
-from typing import Dict, List, Optional, Sequence, Union, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, TypeVar, Union
+
+import networkx as nx
 
 from golem.core.dag.graph_node import GraphNode
 from golem.visualisation.graph_viz import GraphVisualizer, NodeColorType
@@ -33,8 +35,9 @@ class Graph(ABC):
     def update_node(self, old_node: GraphNode, new_node: GraphNode):
         """Replaces ``old_node`` node with ``new_node``
 
-        :param old_node: node to be replaced
-        :param new_node: node to be placed instead
+        Args:
+            old_node: node to be replaced
+            new_node: node to be placed instead
         """
         raise NotImplementedError()
 
@@ -207,7 +210,9 @@ class Graph(ABC):
              node_size_scale: Optional[float] = None, font_size_scale: Optional[float] = None,
              edge_curvature_scale: Optional[float] = None,
              title: Optional[str] = None,
-             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None):
+             node_names_placement: Optional[Literal['auto', 'nodes', 'legend', 'none']] = None,
+             nodes_labels: Dict[int, str] = None, edges_labels: Dict[int, str] = None,
+             nodes_layout_function: Optional[Callable[[nx.DiGraph], Dict[Any, Tuple[float, float]]]] = None):
         """Visualizes graph or saves its picture to the specified ``path``
 
         Args:
@@ -219,14 +224,28 @@ class Graph(ABC):
             edge_curvature_scale: use to make edges more or less curved. Supported only for the engine 'matplotlib'.
             dpi: DPI of the output image. Not supported for the engine 'pyvis'.
             title: title for plot
+            node_names_placement: variant of node names displaying. Defaults to ``auto``.
+
+                Possible options:
+
+                    - ``auto`` -> empirical rule by node size
+
+                    - ``nodes`` -> place node names on top of the nodes
+
+                    - ``legend`` -> place node names at the legend
+
+                    - ``none`` -> do not show node names
+
             nodes_labels: labels to display near nodes
             edges_labels: labels to display near edges
+            nodes_layout_function: any of `Networkx layout functions \
+                <https://networkx.org/documentation/stable/reference/drawing.html#module-networkx.drawing.layout>`_ .
         """
-        GraphVisualizer(graph=self)\
+        GraphVisualizer(graph=self) \
             .visualise(save_path=save_path, engine=engine, node_color=node_color, dpi=dpi,
                        node_size_scale=node_size_scale, font_size_scale=font_size_scale,
-                       edge_curvature_scale=edge_curvature_scale,
-                       title=title,
+                       edge_curvature_scale=edge_curvature_scale, node_names_placement=node_names_placement,
+                       title=title, nodes_layout_function=nodes_layout_function,
                        nodes_labels=nodes_labels, edges_labels=edges_labels)
 
     @property

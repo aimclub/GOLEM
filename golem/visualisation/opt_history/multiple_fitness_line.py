@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 from golem.core.log import default_log
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 from golem.visualisation.opt_history.arg_constraint_wrapper import ArgConstraintWrapper
 from golem.visualisation.opt_history.fitness_line import setup_fitness_plot
 from golem.visualisation.opt_history.utils import show_or_save_figure

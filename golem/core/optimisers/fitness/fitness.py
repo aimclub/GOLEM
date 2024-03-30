@@ -3,7 +3,7 @@ from typing import Sequence, Any, Optional, Tuple
 
 import numpy as np
 
-from golem.core.utilities.data_structures import Comparable
+from golem.utilities.data_structures import Comparable
 
 
 class Fitness(Comparable):
@@ -101,6 +101,9 @@ class Fitness(Comparable):
         return (isinstance(other, self.__class__) and
                 self.valid and other.valid and
                 self.allclose(self.values, other.values))
+
+    def __bool__(self) -> bool:
+        return self.valid
 
     @staticmethod
     def allclose(values1, values2) -> bool:

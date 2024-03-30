@@ -1,6 +1,9 @@
+from copy import deepcopy
 from functools import partial
-from random import choice, randint, random, sample
+from random import choice, randint, random, sample, shuffle
 from typing import TYPE_CHECKING, Optional
+
+import numpy as np
 
 from golem.core.adapter import register_native
 from golem.core.dag.graph import ReconnectType
@@ -11,7 +14,7 @@ from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, AlgorithmParameters
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -69,7 +72,6 @@ def simple_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-
     exchange_node = graph_gen_params.node_factory.exchange_node
     visited_nodes = set()
 
@@ -138,56 +140,67 @@ def single_edge_mutation(graph: OptGraph,
 
 @register_native
 def add_intermediate_node(graph: OptGraph,
-                          node_to_mutate: OptNode,
                           node_factory: OptNodeFactory) -> OptGraph:
-    # add between node and parent
-    new_node = node_factory.get_parent_node(node_to_mutate, is_primary=False)
-    if not new_node:
-        return graph
+    nodes_with_parents = [node for node in graph.nodes if node.nodes_from]
+    if len(nodes_with_parents) > 0:
+        shuffle(nodes_with_parents)
+        for node_to_mutate in nodes_with_parents:
+            # add between node and parent
+            new_node = node_factory.get_parent_node(node_to_mutate, is_primary=False)
+            if not new_node:
+                continue
 
-    # rewire old children to new parent
-    new_node.nodes_from = node_to_mutate.nodes_from
-    node_to_mutate.nodes_from = [new_node]
+            # rewire old children to new parent
+            new_node.nodes_from = node_to_mutate.nodes_from
+            node_to_mutate.nodes_from = [new_node]
 
-    # add new node to graph
-    graph.add_node(new_node)
+            # add new node to graph
+            graph.add_node(new_node)
+            break
     return graph
 
 
 @register_native
 def add_separate_parent_node(graph: OptGraph,
-                             node_to_mutate: OptNode,
                              node_factory: OptNodeFactory) -> OptGraph:
-    # add as separate parent
-    new_node = node_factory.get_parent_node(node_to_mutate, is_primary=True)
-    if not new_node:
-        # there is no possible operators
-        return graph
-    if node_to_mutate.nodes_from:
-        node_to_mutate.nodes_from.append(new_node)
-    else:
-        node_to_mutate.nodes_from = [new_node]
-    graph.nodes.append(new_node)
+    node_idx = np.arange(len(graph.nodes))
+    shuffle(node_idx)
+    for idx in node_idx:
+        node_to_mutate = graph.nodes[idx]
+        # add as separate parent
+        new_node = node_factory.get_parent_node(node_to_mutate, is_primary=True)
+        if not new_node:
+            # there is no possible operators
+            continue
+        if node_to_mutate.nodes_from:
+            node_to_mutate.nodes_from.append(new_node)
+        else:
+            node_to_mutate.nodes_from = [new_node]
+        graph.nodes.append(new_node)
+        break
     return graph
 
 
 @register_native
 def add_as_child(graph: OptGraph,
-                 node_to_mutate: OptNode,
                  node_factory: OptNodeFactory) -> OptGraph:
-    # add as child
-    old_node_children = graph.node_children(node_to_mutate)
-    new_node_child = choice(old_node_children) if old_node_children else None
-    new_node = node_factory.get_node(is_primary=False)
-    if not new_node:
-        return graph
-    graph.add_node(new_node)
-    graph.connect_nodes(node_parent=node_to_mutate, node_child=new_node)
-    if new_node_child:
-        graph.connect_nodes(node_parent=new_node, node_child=new_node_child)
-        graph.disconnect_nodes(node_parent=node_to_mutate, node_child=new_node_child,
-                               clean_up_leftovers=True)
-
+    node_idx = np.arange(len(graph.nodes))
+    shuffle(node_idx)
+    for idx in node_idx:
+        node_to_mutate = graph.nodes[idx]
+        # add as child
+        old_node_children = graph.node_children(node_to_mutate)
+        new_node_child = choice(old_node_children) if old_node_children else None
+        new_node = node_factory.get_node(is_primary=False)
+        if not new_node:
+            continue
+        graph.add_node(new_node)
+        graph.connect_nodes(node_parent=node_to_mutate, node_child=new_node)
+        if new_node_child:
+            graph.connect_nodes(node_parent=new_node, node_child=new_node_child)
+            graph.disconnect_nodes(node_parent=node_to_mutate, node_child=new_node_child,
+                                   clean_up_leftovers=True)
+        break
     return graph
 
 
@@ -202,20 +215,20 @@ def single_add_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-
     if graph.depth >= requirements.max_depth:
         # add mutation is not possible
         return graph
 
-    node_to_mutate = choice(graph.nodes)
-
-    single_add_strategies = [add_as_child, add_separate_parent_node]
-    if node_to_mutate.nodes_from:
-        single_add_strategies.append(add_intermediate_node)
-    strategy = choice(single_add_strategies)
-
-    result = strategy(graph, node_to_mutate, graph_gen_params.node_factory)
-    return result
+    new_graph = deepcopy(graph)
+    single_add_strategies = [add_as_child, add_separate_parent_node, add_intermediate_node]
+    shuffle(single_add_strategies)
+    for strategy in single_add_strategies:
+        new_graph = strategy(new_graph, graph_gen_params.node_factory)
+        # maximum three equality check
+        if new_graph == graph:
+            continue
+        break
+    return new_graph
 
 
 @register_native
@@ -229,11 +242,15 @@ def single_change_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-    node = choice(graph.nodes)
-    new_node = graph_gen_params.node_factory.exchange_node(node)
-    if not new_node:
-        return graph
-    graph.update_node(node, new_node)
+    node_idx = np.arange(len(graph.nodes))
+    shuffle(node_idx)
+    for idx in node_idx:
+        node = graph.nodes[idx]
+        new_node = graph_gen_params.node_factory.exchange_node(node)
+        if not new_node:
+            continue
+        graph.update_node(node, new_node)
+        break
     return graph
 
 
@@ -289,22 +306,27 @@ def tree_growth(graph: OptGraph,
     selected random node, if false then previous depth of selected node doesn't affect to
     new subtree depth, maximal depth of new subtree just should satisfy depth constraint in parent tree
     """
-    node_from_graph = choice(graph.nodes)
-    if local_growth:
-        max_depth = distance_to_primary_level(node_from_graph)
-        is_primary_node_selected = (not node_from_graph.nodes_from) or (node_from_graph != graph.root_node and
-                                                                        randint(0, 1))
-    else:
-        max_depth = requirements.max_depth - distance_to_root_level(graph, node_from_graph)
-        is_primary_node_selected = \
-            distance_to_root_level(graph, node_from_graph) >= requirements.max_depth and randint(0, 1)
-    if is_primary_node_selected:
-        new_subtree = graph_gen_params.node_factory.get_node(is_primary=True)
-        if not new_subtree:
-            return graph
-    else:
-        new_subtree = graph_gen_params.random_graph_factory(requirements, max_depth).root_node
-    graph.update_subtree(node_from_graph, new_subtree)
+    node_idx = np.arange(len(graph.nodes))
+    shuffle(node_idx)
+    for idx in node_idx:
+        node_from_graph = graph.nodes[idx]
+        if local_growth:
+            max_depth = distance_to_primary_level(node_from_graph)
+            is_primary_node_selected = (not node_from_graph.nodes_from) or (node_from_graph != graph.root_node and
+                                                                            randint(0, 1))
+        else:
+            max_depth = requirements.max_depth - distance_to_root_level(graph, node_from_graph)
+            is_primary_node_selected = \
+                distance_to_root_level(graph, node_from_graph) >= requirements.max_depth and randint(0, 1)
+        if is_primary_node_selected:
+            new_subtree = graph_gen_params.node_factory.get_node(is_primary=True)
+            if not new_subtree:
+                continue
+        else:
+            new_subtree = graph_gen_params.random_graph_factory(requirements, max_depth).root_node
+
+        graph.update_subtree(node_from_graph, new_subtree)
+        break
     return graph
 
 
@@ -349,16 +371,18 @@ def reduce_mutation(graph: OptGraph,
         return graph
 
     nodes = [node for node in graph.nodes if node is not graph.root_node]
-    node_to_del = choice(nodes)
-    children = graph.node_children(node_to_del)
-    is_possible_to_delete = all([len(child.nodes_from) - 1 >= requirements.min_arity for child in children])
-    if is_possible_to_delete:
-        graph.delete_subtree(node_to_del)
-    else:
-        primary_node = graph_gen_params.node_factory.get_node(is_primary=True)
-        if not primary_node:
-            return graph
-        graph.update_subtree(node_to_del, primary_node)
+    shuffle(nodes)
+    for node_to_del in nodes:
+        children = graph.node_children(node_to_del)
+        is_possible_to_delete = all([len(child.nodes_from) - 1 >= requirements.min_arity for child in children])
+        if is_possible_to_delete:
+            graph.delete_subtree(node_to_del)
+        else:
+            primary_node = graph_gen_params.node_factory.get_node(is_primary=True)
+            if not primary_node:
+                continue
+            graph.update_subtree(node_to_del, primary_node)
+        break
     return graph
 
 

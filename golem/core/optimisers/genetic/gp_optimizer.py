@@ -33,8 +33,11 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  initial_graphs: Sequence[Union[Graph, Any]],
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
-                 graph_optimizer_params: GPAlgorithmParameters):
-        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+                 graph_optimizer_params: GPAlgorithmParameters,
+                 **custom_optimizer_params
+                 ):
+        super().__init__(objective, initial_graphs, requirements,
+                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
         # Define genetic operators
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)

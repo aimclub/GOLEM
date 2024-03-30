@@ -9,9 +9,9 @@ from golem.core.tuning.optuna_tuner import OptunaTuner
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.sequential import SequentialTuner
 from golem.core.tuning.simultaneous import SimultaneousTuner
-from test.unit.mocks.common_mocks import MockAdapter, MockObjectiveEvaluate, mock_graph_with_params, \
-    opt_graph_with_params, MockNode, MockDomainStructure
-from test.unit.utils import ParamsSumMetric, ParamsProductMetric
+from test.unit.mocks.common_mocks import (MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate,
+                                          mock_graph_with_params, opt_graph_with_params)
+from test.unit.utils import ParamsProductMetric, ParamsSumMetric
 
 
 def not_tunable_mock_graph():
@@ -35,8 +35,12 @@ def search_space():
                 'hyperopt-dist': hp.loguniform,
                 'sampling-scope': [1e-3, 1],
                 'type': 'continuous'
-            }
-        },
+            },
+            'a3': {
+                'hyperopt-dist': hp.choice,
+                'sampling-scope': [['A', 'B', 'C']],
+                'type': 'categorical'
+            }},
         'b': {
             'b1': {
                 'hyperopt-dist': hp.choice,
@@ -48,6 +52,11 @@ def search_space():
                 'sampling-scope': [0.05, 1.0],
                 'type': 'continuous'
             },
+            'b3': {
+                'hyperopt-dist': hp.randint,
+                'sampling-scope': [1, 1000],
+                'type': 'discrete'
+            }
         },
         'e': {
             'e1': {
@@ -109,7 +118,7 @@ def test_node_tuning(search_space, graph):
         assert tuner.init_metric >= tuner.obtained_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [OptunaTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, IOptTuner])
 @pytest.mark.parametrize('init_graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
@@ -121,10 +130,23 @@ def test_node_tuning(search_space, graph):
                                                        is_multi_objective=True)))])
 def test_multi_objective_tuning(search_space, tuner_cls, init_graph, adapter, obj_eval):
     init_metric = obj_eval.evaluate(init_graph)
-    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, objectives_number=2)
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20, early_stopping_rounds=3)
     tuned_graphs = tuner.tune(deepcopy(init_graph), show_progress=False)
     for graph in tuned_graphs:
         assert type(graph) == type(init_graph)
         final_metric = obj_eval.evaluate(graph)
         assert final_metric is not None
         assert not init_metric.dominates(final_metric)
+
+
+@pytest.mark.parametrize('tuner_cls', [SequentialTuner, SimultaneousTuner])
+def test_hyperopt_returns_native_types(search_space, tuner_cls):
+    obj_eval = MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
+    adapter = MockAdapter()
+    graph = opt_graph_with_params()
+    tuner = tuner_cls(obj_eval, search_space, adapter, iterations=20)
+    tuned_graph = tuner.tune(deepcopy(graph))
+    for node in tuned_graph.nodes:
+        for param, val in node.parameters.items():
+            assert val.__class__.__module__ != 'numpy', (f'The parameter "{param}" should not be a numpy type. '
+                                                         f'Got "{type(val)}".')

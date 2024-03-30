@@ -8,11 +8,12 @@ from golem.core.adapter import DirectAdapter
 from golem.core.dag.graph import Graph
 from golem.core.optimisers.fitness import Fitness, null_fitness
 from golem.core.optimisers.genetic.evaluation import MultiprocessingDispatcher, SequentialDispatcher, \
-    ObjectiveEvaluationDispatcher, determine_n_jobs
+    ObjectiveEvaluationDispatcher
 from golem.core.optimisers.meta.surrogate_evaluator import SurrogateDispatcher
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.timer import OptimisationTimer
+from golem.utilities.utilities import determine_n_jobs
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, RandomMetric
 
 
@@ -61,7 +62,7 @@ def test_dispatchers_with_faulty_objectives(objective, dispatcher):
     adapter, population = set_up_tests()
 
     evaluator = dispatcher.dispatch(objective)
-    assert evaluator(population) is None
+    assert evaluator(population) == []
 
 
 @pytest.mark.parametrize('dispatcher', [

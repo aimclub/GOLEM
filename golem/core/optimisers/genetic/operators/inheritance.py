@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.genetic.operators.selection import Selection
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters

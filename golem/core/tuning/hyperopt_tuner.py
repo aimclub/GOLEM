@@ -1,18 +1,26 @@
 from abc import ABC
 from datetime import timedelta
-from typing import Optional, Callable, Dict
+from typing import Callable, Dict, Optional
 
 import numpy as np
-from hyperopt import tpe, hp
+from hyperopt import hp, tpe
 from hyperopt.early_stop import no_progress_loss
-from hyperopt.pyll import Apply
+from hyperopt.pyll import Apply, scope
+from hyperopt.pyll_utils import validate_label
 
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.log import default_log
 from golem.core.optimisers.objective import ObjectiveFunction
-from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner
+
+
+@validate_label
+def hp_randint(label, *args, **kwargs):
+    return scope.int(scope.hyperopt_param(label, scope.randint(*args, **kwargs)))
+
+
+hp.randint = hp_randint
 
 
 class HyperoptTuner(BaseTuner, ABC):
@@ -41,7 +49,7 @@ class HyperoptTuner(BaseTuner, ABC):
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
-                 algo: Callable = tpe.suggest):
+                 algo: Callable = tpe.suggest, **kwargs):
         early_stopping_rounds = early_stopping_rounds or max(100, int(np.sqrt(iterations) * 10))
         super().__init__(objective_evaluate,
                          search_space,
@@ -50,15 +58,11 @@ class HyperoptTuner(BaseTuner, ABC):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation)
+                         deviation, **kwargs)
 
         self.early_stop_fn = no_progress_loss(iteration_stop_count=self.early_stopping_rounds)
-        self.max_seconds = int(timeout.seconds) if timeout is not None else None
         self.algo = algo
         self.log = default_log(self)
-
-    def _update_remaining_time(self, tuner_timer: Timer):
-        self.max_seconds = self.max_seconds - tuner_timer.minutes_from_start * 60
 
 
 def get_parameter_hyperopt_space(search_space: SearchSpace,

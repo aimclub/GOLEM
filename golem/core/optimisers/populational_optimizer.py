@@ -13,7 +13,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.core.utilities.grouped_condition import GroupedCondition
+from golem.utilities.grouped_condition import GroupedCondition
 
 
 class PopulationalOptimizer(GraphOptimizer):
@@ -30,6 +30,8 @@ class PopulationalOptimizer(GraphOptimizer):
          requirements: implementation-independent requirements for graph optimizer
          graph_generation_params: parameters for new graph generation
          graph_optimizer_params: parameters for specific implementation of graph optimizer
+
+    Additional custom params can be specified with `custom_optimizer_params`.
     """
 
     def __init__(self,
@@ -38,8 +40,10 @@ class PopulationalOptimizer(GraphOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: Optional['AlgorithmParameters'] = None,
+                 **custom_optimizer_params
                  ):
-        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+        super().__init__(objective, initial_graphs, requirements,
+                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
         self.population = None
         self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
@@ -57,7 +61,7 @@ class PopulationalOptimizer(GraphOptimizer):
         max_stagnation_time = requirements.early_stopping_timeout or self.timer.timeout
         self.stop_optimization = \
             GroupedCondition(results_as_message=True).add_condition(
-                lambda: self.timer.is_time_limit_reached(self.current_generation_num),
+                lambda: self.timer.is_time_limit_reached(self.current_generation_num - 1),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
                 lambda: (requirements.num_of_generations is not None and
@@ -101,7 +105,7 @@ class PopulationalOptimizer(GraphOptimizer):
                     pbar.update()
                 except EvaluationAttemptsError as ex:
                     self.log.warning(f'Composition process was stopped due to: {ex}')
-                    return [ind.graph for ind in self.best_individuals]
+                    break
                 # Adding of new population to history
                 self._update_population(new_population)
         pbar.close()

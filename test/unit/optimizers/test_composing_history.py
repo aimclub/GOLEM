@@ -60,7 +60,8 @@ def generate_history(request) -> OptHistory:
             ind.set_native_generation(gen_num)
             new_pop.append(ind)
         history.add_to_history(new_pop)
-        history.add_to_archive_history(new_pop)
+        # since only n best individuals need to be added to archive history
+        history.add_to_archive_history([sorted(new_pop,  key=lambda ind: ind.fitness.values[0], reverse=False)[0]])
     return history
 
 
@@ -266,7 +267,8 @@ def test_newly_generated_history(n_jobs: int):
 def test_history_show_saving_plots(tmp_path, plot_type: PlotTypesEnum, generate_history):
     save_path = Path(tmp_path, plot_type.name)
     gif_plots = [PlotTypesEnum.operations_animated_bar,
-                 PlotTypesEnum.diversity_population]
+                 PlotTypesEnum.diversity_population,
+                 PlotTypesEnum.genealogical_path]
     save_path = save_path.with_suffix('.gif') if plot_type in gif_plots \
         else save_path.with_suffix('.png')
     history: OptHistory = generate_history
@@ -327,6 +329,38 @@ def test_load_zero_generations_history():
     assert isinstance(history, OptHistory)
     assert len(history.archive_history) == 0
     assert history.objective is not None
+
+
+@pytest.mark.parametrize('generate_history', [[100, 100, create_individual]], indirect=True)
+def test_save_load_light_history(generate_history):
+    history = generate_history
+    file_name = 'light_history.json'
+    path_to_dir = os.path.join(project_root(), 'test', 'data')
+    path_to_history = os.path.join(path_to_dir, file_name)
+    history.save(json_file_path=path_to_history, is_save_light=True)
+    assert file_name in os.listdir(path_to_dir)
+    loaded_history = OptHistory().load(path_to_history)
+    assert isinstance(loaded_history, OptHistory)
+    assert len(loaded_history.archive_history) == len(loaded_history.generations) == 100
+    for i, _ in enumerate(loaded_history.generations):
+        assert len(loaded_history.generations[i]) == len(loaded_history.archive_history[i]) == 1
+    os.remove(path=os.path.join(path_to_dir, file_name))
+
+
+@pytest.mark.parametrize('generate_history', [[50, 30, create_individual]], indirect=True)
+def test_light_history_is_significantly_lighter(generate_history):
+    """ Checks if light version of history weights signif """
+    history = generate_history
+    file_name_light = 'light_history.json'
+    file_name_heavy = 'heavy_history.json'
+    path_to_dir = os.path.join(project_root(), 'test', 'data')
+    history.save(json_file_path=os.path.join(path_to_dir, file_name_light), is_save_light=True)
+    history.save(json_file_path=os.path.join(path_to_dir, file_name_heavy), is_save_light=False)
+    light_history_size = os.stat(os.path.join(path_to_dir, file_name_light)).st_size
+    heavy_history_size = os.stat(os.path.join(path_to_dir, file_name_heavy)).st_size
+    assert light_history_size * 25 <= heavy_history_size
+    os.remove(path=os.path.join(path_to_dir, file_name_light))
+    os.remove(path=os.path.join(path_to_dir, file_name_heavy))
 
 
 def assert_intermediate_metrics(graph: MockDomainStructure):

@@ -10,7 +10,7 @@ from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.populational_optimizer import EvaluationAttemptsError
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class ReproductionController:

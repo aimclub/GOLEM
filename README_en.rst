@@ -7,7 +7,7 @@
 
     |sai| |itmo|
 
-    |python| |pypi| |build| |integration| |docs| |license| |tg| |rus| |mirror|
+    |python| |pypi| |build| |integration| |coverage| |docs| |license| |tg| |rus| |mirror|
 
 
 Graph Optimization and Learning by Evolutionary Methods
@@ -104,6 +104,14 @@ Following example demonstrates graph search using reference graph & edit distanc
         optimiser.history.show.fitness_line()
         return found_graph
 
+
+Tracing the lineage of the found_graph reveals how genetic operators (mutations, crossovers, etc.) are applied to a random graph one after another, eventually leading to the target graph:
+
+.. image:: /docs/source/img/evolution_process.gif
+   :alt: Evolution process
+   :align: center
+
+One can also notice that despite the fact that the edit distance generally decreases along the genealogical path, the optimizer sometimes sacrifices local fitness gain of some graphs in order to achieve diversity and thus obtain the best possible solution at the end.
 
 Project Structure
 =================
@@ -223,16 +231,16 @@ There are various cases solved with GOLEM's algorithms:
    :alt: Powered by GOLEM
 
 .. |rus| image:: https://img.shields.io/badge/lang-ru-yellow.svg
-            :target: /README.rst
+   :target: /README.rst
 
-.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
+.. |ITMO| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/ITMO_badge.svg
    :alt: Acknowledgement to ITMO
    :target: https://en.itmo.ru/en/
 
-.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
-.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+.. |mirror| image:: https://img.shields.io/badge/mirror-GitLab-orange
    :alt: GitLab mirror for this repository
    :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

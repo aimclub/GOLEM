@@ -5,7 +5,7 @@ from random import choice, randint, sample
 from typing import Callable, List, Optional
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 
 class SelectionTypesEnum(Enum):
@@ -33,6 +33,8 @@ class Selection(Operator):
         }
         if selection_type in selections:
             return selections[selection_type]
+        elif isinstance(selection_type, Callable):
+            return selection_type
         else:
             raise ValueError(f'Required selection not found: {selection_type}')
 

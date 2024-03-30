@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
 from golem.core.paths import project_root
-from golem.core.utilities.serializable import Serializable
+from golem.utilities.serializable import Serializable
 from golem.serializers import Serializer
 from golem.structural_analysis.graph_sa.results.deletion_sa_approach_result import DeletionSAApproachResult
 from golem.structural_analysis.graph_sa.results.object_sa_result import ObjectSAResult, \

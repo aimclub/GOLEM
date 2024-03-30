@@ -26,7 +26,7 @@ class SequentialTuner(HyperoptTuner):
                  n_jobs: int = -1,
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 inverse_node_order: bool = False):
+                 inverse_node_order: bool = False, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -34,61 +34,53 @@ class SequentialTuner(HyperoptTuner):
                          early_stopping_rounds, timeout,
                          n_jobs,
                          deviation,
-                         algo)
+                         algo, **kwargs)
 
         self.inverse_node_order = inverse_node_order
 
-    def tune(self, graph: DomainGraphForTune) -> DomainGraphForTune:
+    def _tune(self, graph: DomainGraphForTune, **kwargs) -> DomainGraphForTune:
         """ Method for hyperparameters tuning on the entire graph
 
         Args:
             graph: graph which hyperparameters will be tuned
         """
-        graph = self.adapter.adapt(graph)
+        remaining_time = self._get_remaining_time()
+        if self._check_if_tuning_possible(graph, parameters_to_optimize=True, remaining_time=remaining_time):
+            # Calculate amount of iterations we can apply per node
+            nodes_amount = graph.length
+            iterations_per_node = round(self.iterations / nodes_amount)
+            iterations_per_node = int(iterations_per_node)
+            if iterations_per_node == 0:
+                iterations_per_node = 1
 
-        # Check source metrics for data
-        self.init_check(graph)
-
-        # Calculate amount of iterations we can apply per node
-        nodes_amount = graph.length
-        iterations_per_node = round(self.iterations / nodes_amount)
-        iterations_per_node = int(iterations_per_node)
-        if iterations_per_node == 0:
-            iterations_per_node = 1
-
-        # Calculate amount of seconds we can apply per node
-        if self.max_seconds is not None:
-            seconds_per_node = round(self.max_seconds / nodes_amount)
-            seconds_per_node = int(seconds_per_node)
-        else:
-            seconds_per_node = None
-
-        # Tuning performed sequentially for every node - so get ids of nodes
-        nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
-        for node_id in nodes_ids:
-            node = graph.nodes[node_id]
-            operation_name = node.name
-
-            # Get node's parameters to optimize
-            node_params = get_node_parameters_for_hyperopt(self.search_space, node_id, operation_name)
-
-            if not node_params:
-                self.log.info(f'"{operation_name}" operation has no parameters to optimize')
+            # Calculate amount of seconds we can apply per node
+            if remaining_time is not None:
+                seconds_per_node = round(remaining_time / nodes_amount)
+                seconds_per_node = int(seconds_per_node)
             else:
-                # Apply tuning for current node
-                self._optimize_node(node_id=node_id,
-                                    graph=graph,
-                                    node_params=node_params,
-                                    iterations_per_node=iterations_per_node,
-                                    seconds_per_node=seconds_per_node)
+                seconds_per_node = None
 
-        # Validate if optimisation did well
-        final_graph = self.final_check(graph)
+            # Tuning performed sequentially for every node - so get ids of nodes
+            nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
+            for node_id in nodes_ids:
+                node = graph.nodes[node_id]
+                operation_name = node.name
 
-        self.was_tuned = True
-        final_graph = self.adapter.restore(final_graph)
+                # Get node's parameters to optimize
+                node_params = get_node_parameters_for_hyperopt(self.search_space, node_id, operation_name)
 
-        return final_graph
+                if not node_params:
+                    self.log.info(f'"{operation_name}" operation has no parameters to optimize')
+                else:
+                    # Apply tuning for current node
+                    self._optimize_node(node_id=node_id,
+                                        graph=graph,
+                                        node_params=node_params,
+                                        iterations_per_node=iterations_per_node,
+                                        seconds_per_node=seconds_per_node)
+
+            self.was_tuned = True
+        return graph
 
     def get_nodes_order(self, nodes_number: int) -> range:
         """ Method returns list with indices of nodes in the graph
@@ -118,30 +110,33 @@ class SequentialTuner(HyperoptTuner):
         """
         graph = self.adapter.adapt(graph)
 
-        self.init_check(graph)
+        with self.timer:
+            self.init_check(graph)
 
-        node = graph.nodes[node_index]
-        operation_name = node.name
+            node = graph.nodes[node_index]
+            operation_name = node.name
 
-        # Get node's parameters to optimize
-        node_params = get_node_parameters_for_hyperopt(self.search_space,
-                                                       node_id=node_index,
-                                                       operation_name=operation_name)
+            # Get node's parameters to optimize
+            node_params = get_node_parameters_for_hyperopt(self.search_space,
+                                                           node_id=node_index,
+                                                           operation_name=operation_name)
 
-        if not node_params:
-            self._stop_tuning_with_message(f'"{operation_name}" operation has no parameters to optimize')
-        else:
-            # Apply tuning for current node
-            self._optimize_node(graph=graph,
-                                node_id=node_index,
-                                node_params=node_params,
-                                iterations_per_node=self.iterations,
-                                seconds_per_node=self.max_seconds,
-                                )
-            self.was_tuned = True
+            remaining_time = self._get_remaining_time()
+            if self._check_if_tuning_possible(graph, len(node_params) > 1, remaining_time):
+                # Apply tuning for current node
+                self._optimize_node(graph=graph,
+                                    node_id=node_index,
+                                    node_params=node_params,
+                                    iterations_per_node=self.iterations,
+                                    seconds_per_node=remaining_time
+                                    )
+                self.was_tuned = True
 
-        # Validation is the optimization do well
-        final_graph = self.final_check(graph)
+                # Validation is the optimization do well
+                final_graph = self.final_check(graph)
+            else:
+                final_graph = graph
+                self.obtained_metric = self.init_metric
         final_graph = self.adapter.restore(final_graph)
         return final_graph
 
@@ -149,7 +144,7 @@ class SequentialTuner(HyperoptTuner):
                        node_id: int,
                        node_params: dict,
                        iterations_per_node: int,
-                       seconds_per_node: int) -> OptGraph:
+                       seconds_per_node: float) -> OptGraph:
         """
         Method for node optimization
 

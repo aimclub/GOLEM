@@ -12,6 +12,7 @@ from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class OptunaTuner(BaseTuner):
@@ -22,8 +23,7 @@ class OptunaTuner(BaseTuner):
                  early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 deviation: float = 0.05,
-                 objectives_number: int = 1):
+                 deviation: float = 0.05, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -31,25 +31,24 @@ class OptunaTuner(BaseTuner):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation)
-        self.objectives_number = objectives_number
+                         deviation, **kwargs)
         self.study = None
 
-    def tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> \
+    def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> \
             Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
-        graph = self.adapter.adapt(graph)
         predefined_objective = partial(self.objective, graph=graph)
-        is_multi_objective = self.objectives_number > 1
 
-        self.init_check(graph)
+        self.objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
+        is_multi_objective = self.objectives_number > 1
 
         self.study = optuna.create_study(directions=['minimize'] * self.objectives_number)
 
         init_parameters, has_parameters_to_optimize = self._get_initial_point(graph)
-        if not has_parameters_to_optimize:
-            self._stop_tuning_with_message(f'Graph {graph.graph_description} has no parameters to optimize')
-            tuned_graphs = self.init_graph
-        else:
+        remaining_time = self._get_remaining_time()
+        if self._check_if_tuning_possible(graph,
+                                          has_parameters_to_optimize,
+                                          remaining_time,
+                                          supports_multi_objective=True):
             # Enqueue initial point to try
             if init_parameters:
                 self.study.enqueue_trial(init_parameters)
@@ -60,8 +59,8 @@ class OptunaTuner(BaseTuner):
             self.study.optimize(predefined_objective,
                                 n_trials=self.iterations,
                                 n_jobs=self.n_jobs,
-                                timeout=self.timeout.seconds,
-                                callbacks=[self.early_stopping_callback],
+                                timeout=remaining_time,
+                                callbacks=[self.early_stopping_callback] if not is_multi_objective else None,
                                 show_progress_bar=show_progress)
 
             if not is_multi_objective:
@@ -75,9 +74,9 @@ class OptunaTuner(BaseTuner):
                     tuned_graph = self.set_arg_graph(deepcopy(graph), best_parameters)
                     tuned_graphs.append(tuned_graph)
                     self.was_tuned = True
-        final_graphs = self.final_check(tuned_graphs, is_multi_objective)
-        final_graphs = self.adapter.restore(final_graphs)
-        return final_graphs
+        else:
+            tuned_graphs = graph
+        return tuned_graphs
 
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Sequence[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)

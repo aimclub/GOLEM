@@ -7,7 +7,7 @@
 
     |sai| |itmo|
 
-    |python| |pypi| |build| |integration| |docs| |license| |tg| |eng| |mirror|
+    |python| |pypi| |build| |integration| |coverage| |docs| |license| |tg| |eng| |mirror|
 
 
 Оптимизация и обучение графовых моделей эволюционными методами
@@ -80,7 +80,7 @@ GOLEM можно установить с помощью ``pip``:
 Быстрый старт
 =============
 
-Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики редакционного расстояния (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
 
 .. code-block:: python
 
@@ -106,6 +106,13 @@ GOLEM можно установить с помощью ``pip``:
         optimiser.history.show.fitness_line()
         return found_graph
 
+Если проследить предков найденного графа, будет видно, как к нему один за другим применяются генетические операторы (мутации, скрещивания и т.д.), приводящие, в конечном итоге, к целевому графу:
+
+.. image:: /docs/source/img/evolution_process.gif
+   :alt: Процесс эволюции
+   :align: center
+
+Можно также заметить, что, несмотря на общее улучшение фитнеса вдоль генеалогического пути, оптимизатор иногда жертвует локальным уменьшением редакционного расстояния некоторых графов ради поддержания разнообразия и получения таким образом наилучшего решения в конце.
 
 Структура проекта
 =================
@@ -226,14 +233,14 @@ GOLEM можно установить с помощью ``pip``:
 .. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
             :target: /README_en.rst
 
-.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
+.. |ITMO| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/ITMO_badge_rus.svg
    :alt: Acknowledgement to ITMO
    :target: https://itmo.ru
 
-.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
-.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+.. |mirror| image:: https://img.shields.io/badge/mirror-GitLab-orange
    :alt: GitLab mirror for this repository
    :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

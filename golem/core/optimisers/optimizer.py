@@ -18,7 +18,7 @@ from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveF
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
-from golem.core.utilities.random import RandomStateHandler
+from golem.utilities.random import RandomStateHandler
 
 STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
 
@@ -102,6 +102,8 @@ class GraphOptimizer:
     :param requirements: implementation-independent requirements for graph optimizer
     :param graph_generation_params: parameters for new graph generation
     :param graph_optimizer_params: parameters for specific implementation of graph optimizer
+
+    Additional custom params can be specified with `custom_optimizer_params`.
     """
 
     def __init__(self,
@@ -110,7 +112,8 @@ class GraphOptimizer:
                  # TODO: rename params to avoid confusion
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_params: Optional[AlgorithmParameters] = None):
+                 graph_optimizer_params: Optional[AlgorithmParameters] = None,
+                 **custom_optimizer_params):
         self.log = default_log(self)
         self._objective = objective
         initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
