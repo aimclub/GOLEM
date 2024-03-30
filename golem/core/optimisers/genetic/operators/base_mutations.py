@@ -126,8 +126,6 @@ def single_edge_mutation(graph: OptGraph,
             return graph
 
         source_node, target_node = sample(graph.nodes, 2)
-        default_log().debug(f"{hash(graph.descriptive_id)}")
-        default_log().debug(f"Graph for adding edges mutation: {graph.descriptive_id}")
         default_log().debug(f"{hash(source_node.descriptive_id)} -> {hash(target_node.descriptive_id)}")
         if source_node not in target_node.nodes_from:
             if graph_has_cycle(graph):
@@ -137,9 +135,6 @@ def single_edge_mutation(graph: OptGraph,
                 if nodes_not_cycling(source_node, target_node):
                     graph.connect_nodes(source_node, target_node)
                     break
-
-    default_log().debug(f"{hash(graph.descriptive_id)}")
-    default_log().debug(f"Resultant graph: {graph.descriptive_id}")
     return graph
 
 
