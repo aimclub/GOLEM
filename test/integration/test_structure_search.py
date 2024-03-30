@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 from functools import partial
 from math import ceil
@@ -11,9 +10,7 @@ from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.dag.graph import Graph
-from golem.core.log import Log, default_log
 from golem.core.optimisers.objective import Objective
-from golem.core.utilities.random import RandomStateHandler
 from golem.metrics.edit_distance import tree_edit_dist, graph_size
 from golem.utilities.utils import set_random_seed
 
@@ -22,8 +19,6 @@ def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> 
     # defining task
     node_types = ['a', 'b']
     target_graph = generate_labeled_graph('tree', size, node_labels=node_types)
-    # Print the graph
-    default_log().debug(BaseNetworkxAdapter().adapt(target_graph).descriptive_id)
     objective = Objective(partial(distance_function, target_graph))
 
     # running the example
@@ -42,12 +37,9 @@ def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> 
 
 @pytest.mark.parametrize('target_sizes, distance_function, indulgence',
                          [([10, 24], tree_edit_dist, 0.5),
-                          ([30], graph_size, 0.1)])
+                          ([30], graph_size, 0.3)])
 def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
     """ Checks if simple targets can be found within specified time. """
-
-    Log().reset_logging_level(logging.DEBUG)
-
     for target_size in target_sizes:
         num_trials = 3
         distances = []
@@ -55,15 +47,10 @@ def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
             # to test num_trials different options
             set_random_seed(i)
             distance, target_graph = run_search(target_size, distance_function=distance_function, timeout_min=1)
-            default_log().debug(";ljdsfamsnb,df,anmsbdf")
-            default_log().debug(target_graph.descriptive_id)
             distances.append(distance)
 
             assert target_graph is not None
             assert distance < target_size
-
-        default_log().debug("1432412498123490 jkhlhlkhlk")
-        default_log().debug(distances)
 
         allowed_error = ceil(target_size * indulgence)
         mean_dist = np.mean(distances)

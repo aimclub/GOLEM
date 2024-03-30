@@ -1,4 +1,3 @@
-import hashlib
 from abc import abstractmethod
 from random import choice
 from typing import Any, Optional, Sequence, Dict
@@ -140,7 +139,6 @@ class PopulationalOptimizer(GraphOptimizer):
 
         self.log.info(f'Generation num: {self.current_generation_num} size: {len(next_population)}')
         self.log.info(f'Best individuals: {str(self.generations)}')
-        log_hash_of_individual_sequence(self.population, self.log, "current population")
         if self.generations.stagnation_iter_count > 0:
             self.log.info(f'no improvements for {self.generations.stagnation_iter_count} iterations')
             self.log.info(f'spent time: {round(self.timer.minutes_from_start, 1)} min')
@@ -168,16 +166,6 @@ class PopulationalOptimizer(GraphOptimizer):
 def _try_unfit_graph(graph: Any):
     if hasattr(graph, 'unfit'):
         graph.unfit()
-
-
-def log_hash_of_individual_sequence(seq, log, name):
-    # For debug purposes (stability of random):
-    descriptive_ids = list(g.graph.descriptive_id for g in seq)
-    hasher = hashlib.sha256()
-    hasher.update(str(descriptive_ids).encode())
-    log.info(f"Hash of individuals {name}: {hasher.hexdigest()}")
-    log.info(f"Built-in hash of individuals {name}: {hash(str(descriptive_ids))}")
-    # log.info(f"Current population: {list(g.graph.descriptive_id for g in seq)}")
 
 
 class EvaluationAttemptsError(Exception):

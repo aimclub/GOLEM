@@ -20,7 +20,7 @@ from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.optimisers.populational_optimizer import PopulationalOptimizer, log_hash_of_individual_sequence
+from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 
 
 class EvoGraphOptimizer(PopulationalOptimizer):
@@ -85,16 +85,12 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
             if len(extended_pop) == target_pop_size:
                 break
-            chosen = choice(pop)
-            log_hash_of_individual_sequence([chosen], self.log, f"chosen at iteration {iter_num} of extension")
-            new_ind = self.mutation(chosen)
-            log_hash_of_individual_sequence([new_ind] if not isinstance(new_ind, Sequence) else new_ind, self.log, f"new_ind at iteration {iter_num} of extension")
+            new_ind = self.mutation(choice(pop))
             if new_ind:
                 new_graph = new_ind.graph
                 if new_graph not in pop_graphs and verifier(new_graph):
                     extended_pop.append(new_ind)
                     pop_graphs.append(new_graph)
-            log_hash_of_individual_sequence(extended_pop, self.log, f"iteration {iter_num} of extension")
         else:
             self.log.warning(f'Exceeded max number of attempts for extending initial graphs, stopping.'
                              f'Current size {len(pop)}, required {target_pop_size} graphs.')
@@ -112,10 +108,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         # Regularize previous population
         individuals_to_select = self.regularization(self.population, evaluator)
-        log_hash_of_individual_sequence(individuals_to_select, self.log, "after regularization")
         # Reproduce from previous pop to get next population
         new_population = self.reproducer.reproduce(individuals_to_select, evaluator)
-        log_hash_of_individual_sequence(new_population, self.log, "after reproduction")
 
         # Adaptive agent experience collection & learning
         # Must be called after reproduction (that collects the new experience)
@@ -125,9 +119,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         # Use some part of previous pop in the next pop
         new_population = self.inheritance(self.population, new_population)
-        log_hash_of_individual_sequence(new_population, self.log, "after inheritance")
         new_population = self.elitism(self.generations.best_individuals, new_population)
-        log_hash_of_individual_sequence(new_population, self.log, "after elitism")
 
         return new_population
 

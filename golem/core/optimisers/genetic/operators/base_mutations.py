@@ -6,7 +6,6 @@ from golem.core.adapter import register_native
 from golem.core.dag.graph import ReconnectType
 from golem.core.dag.graph_node import GraphNode
 from golem.core.dag.graph_utils import distance_to_root_level, distance_to_primary_level, graph_has_cycle
-from golem.core.log import default_log
 from golem.core.optimisers.advisor import RemoveType
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_node_factory import OptNodeFactory
@@ -126,7 +125,6 @@ def single_edge_mutation(graph: OptGraph,
             return graph
 
         source_node, target_node = sample(graph.nodes, 2)
-        default_log().debug(f"{hash(source_node.descriptive_id)} -> {hash(target_node.descriptive_id)}")
         if source_node not in target_node.nodes_from:
             if graph_has_cycle(graph):
                 graph.connect_nodes(source_node, target_node)
