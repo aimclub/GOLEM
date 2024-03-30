@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import random
 
-from golem.core.utilities.random import RandomStateHandler
+from golem.utilities.random import RandomStateHandler
 
 
 def set_random_seed(seed: Optional[int]):
