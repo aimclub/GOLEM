@@ -180,7 +180,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
             final_graphs = self.init_graph
-            self.obtained_metric = self.init_metric
+            self.obtained_metric = ensure_wrapped_in_sequence(self.init_metric)
         return final_graphs
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
