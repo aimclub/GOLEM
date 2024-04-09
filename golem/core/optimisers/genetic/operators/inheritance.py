@@ -40,7 +40,7 @@ class Inheritance(Operator):
                                  ) -> PopulationT:
         # use individuals with non-repetitive uid
         not_repetitive_inds = [ind for ind in prev_population if ind not in new_population]
-        full_population = new_population + not_repetitive_inds
+        full_population = list(new_population) + list(not_repetitive_inds)
         return self.selection(full_population,
                               pop_size=self.parameters.pop_size)
 
