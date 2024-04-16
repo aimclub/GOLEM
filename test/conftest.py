@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from golem.utilities.utilities import urandom_mock
 from golem.utilities.utils import set_random_seed
 
 
@@ -10,11 +11,5 @@ from golem.utilities.utils import set_random_seed
 def stabilize_random():
     set_random_seed(42)
 
-    def urandom_mock(n):
-        return bytes(random.getrandbits(8) for _ in range(n))
-
-    # os.random is the source of random used in the uuid library
-    # normally, it's „true“ random, but to stabilize tests,
-    # it uses seeded `random` library
     with patch('os.urandom', urandom_mock):
         yield

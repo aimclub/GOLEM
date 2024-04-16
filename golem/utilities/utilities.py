@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 from joblib import cpu_count
 
-from golem.utilities import random
+import random
 from golem.utilities.random import RandomStateHandler
 
 
@@ -20,6 +20,13 @@ def determine_n_jobs(n_jobs=-1, logger=None):
     if logger:
         logger.info(f"Number of used CPU's: {n_jobs}")
     return n_jobs
+
+
+def urandom_mock(n):
+    # os.random is the source of random used in the uuid library
+    # normally, it's „true“ random, but to stabilize tests,
+    # seeded `random` library is used instead.
+    return bytes(random.getrandbits(8) for _ in range(n))
 
 
 def set_random_seed(seed: Optional[int]):
