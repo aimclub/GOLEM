@@ -9,7 +9,7 @@ from test.integration.test_quality_improvement import run_graph_trial
 def test_random_seed_fully_determines_evolution_process():
     """ Tests that random seed fully determines evolution process. """
     # Setup graph search
-    target_graph = generate_labeled_graph('gnp', 5, node_labels=['X', 'Y'])
+    target_graph = generate_labeled_graph('tree', 4, node_labels=['X', 'Y'])
 
     def launch_with_seed(seed):
         set_random_seed(seed)
@@ -23,10 +23,9 @@ def test_random_seed_fully_determines_evolution_process():
         return optimizer.history
 
     def history_equals(history1, history2):
-        return all(
-            (history1.generations[i] == history2.generations[i])
-            for i in range(len(history1.generations))
-        )
+        def get_generation_ids(history):
+            return [[ind.graph.descriptive_id for ind in generation] for generation in history.generations]
+        return get_generation_ids(history1) == get_generation_ids(history2)
 
     seed = 42
     first_run = launch_with_seed(seed)
