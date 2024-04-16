@@ -3,8 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from golem.utilities.utilities import urandom_mock
-from golem.utilities.utils import set_random_seed
+from golem.utilities.utilities import urandom_mock, set_random_seed
 
 
 @pytest.fixture(autouse=True)

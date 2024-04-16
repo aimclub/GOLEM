@@ -10,7 +10,6 @@ from examples.synthetic_graph_evolution.graph_search import graph_search_setup
 from examples.synthetic_graph_evolution.tree_search import tree_search_setup
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
-from golem.utilities.utils import set_random_seed
 
 
 def run_graph_trial(optimizer_cls):
@@ -36,7 +35,6 @@ def run_tree_trial(optimizer_cls):
 @pytest.mark.parametrize('run_fun', [run_graph_trial, run_tree_trial])
 @pytest.mark.parametrize('optimizer_cls', [EvoGraphOptimizer])
 def test_multiobjective_improvement(optimizer_cls, run_fun):
-    set_random_seed(42)
     found_graph, history = run_fun(optimizer_cls)
     quality_improved, complexity_improved = check_improvement(history)
 

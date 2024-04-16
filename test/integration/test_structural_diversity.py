@@ -11,7 +11,6 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.optimizer import STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
 from golem.metrics.edit_distance import tree_edit_dist
 from golem.metrics.graph_metrics import degree_distance
-from golem.utilities.utils import set_random_seed
 
 DIVERSITY_THRESHOLD = 0.5
 
@@ -47,7 +46,6 @@ def test_structural_diversity():
 
     gp_params = set_up_params(gen_structural_check=gen_structural_check)
     # running the example
-    set_random_seed(42)
     _, history = run_trial(target_graph=target_graph,
                            optimizer_setup=partial(tree_search_setup, algorithm_parameters=gp_params),
                            node_types=node_types,
