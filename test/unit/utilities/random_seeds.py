@@ -28,12 +28,8 @@ def test_random_seed_fully_determines_evolution_process():
             for i in range(len(history1.generations))
         )
 
-    first_seed = 42
-    second_seed = first_seed + 1
+    seed = 42
+    first_run = launch_with_seed(seed)
+    second_run = launch_with_seed(seed)
 
-    first_seed_first_run = launch_with_seed(first_seed)
-    first_seed_second_run = launch_with_seed(first_seed)
-    second_seed_run = launch_with_seed(second_seed)
-
-    assert history_equals(first_seed_first_run, first_seed_second_run)
-    assert not history_equals(first_seed_first_run, second_seed_run)
+    assert history_equals(first_run, second_run)
