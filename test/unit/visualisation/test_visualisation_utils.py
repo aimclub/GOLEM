@@ -44,13 +44,10 @@ def test_hierarchy_pos():
     node_labels = {uid: str(node) for uid, node in nodes_dict.items()}
 
     pos = GraphVisualizer._get_hierarchy_pos_by_distance_to_primary_level(nx_graph, nodes_dict)
-    print("pos:", pos)
     comparable_lists_y = make_comparable_lists(pos, real_hierarchy_levels_y,
                                                node_labels, 1, reverse=True)
     comparable_lists_x = make_comparable_lists(pos, real_hierarchy_levels_x,
                                                node_labels, 0, reverse=False)
-    print("x:", comparable_lists_x)
-    print("y:", comparable_lists_y)
     assert comparable_lists_y[0] == comparable_lists_y[1]  # check nodes hierarchy by y axis
     assert comparable_lists_x[0] == comparable_lists_x[1]  # check nodes hierarchy by x axis
 
