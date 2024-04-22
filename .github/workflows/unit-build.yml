@@ -31,8 +31,6 @@ jobs:
         pip install .[docs]
         pip install .[profilers]
         pip install pytest-cov
-    - name: Print the installed version of networkx
-      run: pip show networkx | grep "Version"
     - name: Test with pytest
       run: |
         pytest --cov=golem test/unit
