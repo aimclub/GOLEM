@@ -1,7 +1,3 @@
-import pathlib
-
-from matplotlib import pyplot as plt
-
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.optimisers.fitness.multi_objective_fitness import MultiObjFitness
@@ -48,17 +44,6 @@ def test_hierarchy_pos():
     node_labels = {uid: str(node) for uid, node in nodes_dict.items()}
 
     pos = GraphVisualizer._get_hierarchy_pos_by_distance_to_primary_level(nx_graph, nodes_dict)
-    pos_by_label = {node_labels[uid]: pos[uid] for uid in pos}
-    print("pos_by_label:", pos_by_label)
-    descriptive_id = {nodes_dict[uid].descriptive_id: uid for uid in nodes_dict}
-    print("descriptive_id:", descriptive_id)
-    this_dir = pathlib.Path(__file__).parent
-
-    GraphVisualizer(graph).visualise(
-        nodes_layout_function=GraphVisualizer._get_hierarchy_pos_by_distance_to_primary_level,
-        save_path=this_dir / "graph_layout.png"
-    )
-
     print("pos:", pos)
     comparable_lists_y = make_comparable_lists(pos, real_hierarchy_levels_y,
                                                node_labels, 1, reverse=True)
