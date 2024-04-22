@@ -35,10 +35,9 @@ jobs:
       run: |
         pytest --cov=golem test/unit
     - name: Upload graph layout as an artifact
-      if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: graph-layout-python-${{ matrix.python-version }}
+        name: graph-layout
         path: 'test/unit/visualisation/graph_layout.png'
     - name: Codecov-coverage
       uses: codecov/codecov-action@v2
