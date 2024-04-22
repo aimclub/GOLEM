@@ -1,8 +1,5 @@
-import random
 from unittest.mock import patch
-
 import pytest
-
 from golem.utilities.utilities import urandom_mock, set_random_seed
 
 

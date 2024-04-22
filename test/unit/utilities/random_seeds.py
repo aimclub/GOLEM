@@ -1,9 +1,6 @@
-from unittest.mock import patch
-
 from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from examples.synthetic_graph_evolution.graph_search import graph_search_setup
-from golem.utilities.utilities import set_random_seed, urandom_mock
-from test.integration.test_quality_improvement import run_graph_trial
+from golem.utilities.utilities import set_random_seed
 
 
 def test_random_seed_fully_determines_evolution_process():
