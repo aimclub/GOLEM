@@ -56,7 +56,7 @@ class AgentTrainer:
             # Preliminary validity check
             # This allows to filter out histories with different objectives automatically
             if history.objective.metric_names != self.objective.metric_names:
-                self._log.warning(f'History #{i+1} has different objective! '
+                self._log.warning(f'History #{i + 1} has different objective! '
                                   f'Expected {self.objective}, got {history.objective}.')
                 continue
 
@@ -67,13 +67,13 @@ class AgentTrainer:
                 experience, val_experience = experience.split(ratio=0.8, shuffle=True)
 
             # Train
-            self._log.info(f'Training on history #{i+1} with {len(history.generations)} generations')
+            self._log.info(f'Training on history #{i + 1} with {len(history.generations)} generations')
             self.agent.partial_fit(experience)
 
             # Validate
             if val_experience:
                 reward_loss, reward_target = self.validate_agent(experience=val_experience)
-                self._log.info(f'Agent validation for history #{i+1} & {experience}: '
+                self._log.info(f'Agent validation for history #{i + 1} & {experience}: '
                                f'Reward target={reward_target:.3f}, loss={reward_loss:.3f}')
 
         # Reset mutation probabilities to default
@@ -163,9 +163,10 @@ class AgentTrainer:
         return best_step
 
     def _apply_action(self, action: Any, ind: Individual) -> TrajectoryStep:
-        new_graph, applied = self.mutation._adapt_and_apply_mutation(ind.graph, action)
+        new_graph = self.mutation._apply_mutations(ind.graph, action)
+        applied = new_graph is not None
         fitness = self._eval_objective(new_graph) if applied else None
-        parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=ind)
+        parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=[ind])
         new_ind = Individual(new_graph, fitness=fitness, parent_operator=parent_op)
 
         prev_fitness = ind.fitness or self._eval_objective(ind.graph)
