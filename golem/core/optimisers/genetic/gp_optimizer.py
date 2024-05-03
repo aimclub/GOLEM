@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Union, Any
+from typing import Sequence, Union, Any, Optional
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -15,6 +15,7 @@ from golem.core.optimisers.genetic.operators.reproduction import ReproductionCon
 from golem.core.optimisers.genetic.operators.selection import Selection
 from golem.core.optimisers.genetic.parameters.graph_depth import AdaptiveGraphDepth
 from golem.core.optimisers.genetic.parameters.operators_prob import init_adaptive_operators_prob
+from golem.core.optimisers.genetic.parameters.parameter import AdaptiveParameter
 from golem.core.optimisers.genetic.parameters.population_size import init_adaptive_pop_size, PopulationSize
 from golem.core.optimisers.objective.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
@@ -34,6 +35,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters,
+                 pop_size_adaptor: Optional[AdaptiveParameter[int]],
                  **custom_optimizer_params
                  ):
         super().__init__(objective, initial_graphs, requirements,
@@ -50,7 +52,8 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
 
         # Define adaptive parameters
-        self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
+        self._pop_size: PopulationSize = pop_size_adaptor or init_adaptive_pop_size(graph_optimizer_params,
+                                                                                    self.generations)
         self._operators_prob = init_adaptive_operators_prob(graph_optimizer_params)
         self._graph_depth = AdaptiveGraphDepth(self.generations,
                                                start_depth=requirements.start_depth,
@@ -127,17 +130,18 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         return new_population
 
     def _update_requirements(self):
+        # Temporary for RL adaptation
+        self.graph_optimizer_params.pop_size = self._pop_size.next(self.population)
+        self.log.info(f'Next population size: {self.graph_optimizer_params.pop_size}')
+
         if not self.generations.is_any_improved:
             self.graph_optimizer_params.mutation_prob, self.graph_optimizer_params.crossover_prob = \
                 self._operators_prob.next(self.population)
             self.log.info(
                 f'Next mutation proba: {self.graph_optimizer_params.mutation_prob}; '
                 f'Next crossover proba: {self.graph_optimizer_params.crossover_prob}')
-        self.graph_optimizer_params.pop_size = self._pop_size.next(self.population)
         self.requirements.max_depth = self._graph_depth.next()
-        self.log.info(
-            f'Next population size: {self.graph_optimizer_params.pop_size}; '
-            f'max graph depth: {self.requirements.max_depth}')
+        self.log.info(f'max graph depth: {self.requirements.max_depth}')
 
         # update requirements in operators
         for operator in self.operators:
