@@ -130,5 +130,7 @@ class ReproductionController:
                                   f' required {total_target_size}!\n' + helpful_msg)
                 return list(collected_next_population.values())
             else:
+                print(total_target_size, len(collected_next_population), self._minimum_valid_ratio)
+                print(len(population))
                 raise EvaluationAttemptsError('Could not collect valid individuals'
                                               ' for next population.' + helpful_msg)
