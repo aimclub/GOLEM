@@ -34,7 +34,7 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         super().__init__(actions=actions, n_jobs=n_jobs, enable_logging=enable_logging,
                          decaying_factor=decaying_factor, is_initial_fit=False)
         self._agent = MAB(arms=self._indices,
-                          learning_policy=LearningPolicy.UCB1(alpha=1.25),
+                          learning_policy=LearningPolicy.UCB1(alpha=0.8),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
                           n_jobs=n_jobs)
         self._context_agent = context_agent_type if isinstance(context_agent_type, Callable) else \
@@ -81,6 +81,8 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
         obs, arms, processed_rewards = self._get_experience(experience)
         contexts = self.get_context(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=processed_rewards, contexts=contexts)
+        if self._path_to_save:
+            self.save()
 
     def _get_experience(self, experience: ExperienceBuffer):
         """ Get experience from ExperienceBuffer, process rewards and log. """
