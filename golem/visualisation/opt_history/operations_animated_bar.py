@@ -4,6 +4,7 @@ from typing import List, Optional, Sequence, Union
 
 import numpy as np
 import seaborn as sns
+import matplotlib as mpl
 from matplotlib import cm, animation, pyplot as plt
 from matplotlib.colors import Normalize
 
@@ -70,7 +71,7 @@ class OperationsAnimatedBar(HistoryVisualization):
         animation_frames_per_step = 18
         animation_interval_between_frames_ms = 40
         animation_interpolation_power = 4
-        fitness_colormap = cm.get_cmap('YlOrRd')
+        fitness_colormap = mpl.colormaps['YlOrRd']
 
         generation_column_name = 'Generation'
         fitness_column_name = 'Fitness'

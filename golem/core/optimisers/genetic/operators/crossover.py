@@ -169,8 +169,8 @@ def get_subgraphs(graph):
     if not edges:
         return deepcopy([graph.nodes, graph.nodes]), {*deepcopy(graph.nodes)}
 
-    target, source = choice(graph.get_edges())
-    graph.disconnect_nodes(source, target)
+    target, source = choice(edges)
+    graph.disconnect_nodes(target, source)
 
     simple_paths = get_all_simple_paths(graph, source, target)
     simple_paths.sort(key=len)
@@ -182,14 +182,8 @@ def get_subgraphs(graph):
             else graph.disconnect_nodes(node_second, node_first)
         division_points.union([node_first, node_second])
 
-        del simple_paths[0]
-        paths_to_remove = []
-        for idx, path in enumerate(simple_paths):
-            if (node_first, node_second) in path or (node_second, node_first) in path:
-                paths_to_remove.append(idx)
-        paths_to_remove.reverse()
-        for idx in paths_to_remove:
-            del simple_paths[idx]
+        simple_paths = get_all_simple_paths(graph, source, target)
+        simple_paths.sort(key=len)
 
     subgraphs = get_connected_components(graph, [source, target])
     return subgraphs, division_points

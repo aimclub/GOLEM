@@ -202,7 +202,8 @@ def graph_has_cycle(graph: 'Graph') -> bool:
     return False
 
 
-def get_all_simple_paths(graph: 'Graph', source: 'GraphNode', target: 'GraphNode') -> List[List[Tuple['GraphNode']]]:
+def get_all_simple_paths(graph: 'Graph', source: 'GraphNode', target: 'GraphNode') \
+        -> List[List[List['GraphNode']]]:
     """ Returns all simple paths from one node to another ignoring edge direction.
     Args:
         graph: graph in which to search for paths
@@ -210,7 +211,7 @@ def get_all_simple_paths(graph: 'Graph', source: 'GraphNode', target: 'GraphNode
         target: the last node of the path """
     paths = []
     nodes_children = {source.uid: graph.node_children(source)}
-    target = set([target])
+    target = {target}
     visited = dict.fromkeys([source])
     node_neighbors = set(source.nodes_from).union(nodes_children[source.uid])
     stack = [iter(node_neighbors)]
@@ -218,23 +219,22 @@ def get_all_simple_paths(graph: 'Graph', source: 'GraphNode', target: 'GraphNode
     while stack:
         neighbors = stack[-1]
         neighbor = next(neighbors, None)
-        if neighbor is None:
+        if neighbor is None:  # current path does not contain target
             stack.pop()
             visited.popitem()
         else:
-            if neighbor in visited:
+            if neighbor in visited:  # path is not simple
                 continue
-            if neighbor in target:
+            if neighbor in target:  # target node was reached
                 path = list(visited) + [neighbor]
-                pairs_list = [(path[i], path[(i + 1) % len(path)]) for i in range(len(path) - 1)]
+                pairs_list = [[path[i], path[(i + 1)]] for i in range(len(path) - 1)]
                 paths.append(pairs_list)
-            visited[neighbor] = None
-            if target - set(visited.keys()):
-                children = nodes_children.setdefault(neighbor.uid, graph.node_children(neighbor))
+            else:  # target node was not reached
+                visited[neighbor] = None
+                children = nodes_children[neighbor.uid] if neighbor.uid in nodes_children \
+                    else nodes_children.setdefault(neighbor.uid, graph.node_children(neighbor))  # lazy setdefault
                 node_neighbors = set(neighbor.nodes_from).union(children)
                 stack.append(iter(node_neighbors))
-            else:
-                visited.popitem()
     return paths
 
 

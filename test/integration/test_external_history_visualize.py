@@ -7,7 +7,7 @@ from golem.core.paths import project_root
 from golem.visualisation.opt_viz import PlotTypesEnum, OptHistoryVisualizer
 
 
-@pytest.mark.parametrize('history_path', ['test/data/history_composite_bn_healthcare.json'])
+@pytest.mark.parametrize('history_path', ['test/data/external_history_composite_bn_healthcare.json'])
 @pytest.mark.parametrize('plot_type', PlotTypesEnum)
 @pytest.mark.parametrize('is_light_history', [True, False])
 def test_visualizations_for_external_history(tmp_path, history_path, plot_type, is_light_history):
