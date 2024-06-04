@@ -1,6 +1,5 @@
 from abc import ABC
 from datetime import timedelta
-from typing import Optional, Callable, Dict, Tuple, Any
 from typing import Callable, Dict, Optional, Tuple, Any
 
 import numpy as np
