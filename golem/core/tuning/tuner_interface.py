@@ -82,7 +82,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         with self.timer:
 
             # Check source metrics for data
-            self.init_check(graph, self.objectives_number > 1)
+            self.init_check(graph)
             final_graph = self._tune(graph, **kwargs)
             # Validate if optimisation did well
             final_graph = self.final_check(final_graph, self.objectives_number > 1)
