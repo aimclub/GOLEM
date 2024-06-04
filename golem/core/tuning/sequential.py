@@ -65,12 +65,12 @@ class SequentialTuner(HyperoptTuner):
             # Tuning performed sequentially for every node - so get ids of nodes
             nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
             final_graph = deepcopy(self.init_graph)
+            best_metric = self.init_metric
             for node_id in nodes_ids:
                 node = graph.nodes[node_id]
 
                 # Get node's parameters to optimize
                 node_params, init_params = get_node_parameters_for_hyperopt(self.search_space, node_id, node)
-                best_metric = self.init_metric
                 if not node_params:
                     self.log.info(f'"{node.name}" operation has no parameters to optimize')
                 else:
@@ -81,8 +81,9 @@ class SequentialTuner(HyperoptTuner):
                                                         init_params=init_params,
                                                         iterations_per_node=iterations_per_node,
                                                         seconds_per_node=seconds_per_node)
-                    if metric < best_metric:
+                    if metric <= best_metric:
                         final_graph = deepcopy(graph)
+                        best_metric = metric
             self.was_tuned = True
         return final_graph
 
@@ -185,12 +186,12 @@ class SequentialTuner(HyperoptTuner):
                  early_stop_fn=self.early_stop_fn,
                  timeout=seconds_per_node)
 
-        best = space_eval(space=node_params, hp_assignment=trials.argmin)
+        best_params = space_eval(space=node_params, hp_assignment=trials.argmin)
         is_best_trial_with_init_params = trials.best_trial.get('tid') in range(init_trials_num)
         if is_best_trial_with_init_params:
-            best = {**best, **init_params}
+            best_params = {**best_params, **init_params}
         # Set best params for this node in the graph
-        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best)
+        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best_params)
         return graph, trials.best_trial['result']['loss']
 
     def _objective(self,
