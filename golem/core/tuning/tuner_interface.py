@@ -82,7 +82,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         with self.timer:
 
             # Check source metrics for data
-            self.init_check(graph)
+            self.init_check(graph, self.objectives_number > 1)
             final_graph = self._tune(graph, **kwargs)
             # Validate if optimisation did well
             final_graph = self.final_check(final_graph, self.objectives_number > 1)
@@ -100,6 +100,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         Args:
           graph: graph to calculate objective
+          multi_obj: If optimization was multi objective.
         """
         self.log.info('Hyperparameters optimization start: estimation of metric for initial graph')
 
@@ -179,8 +180,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
                              f'{metrics_formatted}')
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
-            final_graphs = self.init_graph
-            self.obtained_metric = self.init_metric
+            final_graphs = [self.init_graph]
+            self.obtained_metric = [self.init_metric]
         return final_graphs
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
