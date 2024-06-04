@@ -4,9 +4,9 @@ from typing import Tuple, Optional, Sequence
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import networkx as nx
 import numpy as np
-from matplotlib import cm
 
 from golem.core.adapter.nx_adapter import BaseNetworkxAdapter
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
@@ -137,7 +137,7 @@ def _get_node_colors_and_labels(graph: nx.Graph,
     root_cm = max_degree
     node_cm = max_degree // 2
     src_cm = 0
-    colormap = cm.get_cmap(cmap_name, max_degree + 1)
+    colormap = mpl.colormaps[cmap_name].resampled(max_degree + 1)
     colors = []
     labels = {}
 

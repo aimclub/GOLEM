@@ -1,11 +1,11 @@
 from copy import deepcopy
 from itertools import chain
 from math import ceil
-from random import choice, random, sample
+from random import choice, random, sample, randrange
 from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
-from golem.core.dag.graph_utils import nodes_from_layer, node_depth
+from golem.core.dag.graph_utils import nodes_from_layer, node_depth, get_all_simple_paths, get_connected_components
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph, OptNode
@@ -23,6 +23,7 @@ class CrossoverTypesEnum(Enum):
     subtree = 'subtree'
     one_point = "one_point"
     none = 'none'
+    subgraph = 'subgraph_crossover'
     exchange_edges = 'exchange_edges'
     exchange_parents_one = 'exchange_parents_one'
     exchange_parents_both = 'exchange_parents_both'
@@ -85,7 +86,8 @@ class Crossover(Operator):
             CrossoverTypesEnum.one_point: one_point_crossover,
             CrossoverTypesEnum.exchange_edges: exchange_edges_crossover,
             CrossoverTypesEnum.exchange_parents_one: exchange_parents_one_crossover,
-            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover
+            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover,
+            CrossoverTypesEnum.subgraph: subgraph_crossover
         }
         if crossover_type in crossovers:
             return crossovers[crossover_type]
@@ -146,6 +148,62 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
         replace_subtrees(graph_first, graph_second, node_from_graph_first, node_from_graph_second,
                          layer_in_graph_first, layer_in_graph_second, max_depth)
     return graph_first, graph_second
+
+
+@register_native
+def subgraph_crossover(graph_first: OptGraph, graph_second: OptGraph, **kwargs) -> Tuple[OptGraph, OptGraph]:
+    """ A random edge is chosen and all paths between these nodes are disconnected.
+    This way each graph is divided into two subgraphs.
+    The subgraphs are exchanged between the graphs and connected randomly at the points of division.
+    Suitable for graphs with cycles. Does not guarantee not exceeding maximal depth. """
+    first_subgraphs, first_div_points = get_subgraphs(graph_first)
+    second_subgraphs, second_div_points = get_subgraphs(graph_second)
+    graph_first = connect_subgraphs(first_subgraphs[0], second_subgraphs[1], first_div_points, second_div_points)
+    graph_second = connect_subgraphs(first_subgraphs[1], second_subgraphs[0], first_div_points, second_div_points)
+
+    return graph_first, graph_second
+
+
+def get_subgraphs(graph):
+    edges = graph.get_edges()
+    if not edges:
+        return deepcopy([graph.nodes, graph.nodes]), {*deepcopy(graph.nodes)}
+
+    target, source = choice(edges)
+    graph.disconnect_nodes(target, source)
+
+    simple_paths = get_all_simple_paths(graph, source, target)
+    simple_paths.sort(key=len)
+    division_points = {source, target}
+
+    while len(simple_paths) > 0:
+        node_first, node_second = choice(simple_paths[0])
+        graph.disconnect_nodes(node_first, node_second) if node_first in node_second.nodes_from \
+            else graph.disconnect_nodes(node_second, node_first)
+        division_points.union([node_first, node_second])
+
+        simple_paths = get_all_simple_paths(graph, source, target)
+        simple_paths.sort(key=len)
+
+    subgraphs = get_connected_components(graph, [source, target])
+    return subgraphs, division_points
+
+
+def connect_subgraphs(first_subgraph, second_subgraph, first_div_points, second_div_points):
+    first_points = list(first_div_points.intersection(first_subgraph))
+    second_points = list(second_div_points.intersection(second_subgraph))
+    connections_num = min(len(first_points), len(second_points))
+    new_graph = OptGraph([*first_subgraph, *second_subgraph])
+
+    for _ in range(connections_num):
+        first_idx, second_idx = randrange(len(first_points)), randrange(len(second_points))
+        first_node, second_node = first_points.pop(first_idx), second_points.pop(second_idx)
+
+        if random() > 0.5:
+            new_graph.connect_nodes(first_node, second_node)
+        else:
+            new_graph.connect_nodes(second_node, first_node)
+    return new_graph
 
 
 @register_native
