@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
+from numpy.typing import ArrayLike
 
 import numpy as np
 import seaborn as sns
@@ -43,7 +44,7 @@ class OperationsAnimatedBar(HistoryVisualization):
             point_1, point_2 = np.array(point_1), np.array(point_2)
             return [point_1 * (1 - t ** power) + point_2 * t ** power for t in t_interp]
 
-        def smoothen_frames_data(data: Sequence[Sequence['ArrayLike']], smoothness=18, power=4) -> List[np.array]:
+        def smoothen_frames_data(data: Sequence[Sequence[ArrayLike]], smoothness=18, power=4) -> List[np.array]:
             final_frames = []
             for initial_frame in range(len(data) - 1):
                 final_frames += interpolate_points(data[initial_frame], data[initial_frame + 1], smoothness, power)
@@ -174,7 +175,7 @@ class OperationsAnimatedBar(HistoryVisualization):
         ax.tick_params(axis='y', which='major', labelsize=label_size)
         ax.set_title(title)
         ax.set_xlim(0, 1)
-        ax.set_xlabel(f'Fraction of graphs containing the operation')
+        ax.set_xlabel('Fraction of graphs containing the operation')
         ax.xaxis.grid(True)
         ax.set_ylabel(operation_column_name)
         ax.invert_yaxis()

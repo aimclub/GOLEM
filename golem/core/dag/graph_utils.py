@@ -1,4 +1,4 @@
-from typing import Sequence, List, TYPE_CHECKING, Callable, Union, Optional, Tuple
+from typing import Sequence, List, TYPE_CHECKING, Callable, Union, Optional
 
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
