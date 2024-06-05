@@ -2,7 +2,8 @@ import os.path
 import _pickle as pickle
 import random
 import re
-from typing import Union, Sequence, Optional
+from functools import partial
+from typing import Union, Sequence, Optional, Callable
 
 from mabwiser.mab import MAB, LearningPolicy
 from scipy.special import softmax
@@ -26,7 +27,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
         # str because parent operator for mutation is stored as string for custom mutations serialisation
-        self._arm_by_action = dict(map(lambda x, y: (x.__name__, y), actions, self._indices))
+        self._arm_by_action = dict(map(lambda x, y: (self._get_callable_name(x), y), actions, self._indices))
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.4),
                           n_jobs=n_jobs)
@@ -34,6 +35,16 @@ class MultiArmedBanditAgent(OperatorAgent):
         if is_initial_fit:
             self._initial_fit()
         self._path_to_save = path_to_save
+
+    @staticmethod
+    def _get_callable_name(action: Callable):
+        if isinstance(action, partial):
+            return action.func.__name__
+        else:
+            try:
+                return action.__name__
+            except AttributeError:
+                return str(action)
 
     def _initial_fit(self):
         n = len(self.actions)
