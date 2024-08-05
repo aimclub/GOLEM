@@ -167,29 +167,16 @@ GOLEM можно установить с помощью ``pip``:
 Цитирование
 ===========
 
-Если вы используете наш проект в своей работе или исследовании, мы будем признательны за цитирование.
+Если вы используете наш проект в своей работе или исследовании, мы будем признательны за цитирование:
 
-@article{nikitin2021automated,
-  title = {Automated evolutionary approach for the design of composite machine learning pipelines},
-  author = {Nikolay O. Nikitin and Pavel Vychuzhanin and Mikhail Sarafanov and Iana S. Polonskaia and Ilia Revin and Irina V. Barabanova and Gleb Maximov and Anna V. Kalyuzhnaya and Alexander Boukhanovsky},
-  journal = {Future Generation Computer Systems},
-  year = {2021},
-  issn = {0167-739X},
-  doi = {https://doi.org/10.1016/j.future.2021.08.022}}
+@inproceedings{pinchuk2024golem,
+  title={GOLEM: Flexible Evolutionary Design of Graph Representations of Physical and Digital Objects},
+  author={Pinchuk, Maiia and Kirgizov, Grigorii and Yamshchikova, Lyubov and Nikitin, Nikolay and Deeva, Irina and Shakhkyan, Karine and Borisov, Ivan and Zharkov, Kirill and Kalyuzhnaya, Anna},
+  booktitle={Proceedings of the Genetic and Evolutionary Computation Conference Companion},
+  pages={1668--1675},
+  year={2024}
+}
 
-Публикации, описывающие применение GOLEM для прикладных задач:
-==============================================================
-
-В данных публикациях описывается применение алгоритмов GOLEM и основанных на нем решений
-для различных прикладных задач.
-
-- Алгоритмы поиска оптимального пайплайна машинного обучения для прогнозирования временных рядов: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
-
-- Алгоритмы идентификации структуры уравнения для акустических данных: Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
-
-- Алгоритмы идентификации структуры дифференциальных уравнений в частных производных: Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8.
-
-- Алгоритмы структурного обучения сетей: Deeva I., Kalyuzhnaya A. V., Alexander V. Boukhanovsky Adaptive Learning Algorithm for Bayesian Networks Based on Kernel Mixtures Distributions//International Journal of Artificial Intelligence. – 2023. - Т.21. - №. 1. - С. 90.
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
