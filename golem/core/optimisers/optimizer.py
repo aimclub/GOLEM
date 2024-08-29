@@ -1,3 +1,8 @@
+import glob
+import os
+import uuid
+import dill as pickle
+
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Sequence, Union
@@ -113,6 +118,7 @@ class GraphOptimizer:
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
                  graph_optimizer_params: Optional[AlgorithmParameters] = None,
+                 saved_state_path='saved_optimisation_state/main',
                  **custom_optimizer_params):
         self.log = default_log(self)
         self._objective = objective
@@ -127,6 +133,9 @@ class GraphOptimizer:
             if requirements and requirements.keep_history else None
         # Log random state for reproducibility of runs
         RandomStateHandler.log_random_state()
+
+        self._saved_state_path = saved_state_path
+        self._run_id = str(uuid.uuid1())
 
     @property
     def objective(self) -> Objective:
@@ -161,12 +170,43 @@ class GraphOptimizer:
     @property
     def _progressbar(self):
         if self.requirements.show_progress:
-            bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
+            if self.use_saved_state:
+                bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen',
+                           initial=self.current_generation_num - 2)
+            else:
+                bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
         else:
             # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
             # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
             bar = EmptyProgressBar()
         return bar
+
+    def save(self, saved_state_path):
+        """
+        Method for serializing and saving a class object to a file using the dill library
+        :param str saved_state_path: full path to the saved state file (including filename)
+        """
+        folder_path = os.path.dirname(os.path.abspath(saved_state_path))
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
+            self.log.info(f'Created directory for saving optimization state: {folder_path}')
+        with open(saved_state_path, 'wb') as f:
+            pickle.dump(self.__dict__, f, 2)
+
+    def load(self, saved_state_path):
+        """
+        Method for loading a serialized class object from file using the dill library
+        :param str saved_state_path: full path to the saved state file
+        """
+        with open(saved_state_path, 'rb') as f:
+            self.__dict__.update(pickle.load(f))
+
+    def _find_latest_dir(self, directory: str) -> str:
+        return max([os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(
+            os.path.join(directory, d))], key=os.path.getmtime)
+
+    def _find_latest_file_in_dir(self, directory: str) -> str:
+        return max(glob.glob(os.path.join(directory, '*')), key=os.path.getmtime)
 
 
 IterationCallback = Callable[[PopulationT, GraphOptimizer], Any]
