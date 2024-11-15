@@ -109,10 +109,10 @@ class GraphOptimizer:
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Optional[Sequence[Union[Graph, Any]]] = None,
-                 # TODO: rename params to avoid confusion
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_params: Optional[AlgorithmParameters] = None):
+                 graph_optimizer_params: Optional[
+                     AlgorithmParameters] = None):  # check if correct for inherited optimizers
         self.log = default_log(self)
         self._objective = objective
         initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
