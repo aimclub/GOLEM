@@ -24,7 +24,7 @@ copyright = '2022-{}, NSS Lab'.format(datetime.datetime.now().year)
 author = 'NSS Lab'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.0'
+release = '0.4.1'
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
