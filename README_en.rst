@@ -174,8 +174,7 @@ If you use our project in your work or research, we would appreciate citations:
   author={Pinchuk, Maiia and Kirgizov, Grigorii and Yamshchikova, Lyubov and Nikitin, Nikolay and Deeva, Irina and Shakhkyan, Karine and Borisov, Ivan and Zharkov, Kirill and Kalyuzhnaya, Anna},
   booktitle={Proceedings of the Genetic and Evolutionary Computation Conference Companion},
   pages={1668--1675},
-  year={2024}
-}
+  year={2024}}
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
    :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
