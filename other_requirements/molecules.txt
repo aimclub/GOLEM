@@ -3,5 +3,4 @@ guacamol>=0.5.4
 joblib>=0.12.5
 requests>=2.30.0
 mol2vec==0.2.2
-gensim @ git+https://github.com/piskvorky/gensim.git@bff9abc
 torch>=2.0.1
