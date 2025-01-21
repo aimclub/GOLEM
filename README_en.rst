@@ -178,8 +178,8 @@ If you use our project in your work or research, we would appreciate citations:
 }
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
-    :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+   :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 .. |build| image:: https://github.com/aimclub/GOLEM/actions/workflows/unit-build.yml/badge.svg?branch=main
    :alt: Build Status
