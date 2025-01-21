@@ -5,10 +5,6 @@
 
 .. class:: center
 
-    |sai| |itmo|
-
-    |python| |pypi| |build| |integration| |coverage| |docs| |license| |tg| |rus| |mirror|
-
 
 Graph Optimization and Learning by Evolutionary Methods
 -------------------------------------------------------
