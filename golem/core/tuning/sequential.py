@@ -46,6 +46,7 @@ class SequentialTuner(HyperoptTuner):
         Args:
             graph: graph which hyperparameters will be tuned
         """
+        final_graph = deepcopy(self.init_graph)
         remaining_time = self._get_remaining_time()
         if self._check_if_tuning_possible(graph, parameters_to_optimize=True, remaining_time=remaining_time):
             # Calculate amount of iterations we can apply per node
@@ -64,7 +65,6 @@ class SequentialTuner(HyperoptTuner):
 
             # Tuning performed sequentially for every node - so get ids of nodes
             nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
-            final_graph = deepcopy(self.init_graph)
             best_metric = self.init_metric
             for node_id in nodes_ids:
                 node = graph.nodes[node_id]
