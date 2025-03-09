@@ -44,7 +44,7 @@ setuptools.setup(
     url=URL,
     python_requires=REQUIRES_PYTHON,
     license=LICENSE,
-    packages=setuptools.find_packages(exclude=['test*']),
+    packages=setuptools.find_packages(exclude=['test*', 'docs*', 'examples*', 'experiments*']),
     include_package_data=True,
     install_requires=_get_requirements('requirements.txt'),
     extras_require={
