@@ -91,7 +91,7 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
 
 class IOptTuner(BaseTuner):
     """
-    Base class for hyperparameters optimization based on hyperopt library
+    Class for hyperparameters optimization based on iOpt library
 
     Args:
         objective_evaluate: objective to optimize
@@ -139,6 +139,7 @@ class IOptTuner(BaseTuner):
                                                   eps_r=np.double(eps_r),
                                                   refine_solution=refine_solution,
                                                   number_of_parallel_points=self.n_jobs,
+                                                  # round timeout up to avoid timeout=0 (minutes) passing to iOpt
                                                   timeout=np.ceil(timeout.total_seconds()/60) if self.timeout else -1)
 
     def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> DomainGraphForTune:
