@@ -232,7 +232,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
     @staticmethod
     def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
+        """ Method for parameters setting to a node
 
         Args:
             graph: graph which contains the node
@@ -240,13 +240,13 @@ class BaseTuner(Generic[DomainGraphForTune]):
             node_params: dictionary with labeled parameters to set
 
         Returns:
-            graph with new hyperparameters in each node
+            graph with new hyperparameters in the specified node
         """
 
         # Remove label prefixes
         node_params = convert_parameters(node_params)
 
-        # Update parameters in nodes
+        # Update parameters in the specified node
         graph.nodes[node_id].parameters = node_params
 
         return graph

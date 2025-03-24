@@ -1,4 +1,3 @@
-from copy import deepcopy
 from datetime import timedelta
 from functools import partial
 from typing import Callable, Optional
@@ -64,8 +63,6 @@ class SequentialTuner(HyperoptTuner):
 
             # Tuning performed sequentially for every node - so get ids of nodes
             nodes_ids = self.get_nodes_order(nodes_number=nodes_amount)
-            final_graph = deepcopy(self.init_graph)
-            best_metric = self.init_metric
             for node_id in nodes_ids:
                 node = graph.nodes[node_id]
 
@@ -75,17 +72,14 @@ class SequentialTuner(HyperoptTuner):
                     self.log.info(f'"{node.name}" operation has no parameters to optimize')
                 else:
                     # Apply tuning for current node
-                    graph, metric = self._optimize_node(node_id=node_id,
-                                                        graph=graph,
-                                                        node_params=node_params,
-                                                        init_params=init_params,
-                                                        iterations_per_node=iterations_per_node,
-                                                        seconds_per_node=seconds_per_node)
-                    if metric <= best_metric:
-                        final_graph = deepcopy(graph)
-                        best_metric = metric
+                    graph, _ = self._optimize_node(node_id=node_id,
+                                                   graph=graph,
+                                                   node_params=node_params,
+                                                   init_params=init_params,
+                                                   iterations_per_node=iterations_per_node,
+                                                   seconds_per_node=seconds_per_node)
             self.was_tuned = True
-        return final_graph
+        return graph
 
     def get_nodes_order(self, nodes_number: int) -> range:
         """ Method returns list with indices of nodes in the graph

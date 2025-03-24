@@ -1,5 +1,4 @@
-from datetime import timedelta, datetime
-from itertools import zip_longest
+from datetime import timedelta
 from typing import Optional, Callable, Dict, Sequence
 
 import networkx as nx
@@ -7,7 +6,6 @@ import numpy as np
 import zss
 from networkx import graph_edit_distance, is_tree
 
-from examples.synthetic_graph_evolution.generators import generate_labeled_graph
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.metrics.graph_metrics import min_max
 from libs.netcomp import edit_distance
@@ -59,8 +57,7 @@ def get_edit_dist_metric(target_graph: nx.DiGraph,
                          requirements: Optional[GraphRequirements] = None,
                          ) -> Callable[[nx.DiGraph], float]:
     def node_match(node_content_1: Dict, node_content_2: Dict) -> bool:
-        operations_do_match = node_content_1.get('name') == node_content_2.get('name')
-        return True or operations_do_match
+        return node_content_1.get('name') == node_content_2.get('name')
 
     if requirements:
         upper_bound = upper_bound or int(np.sqrt(requirements.max_depth * requirements.max_arity)),
@@ -87,31 +84,3 @@ def matrix_edit_dist(target_graph: nx.DiGraph, graph: nx.DiGraph) -> float:
         adj.resize(shape)
     value = edit_distance(target_adj, adj)
     return value
-
-
-def try_tree_edit_distance(sizes1=None, sizes2=None, node_types=None,
-                           print_trees=False):
-    if not sizes1:
-        sizes1 = list(range(5, 100, 5))
-    if not sizes2:
-        sizes2 = sizes1
-    if not node_types:
-        node_types = ['X']
-
-    for i, (n1, n2) in enumerate(zip_longest(sizes1, sizes2)):
-        g1 = generate_labeled_graph('tree', n1, node_types)
-        g2 = generate_labeled_graph('tree', n2, node_types)
-
-        start_time = datetime.now()
-        dist = tree_edit_dist(g1, g2)
-        duration = datetime.now() - start_time
-
-        print(f'iter {i} with sizes={(n1, n2)} dist={dist}, '
-              f't={duration.total_seconds():.3f}s')
-        if print_trees:
-            print(nx.forest_str(g1))
-            print(nx.forest_str(g2))
-
-
-if __name__ == "__main__":
-    try_tree_edit_distance(print_trees=False, node_types=list('XYZWQ'))
