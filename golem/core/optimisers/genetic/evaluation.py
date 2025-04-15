@@ -7,20 +7,23 @@ from datetime import datetime
 from functools import partial
 from typing import List, Optional, Sequence, Tuple, TypeVar, Dict
 
-from joblib import Parallel, delayed
+from dask.distributed import Client, LocalCluster
+from distributed import get_worker
+from joblib import Parallel, delayed, parallel_config
 
-from golem.core.adapter import BaseOptimizationAdapter
+from golem.core.adapter import BaseOptimizationAdapter, DirectAdapter
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log, Log
 from golem.core.optimisers.fitness import Fitness
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
-from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
+from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction, Objective
+from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult, Individual
 from golem.core.optimisers.timer import Timer, get_forever_timer
 from golem.utilities.serializable import Serializable
 from golem.utilities.memory import MemoryAnalytics
 from golem.utilities.utilities import determine_n_jobs
+from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth
 
 # the percentage of successful evaluations,
 # at which evolution is not threatened with stagnation at the moment
@@ -229,9 +232,14 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
                  adapter: BaseOptimizationAdapter,
                  n_jobs: int = 1,
                  graph_cleanup_fn: Optional[GraphFunction] = None,
-                 delegate_evaluator: Optional[DelegateEvaluator] = None):
+                 delegate_evaluator: Optional[DelegateEvaluator] = None,
+                 cluster: Optional[LocalCluster] = None):
 
         super().__init__(adapter, n_jobs, graph_cleanup_fn, delegate_evaluator)
+        # TODO: add cluster setter (as a property) to use renewed Dask external cluster
+        self._cluster = cluster
+        self._client = None
+        self._using_external_cluster = self._cluster is not None
 
     def dispatch(self, objective: ObjectiveFunction, timer: Optional[Timer] = None) -> EvaluationOperator:
         """Return handler to this object that hides all details
@@ -239,30 +247,65 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         super().dispatch(objective, timer)
         return self.evaluate_with_cache
 
+    def ensure_client_initialized(self) -> Client:
+        """Initialize Dask client if not already created."""
+        if self._client is None or self._client.status == 'closed':
+            if not self._using_external_cluster:
+                self._cluster = LocalCluster(processes=False,
+                                             n_workers=1,
+                                             threads_per_worker=max(1, round(self._n_jobs / 2)),
+                                             memory_limit=0.3)
+            self._client = Client(self._cluster)
+        return self._client
+
     def evaluate_population(self, individuals: PopulationT) -> PopulationT:
         individuals_to_evaluate, individuals_to_skip = self.split_individuals_to_evaluate(individuals)
         # Evaluate individuals without valid fitness in parallel.
         n_jobs = determine_n_jobs(self._n_jobs, self.logger)
 
-        parallel = Parallel(n_jobs=n_jobs, verbose=0, pre_dispatch="2*n_jobs")
-        eval_func = partial(self.evaluate_single, logs_initializer=Log().get_parameters())
-        evaluation_results = parallel(delayed(eval_func)(ind.graph, ind.uid) for ind in individuals_to_evaluate)
-        individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
-        # If there were no successful evals then try once again getting at least one,
-        # even if time limit was reached
-        successful_evals = individuals_evaluated + individuals_to_skip
-        self.population_evaluation_info(evaluated_pop_size=len(successful_evals),
-                                        pop_size=len(individuals))
-        if not successful_evals:
-            for single_ind in individuals:
-                evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
-                successful_evals = self.apply_evaluation_results([single_ind], [evaluation_result])
-                if successful_evals:
-                    break
-        MemoryAnalytics.log(self.logger,
-                            additional_info='parallel evaluation of population',
-                            logging_level=logging.INFO)
-        return successful_evals
+        # Initialize Dask client
+        self.ensure_client_initialized()
+        try:
+            with parallel_config(backend='dask'):
+                parallel = Parallel(n_jobs=n_jobs, verbose=0, pre_dispatch="2*n_jobs")
+                # TODO: add file logger initializer from a singular worker
+                eval_func = partial(self.evaluate_single, logs_initializer=Log().get_parameters())
+                evaluation_results = parallel(delayed(eval_func)(ind.graph, ind.uid) for ind in individuals_to_evaluate)
+                individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
+                # If there were no successful evals then try once again getting at least one,
+                # even if time limit was reached
+                successful_evals = individuals_evaluated + individuals_to_skip
+                self.population_evaluation_info(evaluated_pop_size=len(successful_evals),
+                                                pop_size=len(individuals))
+                if not successful_evals:
+                    for single_ind in individuals:
+                        evaluation_result = eval_func(single_ind.graph, single_ind.uid, with_time_limit=False)
+                        successful_evals = self.apply_evaluation_results([single_ind],
+                                                                         [evaluation_result])
+                        if successful_evals:
+                            break
+                MemoryAnalytics.log(self.logger,
+                                    additional_info='parallel evaluation of population',
+                                    logging_level=logging.INFO)
+                return successful_evals
+        finally:
+            self.shutdown()
+
+    def shutdown(self):
+        """Clean up Dask client and cluster resources."""
+        if self._client is not None:
+            try:
+                self._client.close()
+                self._client = None
+            except Exception as e:
+                self.logger.warning(f"Error closing Dask client: {str(e)}")
+
+        # Only clean up the cluster if we created it ourselves
+        if not self._using_external_cluster and self._cluster is not None:
+            try:
+                self._cluster.close()
+            except Exception as e:
+                self.logger.warning(f"Error closing Dask cluster: {str(e)}")
 
 
 class SequentialDispatcher(BaseGraphEvaluationDispatcher):
