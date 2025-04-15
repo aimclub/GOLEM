@@ -8,22 +8,20 @@ from functools import partial
 from typing import List, Optional, Sequence, Tuple, TypeVar, Dict
 
 from dask.distributed import Client, LocalCluster
-from distributed import get_worker
 from joblib import Parallel, delayed, parallel_config
 
-from golem.core.adapter import BaseOptimizationAdapter, DirectAdapter
+from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log, Log
 from golem.core.optimisers.fitness import Fitness
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.graph import OptGraph
-from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction, Objective
-from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult, Individual
+from golem.core.optimisers.objective import GraphFunction, ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.individual import GraphEvalResult
 from golem.core.optimisers.timer import Timer, get_forever_timer
 from golem.utilities.serializable import Serializable
 from golem.utilities.memory import MemoryAnalytics
 from golem.utilities.utilities import determine_n_jobs
-from test.unit.utils import RandomMetric, graph_first, graph_second, graph_third, graph_fourth
 
 # the percentage of successful evaluations,
 # at which evolution is not threatened with stagnation at the moment
