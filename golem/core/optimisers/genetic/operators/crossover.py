@@ -51,12 +51,16 @@ class Crossover(Operator):
 
     @staticmethod
     def crossover_parents_selection(population: PopulationT) -> Iterable[Tuple[Individual, Individual]]:
+        print('Crossover: parents selection')
+        print(population)
         return zip(population[::2], population[1::2])
 
     def _crossover(self, ind_first: Individual, ind_second: Individual) -> Tuple[Individual, Individual]:
         crossover_type = choice(self.parameters.crossover_types)
+        print('Crossover type: ', crossover_type)
 
         if self._will_crossover_be_applied(ind_first.graph, ind_second.graph, crossover_type):
+            print('Crossover applied')
             crossover_func = self._get_crossover_function(crossover_type)
             for _ in range(self.parameters.max_num_of_operator_attempts):
                 first_object = deepcopy(ind_first.graph)
@@ -66,6 +70,7 @@ class Crossover(Operator):
                 if are_correct:
                     parent_individuals = (ind_first, ind_second)
                     new_individuals = self._get_individuals(new_graphs, parent_individuals, crossover_type)
+                    print('New individuals: ', [x.graph.descriptive_id for x in new_individuals], new_individuals)
                     return new_individuals
 
             self.log.debug('Number of crossover attempts exceeded. '

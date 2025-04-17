@@ -104,7 +104,7 @@ def test_graphs_equivalent_subtree(graphs_to_search_in, subgraphs_counts):
     graph_1, graph_2 = graphs_to_search_in
     answer_primary, answer_non_primary = subgraphs_counts
 
-    # get all common subgraphs. primary nodes are considered too.
+    # get all common subgraphs. primary nodes are not considered.
     similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_1, graph_second=graph_2,
                                                         with_primary_nodes=False)
     assert len(similar_nodes_first_and_second) == answer_primary
@@ -119,7 +119,7 @@ def test_graphs_with_multi_root_equivalent_subtree():
     graph_first = graph_with_multi_roots_first()
     graph_second = graph_with_multi_roots_second()
 
-    # get all common subgraphs. primary nodes are considered too.
+    # get all common subgraphs. primary nodes are not considered.
     similar_nodes_first_and_second = equivalent_subtree(graph_first=graph_first, graph_second=graph_second,
                                                         with_primary_nodes=False)
     assert len(similar_nodes_first_and_second) == 2

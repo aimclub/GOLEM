@@ -26,7 +26,8 @@ def equivalent_subtree(graph_first: Any, graph_second: Any, with_primary_nodes: 
                                                            recursive_ids=all_recursive_ids)
             pairs_list.extend(equivalent_pairs)
 
-    pairs_list = list(set(pairs_list))
+    pairs_list = sorted(list(dict.fromkeys(pairs_list)),
+                        key=lambda pair: (pair[0].descriptive_id, pair[1].descriptive_id))
     if with_primary_nodes:
         return pairs_list
     # remove nodes with no children
