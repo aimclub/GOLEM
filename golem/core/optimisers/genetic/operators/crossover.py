@@ -280,7 +280,7 @@ def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph
         return new_nodes
 
     edges = graph_second.get_edges()
-    nodes_with_parent_or_child = list(set(chain(*edges)))
+    nodes_with_parent_or_child = sorted(set(chain(*edges)), key=lambda node: node.descriptive_id)
     if nodes_with_parent_or_child:
 
         selected_node = choice(nodes_with_parent_or_child)
