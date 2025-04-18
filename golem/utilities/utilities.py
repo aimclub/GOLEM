@@ -21,13 +21,6 @@ def determine_n_jobs(n_jobs=-1, logger=None):
     return n_jobs
 
 
-def urandom_mock(n):
-    # os.random is the source of random used in the uuid library
-    # normally, it's „true“ random, but to stabilize tests,
-    # seeded `random` library is used instead.
-    return bytes(random.getrandbits(8) for _ in range(n))
-
-
 def set_random_seed(seed: Optional[int]):
     """ Sets random seed for evaluation of models. """
     if seed is not None:
