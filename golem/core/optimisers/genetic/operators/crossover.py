@@ -312,7 +312,7 @@ def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGrap
     def find_nodes_in_other_graph(nodes, graph: OptGraph):
         new_nodes = []
         for node in nodes:
-            new_node = graph.get_nodes_by_name(str(node))
+            new_node = graph.get_nodes_by_name(str(node)).sort(key=lambda x: x.descriptive_id)
             if new_node:
                 new_node = new_node[0]
             else:
@@ -322,7 +322,7 @@ def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGrap
         return new_nodes
 
     edges = graph_second.get_edges()
-    nodes_with_parent_or_child = list(set(chain(*edges)))
+    nodes_with_parent_or_child = sorted(set(chain(*edges)), key=lambda node: node.descriptive_id)
     if nodes_with_parent_or_child:
 
         selected_node2 = choice(nodes_with_parent_or_child)
