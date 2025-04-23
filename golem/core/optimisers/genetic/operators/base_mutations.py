@@ -222,7 +222,6 @@ def single_add_mutation(graph: OptGraph,
     if graph.depth >= requirements.max_depth:
         # add mutation is not possible
         return graph
-    print('Graph for Single Add Mutation: ', graph.descriptive_id, graph)
     new_graph = deepcopy(graph)
     single_add_strategies = [add_as_child, add_separate_parent_node, add_intermediate_node]
     shuffle(single_add_strategies)
@@ -232,7 +231,6 @@ def single_add_mutation(graph: OptGraph,
         if new_graph == graph:
             continue
         break
-    print('After single add mutation ind: ', new_graph.descriptive_id, new_graph)
     return new_graph
 
 
@@ -247,7 +245,6 @@ def single_change_mutation(graph: OptGraph,
 
     :param graph: graph to mutate
     """
-    print('Graph for Single Change Mutation: ', graph.descriptive_id, graph)
     node_idx = np.arange(len(graph.nodes))
     shuffle(node_idx)
     for idx in node_idx:
@@ -257,7 +254,6 @@ def single_change_mutation(graph: OptGraph,
             continue
         graph.update_node(node, new_node)
         break
-    print('After single change mutation graph: ', graph.descriptive_id, graph)
     return graph
 
 
@@ -277,7 +273,6 @@ def single_drop_mutation(graph: OptGraph,
     node_to_del = choice(graph.nodes)
     node_name = node_to_del.name
     removal_type = graph_gen_params.advisor.can_be_removed(node_to_del)
-    print('Graph for Single Drop Mutation: ', graph.descriptive_id, graph)
     if removal_type == RemoveType.with_direct_children:
         # TODO refactor workaround with data_source
         graph.delete_node(node_to_del)
@@ -296,7 +291,6 @@ def single_drop_mutation(graph: OptGraph,
         pass
     else:
         raise ValueError("Unknown advice (RemoveType) returned by Advisor ")
-    print('After single drop mutation graph: ', graph.descriptive_id, graph)
     return graph
 
 
