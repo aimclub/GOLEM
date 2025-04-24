@@ -222,6 +222,7 @@ def single_add_mutation(graph: OptGraph,
     if graph.depth >= requirements.max_depth:
         # add mutation is not possible
         return graph
+
     new_graph = deepcopy(graph)
     single_add_strategies = [add_as_child, add_separate_parent_node, add_intermediate_node]
     shuffle(single_add_strategies)
