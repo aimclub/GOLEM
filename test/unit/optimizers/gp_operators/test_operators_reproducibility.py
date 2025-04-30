@@ -18,7 +18,8 @@ crossover_types = [
 
 
 @pytest.mark.parametrize('crossover_type', crossover_types)
-def test_crossover_reproducibility(crossover_type):
+@pytest.mark.parametrize('seed', [0, 42, 1042])
+def test_crossover_reproducibility(crossover_type, seed):
     graph_example_first = graph_first()
     graph_example_second = graph_second()
 
@@ -35,8 +36,8 @@ def test_crossover_reproducibility(crossover_type):
         results = [ind.graph.descriptive_id for ind in results]
         return results
 
-    results_first = run_with_seed(42)
-    results_second = run_with_seed(42)
+    results_first = run_with_seed(seed)
+    results_second = run_with_seed(seed)
 
     assert results_first == results_second
 
