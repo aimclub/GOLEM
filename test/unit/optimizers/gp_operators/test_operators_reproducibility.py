@@ -1,10 +1,13 @@
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum, Crossover
+from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
+from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.utilities.utilities import set_random_seed
 from test.unit.utils import graph_first, graph_second
+from test.unit.optimizers.gp_operators.test_mutation import get_mutation_params
 import pytest
 
 # subgraph crossover is non-reproducible by design
@@ -41,3 +44,23 @@ def test_crossover_reproducibility(crossover_type, seed):
 
     assert results_first == results_second
 
+
+@pytest.mark.parametrize('mutation_type', MutationTypesEnum)
+@pytest.mark.parametrize('seed', [0, 42, 1042])
+def test_mutation_reproducibility(mutation_type, seed):
+    params = get_mutation_params([mutation_type])
+    mutation = Mutation(**params)
+
+    def run_with_seed(seed):
+        set_random_seed(seed)
+        ind = Individual(graph_first())
+        new_ind = mutation(ind)
+        if isinstance(new_ind, Individual):
+            return new_ind.graph.descriptive_id
+        else:
+            return new_ind
+
+    results_first = run_with_seed(seed)
+    results_second = run_with_seed(seed)
+
+    assert results_first == results_second
