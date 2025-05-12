@@ -24,6 +24,7 @@ jobs:
             ```markdown
             ${{ github.event.pull_request.body }}
             ```
+            
             Check it out to keep your local repository updated!
   close_job:
     if: github.event.pull_request.merged == false
