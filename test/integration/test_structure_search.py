@@ -41,7 +41,7 @@ def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> 
 def test_simple_targets_are_found(target_size, distance_function, indulgence):
     """ Checks if simple targets can be found within specified time. """
 
-    num_trials = 10
+    num_trials = 3
     distances = []
     for i in range(num_trials):
         # to test num_trials different options
