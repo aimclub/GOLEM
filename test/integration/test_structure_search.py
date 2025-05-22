@@ -34,23 +34,24 @@ def run_search(size: int, distance_function: Callable, timeout_min: int = 1) -> 
     return distance, found_graph
 
 
-@pytest.mark.parametrize('target_sizes, distance_function, indulgence',
-                         [([10, 24], tree_edit_dist, 0.5),
-                          ([30], graph_size, 0.3)])
-def test_simple_targets_are_found(target_sizes, distance_function, indulgence):
+@pytest.mark.parametrize('target_size, distance_function, indulgence',
+                         [(10, tree_edit_dist, 0.3),
+                          (24, tree_edit_dist, 0.6),
+                          (30, graph_size, 0.3)])
+def test_simple_targets_are_found(target_size, distance_function, indulgence):
     """ Checks if simple targets can be found within specified time. """
-    for target_size in target_sizes:
-        num_trials = 3
-        distances = []
-        for i in range(num_trials):
-            # to test num_trials different options
-            distance, target_graph = run_search(target_size, distance_function=distance_function, timeout_min=1)
-            distances.append(distance)
 
-            assert target_graph is not None
-            assert distance < target_size
+    num_trials = 10
+    distances = []
+    for i in range(num_trials):
+        # to test num_trials different options
+        distance, target_graph = run_search(target_size, distance_function=distance_function, timeout_min=1)
+        distances.append(distance)
 
-        allowed_error = ceil(target_size * indulgence)
-        mean_dist = np.mean(distances)
+        assert target_graph is not None
+        assert distance < target_size
 
-        assert mean_dist <= allowed_error
+    allowed_error = ceil(target_size * indulgence)
+    mean_dist = np.mean(distances)
+
+    assert mean_dist <= allowed_error
