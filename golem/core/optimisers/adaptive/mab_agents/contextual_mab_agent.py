@@ -79,6 +79,9 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     def partial_fit(self, experience: ExperienceBuffer):
         """Continues learning of underlying agent with new experience."""
         obs, arms, processed_rewards = self._get_experience(experience)
+        if not obs:
+            self._log.info("Empty experience received, skipping partial_fit.")
+            return
         contexts = self.get_context(obs=obs)
         self._agent.partial_fit(decisions=arms, rewards=processed_rewards, contexts=contexts)
 
