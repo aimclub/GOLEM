@@ -158,7 +158,7 @@ class NNWithShallowExploration:
             self.LAMBDA += torch.mm(self.feature_extractor(temp, self.W),
                                     self.feature_extractor(temp, self.W).t())
             self.bb += reward * self.feature_extractor(temp, self.W)
-            theta, _ = torch.solve(self.bb, self.LAMBDA)
+            theta = torch.linalg.solve(self.LAMBDA, self.bb)
 
             if np.mod(iter, self._H_q) == 0:
                 theta_action = theta.view(-1, 1)
@@ -176,7 +176,7 @@ class NNWithShallowExploration:
     def UCB(A, phi):
         """ Ucb term. """
         try:
-            tmp, _ = torch.solve(phi, A)
+            tmp = torch.linalg.solve(A, phi)
         except Exception:
             tmp = torch.Tensor(np.linalg.solve(A, phi))
 

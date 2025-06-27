@@ -38,13 +38,14 @@ class MultiArmedBanditAgent(OperatorAgent):
 
     @staticmethod
     def _get_callable_name(action: Callable):
+        if isinstance(action, str):
+            return action
         if isinstance(action, partial):
             return action.func.__name__
-        else:
-            try:
-                return action.__name__
-            except AttributeError:
-                return str(action)
+        try:
+            return action.__name__
+        except AttributeError:
+            return str(action)
 
     def _initial_fit(self):
         n = len(self.actions)

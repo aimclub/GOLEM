@@ -146,7 +146,7 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         if pop_size == 0 or evaluated_pop_size / pop_size <= STAGNATION_EVALUATION_PERCENTAGE:
             success_rate = evaluated_pop_size / pop_size if pop_size != 0 else 0
             self.logger.warning(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
-                                f"were evaluated successfully. {success_rate}% "
+                                f"were evaluated successfully. {round(success_rate * 100)}% "
                                 f"is a fairly small percentage of successful evaluation.")
         else:
             self.logger.message(f"{evaluated_pop_size} individuals out of {pop_size} in previous population "
