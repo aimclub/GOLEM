@@ -25,19 +25,17 @@ class NeuralMAB(MAB):
     Neural Multi-Armed Bandit.
     The main concept is explained in the article: https://arxiv.org/abs/2012.01780.
     Deep representation is formed with NN and Contextual Multi-Armed Bandit is integrated to choose arm.
-
-    NB! Neural MABs can be used with 1.8.0 version of torch since some methods are deprecated in later versions,
-    however, python of version 3.10 is not supported in this version of torch.
     """
 
     def __init__(self, arms: List[Arm],
                  learning_policy: Any = LearningPolicy.UCB1(alpha=1.25),
                  neighborhood_policy: Any = NeighborhoodPolicy.Clusters(),
                  seed: int = Constants.default_seed,
+                 context_size: int = 1,
                  n_jobs: int = 1):
 
         super().__init__(arms, learning_policy, neighborhood_policy, seed, n_jobs)
-        self.nn_with_se = NNWithShallowExploration(context_size=1, arms_count=len(arms))
+        self.nn_with_se = NNWithShallowExploration(context_size=context_size, arms_count=len(arms))
         self.arms = arms
         self.seed = seed
         self.n_jobs = n_jobs
