@@ -309,5 +309,9 @@ class NNWithShallowExploration:
         output_t = torch.transpose(output, 0, 1).view(num_sample, -1, 1)
         output_y = torch.bmm(THETA_t, output_t).squeeze().view(1, -1)
 
-        summ = (Y - output_y).pow(2).sum() / num_sample
-        return summ
+        mse_loss = (Y - output_y).pow(2).sum() / num_sample
+        # L2 regularization
+        l2_lambda = 10e-3
+        l2_reg = sum(torch.sum(w.pow(2)) for w in W) + torch.sum(THETA.pow(2))
+        total_loss = mse_loss + l2_lambda * l2_reg
+        return total_loss
