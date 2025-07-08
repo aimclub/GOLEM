@@ -17,7 +17,7 @@ def get_context_size(context_agent_type: ContextAgentTypeEnum, available_operati
     elif context_agent_type == ContextAgentTypeEnum.adjacency_matrix:
         return len(available_operations) ** 2
     elif context_agent_type == ContextAgentTypeEnum.feather_graph:
-        return 250  # Embedding size for FeatherGraph with default parameters
+        return 500  # Embedding size for FeatherGraph with default parameters
     else:
         raise ValueError(f"Context agent type {context_agent_type} is not supported for NeuralContextualMABAgent.")
 
