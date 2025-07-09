@@ -253,6 +253,7 @@ class NNWithShallowExploration:
         output = x
         for i in range(0, depth - 1):
             output = torch.mm(W[i], output)
+            output = (output - output.mean()) / (output.std() + 1e-8)
             output = output.clamp(min=0)
 
         output = output * math.sqrt(W[depth - 1].size()[1])
