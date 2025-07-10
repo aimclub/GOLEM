@@ -1,8 +1,8 @@
 from functools import partial
-from typing import Callable
+from typing import Callable, Union
 
 
-def get_callable_name(action: Callable):
+def get_callable_name(action: Union[Callable, str]) -> str:
     if isinstance(action, str):
         return action
     if isinstance(action, partial):
