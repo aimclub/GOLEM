@@ -42,11 +42,17 @@ def encode_operations(operations: List[str], available_operations: List[str], mo
     """
     encoded = []
     for operation in operations:
-        if mode == 'label':
-            encoding = available_operations.index(operation)
+        if operation == -1:  # empty operation from labeled_edges padding
+            if mode == 'label':
+                encoding = len(available_operations)  # special index for padding
+            else:
+                encoding = [0] * len(available_operations)
         else:
-            encoding = [0] * len(available_operations)
-            encoding[available_operations.index(operation)] = 1
+            if mode == 'label':
+                encoding = available_operations.index(operation)
+            else:
+                encoding = [0] * len(available_operations)
+                encoding[available_operations.index(operation)] = 1
         encoded.append(encoding)
     return encoded
 
@@ -72,12 +78,21 @@ def nodes_num(obs: Any, available_operations: List[str]) -> List[int]:
 
 @adapter_func_to_graph
 def labeled_edges(obs: Any, available_operations: List[str]) -> List[int]:
-    """ Encodes graph with its edges with nodes labels. """
+    """ Encodes graph with its edges with nodes labels.
+    To ensure a fixed-length context for compatibility with bandit agents,
+    truncate the sequence to 100 elements if longer or pad with -1 if shorter. """
     operations = []
     for node in obs.nodes:
         for node_ in node.nodes_from:
             operations.append(node_.name)
             operations.append(node.name)
+
+    # truncate to fixed_size elements or pad with -1 to maintain a fixed context size
+    fixed_size = 100
+    if len(operations) > fixed_size:
+        operations = operations[:fixed_size]
+    else:
+        operations = operations + [-1] * (fixed_size - len(operations))
     return encode_operations(operations=operations, available_operations=available_operations)
 
 

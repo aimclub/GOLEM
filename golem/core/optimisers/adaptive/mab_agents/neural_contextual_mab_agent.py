@@ -11,13 +11,15 @@ def get_context_size(context_agent_type: ContextAgentTypeEnum, available_operati
     Returns the context size based on the context agent type and available operations.
     """
     if context_agent_type == ContextAgentTypeEnum.nodes_num:
-        return 1  # Returns 1 as nodes_num context represents the number of nodes in the graph
+        return 1  # returns 1 as nodes_num context represents the number of nodes in the graph
     elif context_agent_type == ContextAgentTypeEnum.operations_quantity:
         return len(available_operations)
     elif context_agent_type == ContextAgentTypeEnum.adjacency_matrix:
         return len(available_operations) ** 2
     elif context_agent_type == ContextAgentTypeEnum.feather_graph:
-        return 500  # Embedding size for FeatherGraph with default parameters
+        return 500  # embedding size for FeatherGraph with default parameters
+    elif context_agent_type == ContextAgentTypeEnum.labeled_edges:
+        return 100  # fixed context size; can be edited in labeled_edges function
     else:
         raise ValueError(f"Context agent type {context_agent_type} is not supported for NeuralContextualMABAgent.")
 
