@@ -19,7 +19,7 @@ def get_opt_graph():
                          [(ContextAgentTypeEnum.operations_quantity,
                            [1, 2, 1, 1, 1]),
                           (ContextAgentTypeEnum.labeled_edges,
-                           [3, 4, 1, 4, 2, 4, 0, 3, 1, 3]),
+                           [3, 4, 1, 4, 2, 4, 0, 3, 1, 3] + [5] * 90),
                           (ContextAgentTypeEnum.adjacency_matrix,
                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]),
                           (ContextAgentTypeEnum.nodes_num,
