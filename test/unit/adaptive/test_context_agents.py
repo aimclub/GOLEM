@@ -1,11 +1,9 @@
 import pytest
 
-from golem.core.adapter.nx_adapter import BanditNetworkxAdapter
 from golem.core.optimisers.adaptive.context_agents import ContextAgentsRepository, ContextAgentTypeEnum
 from golem.core.optimisers.graph import OptNode, OptGraph
 from test.unit.adaptive.test_contextual_mab_agents import get_large_and_small_graphs
 
-adapter = BanditNetworkxAdapter()
 available_operations = ['1', '2', '3', '4', '5']
 
 
