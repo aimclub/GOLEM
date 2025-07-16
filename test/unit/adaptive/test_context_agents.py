@@ -2,7 +2,7 @@ import pytest
 
 from golem.core.optimisers.adaptive.context_agents import ContextAgentsRepository, ContextAgentTypeEnum
 from golem.core.optimisers.graph import OptNode, OptGraph
-from test.unit.adaptive.test_contextual_mab_agents import get_large_and_small_graphs
+from test.unit.adaptive.test_contextual_mab_agents import get_small_and_large_graphs
 
 available_operations = ['1', '2', '3', '4', '5']
 
@@ -46,7 +46,7 @@ def test_operations_encoding(context_agent_enum, result_encoding):
 def test_context_size(context_agent, context_size):
     """ Checks the correctness of context size, returned by context agents. """
 
-    small_graph, large_graph = get_large_and_small_graphs()
+    small_graph, large_graph = get_small_and_large_graphs()
 
     context_small_graph = ContextAgentsRepository.agent_class_by_id(context_agent)(small_graph, available_operations)
     context_large_graph = ContextAgentsRepository.agent_class_by_id(context_agent)(large_graph, available_operations)

@@ -12,7 +12,7 @@ adapter = BanditNetworkxAdapter()
 available_operations = ['1', '2', '3', '4', '5']
 
 
-def get_large_and_small_graphs():
+def get_small_and_large_graphs():
     """ Generates and adapts two graphs:
     a 'small' graph with random size from 1 to 10
     a 'large' graph with random size from 100 to 200. """
@@ -45,7 +45,7 @@ def test_contextual_mab_agents(context_agent, context_size):
                                                               available_operations=available_operations,
                                                               context_agent_type=context_agent)
 
-    small_graph, large_graph = get_large_and_small_graphs()
+    small_graph, large_graph = get_small_and_large_graphs()
 
     assert cmab_agent.get_context(small_graph).shape[1] == context_size
     assert cmab_agent.get_context(large_graph).shape[1] == context_size
