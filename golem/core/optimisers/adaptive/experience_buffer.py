@@ -4,6 +4,7 @@ from typing import List, Iterable, Tuple, Optional
 import numpy as np
 
 from golem.core.optimisers.adaptive.common_types import ObsType, ActType, TrajectoryStep, GraphTrajectory
+from golem.core.optimisers.adaptive.utils import get_callable_name
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
@@ -97,7 +98,7 @@ class ExperienceBuffer:
 
     def collect_experience(self, obs: Individual, action: ActType, reward: float):
         self._individuals.append(obs)
-        self._actions.append(action)
+        self._actions.append(get_callable_name(action))
         self._rewards.append(reward)
 
     def retrieve_experience(self, as_graphs: bool = True) -> Tuple[List[ObsType], List[ActType], List[float]]:

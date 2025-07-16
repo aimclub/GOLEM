@@ -30,9 +30,12 @@ jobs:
         pip install pytest
         pip install .[docs]
         pip install .[profilers]
+        pip install .[adaptive]
         pip install pytest-cov
     - name: Test with pytest
       run: |
         pytest --cov=golem test/unit
     - name: Codecov-coverage
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v4
+      with:
+         token: ${{ secrets.CODECOV_TOKEN }}
