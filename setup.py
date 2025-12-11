@@ -6,9 +6,15 @@ import setuptools
 # The directory containing this file
 HERE = Path(__file__).parent.resolve()
 
+# Read version from version.py
+version_info = {}
+with open(HERE / 'golem' / 'version.py') as fp:
+    exec(fp.read(), version_info)
+
+VERSION = version_info['__version__']
+
 # The text of the README file
 NAME = 'thegolem'
-VERSION = '0.4.2'
 AUTHOR = 'NSS Lab'
 SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutionary Methods'
 
