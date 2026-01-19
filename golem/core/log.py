@@ -1,11 +1,11 @@
 import json
 import logging
-import multiprocessing
 import os
 import pathlib
 import sys
 from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler
+from multiprocessing import current_process
 from typing import Optional, Tuple, Union
 
 from typing_extensions import Literal
@@ -47,7 +47,7 @@ class Log(metaclass=SingletonMeta):
             logs_dir: path to the logs directory
         """
 
-        cur_proc = multiprocessing.current_process().name
+        cur_proc = current_process().name
         log_file_name = logs_dir.joinpath(f'log_{cur_proc}.log')
         Log(output_logging_level=logging_level, log_file=log_file_name, use_console=False)
 
