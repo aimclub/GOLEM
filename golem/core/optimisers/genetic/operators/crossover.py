@@ -143,12 +143,10 @@ def subtree_crossover(graph_1: OptGraph, graph_2: OptGraph, max_depth: int, inpl
         break
 
     if picked is None:
-        layer_first = choice(range(graph_1.depth))
-        min_second_layer = 1 if layer_first == 0 and graph_2.depth > 1 else 0
-        layer_second = choice(range(min_second_layer, graph_2.depth))
-        picked = (choice(nodes_from_layer(graph_1, layer_first)),
-                  choice(nodes_from_layer(graph_2, layer_second)),
-                  layer_first, layer_second)
+        # Every considered pick would breed offspring that verification is
+        # certain to reject; unchanged parents are what those retries would
+        # have ended with anyway.
+        return graph_1, graph_2
 
     node_first, node_second, layer_first, layer_second = picked
     replace_subtrees(graph_1, graph_2, node_first, node_second, layer_first, layer_second, max_depth)
@@ -166,12 +164,14 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
         # A pair that would put an unacceptable head into a sink position can
         # only breed offspring that verification rejects; prefer the rest.
         root_first, root_second = graph_first.root_node, graph_second.root_node
-        acceptable = [
+        pairs_of_nodes = [
             (first, second) for first, second in pairs_of_nodes
             if (first is not root_first or sink_filter(second))
             and (second is not root_second or sink_filter(first))
         ]
-        pairs_of_nodes = acceptable or pairs_of_nodes
+        # No acceptable pair means every possible offspring would be rejected
+        # and the parents returned unchanged after all retries - which is what
+        # an empty pair list produces immediately, minus the wasted attempts.
     if pairs_of_nodes:
         node_from_graph_first, node_from_graph_second = choice(pairs_of_nodes)
 
