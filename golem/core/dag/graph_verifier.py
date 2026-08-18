@@ -1,7 +1,8 @@
 from typing import Sequence, Optional, Callable
 
 from golem.core.adapter import BaseOptimizationAdapter
-from golem.core.adapter.adapter import IdentityAdapter
+from golem.core.adapter.adapter import IdentityAdapter, _transform
+from golem.core.adapter.adapt_registry import AdaptRegistry
 from golem.core.dag.graph import Graph
 from golem.core.log import default_log
 
@@ -26,11 +27,15 @@ class GraphVerifier:
         return self.verify(graph)
 
     def verify(self, graph: Graph) -> bool:
-        # Check if all rules pass
-        adapt = self._adapter.adapt_func
+        # Check if all rules pass.
+        # The domain graph is restored at most once per verification: restoring
+        # anew for every rule, as ``adapt_func`` would, dominates the cost of
+        # verifying graphs whose domain representation is expensive to build.
+        restore = _restore_memoized(self._adapter)
         for rule in self._rules:
+            adapted_rule = rule if AdaptRegistry.is_native(rule) else                 _transform(rule, f_args=restore, f_ret=self._adapter.adapt)
             try:
-                if adapt(rule)(graph) is False:
+                if adapted_rule(graph) is False:
                     return False
             except ValueError as err:
                 msg = f'Graph verification failed with error <{err}> '\
@@ -41,3 +46,20 @@ class GraphVerifier:
                     self._log.debug(msg)
                     return False
         return True
+
+
+def _restore_memoized(adapter: BaseOptimizationAdapter) -> Callable:
+    """A ``restore`` that maps each object at most once, by identity.
+
+    Verification rules only read the domain graph, so all rules of one
+    verification can share a single restored instance.
+    """
+    memo = {}
+
+    def restore(item):
+        key = id(item)
+        if key not in memo:
+            memo[key] = adapter.restore(item)
+        return memo[key]
+
+    return restore
