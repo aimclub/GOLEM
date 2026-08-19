@@ -2,7 +2,8 @@
 torch
 # karateclub has some outdated dependencies that sometimes
 # can cause conflicts without a good reason.
-# Its transitive gensim pin requires numpy < 2, which has no builds for
-# Python 3.13+, so karateclub is unavailable there; the feather_graph
+# Its unmaintained dependency caps (gensim -> numpy < 2, pandas <= 1.3.5)
+# only resolve into installable wheels on Python 3.10 and older, so
+# karateclub is unavailable on newer interpreters; the feather_graph
 # context agent degrades gracefully without it.
-karateclub>=1.3.3; python_version < '3.13'
+karateclub>=1.3.3; python_version < '3.11'

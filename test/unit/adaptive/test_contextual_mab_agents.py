@@ -36,7 +36,7 @@ def get_small_and_large_graphs():
                           pytest.param(ContextAgentTypeEnum.feather_graph, 500,
                                        marks=pytest.mark.skipif(find_spec('karateclub') is None,
                                                                 reason='karateclub is not available '
-                                                                       '(unsupported on Python 3.13+)')),
+                                                                       '(unsupported on Python 3.11+)')),
                           (ContextAgentTypeEnum.labeled_edges, 100),
                           (ContextAgentTypeEnum.nodes_num, 1)])
 def test_contextual_mab_agents(context_agent, context_size):
