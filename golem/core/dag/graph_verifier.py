@@ -33,7 +33,7 @@ class GraphVerifier:
         # verifying graphs whose domain representation is expensive to build.
         restore = _restore_memoized(self._adapter)
         for rule in self._rules:
-            adapted_rule = rule if AdaptRegistry.is_native(rule) else                 _transform(rule, f_args=restore, f_ret=self._adapter.adapt)
+            adapted_rule = rule if AdaptRegistry.is_native(rule) else _transform(rule, f_args=restore, f_ret=self._adapter.adapt)
             try:
                 if adapted_rule(graph) is False:
                     return False
