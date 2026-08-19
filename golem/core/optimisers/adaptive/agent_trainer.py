@@ -48,9 +48,12 @@ class AgentTrainer:
         param histories: histories to use in training.
         param validate_each: validate agent once in validate_each generation.
         """
-        # Set mutation probabilities to 1.0
-        initial_req = deepcopy(self.mutation.requirements)
-        self.mutation.requirements.mutation_prob = 1.0
+        # Set mutation probability to 1.0: the Mutation operator reads it from the
+        # algorithm parameters, not from the requirements
+        initial_parameters = deepcopy(self.mutation.parameters)
+        forced_parameters = deepcopy(self.mutation.parameters)
+        forced_parameters.mutation_prob = 1.0
+        self.mutation.update_requirements(parameters=forced_parameters)
 
         for i, history in enumerate(histories):
             # Preliminary validity check
@@ -77,7 +80,7 @@ class AgentTrainer:
                                f'Reward target={reward_target:.3f}, loss={reward_loss:.3f}')
 
         # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=initial_req)
+        self.mutation.update_requirements(parameters=initial_parameters)
         return self.agent
 
     def validate_on_rollouts(self, histories: Sequence[OptHistory]) -> float:
@@ -88,13 +91,13 @@ class AgentTrainer:
         trajectories = concat_lists(map(ExperienceBuffer.unroll_trajectories, histories))
 
         mean_traj_len = int(np.mean([len(tr) for tr in trajectories]))
-        traj_rewards = [sum(reward for _, reward, _ in traj) for traj in trajectories]
+        traj_rewards = [sum(reward for _, _, reward in traj) for traj in trajectories]
         mean_baseline_reward = np.mean(traj_rewards)
 
         # Collect same number of trajectories of the same length; and their rewards
         agent_trajectories = [self._sample_trajectory(initial=tr[0][0], length=mean_traj_len)
                               for tr in trajectories]
-        agent_traj_rewards = [sum(reward for _, reward, _ in traj) for traj in agent_trajectories]
+        agent_traj_rewards = [sum(reward for _, _, reward in traj) for traj in agent_trajectories]
         mean_agent_reward = np.mean(agent_traj_rewards)
 
         # Compute improvement score of agent over baseline histories

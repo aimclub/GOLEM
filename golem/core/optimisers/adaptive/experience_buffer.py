@@ -125,7 +125,10 @@ class ExperienceBuffer:
         """Splits buffer in 2 parts, useful for train/validation split."""
         mask_train = np.full_like(self._individuals, False, dtype=bool)
         num_train = int(len(self._individuals) * ratio)
-        mask_train[-num_train:] = True
+        # NB: guard against num_train == 0 - the slice [-0:] covers the whole
+        # array and would invert the split for tiny buffers
+        if num_train > 0:
+            mask_train[-num_train:] = True
         if shuffle:
             np.random.default_rng().shuffle(mask_train)
         buffer_train = ExperienceBuffer(inds=np.array(self._individuals)[mask_train].tolist(),

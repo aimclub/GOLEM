@@ -46,6 +46,27 @@ def test_number_of_real_generations_matches_requirements(n_initial):
     assert len(evolution_generations) == num_of_generations
 
 
+def test_extend_population_forces_mutation_probability():
+    """Extension of the initial population must apply mutations unconditionally:
+    the temporary probability override goes to the algorithm parameters the
+    Mutation operator actually reads, and is restored afterwards."""
+    graphs = [graph_first()]
+    objective = Objective({'graph_size': lambda graph: len(graph.nodes)})
+    requirements = GraphRequirements(num_of_generations=1,
+                                     timeout=datetime.timedelta(minutes=5),
+                                     max_depth=5)
+    graph_generation_params = GraphGenerationParams(adapter=DirectAdapter(),
+                                                    rules_for_constraint=DEFAULT_DAG_RULES,
+                                                    available_node_types=['a', 'b', 'c', 'd', 'e', 'f'])
+    parameters = GPAlgorithmParameters(pop_size=5, mutation_prob=0.0)
+    optimizer = EvoGraphOptimizer(objective, graphs, requirements, graph_generation_params, parameters)
+
+    extended = optimizer._extend_population(optimizer.initial_individuals, 5)
+    assert len(extended) == 5
+    # the override must not leak out of the extension
+    assert optimizer.mutation.parameters.mutation_prob == 0.0
+
+
 def test_base_extend_population_copies_graphs():
     """Individuals produced by the extension must not share one mutable graph object."""
     source = [Individual(DirectAdapter().adapt(graph_first()))]

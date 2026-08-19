@@ -84,10 +84,11 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         extended_pop = list(pop)
         pop_graphs = [ind.graph for ind in extended_pop]
 
-        # Set mutation probabilities to 1.0
-        initial_req = deepcopy(self.requirements)
-        initial_req.mutation_prob = 1.0
-        self.mutation.update_requirements(requirements=initial_req)
+        # Set mutation probability to 1.0: the Mutation operator reads it from the
+        # algorithm parameters, not from the graph requirements
+        initial_parameters = deepcopy(self.graph_optimizer_params)
+        initial_parameters.mutation_prob = 1.0
+        self.mutation.update_requirements(parameters=initial_parameters)
 
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
             if len(extended_pop) == target_pop_size:
@@ -103,7 +104,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                              f'Current size {len(pop)}, required {target_pop_size} graphs.')
 
         # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=self.requirements)
+        self.mutation.update_requirements(parameters=self.graph_optimizer_params, requirements=self.requirements)
         return extended_pop
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:

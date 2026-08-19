@@ -115,6 +115,29 @@ def test_graphs_equivalent_subtree(graphs_to_search_in, subgraphs_counts):
     assert len(similar_nodes_first_and_second) == answer_non_primary
 
 
+def test_equivalent_subtree_reports_no_false_positives():
+    """Nodes whose children have no structural match must not be paired: a truthiness
+    bug in `are_subtrees_the_same` used to count every child pair as matched."""
+    # root_a: two children - a leaf and a node with two leaf children
+    node_mid = LinkedGraphNode('a', nodes_from=[LinkedGraphNode('c'), LinkedGraphNode('d')])
+    root_a = LinkedGraphNode('a', nodes_from=[LinkedGraphNode('c'), node_mid])
+    graph_a = LinkedGraph([LinkedGraphNode('c'), LinkedGraphNode('d'), node_mid,
+                           root_a.nodes_from[0], root_a])
+    # root_b: two children, each a node with exactly one leaf child
+    node_left = LinkedGraphNode('a', nodes_from=[LinkedGraphNode('c')])
+    node_right = LinkedGraphNode('a', nodes_from=[LinkedGraphNode('d')])
+    root_b = LinkedGraphNode('a', nodes_from=[node_left, node_right])
+    graph_b = LinkedGraph([node_left.nodes_from[0], node_right.nodes_from[0],
+                           node_left, node_right, root_b])
+
+    pairs = equivalent_subtree(graph_first=graph_a, graph_second=graph_b, with_primary_nodes=False)
+    for node_from_a, node_from_b in pairs:
+        assert len(node_from_a.nodes_from) == len(node_from_b.nodes_from)
+        # a leaf-and-inner-node child set can not match a two-inner-nodes child set
+        assert (node_from_a is not root_a) or (node_from_b is not root_b), \
+            'roots with structurally different children were wrongly paired'
+
+
 def test_graphs_with_multi_root_equivalent_subtree():
     graph_first = graph_with_multi_roots_first()
     graph_second = graph_with_multi_roots_second()
