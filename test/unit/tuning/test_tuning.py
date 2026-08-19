@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+import numpy as np
 import pytest
 from hyperopt import hp
 
@@ -12,6 +13,12 @@ from golem.core.tuning.simultaneous import SimultaneousTuner
 from test.unit.mocks.common_mocks import (MockAdapter, MockDomainStructure, MockNode, MockObjectiveEvaluate,
                                           mock_graph_with_params, opt_graph_with_params)
 from test.unit.utils import ParamsProductMetric, ParamsSumMetric
+
+# iOpt 0.2.22 still calls np.infty, which numpy 2.0 removed; numpy < 2 has no
+# builds for Python 3.13+, so the tuner cannot work there until iOpt catches up
+iopt_tuner = pytest.param(IOptTuner,
+                          marks=pytest.mark.skipif(not hasattr(np, 'infty'),
+                                                   reason='iOpt is incompatible with numpy 2'))
 
 
 def not_tunable_mock_graph():
@@ -80,7 +87,7 @@ def search_space():
     return SearchSpace(params_per_operation)
 
 
-@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, iopt_tuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))),
@@ -94,7 +101,7 @@ def test_tuner_improves_metric(search_space, tuner_cls, graph, adapter, obj_eval
     assert tuner.init_metric > tuner.obtained_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, IOptTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner, iopt_tuner])
 @pytest.mark.parametrize('graph, adapter, obj_eval',
                          [(not_tunable_mock_graph(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value})))])
@@ -118,7 +125,7 @@ def test_node_tuning(search_space, graph):
         assert tuner.init_metric >= tuner.obtained_metric
 
 
-@pytest.mark.parametrize('tuner_cls', [OptunaTuner, IOptTuner])
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, iopt_tuner])
 @pytest.mark.parametrize('init_graph, adapter, obj_eval',
                          [(mock_graph_with_params(), MockAdapter(),
                            MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value,
