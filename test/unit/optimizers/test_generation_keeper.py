@@ -57,6 +57,20 @@ def test_archive_no_improvement():
     assert archive.generation_num == 2
 
 
+def test_bookkeeping_append_does_not_advance_generation():
+    """Extension of the initial assumptions must not be counted as a generation."""
+    archive = generation_keeper(population1())
+    assert archive.generation_num == 1
+    stagnation_before = archive.stagnation_iter_count
+
+    archive.append(population1(), evolutionary_step=False)
+    assert archive.generation_num == 1
+    assert archive.stagnation_iter_count == stagnation_before
+
+    archive.append(population2())
+    assert archive.generation_num == 2
+
+
 def test_archive_multiobj_one_improvement():
     archive = generation_keeper(population1())
     previous_size = len(archive.best_individuals)

@@ -63,6 +63,13 @@ class Crossover(Operator):
                 first_object = deepcopy(ind_first.graph)
                 second_object = deepcopy(ind_second.graph)
                 new_graphs = crossover_func(first_object, second_object, max_depth=self.requirements.max_depth)
+                if all(new_graph == parent.graph
+                       for new_graph, parent in zip(new_graphs, (ind_first, ind_second))):
+                    # The crossover gave up (e.g. no sink-valid pick, or the depth guard
+                    # rejected the swap) and returned the parents unchanged. Breeding them
+                    # as offspring would only re-evaluate duplicates of already-evaluated
+                    # individuals, so spend the attempt budget on a fresh random draw instead.
+                    continue
                 are_correct = all(self.graph_generation_params.verifier(new_graph) for new_graph in new_graphs)
                 if are_correct:
                     parent_individuals = (ind_first, ind_second)
@@ -163,11 +170,14 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
     if pairs_of_nodes and sink_filter is not None:
         # A pair that would put an unacceptable head into a sink position can
         # only breed offspring that verification rejects; prefer the rest.
-        root_first, root_second = graph_first.root_node, graph_second.root_node
+        # NB: root_nodes() is used instead of root_node, because the latter returns
+        # a list (not a node) for graphs with several roots, and an identity check
+        # against a list would silently accept every pair.
+        roots_first, roots_second = graph_first.root_nodes(), graph_second.root_nodes()
         pairs_of_nodes = [
             (first, second) for first, second in pairs_of_nodes
-            if (first is not root_first or sink_filter(second))
-            and (second is not root_second or sink_filter(first))
+            if (not any(first is root for root in roots_first) or sink_filter(second))
+            and (not any(second is root for root in roots_second) or sink_filter(first))
         ]
         # No acceptable pair means every possible offspring would be rejected
         # and the parents returned unchanged after all retries - which is what

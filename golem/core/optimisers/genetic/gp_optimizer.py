@@ -72,8 +72,12 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
-            # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+            # Adding of extended population to history.
+            # The extension is bookkeeping around the same zero generation, not an
+            # evolutionary step: counting it as a generation would silently shorten
+            # the run by one generation whenever the initial population is extended.
+            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions',
+                                    evolutionary_step=False)
 
     def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
         verifier = self.graph_generation_params.verifier
