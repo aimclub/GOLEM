@@ -198,7 +198,7 @@ def add_as_child(graph: OptGraph,
         # Without a child to take over, the new node becomes the graph's sink,
         # and domains constrain what a sink may be; asking the factory for a
         # valid final node avoids offspring the verifier would only reject.
-        new_node = node_factory.get_node(is_primary=False) if new_node_child             else node_factory.get_final_node()
+        new_node = node_factory.get_node(is_primary=False) if new_node_child else node_factory.get_final_node()
         if not new_node:
             continue
         graph.add_node(new_node)
