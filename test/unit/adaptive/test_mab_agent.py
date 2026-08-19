@@ -34,7 +34,10 @@ def test_load_mab():
     assert isinstance(loaded_mab, MultiArmedBanditAgent)
 
     assert isinstance(loaded_mab._agent, MAB)
-    assert loaded_mab.__eq__(mab)
+    # NB: neither MultiArmedBanditAgent nor MAB define __eq__, so a direct
+    # __eq__ call returns NotImplemented - truthy before Python 3.14, a
+    # TypeError in a boolean context since; the field asserts below are the
+    # actual equality check
     assert loaded_mab.actions == mab.actions
     assert loaded_mab._enable_logging == mab._enable_logging
     assert loaded_mab._path_to_save == mab._path_to_save

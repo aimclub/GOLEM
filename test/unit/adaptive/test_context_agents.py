@@ -1,3 +1,5 @@
+from importlib.util import find_spec
+
 import pytest
 
 from golem.core.optimisers.adaptive.context_agents import ContextAgentsRepository, ContextAgentTypeEnum
@@ -40,7 +42,10 @@ def test_operations_encoding(context_agent_enum, result_encoding):
 @pytest.mark.parametrize('context_agent, context_size',
                          [(ContextAgentTypeEnum.operations_quantity, len(available_operations)),
                           (ContextAgentTypeEnum.adjacency_matrix, len(available_operations) ** 2),
-                          (ContextAgentTypeEnum.feather_graph, 500),
+                          pytest.param(ContextAgentTypeEnum.feather_graph, 500,
+                                       marks=pytest.mark.skipif(find_spec('karateclub') is None,
+                                                                reason='karateclub is not available '
+                                                                       '(unsupported on Python 3.11+)')),
                           (ContextAgentTypeEnum.labeled_edges, 100),
                           (ContextAgentTypeEnum.nodes_num, 1)])
 def test_context_size(context_agent, context_size):

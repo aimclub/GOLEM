@@ -43,8 +43,10 @@ class PopulationalRandomMutationOptimizer(PopulationalOptimizer):
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
-            # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+            # Adding of extended population to history; the extension is bookkeeping
+            # around the same zero generation, not an evolutionary step
+            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions',
+                                    evolutionary_step=False)
 
 
 class RandomMutationOptimizer(RandomSearchOptimizer):
