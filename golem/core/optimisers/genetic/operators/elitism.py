@@ -1,7 +1,7 @@
 from random import shuffle
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 
 class ElitismTypesEnum(Enum):
@@ -29,12 +29,16 @@ class Elitism(Operator):
 
     @staticmethod
     def keep_n_best_elitism(best_individuals: PopulationT, new_population: PopulationT) -> PopulationT:
-        final_population = []
-        final_population += best_individuals
-        new_unique_inds = [ind for ind in new_population if ind not in best_individuals]
+        # Elites must leave room for at least one new individual: an archive as large
+        # as the population would otherwise fill the whole next generation with the
+        # same individuals over and over, silently freezing evolution.
+        # `best_individuals` (the HallOfFame) is sorted best-first, so the slice keeps the best.
+        elites = list(best_individuals)[:max(len(new_population) - 1, 0)]
+        final_population = list(elites)
+        new_unique_inds = [ind for ind in new_population if ind not in elites]
         if new_unique_inds:
             shuffle(new_unique_inds)
-            remain_n = len(new_population) - len(best_individuals)
+            remain_n = len(new_population) - len(elites)
             final_population += new_unique_inds[:remain_n]
         return final_population
 

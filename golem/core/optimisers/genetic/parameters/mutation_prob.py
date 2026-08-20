@@ -9,10 +9,10 @@ class AdaptiveMutationProb(AdaptiveParameter[float]):
     def __init__(self, default_prob: float = 0.5):
         self._current_std = 0.
         self._max_std = 0.
-        self._min_proba = 0.05
-        if default_prob is None or not (self._min_proba <= default_prob <= 1):
-            raise ValueError(f"Uncorrect probability value: {default_prob}."
-                             f"It should be between {self._min_proba} and 1")
+        self._min_proba = 0.1
+        if default_prob is None or not (0 < default_prob <= 1):
+            raise ValueError(f'Incorrect probability value: {default_prob}. '
+                             f'It should be in the interval (0, 1].')
         self._default_prob = default_prob
 
     @property

@@ -105,6 +105,14 @@ Following example demonstrates graph search using reference graph & edit distanc
         return found_graph
 
 
+Tracing the lineage of the found_graph reveals how genetic operators (mutations, crossovers, etc.) are applied to a random graph one after another, eventually leading to the target graph:
+
+.. image:: /docs/source/img/evolution_process.gif
+   :alt: Evolution process
+   :align: center
+
+One can also notice that despite the fact that the edit distance generally decreases along the genealogical path, the optimizer sometimes sacrifices local fitness gain of some graphs in order to achieve diversity and thus obtain the best possible solution at the end.
+
 Project Structure
 =================
 
@@ -159,29 +167,15 @@ Contacts
 Citation
 ========
 
-If you use our project in your work or research, we would appreciate citations.
+If you use our project in your work or research, we would appreciate citations:
 
-@article{nikitin2021automated,
-  title = {Automated evolutionary approach for the design of composite machine learning pipelines},
-  author = {Nikolay O. Nikitin and Pavel Vychuzhanin and Mikhail Sarafanov and Iana S. Polonskaia and Ilia Revin and Irina V. Barabanova and Gleb Maximov and Anna V. Kalyuzhnaya and Alexander Boukhanovsky},
-  journal = {Future Generation Computer Systems},
-  year = {2021},
-  issn = {0167-739X},
-  doi = {https://doi.org/10.1016/j.future.2021.08.022}}
-
-Papers that describe applications of GOLEM:
-===========================================
-
-There are various cases solved with GOLEM's algorithms:
-
-- Algorithms for time series forecasting pipeline design: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
-
-- Algorithms for acoustic equation discovery: Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
-
-- Algorithms for PDE discovery: Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8.
-
-- Algorithms for structural learning of Bayesian Networks: Deeva I., Kalyuzhnaya A. V., Alexander V. Boukhanovsky Adaptive Learning Algorithm for Bayesian Networks Based on Kernel Mixtures Distributions//International Journal of Artificial Intelligence. – 2023. - Т.21. - №. 1. - С. 90.
-
+@inproceedings{pinchuk2024golem,
+  title={GOLEM: Flexible Evolutionary Design of Graph Representations of Physical and Digital Objects},
+  author={Pinchuk, Maiia and Kirgizov, Grigorii and Yamshchikova, Lyubov and Nikitin, Nikolay and Deeva, Irina and Shakhkyan, Karine and Borisov, Ivan and Zharkov, Kirill and Kalyuzhnaya, Anna},
+  booktitle={Proceedings of the Genetic and Evolutionary Computation Conference Companion},
+  pages={1668--1675},
+  year={2024}
+}
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
@@ -201,14 +195,14 @@ There are various cases solved with GOLEM's algorithms:
 
 .. |pypi| image:: https://img.shields.io/pypi/v/thegolem.svg
    :alt: PyPI Package Version
-   :target: https://img.shields.io/pypi/v/thegolem
+   :target: https://pypi.org/project/thegolem/
 
-.. |python| image:: https://img.shields.io/pypi/pyversions/thegolem.svg
+.. |python| image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue
    :alt: Supported Python Versions
-   :target: https://img.shields.io/pypi/pyversions/thegolem
+   :target: https://pypi.org/project/thegolem/
 
 .. |license| image:: https://img.shields.io/github/license/aimclub/GOLEM
-   :alt: Supported Python Versions
+   :alt: License
    :target: https://github.com/aimclub/GOLEM/blob/main/LICENSE.md
 
 .. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/thegolem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
@@ -223,16 +217,16 @@ There are various cases solved with GOLEM's algorithms:
    :alt: Powered by GOLEM
 
 .. |rus| image:: https://img.shields.io/badge/lang-ru-yellow.svg
-            :target: /README.rst
+   :target: /README.rst
 
-.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge.svg
+.. |ITMO| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/ITMO_badge.svg
    :alt: Acknowledgement to ITMO
    :target: https://en.itmo.ru/en/
 
-.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
-.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+.. |mirror| image:: https://img.shields.io/badge/mirror-GitLab-orange
    :alt: GitLab mirror for this repository
    :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

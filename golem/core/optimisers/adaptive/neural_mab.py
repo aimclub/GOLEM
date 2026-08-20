@@ -25,19 +25,17 @@ class NeuralMAB(MAB):
     Neural Multi-Armed Bandit.
     The main concept is explained in the article: https://arxiv.org/abs/2012.01780.
     Deep representation is formed with NN and Contextual Multi-Armed Bandit is integrated to choose arm.
-
-    NB! Neural MABs can be used with 1.8.0 version of torch since some methods are deprecated in later versions,
-    however, python of version 3.10 is not supported in this version of torch.
     """
 
     def __init__(self, arms: List[Arm],
                  learning_policy: Any = LearningPolicy.UCB1(alpha=1.25),
                  neighborhood_policy: Any = NeighborhoodPolicy.Clusters(),
                  seed: int = Constants.default_seed,
+                 context_size: int = 1,
                  n_jobs: int = 1):
 
         super().__init__(arms, learning_policy, neighborhood_policy, seed, n_jobs)
-        self.nn_with_se = NNWithShallowExploration(context_size=1, arms_count=len(arms))
+        self.nn_with_se = NNWithShallowExploration(context_size=context_size, arms_count=len(arms))
         self.arms = arms
         self.seed = seed
         self.n_jobs = n_jobs
@@ -158,7 +156,7 @@ class NNWithShallowExploration:
             self.LAMBDA += torch.mm(self.feature_extractor(temp, self.W),
                                     self.feature_extractor(temp, self.W).t())
             self.bb += reward * self.feature_extractor(temp, self.W)
-            theta, _ = torch.solve(self.bb, self.LAMBDA)
+            theta = torch.linalg.solve(self.LAMBDA, self.bb)
 
             if np.mod(iter, self._H_q) == 0:
                 theta_action = theta.view(-1, 1)
@@ -176,7 +174,7 @@ class NNWithShallowExploration:
     def UCB(A, phi):
         """ Ucb term. """
         try:
-            tmp, _ = torch.solve(phi, A)
+            tmp = torch.linalg.solve(A, phi)
         except Exception:
             tmp = torch.Tensor(np.linalg.solve(A, phi))
 
@@ -255,6 +253,7 @@ class NNWithShallowExploration:
         output = x
         for i in range(0, depth - 1):
             output = torch.mm(W[i], output)
+            output = (output - output.mean()) / (output.std() + 1e-8)
             output = output.clamp(min=0)
 
         output = output * math.sqrt(W[depth - 1].size()[1])

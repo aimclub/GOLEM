@@ -4,7 +4,7 @@ from collections import UserList
 from copy import deepcopy, copy
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 if TYPE_CHECKING:
     from golem.core.optimisers.opt_history_objects.individual import Individual

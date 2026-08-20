@@ -8,8 +8,10 @@ from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler
 from typing import Optional, Tuple, Union
 
-from golem.core.utilities.singleton_meta import SingletonMeta
+from typing_extensions import Literal
+
 from golem.core.paths import default_data_dir
+from golem.utilities.singleton_meta import SingletonMeta
 
 DEFAULT_LOG_PATH = pathlib.Path(default_data_dir(), 'log.log')
 
@@ -160,57 +162,63 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.logger.setLevel(self.logging_level)
         return '%s - %s' % (self.extra['prefix'], msg), kwargs
 
-    def debug(self, msg, *args, **kwargs):
-        raise_if_test(msg, **kwargs)
-        super().debug(msg, *args, **kwargs)
-
-    def info(self, msg, *args, **kwargs):
-        raise_if_test(msg, **kwargs)
-        super().info(msg, *args, **kwargs)
-
-    def warning(self, msg, *args, **kwargs):
-        raise_if_test(msg, **kwargs)
-        super().warning(msg, *args, **kwargs)
-
-    def error(self, msg, *args, **kwargs):
-        raise_if_test(msg, **kwargs)
-        super().error(msg, *args, **kwargs)
-
-    def exception(self, msg, *args, exc_info=True, **kwargs):
-        raise_if_test(msg, **kwargs)
-        super().exception(msg, *args, **kwargs)
-
-    def critical(self, msg, *args, **kwargs):
-        raise_if_test(msg, **kwargs)
-        super().critical(msg, *args, **kwargs)
-
-    def log(self, level, msg, *args, **kwargs):
-        """
-        Delegate a log call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
-        raise_if_test(msg, **kwargs)
-        super().log(level, msg, *args, **kwargs)
-
     def message(self, msg: str, **kwargs):
         """ Record the message to user.
         Message is an intermediate logging level between info and warning
         to display main info about optimization process """
-        raise_if_test(msg, **kwargs)
-        message_logging_level = 45
-        if message_logging_level >= self.logging_level:
-            self.critical(msg=msg)
+        level = 45
+        self.log(level, msg, **kwargs)
+
+    def log_or_raise(
+            self, level: Union[int, Literal['debug', 'info', 'warning', 'error', 'critical', 'message']],
+            exc: Union[BaseException, object],
+            **log_kwargs):
+        """ Logs the given exception with the given logging level or raises it if the current
+        session is a test one.
+
+        The given exception is logged with its traceback. If this method is called inside an ``except`` block,
+        the exception caught earlier is used as a cause for the given exception.
+
+        Args:
+
+            level: the same as in :py:func:`logging.log`, but may be specified as a lower-case string literal
+                for convenience. For example, the value ``warning`` is equivalent for ``logging.WARNING``.
+                This includes a custom "message" logging level that equals to 45.
+            exc: the exception/message to log/raise. Given a message, an ``Exception`` instance is initialized
+                based on the message.
+            log_kwargs: keyword arguments for :py:func:`logging.log`.
+        """
+        _, recent_exc, _ = sys.exc_info()  # Catch the most recent exception
+        if not isinstance(exc, BaseException):
+            exc = Exception(exc)
+        try:
+            # Raise anyway to combine tracebacks
+            raise exc from recent_exc
+        except type(exc) as exc_info:
+            # Raise further if test session
+            if is_test_session():
+                raise
+            # Log otherwise
+            level_map = {
+                'debug': logging.DEBUG,
+                'info': logging.INFO,
+                'warning': logging.WARNING,
+                'error': logging.ERROR,
+                'critical': logging.CRITICAL,
+                'message': 45,
+            }
+            if isinstance(level, str):
+                level = level_map[level]
+            self.log(level, exc,
+                     exc_info=log_kwargs.pop('exc_info', exc_info),
+                     stacklevel=log_kwargs.pop('stacklevel', 2),
+                     **log_kwargs)
 
     def __str__(self):
         return f'LoggerAdapter object for {self.extra["prefix"]} module'
 
     def __repr__(self):
         return self.__str__()
-
-
-def raise_if_test(msg, **kwargs):
-    if kwargs.get('raise_if_test', False) is True and is_test_session:
-        raise Exception(msg)
 
 
 def is_test_session():

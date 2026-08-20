@@ -5,7 +5,7 @@ from random import choice, randint, sample
 from typing import Callable, List, Optional
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 
 class SelectionTypesEnum(Enum):
@@ -21,7 +21,7 @@ class Selection(Operator):
         :param pop_size: Optional custom population_size.
         Taken from algorithm parameters if not specified.
         """
-        pop_size = pop_size or self.parameters.pop_size
+        pop_size = pop_size if pop_size is not None else self.parameters.pop_size
         selection_type = choice(self.parameters.selection_types)
         return self._selection_by_type(selection_type)(population, pop_size)
 
@@ -33,6 +33,8 @@ class Selection(Operator):
         }
         if selection_type in selections:
             return selections[selection_type]
+        elif isinstance(selection_type, Callable):
+            return selection_type
         else:
             raise ValueError(f'Required selection not found: {selection_type}')
 

@@ -16,7 +16,7 @@ from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
-from golem.core.utilities.data_structures import unzip
+from golem.utilities.data_structures import unzip
 
 
 class AgentTrainer:
@@ -48,15 +48,18 @@ class AgentTrainer:
         param histories: histories to use in training.
         param validate_each: validate agent once in validate_each generation.
         """
-        # Set mutation probabilities to 1.0
-        initial_req = deepcopy(self.mutation.requirements)
-        self.mutation.requirements.mutation_prob = 1.0
+        # Set mutation probability to 1.0: the Mutation operator reads it from the
+        # algorithm parameters, not from the requirements
+        initial_parameters = deepcopy(self.mutation.parameters)
+        forced_parameters = deepcopy(self.mutation.parameters)
+        forced_parameters.mutation_prob = 1.0
+        self.mutation.update_requirements(parameters=forced_parameters)
 
         for i, history in enumerate(histories):
             # Preliminary validity check
             # This allows to filter out histories with different objectives automatically
             if history.objective.metric_names != self.objective.metric_names:
-                self._log.warning(f'History #{i+1} has different objective! '
+                self._log.warning(f'History #{i + 1} has different objective! '
                                   f'Expected {self.objective}, got {history.objective}.')
                 continue
 
@@ -67,17 +70,17 @@ class AgentTrainer:
                 experience, val_experience = experience.split(ratio=0.8, shuffle=True)
 
             # Train
-            self._log.info(f'Training on history #{i+1} with {len(history.generations)} generations')
+            self._log.info(f'Training on history #{i + 1} with {len(history.generations)} generations')
             self.agent.partial_fit(experience)
 
             # Validate
             if val_experience:
                 reward_loss, reward_target = self.validate_agent(experience=val_experience)
-                self._log.info(f'Agent validation for history #{i+1} & {experience}: '
+                self._log.info(f'Agent validation for history #{i + 1} & {experience}: '
                                f'Reward target={reward_target:.3f}, loss={reward_loss:.3f}')
 
         # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=initial_req)
+        self.mutation.update_requirements(parameters=initial_parameters)
         return self.agent
 
     def validate_on_rollouts(self, histories: Sequence[OptHistory]) -> float:
@@ -88,13 +91,13 @@ class AgentTrainer:
         trajectories = concat_lists(map(ExperienceBuffer.unroll_trajectories, histories))
 
         mean_traj_len = int(np.mean([len(tr) for tr in trajectories]))
-        traj_rewards = [sum(reward for _, reward, _ in traj) for traj in trajectories]
+        traj_rewards = [sum(reward for _, _, reward in traj) for traj in trajectories]
         mean_baseline_reward = np.mean(traj_rewards)
 
         # Collect same number of trajectories of the same length; and their rewards
         agent_trajectories = [self._sample_trajectory(initial=tr[0][0], length=mean_traj_len)
                               for tr in trajectories]
-        agent_traj_rewards = [sum(reward for _, reward, _ in traj) for traj in agent_trajectories]
+        agent_traj_rewards = [sum(reward for _, _, reward in traj) for traj in agent_trajectories]
         mean_agent_reward = np.mean(agent_traj_rewards)
 
         # Compute improvement score of agent over baseline histories
@@ -163,9 +166,10 @@ class AgentTrainer:
         return best_step
 
     def _apply_action(self, action: Any, ind: Individual) -> TrajectoryStep:
-        new_graph, applied = self.mutation._adapt_and_apply_mutation(ind.graph, action)
+        new_graph = self.mutation._apply_mutations(ind.graph, action)
+        applied = new_graph is not None
         fitness = self._eval_objective(new_graph) if applied else None
-        parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=ind)
+        parent_op = ParentOperator(type_='mutation', operators=applied, parent_individuals=[ind])
         new_ind = Individual(new_graph, fitness=fitness, parent_operator=parent_op)
 
         prev_fitness = ind.fitness or self._eval_objective(ind.graph)

@@ -2,7 +2,7 @@ from copy import copy
 from functools import partial
 from typing import Callable
 
-from golem.core.utilities.singleton_meta import SingletonMeta
+from golem.utilities.singleton_meta import SingletonMeta
 
 
 class AdaptRegistry(metaclass=SingletonMeta):

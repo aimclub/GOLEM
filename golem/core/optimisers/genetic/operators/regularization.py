@@ -1,13 +1,14 @@
 from copy import deepcopy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from golem.core.optimisers.genetic.operators.operator import PopulationT, EvaluationOperator, Operator
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
+from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 if TYPE_CHECKING:
     from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
@@ -20,8 +21,9 @@ class RegularizationTypesEnum(Enum):
 
 class Regularization(Operator):
     def __init__(self, parameters: 'GPAlgorithmParameters',
-                 graph_generation_params: GraphGenerationParams):
-        super().__init__(parameters=parameters)
+                 graph_generation_params: GraphGenerationParams,
+                 requirements: Optional[GraphRequirements] = None):
+        super().__init__(parameters=parameters, requirements=requirements)
         self.graph_generation_params = graph_generation_params
 
     def __call__(self, population: PopulationT, evaluator: EvaluationOperator) -> PopulationT:

@@ -1,13 +1,11 @@
-import pytest
-
 from golem.core.optimisers.archive import GenerationKeeper
 from golem.core.optimisers.fitness import SingleObjFitness
-from golem.core.optimisers.genetic.parameters.population_size import PopulationSize, AdaptivePopulationSize, \
+from golem.core.optimisers.genetic.parameters.population_size import AdaptivePopulationSize, \
     ConstRatePopulationSize
 from golem.core.optimisers.graph import OptGraph, OptNode
 from golem.core.optimisers.objective import Objective
 from golem.core.optimisers.opt_history_objects.individual import Individual
-from golem.core.utilities.sequence_iterator import SequenceIterator, fibonacci_sequence
+from golem.utilities.sequence_iterator import SequenceIterator
 
 
 def custom_objective():

@@ -10,7 +10,7 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.populational_optimizer import PopulationalOptimizer
 from golem.core.optimisers.random.random_search import RandomSearchOptimizer
-from golem.core.utilities.data_structures import ensure_wrapped_in_sequence
+from golem.utilities.data_structures import ensure_wrapped_in_sequence
 
 
 class PopulationalRandomMutationOptimizer(PopulationalOptimizer):
@@ -43,8 +43,10 @@ class PopulationalRandomMutationOptimizer(PopulationalOptimizer):
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
-            # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+            # Adding of extended population to history; the extension is bookkeeping
+            # around the same zero generation, not an evolutionary step
+            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions',
+                                    evolutionary_step=False)
 
 
 class RandomMutationOptimizer(RandomSearchOptimizer):

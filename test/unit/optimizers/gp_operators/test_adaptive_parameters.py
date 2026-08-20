@@ -1,5 +1,4 @@
 import random
-from itertools import product
 from typing import Any, Tuple, List
 
 import pytest
@@ -36,6 +35,7 @@ def get_adaptive_depth(start_depth: int, max_depth: int, max_stagnation_gens: in
                                         max_depth=max_depth, max_stagnation_gens=max_stagnation_gens,
                                         adaptive=adaptive)
     return adaptive_depth, generation_keeper
+
 
 def _test_adaptive_probability_parameter(adaptive_parameter: AdaptiveParameter, check_uniqueness: bool = True):
     def return_list(data: Any):

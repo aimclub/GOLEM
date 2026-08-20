@@ -80,7 +80,7 @@ GOLEM можно установить с помощью ``pip``:
 Быстрый старт
 =============
 
-Следующий пример показывает поиск графа по графу-эталону с помощью метрики расстояния редактирования (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
+Следующий пример показывает поиск графа по графу-эталону с помощью метрики редакционного расстояния (Edit Distance). Оптимизатор настраивается с минимальным набором параметров и простыми одноточечными мутациями. Более подробные примеры можно найти в файлах `simple_run.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/simple_run.py>`_, `graph_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/graph_search.py>`_ и `tree_search.py <https://github.com/aimclub/GOLEM/blob/main/examples/synthetic_graph_evolution/tree_search.py>`_ в директории `examples/synthetic_graph_evolution <https://github.com/aimclub/GOLEM/tree/main/examples/synthetic_graph_evolution>`_.
 
 .. code-block:: python
 
@@ -106,6 +106,13 @@ GOLEM можно установить с помощью ``pip``:
         optimiser.history.show.fitness_line()
         return found_graph
 
+Если проследить предков найденного графа, будет видно, как к нему один за другим применяются генетические операторы (мутации, скрещивания и т.д.), приводящие, в конечном итоге, к целевому графу:
+
+.. image:: /docs/source/img/evolution_process.gif
+   :alt: Процесс эволюции
+   :align: center
+
+Можно также заметить, что, несмотря на общее улучшение фитнеса вдоль генеалогического пути, оптимизатор иногда жертвует локальным уменьшением редакционного расстояния некоторых графов ради поддержания разнообразия и получения таким образом наилучшего решения в конце.
 
 Структура проекта
 =================
@@ -160,29 +167,16 @@ GOLEM можно установить с помощью ``pip``:
 Цитирование
 ===========
 
-Если вы используете наш проект в своей работе или исследовании, мы будем признательны за цитирование.
+Если вы используете наш проект в своей работе или исследовании, мы будем признательны за цитирование:
 
-@article{nikitin2021automated,
-  title = {Automated evolutionary approach for the design of composite machine learning pipelines},
-  author = {Nikolay O. Nikitin and Pavel Vychuzhanin and Mikhail Sarafanov and Iana S. Polonskaia and Ilia Revin and Irina V. Barabanova and Gleb Maximov and Anna V. Kalyuzhnaya and Alexander Boukhanovsky},
-  journal = {Future Generation Computer Systems},
-  year = {2021},
-  issn = {0167-739X},
-  doi = {https://doi.org/10.1016/j.future.2021.08.022}}
+@inproceedings{pinchuk2024golem,
+  title={GOLEM: Flexible Evolutionary Design of Graph Representations of Physical and Digital Objects},
+  author={Pinchuk, Maiia and Kirgizov, Grigorii and Yamshchikova, Lyubov and Nikitin, Nikolay and Deeva, Irina and Shakhkyan, Karine and Borisov, Ivan and Zharkov, Kirill and Kalyuzhnaya, Anna},
+  booktitle={Proceedings of the Genetic and Evolutionary Computation Conference Companion},
+  pages={1668--1675},
+  year={2024}
+}
 
-Публикации, описывающие применение GOLEM для прикладных задач:
-==============================================================
-
-В данных публикациях описывается применение алгоритмов GOLEM и основанных на нем решений
-для различных прикладных задач.
-
-- Алгоритмы поиска оптимального пайплайна машинного обучения для прогнозирования временных рядов: Sarafanov M., Pokrovskii V., Nikitin N. O. Evolutionary Automated Machine Learning for Multi-Scale Decomposition and Forecasting of Sensor Time Series //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 01-08.
-
-- Алгоритмы идентификации структуры уравнения для акустических данных: Hvatov A. Data-Driven Approach for the Floquet Propagator Inverse Problem Solution //ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). – IEEE, 2022. – С. 3813-3817.
-
-- Алгоритмы идентификации структуры дифференциальных уравнений в частных производных: Maslyaev M., Hvatov A. Solver-Based Fitness Function for the Data-Driven Evolutionary Discovery of Partial Differential Equations //2022 IEEE Congress on Evolutionary Computation (CEC). – IEEE, 2022. – С. 1-8.
-
-- Алгоритмы структурного обучения сетей: Deeva I., Kalyuzhnaya A. V., Alexander V. Boukhanovsky Adaptive Learning Algorithm for Bayesian Networks Based on Kernel Mixtures Distributions//International Journal of Artificial Intelligence. – 2023. - Т.21. - №. 1. - С. 90.
 
 .. |docs| image:: https://readthedocs.org/projects/thegolem/badge/?version=latest
     :target: https://thegolem.readthedocs.io/en/latest/?badge=latest
@@ -202,14 +196,14 @@ GOLEM можно установить с помощью ``pip``:
 
 .. |pypi| image:: https://img.shields.io/pypi/v/thegolem.svg
    :alt: PyPI Package Version
-   :target: https://img.shields.io/pypi/v/thegolem
+   :target: https://pypi.org/project/thegolem/
 
-.. |python| image:: https://img.shields.io/pypi/pyversions/thegolem.svg
+.. |python| image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue
    :alt: Supported Python Versions
-   :target: https://img.shields.io/pypi/pyversions/thegolem
+   :target: https://pypi.org/project/thegolem/
 
 .. |license| image:: https://img.shields.io/github/license/aimclub/GOLEM
-   :alt: Supported Python Versions
+   :alt: License
    :target: https://github.com/aimclub/GOLEM/blob/main/LICENSE.md
 
 .. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/thegolem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
@@ -226,14 +220,14 @@ GOLEM можно установить с помощью ``pip``:
 .. |eng| image:: https://img.shields.io/badge/lang-en-red.svg
             :target: /README_en.rst
 
-.. |ITMO| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/ITMO_badge_rus.svg
+.. |ITMO| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/ITMO_badge_rus.svg
    :alt: Acknowledgement to ITMO
    :target: https://itmo.ru
 
-.. |SAI| image:: https://github.com/aimclub/open-source-ops/blob/add_badge/badges/SAI_badge.svg
+.. |SAI| image:: https://raw.githubusercontent.com/aimclub/open-source-ops/43bb283758b43d75ec1df0a6bb4ae3eb20066323/badges/SAI_badge.svg
    :alt: Acknowledgement to SAI
    :target: https://sai.itmo.ru/
 
-.. |mirror| image:: https://camo.githubusercontent.com/9bd7b8c5b418f1364e72110a83629772729b29e8f3393b6c86bff237a6b784f6/68747470733a2f2f62616467656e2e6e65742f62616467652f6769746c61622f6d6972726f722f6f72616e67653f69636f6e3d6769746c6162
+.. |mirror| image:: https://img.shields.io/badge/mirror-GitLab-orange
    :alt: GitLab mirror for this repository
    :target: https://gitlab.actcognitive.org/itmo-nss-team/GOLEM

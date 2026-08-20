@@ -1,6 +1,6 @@
 from typing import List, Any, TypeVar, Generic
 
-from golem.core.utilities.data_structures import ComparableEnum as Enum
+from golem.utilities.data_structures import ComparableEnum as Enum
 
 NodeType = TypeVar('NodeType')
 
@@ -27,6 +27,16 @@ class DefaultChangeAdvisor(Generic[NodeType]):
 
     def can_be_removed(self, node: NodeType) -> RemoveType:
         return RemoveType.node_rewire
+
+    def can_be_sink(self, node: NodeType) -> bool:
+        """Whether the node is acceptable as the final (sink) node of a graph.
+
+        Crossover consults this before placing a subtree head into the sink
+        position, so domains whose sinks are constrained - e.g. a pipeline
+        must end with a model - do not breed offspring that verification is
+        certain to reject.
+        """
+        return True
 
     def propose_parent(self, node: NodeType, possible_operations: List[Any]) -> List[Any]:
         return possible_operations

@@ -132,10 +132,18 @@ class GenerationKeeper(ImprovementWatcher):
     def _metric_ids(self) -> Iterable[Any]:
         return self._objective.metric_names
 
-    def append(self, population: PopulationT):
+    def append(self, population: PopulationT, evolutionary_step: bool = True):
+        """Adds population to the archive.
+
+        ``evolutionary_step=False`` marks a bookkeeping append (e.g. the extension
+        of the initial assumptions up to the full population size): the archive is
+        still updated, but the generation counter and the stagnation trackers are
+        left untouched, so that the number of counted generations matches the
+        number of actual evolutionary steps.
+        """
         previous_archive_fitness = self._archive_fitness()
         self.archive.update(population)
-        self._update_improvements(previous_archive_fitness)
+        self._update_improvements(previous_archive_fitness, evolutionary_step)
 
     def _archive_fitness(self) -> Dict[Any, Sequence[float]]:
         archive_pop_metrics = (ind.fitness.values for ind in self.archive.items)
@@ -143,7 +151,7 @@ class GenerationKeeper(ImprovementWatcher):
         archive_fitness_per_metric = dict(zip(self._metric_ids, archive_fitness_per_metric))
         return archive_fitness_per_metric
 
-    def _update_improvements(self, previous_metric_archive):
+    def _update_improvements(self, previous_metric_archive, evolutionary_step: bool = True):
         self._reset_metrics_improvement()
         current_metric_archive = self._archive_fitness()
         for metric in self._metric_ids:
@@ -154,6 +162,8 @@ class GenerationKeeper(ImprovementWatcher):
             if is_metric_worse(previous_worst, current_worst):
                 self._metrics_improvement[metric] = True
 
+        if not evolutionary_step:
+            return
         self._generation_num += 1  # becomes 1 on first population
         self._stagnation_start_time = datetime.datetime.now() \
             if self.is_any_improved or self._generation_num == 1 else self._stagnation_start_time

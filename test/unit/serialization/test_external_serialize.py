@@ -12,7 +12,7 @@ from golem.core.paths import project_root
 
 
 @pytest.mark.parametrize('history_path', [
-    'test/data/history_composite_bn_healthcare.json',
+    'test/data/external_history_composite_bn_healthcare.json',
 ])
 def test_external_history_load(history_path):
     """The idea is that external histories must be loadable by GOLEM.

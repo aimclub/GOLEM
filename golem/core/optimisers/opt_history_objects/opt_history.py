@@ -99,7 +99,7 @@ class OptHistory:
             last_gen = self.generations[last_gen_id]
             for individual in last_gen:
                 ind_path = Path(save_dir, str(last_gen_id), str(individual.uid))
-                ind_path.mkdir(exist_ok=True)
+                ind_path.mkdir(exist_ok=True, parents=True)
                 individual.save(json_file_path=ind_path / f'{str(individual.uid)}.json')
         except Exception as ex:
             self._log.exception(ex)
@@ -173,6 +173,23 @@ class OptHistory:
     @property
     def show(self):
         return OptHistoryVisualizer(self)
+
+    # def analyze_online(self, url='https://fedot.onti.actcognitive.org'):
+    #     case_id = FILE_NAME.replace('.json', '') + str(uuid4())
+    #     history_url = f'{DOMAIN}/ws/sandbox/custom_{case_id}/history'
+    #     post_url = f"{DOMAIN}/api/showcase/add"
+    #
+    #     history_json = json.load(open(BASE_PATH.joinpath(FILE_NAME)))
+    #     new_case = {
+    #         'case': {
+    #             'case_id': case_id,
+    #         },
+    #         'history': history_json
+    #     }
+    #     response = requests.post(post_url, json=new_case)
+    #
+    #     print(response.text, response.status_code, )
+    #     print(f'IMPORTANT! Save this url.\n{history_url}')
 
     def get_leaderboard(self, top_n: int = 10) -> str:
         """

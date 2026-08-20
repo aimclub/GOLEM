@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from copy import deepcopy
 from random import choice
 from typing import Any, Optional, Sequence, Dict
 
@@ -13,7 +14,7 @@ from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer, AlgorithmParameters
 from golem.core.optimisers.timer import OptimisationTimer
-from golem.core.utilities.grouped_condition import GroupedCondition
+from golem.utilities.grouped_condition import GroupedCondition
 
 
 class PopulationalOptimizer(GraphOptimizer):
@@ -30,6 +31,8 @@ class PopulationalOptimizer(GraphOptimizer):
          requirements: implementation-independent requirements for graph optimizer
          graph_generation_params: parameters for new graph generation
          graph_optimizer_params: parameters for specific implementation of graph optimizer
+
+    Additional custom params can be specified with `custom_optimizer_params`.
     """
 
     def __init__(self,
@@ -38,8 +41,10 @@ class PopulationalOptimizer(GraphOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: Optional['AlgorithmParameters'] = None,
+                 **custom_optimizer_params
                  ):
-        super().__init__(objective, initial_graphs, requirements, graph_generation_params, graph_optimizer_params)
+        super().__init__(objective, initial_graphs, requirements,
+                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
         self.population = None
         self.generations = GenerationKeeper(self.objective, keep_n_best=requirements.keep_n_best)
         self.timer = OptimisationTimer(timeout=self.requirements.timeout)
@@ -57,7 +62,7 @@ class PopulationalOptimizer(GraphOptimizer):
         max_stagnation_time = requirements.early_stopping_timeout or self.timer.timeout
         self.stop_optimization = \
             GroupedCondition(results_as_message=True).add_condition(
-                lambda: self.timer.is_time_limit_reached(self.current_generation_num),
+                lambda: self.timer.is_time_limit_reached(self.current_generation_num - 1),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
                 lambda: (requirements.num_of_generations is not None and
@@ -68,7 +73,8 @@ class PopulationalOptimizer(GraphOptimizer):
                          self.generations.stagnation_iter_count >= max_stagnation_length),
                 'Optimisation finished: Early stopping iterations criteria was satisfied'
             ).add_condition(
-                lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
+                lambda: (max_stagnation_time is not None and
+                         self.generations.stagnation_time_duration >= max_stagnation_time),
                 'Optimisation finished: Early stopping timeout criteria was satisfied'
             )
         # in how many generations structural diversity check should be performed
@@ -126,12 +132,15 @@ class PopulationalOptimizer(GraphOptimizer):
         """ Extends population to specified `target_pop_size`. """
         n = target_pop_size - len(pop)
         extended_population = list(pop)
-        extended_population.extend([Individual(graph=choice(pop).graph) for _ in range(n)])
+        # Each individual must own its graph: sharing one mutable graph object between
+        # several individuals lets an in-place change to any of them corrupt the rest.
+        extended_population.extend([Individual(graph=deepcopy(choice(pop).graph)) for _ in range(n)])
         return extended_population
 
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
-                           metadata: Optional[Dict[str, Any]] = None):
-        self.generations.append(next_population)
+                           metadata: Optional[Dict[str, Any]] = None,
+                           evolutionary_step: bool = True):
+        self.generations.append(next_population, evolutionary_step)
         if self.requirements.keep_history:
             self._log_to_history(next_population, label, metadata)
         self._iteration_callback(next_population, self)

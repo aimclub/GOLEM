@@ -1,4 +1,4 @@
-from golem.core.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
+from golem.utilities.sequence_iterator import fibonacci_sequence, SequenceIterator
 
 
 def test_iterator_without_constraints():

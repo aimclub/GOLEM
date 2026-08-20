@@ -88,7 +88,7 @@ class Serializer(JSONEncoder, JSONDecoder):
         from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
         from golem.core.optimisers.fitness.fitness import Fitness
         from golem.core.optimisers.objective.objective import ObjectiveInfo
-        from golem.core.utilities.data_structures import ComparableEnum
+        from golem.utilities.data_structures import ComparableEnum
 
         from .any_serialization import any_from_json, any_to_json
 

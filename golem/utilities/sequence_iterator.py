@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from golem.core.utilities.data_structures import BidirectionalIterator
+from golem.utilities.data_structures import BidirectionalIterator
 
 
 class SequenceIterator(BidirectionalIterator[int]):

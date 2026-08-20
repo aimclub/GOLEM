@@ -1,6 +1,6 @@
 from typing import Union, Optional, Iterable, List
 from golem.core.dag.graph_node import GraphNode
-from golem.core.utilities.data_structures import UniqueList
+from golem.utilities.data_structures import UniqueList
 
 
 class LinkedGraphNode(GraphNode):

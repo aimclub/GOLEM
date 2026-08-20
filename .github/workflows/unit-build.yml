@@ -15,8 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [ 3.8, 3.9, '3.10' ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
 
     steps:
     - uses: actions/checkout@v3
@@ -30,9 +31,12 @@ jobs:
         pip install pytest
         pip install .[docs]
         pip install .[profilers]
+        pip install .[adaptive]
         pip install pytest-cov
     - name: Test with pytest
       run: |
         pytest --cov=golem test/unit
     - name: Codecov-coverage
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v4
+      with:
+         token: ${{ secrets.CODECOV_TOKEN }}

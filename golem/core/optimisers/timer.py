@@ -48,9 +48,9 @@ class OptimisationTimer(Timer):
 
     def _is_next_iteration_possible(self, time_constraint: float, iteration_num: int = None) -> bool:
         minutes = self.minutes_from_start
-        if iteration_num is not None:
+        if iteration_num is not None and iteration_num != 0:
             evo_proc_minutes = minutes - self.init_time
-            possible = time_constraint > (minutes + (evo_proc_minutes / (iteration_num + 1)))
+            possible = time_constraint > (minutes + (evo_proc_minutes / iteration_num))
         else:
             possible = time_constraint > minutes
         if not possible:
