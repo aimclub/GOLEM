@@ -47,7 +47,12 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         self.elitism = Elitism(graph_optimizer_params)
         self.operators = [self.regularization, self.selection, self.crossover,
                           self.mutation, self.inheritance, self.elitism]
-        self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
+        mating_selection = (Selection(graph_optimizer_params,
+                                      selection_types=graph_optimizer_params.mating_selection_types)
+                            if graph_optimizer_params.mating_selection_types else None)
+        self.reproducer = ReproductionController(graph_optimizer_params, self.selection,
+                                                 self.mutation, self.crossover,
+                                                 mating_selection=mating_selection)
 
         # Define adaptive parameters
         self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)

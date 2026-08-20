@@ -13,7 +13,7 @@ from golem.core.optimisers.genetic.operators.crossover import Crossover, Crossov
 from golem.core.optimisers.genetic.operators.mutation import Mutation
 from golem.core.optimisers.genetic.operators.operator import EvaluationOperator, PopulationT
 from golem.core.optimisers.genetic.operators.reproduction import ReproductionController
-from golem.core.optimisers.genetic.operators.selection import Selection
+from golem.core.optimisers.genetic.operators.selection import Selection, SelectionTypesEnum
 from golem.core.optimisers.genetic.parameters.population_size import ConstRatePopulationSize
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.optimization_parameters import GraphRequirements
@@ -129,3 +129,70 @@ def test_pop_size_progression(reproducer: ReproductionController, success_rate: 
 
         # update pop size
         parameters.pop_size = pop_size_progress.next(pop)
+
+
+def test_mating_selection_lifts_the_mating_pool_cap():
+    """Without a mating selection the controller caps its request at the size
+    of the population it selects from, and every selection operator answers
+    such a request by returning everyone -- so reproduction applies no
+    selection pressure at all. A mating selection that samples with
+    replacement lifts the cap, and the request survives to the operator."""
+    params = GPAlgorithmParameters(
+        pop_size=20,
+        mutation_types=[MutationTypesEnum.single_add],
+        crossover_types=[CrossoverTypesEnum.none],
+        mating_selection_types=[SelectionTypesEnum.tournament_with_replacement])
+    graph_gen_params = GraphGenerationParams(available_node_types=['x'], rules_for_constraint=[])
+    requirements = GraphRequirements()
+
+    requested = []
+
+    class RecordingSelection(Selection):
+        def __call__(self, population, pop_size=None):
+            requested.append(pop_size)
+            return super().__call__(population, pop_size)
+
+    mating = RecordingSelection(
+        params, requirements,
+        selection_types=[SelectionTypesEnum.tournament_with_replacement])
+    reproduction = ReproductionController(
+        params,
+        selection=Selection(params, requirements),
+        mutation=Mutation(params, requirements, graph_gen_params),
+        crossover=Crossover(params, requirements, graph_gen_params),
+        mating_selection=mating)
+
+    population = get_rand_population(10)
+    reproduction.reproduce(population, MockEvaluator(1.0))
+
+    assert requested, 'the mating selection was never consulted'
+    assert max(requested) > len(population)
+
+
+def test_without_mating_selection_the_pool_never_exceeds_the_population():
+    """Pins the historical behaviour the option above opts out of."""
+    params = GPAlgorithmParameters(
+        pop_size=20,
+        mutation_types=[MutationTypesEnum.single_add],
+        crossover_types=[CrossoverTypesEnum.none])
+    graph_gen_params = GraphGenerationParams(available_node_types=['x'], rules_for_constraint=[])
+    requirements = GraphRequirements()
+
+    requested = []
+
+    class RecordingSelection(Selection):
+        def __call__(self, population, pop_size=None):
+            requested.append(pop_size)
+            return super().__call__(population, pop_size)
+
+    reproduction = ReproductionController(
+        params,
+        selection=RecordingSelection(params, requirements),
+        mutation=Mutation(params, requirements, graph_gen_params),
+        crossover=Crossover(params, requirements, graph_gen_params))
+
+    population = get_rand_population(10)
+    reproduction.reproduce(population, MockEvaluator(1.0))
+
+    assert requested
+    assert max(requested) <= len(population)

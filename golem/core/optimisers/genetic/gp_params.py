@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence, Union, Any, Optional, Callable
 
+from golem.core.log import default_log
 from golem.core.optimisers.adaptive.operator_agent import MutationAgentTypeEnum
 from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import ContextAgentTypeEnum
 from golem.core.optimisers.genetic.operators.base_mutations import MutationStrengthEnum, MutationTypesEnum, \
@@ -84,6 +85,12 @@ class GPAlgorithmParameters(AlgorithmParameters):
     context_agent_type: Union[ContextAgentTypeEnum, Callable] = ContextAgentTypeEnum.nodes_num
 
     selection_types: Optional[Sequence[Union[SelectionTypesEnum, Any]]] = None
+    #: Selection used to build the *mating* pool inside ``ReproductionController``.
+    #: ``None`` keeps the historical behaviour, where reproduction reuses
+    #: ``selection_types`` and -- because the requested pool is never smaller
+    #: than the population it selects from -- applies no mating pressure at all.
+    #: ``SelectionTypesEnum.tournament_with_replacement`` restores it.
+    mating_selection_types: Optional[Sequence[Union[SelectionTypesEnum, Any]]] = None
     crossover_types: Sequence[Union[CrossoverTypesEnum, Any]] = \
         (CrossoverTypesEnum.one_point,)
     mutation_types: Sequence[Union[MutationTypesEnum, Any]] = simple_mutation_set
@@ -101,3 +108,29 @@ class GPAlgorithmParameters(AlgorithmParameters):
         if self.multi_objective:
             # TODO add possibility of using regularization in MO alg
             self.regularization_type = RegularizationTypesEnum.none
+            if self.genetic_scheme_type == GeneticSchemeTypesEnum.generational:
+                # This combination leaves the loop with NO survival selection
+                # at all, and it fails silently -- the run looks healthy and
+                # the archive still fills up, it just searches much worse.
+                #
+                # Why: elitism is deliberately disabled in multi-objective mode
+                # (Elitism._is_elitism_applicable), and the generational scheme
+                # replaces the whole population with the offspring
+                # (Inheritance.direct_inheritance) instead of selecting among
+                # parents + offspring. The remaining selection call, in
+                # ReproductionController, asks for a mating pool no smaller
+                # than the population it selects from, which every selection
+                # operator answers by returning all of them. Net effect: every
+                # parent breeds regardless of fitness and every offspring
+                # survives regardless of fitness -- a random walk with a Pareto
+                # archive bolted on.
+                #
+                # `steady_state` selects the next population out of
+                # parents + offspring and does apply pressure; it is what
+                # GOLEM's own multi-objective example uses.
+                default_log(self).warning(
+                    'Multi-objective optimisation with the generational genetic '
+                    'scheme applies no survival selection (elitism is disabled '
+                    'for multi-objective runs, and the generational scheme keeps '
+                    'the offspring unconditionally). Use '
+                    'GeneticSchemeTypesEnum.steady_state for multi-objective runs.')

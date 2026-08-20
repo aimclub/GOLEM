@@ -5,15 +5,34 @@ from random import choice, randint, sample
 from typing import Callable, List, Optional
 
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
+from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.utilities.data_structures import ComparableEnum as Enum
 
 
 class SelectionTypesEnum(Enum):
     tournament = 'tournament'
     spea2 = 'spea2'
+    nsga2 = 'nsga2'
+    tournament_with_replacement = 'tournament_with_replacement'
 
 
 class Selection(Operator):
+    """Selection operator.
+
+    ``selection_types`` normally comes from the algorithm parameters; pass
+    ``selection_types`` explicitly to build a selection that uses a different
+    set -- used for the *mating* pool, whose requirements differ from those of
+    environmental (survival) selection.
+    """
+
+    def __init__(self, parameters=None, requirements=None, selection_types=None):
+        super().__init__(parameters=parameters, requirements=requirements)
+        self._selection_types_override = selection_types
+
+    @property
+    def selection_types(self):
+        return self._selection_types_override or self.parameters.selection_types
+
     def __call__(self, population: PopulationT, pop_size: Optional[int] = None) -> PopulationT:
         """
         Selection of individuals based on specified type of selection
@@ -22,14 +41,16 @@ class Selection(Operator):
         Taken from algorithm parameters if not specified.
         """
         pop_size = pop_size if pop_size is not None else self.parameters.pop_size
-        selection_type = choice(self.parameters.selection_types)
+        selection_type = choice(self.selection_types)
         return self._selection_by_type(selection_type)(population, pop_size)
 
     @staticmethod
     def _selection_by_type(selection_type: SelectionTypesEnum) -> Callable[[PopulationT, int], PopulationT]:
         selections = {
             SelectionTypesEnum.tournament: tournament_selection,
-            SelectionTypesEnum.spea2: spea2_selection
+            SelectionTypesEnum.spea2: spea2_selection,
+            SelectionTypesEnum.nsga2: nsga2_selection,
+            SelectionTypesEnum.tournament_with_replacement: tournament_selection_with_replacement,
         }
         if selection_type in selections:
             return selections[selection_type]
@@ -86,6 +107,133 @@ def tournament_selection(individuals: PopulationT, pop_size: int, fraction: floa
 @default_selection_behaviour
 def random_selection(individuals: PopulationT, pop_size: int) -> PopulationT:
     return sample(individuals, pop_size)
+
+
+def _tournament_winner(first: Individual, second: Individual) -> Individual:
+    """Binary-tournament comparison that is correct for both fitness kinds.
+
+    ``dominates`` is Pareto domination for multi-objective fitness and plain
+    better-than for single-objective; mutually non-dominated pairs are decided
+    by a coin flip, as in NSGA-II's binary tournament.
+    """
+    if first.fitness.dominates(second.fitness):
+        return first
+    if second.fitness.dominates(first.fitness):
+        return second
+    return choice((first, second))
+
+
+def tournament_selection_with_replacement(individuals: PopulationT, pop_size: int,
+                                          tournament_size: int = 2) -> PopulationT:
+    """Build a *mating pool* of exactly ``pop_size`` parents, with replacement.
+
+    Deliberately NOT wrapped in ``default_selection_behaviour``: that wrapper
+    returns the input untouched whenever ``len(individuals) <= pop_size``,
+    which is precisely the case in reproduction -- the mating pool is never
+    smaller than the population it is drawn from. The result is that a
+    generational run applies no mating pressure at all: every parent breeds
+    regardless of fitness.
+
+    Each tournament draws its contenders without replacement, so an
+    individual never competes against itself; the tournaments themselves are
+    independent, so a fit individual can win several and enter the pool more
+    than once. That is what decouples the pool size from the population size
+    and lets fitness decide how often a parent breeds.
+    """
+    individuals = list({ind.uid: ind for ind in individuals}.values())
+    if not individuals:
+        return []
+    if len(individuals) == 1:
+        return individuals * pop_size
+    size = max(2, min(tournament_size, len(individuals)))
+    chosen = []
+    for _ in range(pop_size):
+        group = sample(individuals, size)
+        winner = group[0]
+        for contender in group[1:]:
+            winner = _tournament_winner(winner, contender)
+        chosen.append(winner)
+    return chosen
+
+
+def fast_non_dominated_sort(individuals: PopulationT) -> List[List[Individual]]:
+    """Partition ``individuals`` into Pareto fronts (NSGA-II, Deb et al. 2002)."""
+    size = len(individuals)
+    dominated_by = [[] for _ in range(size)]
+    domination_count = [0] * size
+
+    for i in range(size):
+        for j in range(i + 1, size):
+            if individuals[i].fitness.dominates(individuals[j].fitness):
+                dominated_by[i].append(j)
+                domination_count[j] += 1
+            elif individuals[j].fitness.dominates(individuals[i].fitness):
+                dominated_by[j].append(i)
+                domination_count[i] += 1
+
+    # A domination count is only final once every pair has been visited, so
+    # the first front is read off after the loop, not during it.
+    fronts: List[List[int]] = [[i for i in range(size) if domination_count[i] == 0]]
+    current = fronts[0]
+    while current:
+        nxt = []
+        for i in current:
+            for j in dominated_by[i]:
+                domination_count[j] -= 1
+                if domination_count[j] == 0:
+                    nxt.append(j)
+        if nxt:
+            fronts.append(nxt)
+        current = nxt
+    return [[individuals[i] for i in front] for front in fronts]
+
+
+def crowding_distances(front: PopulationT) -> List[float]:
+    """NSGA-II crowding distance: how isolated each solution is on its front."""
+    size = len(front)
+    if size <= 2:
+        return [float('inf')] * size
+    distances = [0.0] * size
+    num_objectives = len(front[0].fitness.values)
+    for axis in range(num_objectives):
+        order = sorted(range(size), key=lambda i: front[i].fitness.values[axis])
+        low = front[order[0]].fitness.values[axis]
+        high = front[order[-1]].fitness.values[axis]
+        distances[order[0]] = distances[order[-1]] = float('inf')
+        span = high - low
+        if span <= 0:
+            continue
+        for rank in range(1, size - 1):
+            nxt = front[order[rank + 1]].fitness.values[axis]
+            prev = front[order[rank - 1]].fitness.values[axis]
+            distances[order[rank]] += (nxt - prev) / span
+    return distances
+
+
+@default_selection_behaviour
+def nsga2_selection(individuals: PopulationT, pop_size: int) -> PopulationT:
+    """NSGA-II environmental selection: Pareto rank, then crowding distance.
+
+    An alternative to ``spea2_selection`` for multi-objective runs. SPEA-2
+    scores density with a k-th-nearest-neighbour estimate over the whole
+    population and truncates one point at a time -- O(N^3) in the worst case
+    and biased towards whichever region happens to be dense. NSGA-II keeps
+    whole fronts and only needs crowding distance on the front that
+    overflows, which is O(M N log N) and spreads the retained solutions more
+    evenly along the front -- what matters on objectives that are strongly
+    correlated, where the front is a thin arc and losing its parsimonious end
+    means losing the interpretable solutions.
+    """
+    chosen: List[Individual] = []
+    for front in fast_non_dominated_sort(list(individuals)):
+        if len(chosen) + len(front) <= pop_size:
+            chosen.extend(front)
+            continue
+        distances = crowding_distances(front)
+        order = sorted(range(len(front)), key=lambda i: distances[i], reverse=True)
+        chosen.extend(front[i] for i in order[:pop_size - len(chosen)])
+        break
+    return chosen
 
 
 # Code of spea2 selection is modified part of DEAP library (Library URL: https://github.com/DEAP/deap).

@@ -46,11 +46,16 @@ class ReproductionController:
                  mutation: Mutation,
                  crossover: Crossover,
                  window_size: int = 10,
+                 mating_selection: Optional[Selection] = None,
                  ):
         self.parameters = parameters
-        self.selection = selection
+        self.selection = mating_selection or selection
         self.mutation = mutation
         self.crossover = crossover
+        #: Sampling with replacement decouples the mating-pool size from the
+        #: population size, so the pool can be larger than the population and
+        #: selection is free to favour the fitter parents.
+        self._mating_with_replacement = mating_selection is not None
 
         self._minimum_valid_ratio = parameters.required_valid_ratio * 0.5
         self._window_size = window_size
@@ -101,7 +106,10 @@ class ReproductionController:
             residual_size = total_target_size - len(collected_next_population)
             residual_size = max(MIN_POP_SIZE,
                                 int(residual_size / self.mean_success_rate))
-            residual_size = min(len(population), residual_size)
+            if not self._mating_with_replacement:
+                # Selection without replacement cannot return more parents than
+                # it was given, so asking for more is pointless.
+                residual_size = min(len(population), residual_size)
 
             # Reproduce the required number of individuals that equals residual size
             partial_next_population = self.reproduce_uncontrolled(population, evaluator, residual_size)
