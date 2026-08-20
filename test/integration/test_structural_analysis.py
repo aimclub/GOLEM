@@ -63,7 +63,6 @@ def test_structural_analysis():
                                  requirements=requirements,
                                  path_to_save=path_to_save,
                                  is_visualize_per_iteration=False)
-
     optimized_graph, _ = sa.optimize(graph=opt_graph, n_jobs=1,
                                      max_iter=2)
 

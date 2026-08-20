@@ -100,6 +100,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         Args:
           graph: graph to calculate objective
+          multi_obj: If optimization was multi objective.
         """
         self.log.info('Hyperparameters optimization start: estimation of metric for initial graph')
 
@@ -179,8 +180,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
                              f'{metrics_formatted}')
         else:
             self.log.message('Initial metric dominates all found solutions. Return initial graph.')
-            final_graphs = self.init_graph
-            self.obtained_metric = self.init_metric
+            final_graphs = [self.init_graph]
+            self.obtained_metric = [self.init_metric]
         return final_graphs
 
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
@@ -231,7 +232,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
     @staticmethod
     def set_arg_node(graph: OptGraph, node_id: int, node_params: dict) -> OptGraph:
-        """ Method for parameters setting to a graph
+        """ Method for parameters setting to a node
 
         Args:
             graph: graph which contains the node
@@ -239,13 +240,13 @@ class BaseTuner(Generic[DomainGraphForTune]):
             node_params: dictionary with labeled parameters to set
 
         Returns:
-            graph with new hyperparameters in each node
+            graph with new hyperparameters in the specified node
         """
 
         # Remove label prefixes
         node_params = convert_parameters(node_params)
 
-        # Update parameters in nodes
+        # Update parameters in the specified node
         graph.nodes[node_id].parameters = node_params
 
         return graph

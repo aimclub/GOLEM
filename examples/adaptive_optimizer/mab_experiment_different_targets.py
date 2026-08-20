@@ -72,6 +72,7 @@ def run_experiment_node_num(adaptive_mutation_type: MutationAgentTypeEnum,
         optimizer, _ = graph_search_setup(
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
+            node_types=['x', 'y', 'z'],
             algorithm_parameters=get_graph_gp_params(objective=objective,
                                                      adaptive_mutation_type=adaptive_mutation_type,
                                                      context_agent_type=context_agent_type),
@@ -95,6 +96,7 @@ def run_experiment_edge_num(adaptive_mutation_type: MutationAgentTypeEnum,
         optimizer, _ = graph_search_setup(
             objective=objective,
             optimizer_cls=EvoGraphOptimizer,
+            node_types=['x', 'y', 'z'],
             algorithm_parameters=get_graph_gp_params(objective=objective,
                                                      adaptive_mutation_type=adaptive_mutation_type,
                                                      context_agent_type=context_agent_type),
@@ -112,7 +114,7 @@ def run_experiment_graphs_ratio_edges_nodes(adaptive_mutation_type: MutationAgen
     """In this experiment setup we generate different graphs with different ratios of #Edges/#Nodes.
     Respectively, probabilities of adding edges and adding nodes must be different for different targets."""
 
-    node_types = ['x']
+    node_types = ['x', 'y', 'z']
     for target in generate_gnp_graphs(gnp_probs=[0.15, 0.3], graph_size=100, node_types=node_types):
         # Setup objective that measures some graph-theoretic similarity measure
         objective = Objective(
@@ -147,7 +149,7 @@ def run_experiment_trees(adaptive_mutation_type: MutationAgentTypeEnum,
                          trial_timeout: int = 15,
                          trial_iterations: Optional[int] = 500,
                          run_func: Callable = run_adaptive_mutations):
-    node_types = ['x']
+    node_types = ['x', 'y', 'z']
     for target in generate_trees(graph_sizes=[20, 30, 50], node_types=node_types):
         # Setup objective that measures some graph-theoretic similarity measure
         objective = Objective(

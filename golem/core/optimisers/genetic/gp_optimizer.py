@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Union, Any
+from typing import Any, Optional, Sequence, Union
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -35,41 +35,41 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters,
                  use_saved_state: bool = False,
-                 saved_state_path: str = 'saved_optimisation_state/main/evo_graph_optimiser',
-                 saved_state_file: str = None,
+                 saved_state_path: Optional[str] = None,
+                 saved_state_file: Optional[str] = None,
                  **custom_optimizer_params
                  ):
         super().__init__(objective, initial_graphs, requirements, graph_generation_params,
                          graph_optimizer_params, use_saved_state, saved_state_path, saved_state_file,
                          **custom_optimizer_params)
+        if self._is_restored_from_saved_state:
+            # all the operators and adaptive parameters are contained in the restored state
+            return
+        # Define genetic operators
+        self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
+        self.selection = Selection(graph_optimizer_params)
+        self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
+        self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
+        self.inheritance = Inheritance(graph_optimizer_params, self.selection)
+        self.elitism = Elitism(graph_optimizer_params)
+        self.operators = [self.regularization, self.selection, self.crossover,
+                          self.mutation, self.inheritance, self.elitism]
+        self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation, self.crossover)
 
-        if not use_saved_state:
-            # Define genetic operators
-            self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
-            self.selection = Selection(graph_optimizer_params)
-            self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
-            self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
-            self.inheritance = Inheritance(graph_optimizer_params, self.selection)
-            self.elitism = Elitism(graph_optimizer_params)
-            self.operators = [self.regularization, self.selection, self.crossover,
-                              self.mutation, self.inheritance, self.elitism]
-            self.reproducer = ReproductionController(graph_optimizer_params, self.selection, self.mutation,
-                                                     self.crossover)
+        # Define adaptive parameters
+        self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
+        self._operators_prob = init_adaptive_operators_prob(graph_optimizer_params)
+        self._graph_depth = AdaptiveGraphDepth(self.generations,
+                                               start_depth=requirements.start_depth,
+                                               max_depth=requirements.max_depth,
+                                               max_stagnation_gens=graph_optimizer_params.adaptive_depth_max_stagnation,
+                                               adaptive=graph_optimizer_params.adaptive_depth)
 
-            # Define adaptive parameters
-            self._pop_size: PopulationSize = init_adaptive_pop_size(graph_optimizer_params, self.generations)
-            self._operators_prob = init_adaptive_operators_prob(graph_optimizer_params)
-            self._graph_depth = AdaptiveGraphDepth(self.generations,
-                                                   start_depth=requirements.start_depth,
-                                                   max_depth=requirements.max_depth,
-                                                   max_stagnation_gens=graph_optimizer_params.adaptive_depth_max_stagnation,
-                                                   adaptive=graph_optimizer_params.adaptive_depth)
-
-            # Define initial parameters
-            self.requirements.max_depth = self._graph_depth.initial
-            self.graph_optimizer_params.pop_size = self._pop_size.initial
-            self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
-                                        for graph in self.initial_graphs]
+        # Define initial parameters
+        self.requirements.max_depth = self._graph_depth.initial
+        self.graph_optimizer_params.pop_size = self._pop_size.initial
+        self.initial_individuals = [Individual(graph, metadata=requirements.static_individual_metadata)
+                                    for graph in self.initial_graphs]
 
     def _initial_population(self, evaluator: EvaluationOperator):
         """ Initializes the initial population """
@@ -79,18 +79,23 @@ class EvoGraphOptimizer(PopulationalOptimizer):
 
         if len(self.initial_individuals) < pop_size:
             self.initial_individuals = self._extend_population(self.initial_individuals, pop_size)
-            # Adding of extended population to history
-            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions')
+            # Adding of extended population to history.
+            # The extension is bookkeeping around the same zero generation, not an
+            # evolutionary step: counting it as a generation would silently shorten
+            # the run by one generation whenever the initial population is extended.
+            self._update_population(evaluator(self.initial_individuals), 'extended_initial_assumptions',
+                                    evolutionary_step=False)
 
     def _extend_population(self, pop: PopulationT, target_pop_size: int) -> PopulationT:
         verifier = self.graph_generation_params.verifier
         extended_pop = list(pop)
         pop_graphs = [ind.graph for ind in extended_pop]
 
-        # Set mutation probabilities to 1.0
-        initial_req = deepcopy(self.requirements)
-        initial_req.mutation_prob = 1.0
-        self.mutation.update_requirements(requirements=initial_req)
+        # Set mutation probability to 1.0: the Mutation operator reads it from the
+        # algorithm parameters, not from the graph requirements
+        initial_parameters = deepcopy(self.graph_optimizer_params)
+        initial_parameters.mutation_prob = 1.0
+        self.mutation.update_requirements(parameters=initial_parameters)
 
         for iter_num in range(MAX_GRAPH_GEN_ATTEMPTS):
             if len(extended_pop) == target_pop_size:
@@ -106,7 +111,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                              f'Current size {len(pop)}, required {target_pop_size} graphs.')
 
         # Reset mutation probabilities to default
-        self.mutation.update_requirements(requirements=self.requirements)
+        self.mutation.update_requirements(parameters=self.graph_optimizer_params, requirements=self.requirements)
         return extended_pop
 
     def _evolve_population(self, evaluator: EvaluationOperator) -> PopulationT:

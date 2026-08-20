@@ -15,17 +15,20 @@ from golem.core.dag.graph_verifier import GraphVerifier, VerifierRuleType
 from golem.core.dag.verification_rules import DEFAULT_DAG_RULES
 from golem.core.log import default_log
 from golem.core.optimisers.advisor import DefaultChangeAdvisor
-from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.genetic.evaluation import DelegateEvaluator
 from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import GraphFunction, Objective, ObjectiveFunction
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.optimisers.opt_node_factory import DefaultOptNodeFactory, OptNodeFactory
+from golem.core.optimisers.optimization_parameters import OptimizationParameters
 from golem.core.optimisers.random_graph_factory import RandomGraphFactory, RandomGrowthGraphFactory
 from golem.utilities.random import RandomStateHandler
+from golem.utilities.utilities import set_random_seed
 
 STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
+# base directory (relative to `default_data_dir`) where optimisation state snapshots are kept
+SAVED_STATE_BASE_DIR = 'saved_optimisation_state'
 
 
 def do_nothing_callback(*args, **kwargs):
@@ -52,6 +55,7 @@ class AlgorithmParameters:
     adaptive_depth: bool = False
     adaptive_depth_max_stagnation: int = 3
     structural_diversity_frequency_check: int = STRUCTURAL_DIVERSITY_FREQUENCY_CHECK
+    seed = None
 
 
 @dataclass
@@ -107,19 +111,18 @@ class GraphOptimizer:
     :param requirements: implementation-independent requirements for graph optimizer
     :param graph_generation_params: parameters for new graph generation
     :param graph_optimizer_params: parameters for specific implementation of graph optimizer
-
-    Additional custom params can be specified with `custom_optimizer_params`.
+    :param saved_state_path: directory for saving optimisation state snapshots, relative to `default_data_dir`.
+        If unspecified, a per-class default `saved_optimisation_state/<ClassName>` is used.
     """
 
     def __init__(self,
                  objective: Objective,
                  initial_graphs: Optional[Sequence[Union[Graph, Any]]] = None,
-                 # TODO: rename params to avoid confusion
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
-                 graph_optimizer_params: Optional[AlgorithmParameters] = None,
-                 saved_state_path='saved_optimisation_state/main',
-                 **custom_optimizer_params):
+                 graph_optimizer_params: Optional[
+                     AlgorithmParameters] = None,  # check if correct for inherited optimizers
+                 saved_state_path: Optional[str] = None):
         self.log = default_log(self)
         self._objective = objective
         initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
@@ -131,10 +134,12 @@ class GraphOptimizer:
         self._iteration_callback: IterationCallback = do_nothing_callback
         self._history = OptHistory(objective.get_info(), requirements.history_dir) \
             if requirements and requirements.keep_history else None
+
+        set_random_seed(self.graph_optimizer_params.seed)
         # Log random state for reproducibility of runs
         RandomStateHandler.log_random_state()
 
-        self._saved_state_path = saved_state_path
+        self._saved_state_path = saved_state_path or os.path.join(SAVED_STATE_BASE_DIR, type(self).__name__)
         self._run_id = str(uuid.uuid1())
 
     @property
@@ -170,42 +175,37 @@ class GraphOptimizer:
     @property
     def _progressbar(self):
         if self.requirements.show_progress:
-            if self.use_saved_state:
-                bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen',
-                           initial=self.current_generation_num - 2)
-            else:
-                bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
+            bar = tqdm(total=self.requirements.num_of_generations, desc='Generations', unit='gen', initial=0)
         else:
             # disable call to tqdm.__init__ to avoid stdout/stderr access inside it
             # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
             bar = EmptyProgressBar()
         return bar
 
-    def save(self, saved_state_path):
-        """
-        Method for serializing and saving a class object to a file using the dill library
-        :param str saved_state_path: full path to the saved state file (including filename)
-        """
-        folder_path = os.path.dirname(os.path.abspath(saved_state_path))
-        if not os.path.isdir(folder_path):
-            os.makedirs(folder_path)
-            self.log.info(f'Created directory for saving optimization state: {folder_path}')
-        with open(saved_state_path, 'wb') as f:
-            pickle.dump(self.__dict__, f, 2)
+    def save(self, saved_state_file: str):
+        """Serializes the optimizer state and saves it to a file using the dill library.
 
-    def load(self, saved_state_path):
+        :param saved_state_file: full path to the saved state file (including filename)
         """
-        Method for loading a serialized class object from file using the dill library
-        :param str saved_state_path: full path to the saved state file
+        os.makedirs(os.path.dirname(os.path.abspath(saved_state_file)), exist_ok=True)
+        with open(saved_state_file, 'wb') as f:
+            pickle.dump(self.__dict__, f, pickle.HIGHEST_PROTOCOL)
+
+    def load(self, saved_state_file: str):
+        """Loads a serialized optimizer state from a file using the dill library.
+
+        :param saved_state_file: full path to the saved state file
         """
-        with open(saved_state_path, 'rb') as f:
+        with open(saved_state_file, 'rb') as f:
             self.__dict__.update(pickle.load(f))
 
-    def _find_latest_dir(self, directory: str) -> str:
-        return max([os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(
-            os.path.join(directory, d))], key=os.path.getmtime)
+    @staticmethod
+    def _find_latest_dir(directory: str) -> str:
+        return max((os.path.join(directory, d) for d in os.listdir(directory)
+                    if os.path.isdir(os.path.join(directory, d))), key=os.path.getmtime)
 
-    def _find_latest_file_in_dir(self, directory: str) -> str:
+    @staticmethod
+    def _find_latest_file_in_dir(directory: str) -> str:
         return max(glob.glob(os.path.join(directory, '*')), key=os.path.getmtime)
 
 

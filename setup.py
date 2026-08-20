@@ -6,15 +6,21 @@ import setuptools
 # The directory containing this file
 HERE = Path(__file__).parent.resolve()
 
+# Read version from version.py
+version_info = {}
+with open(HERE / 'golem' / 'version.py') as fp:
+    exec(fp.read(), version_info)
+
+VERSION = version_info['__version__']
+
 # The text of the README file
 NAME = 'thegolem'
-VERSION = '0.4.0'
 AUTHOR = 'NSS Lab'
 SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutionary Methods'
 
 README = Path(HERE, 'README_en.rst').read_text(encoding='utf-8')
 URL = 'https://github.com/aimclub/GOLEM'
-REQUIRES_PYTHON = '>=3.8'
+REQUIRES_PYTHON = '>=3.10'
 LICENSE = 'BSD 3-Clause'
 
 
@@ -44,7 +50,7 @@ setuptools.setup(
     url=URL,
     python_requires=REQUIRES_PYTHON,
     license=LICENSE,
-    packages=setuptools.find_packages(exclude=['test*']),
+    packages=setuptools.find_packages(exclude=['test*', 'docs*', 'examples*', 'experiments*']),
     include_package_data=True,
     install_requires=_get_requirements('requirements.txt'),
     extras_require={
@@ -53,8 +59,10 @@ setuptools.setup(
     },
     classifiers=[
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10'
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14'
     ],
 )

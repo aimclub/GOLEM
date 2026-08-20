@@ -279,8 +279,8 @@ def extract_objectives(individuals: List[List[Any]], objectives_numbers: Tuple[i
 
 
 def figure_to_array(fig):
-    img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    img = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+    img = img.reshape(fig.canvas.get_width_height()[::-1] + (4,))
     return img
 
 
