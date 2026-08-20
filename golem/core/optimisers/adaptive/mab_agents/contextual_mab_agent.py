@@ -23,6 +23,8 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
     :param available_operations: available operations
     :param n_jobs: n_jobs
     :param enable_logging: bool logging flag
+    :param path_to_save: path to the directory (or a .pkl file) where the agent state
+        is saved after each partial fit; if None, the agent is not saved automatically
     """
 
     def __init__(self, actions: Sequence[ActType],
@@ -30,9 +32,11 @@ class ContextualMultiArmedBanditAgent(MultiArmedBanditAgent):
                  available_operations: List[str],
                  n_jobs: int = 1,
                  enable_logging: bool = True,
-                 decaying_factor: float = 1.0):
+                 decaying_factor: float = 1.0,
+                 path_to_save: Optional[str] = None):
         super().__init__(actions=actions, n_jobs=n_jobs, enable_logging=enable_logging,
-                         decaying_factor=decaying_factor, is_initial_fit=False)
+                         decaying_factor=decaying_factor, is_initial_fit=False,
+                         path_to_save=path_to_save)
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.UCB1(alpha=0.8),
                           neighborhood_policy=NeighborhoodPolicy.Clusters(),
