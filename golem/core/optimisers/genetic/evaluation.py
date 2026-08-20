@@ -110,18 +110,24 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
         n_jobs: number of jobs for multiprocessing or 1 for no multiprocessing.
         graph_cleanup_fn: function to call after graph evaluation, primarily for memory cleanup.
         delegate_evaluator: delegate graph fitter (e.g. for remote graph fitting before evaluation)
+        collect_garbage: run an explicit ``gc.collect()`` after each evaluated
+            population. Useful when the objective leaves large cyclic garbage
+            behind (fitted models, cached tensors); a needless cost otherwise,
+            since a full collection scans the whole live heap.
     """
 
     def __init__(self,
                  adapter: BaseOptimizationAdapter,
                  n_jobs: int = 1,
                  graph_cleanup_fn: Optional[GraphFunction] = None,
-                 delegate_evaluator: Optional[DelegateEvaluator] = None):
+                 delegate_evaluator: Optional[DelegateEvaluator] = None,
+                 collect_garbage: bool = True):
         self._adapter = adapter
         self._objective_eval = None
         self._cleanup = graph_cleanup_fn
         self._post_eval_callback = None
         self._delegate_evaluator = delegate_evaluator
+        self._collect_garbage = collect_garbage
 
         self.timer = None
         self.logger = default_log(self)
@@ -189,9 +195,20 @@ class BaseGraphEvaluationDispatcher(ObjectiveEvaluationDispatcher):
             self._post_eval_callback(domain_graph)
         if self._cleanup:
             self._cleanup(domain_graph)
-        gc.collect()
-
+        # NB: the full collection that used to run here fired once per
+        # individual. A gen-2 collect costs time proportional to the size of
+        # the whole live heap, so on domains whose objective keeps large
+        # objects alive (cached tensors, fitted models) it dominated the
+        # evaluation itself -- ~85 ms per graph, ~70% of the optimiser's wall
+        # clock, on the EPDE equation-discovery objective. It is now done once
+        # per population instead (see `collect_garbage`), which keeps the
+        # memory-hygiene intent at 1/pop_size of the cost.
         return fitness, domain_graph
+
+    def collect_garbage(self):
+        """Population-level heap cleanup, called once per evaluated generation."""
+        if self._collect_garbage:
+            gc.collect()
 
     def evaluate_with_cache(self, population: PopulationT) -> PopulationT:
         reversed_population = list(reversed(population))
@@ -229,9 +246,11 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
                  adapter: BaseOptimizationAdapter,
                  n_jobs: int = 1,
                  graph_cleanup_fn: Optional[GraphFunction] = None,
-                 delegate_evaluator: Optional[DelegateEvaluator] = None):
+                 delegate_evaluator: Optional[DelegateEvaluator] = None,
+                 collect_garbage: bool = True):
 
-        super().__init__(adapter, n_jobs, graph_cleanup_fn, delegate_evaluator)
+        super().__init__(adapter, n_jobs, graph_cleanup_fn, delegate_evaluator,
+                         collect_garbage)
 
     def dispatch(self, objective: ObjectiveFunction, timer: Optional[Timer] = None) -> EvaluationOperator:
         """Return handler to this object that hides all details
@@ -262,6 +281,7 @@ class MultiprocessingDispatcher(BaseGraphEvaluationDispatcher):
         MemoryAnalytics.log(self.logger,
                             additional_info='parallel evaluation of population',
                             logging_level=logging.INFO)
+        self.collect_garbage()
         return successful_evals
 
 
@@ -276,4 +296,5 @@ class SequentialDispatcher(BaseGraphEvaluationDispatcher):
         evaluation_results = [self.evaluate_single(ind.graph, ind.uid) for ind in individuals_to_evaluate]
         individuals_evaluated = self.apply_evaluation_results(individuals_to_evaluate, evaluation_results)
         evaluated_population = individuals_evaluated + individuals_to_skip
+        self.collect_garbage()
         return evaluated_population

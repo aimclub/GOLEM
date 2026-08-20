@@ -55,7 +55,8 @@ class PopulationalOptimizer(GraphOptimizer):
         self.eval_dispatcher = dispatcher_type(adapter=graph_generation_params.adapter,
                                                n_jobs=requirements.n_jobs,
                                                graph_cleanup_fn=_try_unfit_graph,
-                                               delegate_evaluator=graph_generation_params.remote_evaluator)
+                                               delegate_evaluator=graph_generation_params.remote_evaluator,
+                                               collect_garbage=requirements.collect_garbage)
 
         # early_stopping_iterations and early_stopping_timeout may be None, so use some obvious max number
         max_stagnation_length = requirements.early_stopping_iterations or requirements.num_of_generations

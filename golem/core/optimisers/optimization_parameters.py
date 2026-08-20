@@ -37,6 +37,13 @@ class OptimizationParameters:
     :param show_progress: bool indicating whether to show progress using tqdm or not
     :param collect_intermediate_metric: save metrics for intermediate (non-root) nodes in graph
     :param parallelization_mode: identifies the way to parallelize population evaluation
+    :param collect_garbage: run an explicit ``gc.collect()`` after every evaluated
+        population.
+
+        Worth keeping for objectives that leave large cyclic garbage behind
+        (fitted models, cached tensors). A full collection walks the entire live
+        heap, so on domains with a big long-lived working set it can cost more
+        than the evaluations it follows -- switch it off there.
 
     History options:
 
@@ -59,6 +66,7 @@ class OptimizationParameters:
     show_progress: bool = True
     collect_intermediate_metric: bool = False
     parallelization_mode: str = 'populational'
+    collect_garbage: bool = True
     static_individual_metadata: dict = field(default_factory=lambda: {
         'use_input_preprocessing': True
     })

@@ -1,4 +1,5 @@
 import datetime
+import gc
 from functools import partial
 
 import pytest
@@ -102,3 +103,34 @@ def test_n_jobs_for_dispatcher():
     for n_jobs in (0, -cpu_count() - 1, -cpu_count() - 2):
         with pytest.raises(ValueError):
             _ = determine_n_jobs(n_jobs)
+
+
+@pytest.mark.parametrize('dispatcher_class', [SequentialDispatcher, MultiprocessingDispatcher])
+def test_garbage_is_collected_once_per_population(dispatcher_class, monkeypatch):
+    """A full collection walks the whole live heap, so it must not run per
+    individual: on objectives that keep a large working set alive that cost
+    dominates the evaluations themselves."""
+    _, population = set_up_tests()
+    collections = []
+    monkeypatch.setattr(gc, 'collect', lambda *args, **kwargs: collections.append(1))
+
+    dispatcher = dispatcher_class(DirectAdapter())
+    evaluator = dispatcher.dispatch(get_objective)
+    evaluated_population = evaluator(population)
+
+    assert len(evaluated_population) == len(population)
+    assert len(collections) == 1
+
+
+@pytest.mark.parametrize('dispatcher_class', [SequentialDispatcher, MultiprocessingDispatcher])
+def test_garbage_collection_can_be_disabled(dispatcher_class, monkeypatch):
+    _, population = set_up_tests()
+    collections = []
+    monkeypatch.setattr(gc, 'collect', lambda *args, **kwargs: collections.append(1))
+
+    dispatcher = dispatcher_class(DirectAdapter(), collect_garbage=False)
+    evaluator = dispatcher.dispatch(get_objective)
+    evaluated_population = evaluator(population)
+
+    assert len(evaluated_population) == len(population)
+    assert collections == []
