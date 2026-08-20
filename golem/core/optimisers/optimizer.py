@@ -1,3 +1,8 @@
+import glob
+import os
+import uuid
+import dill as pickle
+
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Sequence, Union
@@ -22,6 +27,8 @@ from golem.utilities.random import RandomStateHandler
 from golem.utilities.utilities import set_random_seed
 
 STRUCTURAL_DIVERSITY_FREQUENCY_CHECK = 5
+# base directory (relative to `default_data_dir`) where optimisation state snapshots are kept
+SAVED_STATE_BASE_DIR = 'saved_optimisation_state'
 
 
 def do_nothing_callback(*args, **kwargs):
@@ -104,6 +111,8 @@ class GraphOptimizer:
     :param requirements: implementation-independent requirements for graph optimizer
     :param graph_generation_params: parameters for new graph generation
     :param graph_optimizer_params: parameters for specific implementation of graph optimizer
+    :param saved_state_path: directory for saving optimisation state snapshots, relative to `default_data_dir`.
+        If unspecified, a per-class default `saved_optimisation_state/<ClassName>` is used.
     """
 
     def __init__(self,
@@ -112,7 +121,8 @@ class GraphOptimizer:
                  requirements: Optional[OptimizationParameters] = None,
                  graph_generation_params: Optional[GraphGenerationParams] = None,
                  graph_optimizer_params: Optional[
-                     AlgorithmParameters] = None):  # check if correct for inherited optimizers
+                     AlgorithmParameters] = None,  # check if correct for inherited optimizers
+                 saved_state_path: Optional[str] = None):
         self.log = default_log(self)
         self._objective = objective
         initial_graphs = graph_generation_params.adapter.adapt(initial_graphs) if initial_graphs else None
@@ -128,6 +138,9 @@ class GraphOptimizer:
         set_random_seed(self.graph_optimizer_params.seed)
         # Log random state for reproducibility of runs
         RandomStateHandler.log_random_state()
+
+        self._saved_state_path = saved_state_path or os.path.join(SAVED_STATE_BASE_DIR, type(self).__name__)
+        self._run_id = str(uuid.uuid1())
 
     @property
     def objective(self) -> Objective:
@@ -168,6 +181,32 @@ class GraphOptimizer:
             # part of a workaround for https://github.com/nccr-itmo/FEDOT/issues/765
             bar = EmptyProgressBar()
         return bar
+
+    def save(self, saved_state_file: str):
+        """Serializes the optimizer state and saves it to a file using the dill library.
+
+        :param saved_state_file: full path to the saved state file (including filename)
+        """
+        os.makedirs(os.path.dirname(os.path.abspath(saved_state_file)), exist_ok=True)
+        with open(saved_state_file, 'wb') as f:
+            pickle.dump(self.__dict__, f, pickle.HIGHEST_PROTOCOL)
+
+    def load(self, saved_state_file: str):
+        """Loads a serialized optimizer state from a file using the dill library.
+
+        :param saved_state_file: full path to the saved state file
+        """
+        with open(saved_state_file, 'rb') as f:
+            self.__dict__.update(pickle.load(f))
+
+    @staticmethod
+    def _find_latest_dir(directory: str) -> str:
+        return max((os.path.join(directory, d) for d in os.listdir(directory)
+                    if os.path.isdir(os.path.join(directory, d))), key=os.path.getmtime)
+
+    @staticmethod
+    def _find_latest_file_in_dir(directory: str) -> str:
+        return max(glob.glob(os.path.join(directory, '*')), key=os.path.getmtime)
 
 
 IterationCallback = Callable[[PopulationT, GraphOptimizer], Any]
