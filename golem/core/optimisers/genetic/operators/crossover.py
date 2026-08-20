@@ -1,11 +1,12 @@
 from copy import deepcopy
+from functools import partial
 from itertools import chain
 from math import ceil
-from random import choice, random, sample
-from typing import Callable, Union, Iterable, Tuple, TYPE_CHECKING
+from random import choice, random, sample, randrange
+from typing import Callable, Optional, Union, Iterable, Tuple, TYPE_CHECKING
 
 from golem.core.adapter import register_native
-from golem.core.dag.graph_utils import nodes_from_layer, node_depth
+from golem.core.dag.graph_utils import nodes_from_layer, node_depth, get_all_simple_paths, get_connected_components
 from golem.core.optimisers.genetic.gp_operators import equivalent_subtree, replace_subtrees
 from golem.core.optimisers.genetic.operators.operator import PopulationT, Operator
 from golem.core.optimisers.graph import OptGraph, OptNode
@@ -23,6 +24,7 @@ class CrossoverTypesEnum(Enum):
     subtree = 'subtree'
     one_point = "one_point"
     none = 'none'
+    subgraph = 'subgraph_crossover'
     exchange_edges = 'exchange_edges'
     exchange_parents_one = 'exchange_parents_one'
     exchange_parents_both = 'exchange_parents_both'
@@ -61,6 +63,13 @@ class Crossover(Operator):
                 first_object = deepcopy(ind_first.graph)
                 second_object = deepcopy(ind_second.graph)
                 new_graphs = crossover_func(first_object, second_object, max_depth=self.requirements.max_depth)
+                if all(new_graph == parent.graph
+                       for new_graph, parent in zip(new_graphs, (ind_first, ind_second))):
+                    # The crossover gave up (e.g. no sink-valid pick, or the depth guard
+                    # rejected the swap) and returned the parents unchanged. Breeding them
+                    # as offspring would only re-evaluate duplicates of already-evaluated
+                    # individuals, so spend the attempt budget on a fresh random draw instead.
+                    continue
                 are_correct = all(self.graph_generation_params.verifier(new_graph) for new_graph in new_graphs)
                 if are_correct:
                     parent_individuals = (ind_first, ind_second)
@@ -80,12 +89,14 @@ class Crossover(Operator):
         return self.graph_generation_params.adapter.adapt_func(crossover_func)
 
     def _crossover_by_type(self, crossover_type: CrossoverTypesEnum) -> CrossoverCallable:
+        sink_filter = self.graph_generation_params.advisor.can_be_sink
         crossovers = {
-            CrossoverTypesEnum.subtree: subtree_crossover,
-            CrossoverTypesEnum.one_point: one_point_crossover,
+            CrossoverTypesEnum.subtree: partial(subtree_crossover, sink_filter=sink_filter),
+            CrossoverTypesEnum.one_point: partial(one_point_crossover, sink_filter=sink_filter),
             CrossoverTypesEnum.exchange_edges: exchange_edges_crossover,
             CrossoverTypesEnum.exchange_parents_one: exchange_parents_one_crossover,
-            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover
+            CrossoverTypesEnum.exchange_parents_both: exchange_parents_both_crossover,
+            CrossoverTypesEnum.subgraph: subgraph_crossover
         }
         if crossover_type in crossovers:
             return crossovers[crossover_type]
@@ -107,36 +118,70 @@ class Crossover(Operator):
 
 
 @register_native
-def subtree_crossover(graph_1: OptGraph, graph_2: OptGraph,
-                      max_depth: int, inplace: bool = True) -> Tuple[OptGraph, OptGraph]:
+def subtree_crossover(graph_1: OptGraph, graph_2: OptGraph, max_depth: int, inplace: bool = True,
+                      sink_filter: Optional[Callable[[OptNode], bool]] = None) -> Tuple[OptGraph, OptGraph]:
     """Performed by the replacement of random subtree
-    in first selected parent to random subtree from the second parent"""
+    in first selected parent to random subtree from the second parent.
+
+    When a sink of either graph is the crossover point, the head of the
+    incoming subtree is checked with ``sink_filter``: an unacceptable sink
+    means the offspring is certain to be rejected by verification, so such
+    picks are retried, falling back to the old behaviour when nothing valid
+    turns up.
+    """
 
     if not inplace:
         graph_1 = deepcopy(graph_1)
         graph_2 = deepcopy(graph_2)
-    else:
-        graph_1 = graph_1
-        graph_2 = graph_2
 
-    random_layer_in_graph_first = choice(range(graph_1.depth))
-    min_second_layer = 1 if random_layer_in_graph_first == 0 and graph_2.depth > 1 else 0
-    random_layer_in_graph_second = choice(range(min_second_layer, graph_2.depth))
+    picked = None
+    for _ in range(5 if sink_filter is not None else 1):
+        layer_first = choice(range(graph_1.depth))
+        min_second_layer = 1 if layer_first == 0 and graph_2.depth > 1 else 0
+        layer_second = choice(range(min_second_layer, graph_2.depth))
+        node_first = choice(nodes_from_layer(graph_1, layer_first))
+        node_second = choice(nodes_from_layer(graph_2, layer_second))
+        if sink_filter is not None:
+            if layer_first == 0 and not sink_filter(node_second):
+                continue
+            if layer_second == 0 and not sink_filter(node_first):
+                continue
+        picked = (node_first, node_second, layer_first, layer_second)
+        break
 
-    node_from_graph_first = choice(nodes_from_layer(graph_1, random_layer_in_graph_first))
-    node_from_graph_second = choice(nodes_from_layer(graph_2, random_layer_in_graph_second))
+    if picked is None:
+        # Every considered pick would breed offspring that verification is
+        # certain to reject; unchanged parents are what those retries would
+        # have ended with anyway.
+        return graph_1, graph_2
 
-    replace_subtrees(graph_1, graph_2, node_from_graph_first, node_from_graph_second,
-                     random_layer_in_graph_first, random_layer_in_graph_second, max_depth)
+    node_first, node_second, layer_first, layer_second = picked
+    replace_subtrees(graph_1, graph_2, node_first, node_second, layer_first, layer_second, max_depth)
 
     return graph_1, graph_2
 
 
 @register_native
-def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int) -> Tuple[OptGraph, OptGraph]:
+def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth: int,
+                        sink_filter: Optional[Callable[[OptNode], bool]] = None) -> Tuple[OptGraph, OptGraph]:
     """Finds common structural parts between two trees, and after that randomly
     chooses the location of nodes, subtrees of which will be swapped"""
     pairs_of_nodes = equivalent_subtree(graph_first, graph_second)
+    if pairs_of_nodes and sink_filter is not None:
+        # A pair that would put an unacceptable head into a sink position can
+        # only breed offspring that verification rejects; prefer the rest.
+        # NB: root_nodes() is used instead of root_node, because the latter returns
+        # a list (not a node) for graphs with several roots, and an identity check
+        # against a list would silently accept every pair.
+        roots_first, roots_second = graph_first.root_nodes(), graph_second.root_nodes()
+        pairs_of_nodes = [
+            (first, second) for first, second in pairs_of_nodes
+            if (not any(first is root for root in roots_first) or sink_filter(second))
+            and (not any(second is root for root in roots_second) or sink_filter(first))
+        ]
+        # No acceptable pair means every possible offspring would be rejected
+        # and the parents returned unchanged after all retries - which is what
+        # an empty pair list produces immediately, minus the wasted attempts.
     if pairs_of_nodes:
         node_from_graph_first, node_from_graph_second = choice(pairs_of_nodes)
 
@@ -146,6 +191,62 @@ def one_point_crossover(graph_first: OptGraph, graph_second: OptGraph, max_depth
         replace_subtrees(graph_first, graph_second, node_from_graph_first, node_from_graph_second,
                          layer_in_graph_first, layer_in_graph_second, max_depth)
     return graph_first, graph_second
+
+
+@register_native
+def subgraph_crossover(graph_first: OptGraph, graph_second: OptGraph, **kwargs) -> Tuple[OptGraph, OptGraph]:
+    """ A random edge is chosen and all paths between these nodes are disconnected.
+    This way each graph is divided into two subgraphs.
+    The subgraphs are exchanged between the graphs and connected randomly at the points of division.
+    Suitable for graphs with cycles. Does not guarantee not exceeding maximal depth. """
+    first_subgraphs, first_div_points = get_subgraphs(graph_first)
+    second_subgraphs, second_div_points = get_subgraphs(graph_second)
+    graph_first = connect_subgraphs(first_subgraphs[0], second_subgraphs[1], first_div_points, second_div_points)
+    graph_second = connect_subgraphs(first_subgraphs[1], second_subgraphs[0], first_div_points, second_div_points)
+
+    return graph_first, graph_second
+
+
+def get_subgraphs(graph):
+    edges = graph.get_edges()
+    if not edges:
+        return deepcopy([graph.nodes, graph.nodes]), {*deepcopy(graph.nodes)}
+
+    target, source = choice(edges)
+    graph.disconnect_nodes(target, source)
+
+    simple_paths = get_all_simple_paths(graph, source, target)
+    simple_paths.sort(key=len)
+    division_points = {source, target}
+
+    while len(simple_paths) > 0:
+        node_first, node_second = choice(simple_paths[0])
+        graph.disconnect_nodes(node_first, node_second) if node_first in node_second.nodes_from \
+            else graph.disconnect_nodes(node_second, node_first)
+        division_points.union([node_first, node_second])
+
+        simple_paths = get_all_simple_paths(graph, source, target)
+        simple_paths.sort(key=len)
+
+    subgraphs = get_connected_components(graph, [source, target])
+    return subgraphs, division_points
+
+
+def connect_subgraphs(first_subgraph, second_subgraph, first_div_points, second_div_points):
+    first_points = list(first_div_points.intersection(first_subgraph))
+    second_points = list(second_div_points.intersection(second_subgraph))
+    connections_num = min(len(first_points), len(second_points))
+    new_graph = OptGraph([*first_subgraph, *second_subgraph])
+
+    for _ in range(connections_num):
+        first_idx, second_idx = randrange(len(first_points)), randrange(len(second_points))
+        first_node, second_node = first_points.pop(first_idx), second_points.pop(second_idx)
+
+        if random() > 0.5:
+            new_graph.connect_nodes(first_node, second_node)
+        else:
+            new_graph.connect_nodes(second_node, first_node)
+    return new_graph
 
 
 @register_native
@@ -217,7 +318,7 @@ def exchange_parents_one_crossover(graph_first: OptGraph, graph_second: OptGraph
         return new_nodes
 
     edges = graph_second.get_edges()
-    nodes_with_parent_or_child = list(set(chain(*edges)))
+    nodes_with_parent_or_child = sorted(set(chain(*edges)), key=lambda node: node.descriptive_id)
     if nodes_with_parent_or_child:
 
         selected_node = choice(nodes_with_parent_or_child)
@@ -249,7 +350,7 @@ def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGrap
     def find_nodes_in_other_graph(nodes, graph: OptGraph):
         new_nodes = []
         for node in nodes:
-            new_node = graph.get_nodes_by_name(str(node))
+            new_node = graph.get_nodes_by_name(str(node)).sort(key=lambda x: x.descriptive_id)
             if new_node:
                 new_node = new_node[0]
             else:
@@ -259,7 +360,7 @@ def exchange_parents_both_crossover(graph_first: OptGraph, graph_second: OptGrap
         return new_nodes
 
     edges = graph_second.get_edges()
-    nodes_with_parent_or_child = list(set(chain(*edges)))
+    nodes_with_parent_or_child = sorted(set(chain(*edges)), key=lambda node: node.descriptive_id)
     if nodes_with_parent_or_child:
 
         selected_node2 = choice(nodes_with_parent_or_child)

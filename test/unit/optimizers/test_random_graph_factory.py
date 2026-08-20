@@ -31,4 +31,4 @@ def test_gp_composer_random_graph_generation_looping(max_depth):
         assert verifier(graph) is True
         assert graph.depth <= requirements.max_depth
     # at least one graph has depth greater than a max_depth quarter
-    assert np.any([graph.depth >= math.ceil(max_depth / 4) for graph in graphs])
+    assert np.any([graph.depth >= math.ceil(max_depth * 0.25) for graph in graphs])

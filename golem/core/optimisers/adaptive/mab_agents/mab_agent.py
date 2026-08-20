@@ -2,7 +2,8 @@ import os.path
 import _pickle as pickle
 import random
 import re
-from typing import Union, Sequence, Optional
+from functools import partial
+from typing import Union, Sequence, Optional, Callable
 
 from mabwiser.mab import MAB, LearningPolicy
 from scipy.special import softmax
@@ -11,6 +12,7 @@ from golem.core.dag.graph import Graph
 from golem.core.dag.graph_node import GraphNode
 from golem.core.optimisers.adaptive.operator_agent import OperatorAgent, ActType, ObsType, ExperienceBuffer
 from golem.core.optimisers.adaptive.reward_agent import FitnessRateRankRewardTransformer
+from golem.core.optimisers.adaptive.utils import get_callable_name
 from golem.core.paths import default_data_dir
 
 
@@ -25,7 +27,8 @@ class MultiArmedBanditAgent(OperatorAgent):
         super().__init__(actions=actions, enable_logging=enable_logging)
         self.actions = list(actions)
         self._indices = list(range(len(actions)))
-        self._arm_by_action = dict(zip(actions, self._indices))
+        # str because parent operator for mutation is stored as string for custom mutations serialisation
+        self._arm_by_action = dict(map(lambda x, y: (get_callable_name(x), y), actions, self._indices))
         self._agent = MAB(arms=self._indices,
                           learning_policy=LearningPolicy.EpsilonGreedy(epsilon=0.4),
                           n_jobs=n_jobs)

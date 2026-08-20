@@ -355,7 +355,11 @@ class GraphVisualizer:
                 if node_id in (u, v):
                     continue  # The node is adjacent to the edge.
                 p_3 = np.array(pos[node_id])
-                distance_to_node = abs(np.cross(p_1_2, p_3 - p_1)) / p_1_2_length
+                # z-component of the 2D cross product; np.cross dropped support
+                # for 2-dimensional vectors in numpy 2.0
+                p_1_3 = p_3 - p_1
+                cross_z = p_1_2[0] * p_1_3[1] - p_1_2[1] * p_1_3[0]
+                distance_to_node = abs(cross_z) / p_1_2_length
                 if (distance_to_node > min(node_distance_gap, min_distance_found)  # The node is too far.
                         or ((p_3 - p_1) @ p_1_2) < 0  # There's no perpendicular from the node to the edge.
                         or ((p_3 - p_2) @ -p_1_2) < 0):

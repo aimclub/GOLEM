@@ -1,9 +1,15 @@
 from golem.core.adapter import DirectAdapter
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
+from golem.core.optimisers.genetic.operators.operator import PopulationT
 from golem.core.optimisers.genetic.operators.selection import Selection, SelectionTypesEnum, random_selection
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from test.unit.optimizers.test_evaluation import get_objective
 from test.unit.utils import graph_first, graph_second, graph_third, graph_fourth, graph_fifth
+from random import sample
+
+
+def custom_selection(population: PopulationT, pop_size: int):
+    return sample(population, pop_size)
 
 
 def get_population():
@@ -45,6 +51,15 @@ def test_individuals_selection_random_individuals():
             len(selected_individuals) == num_of_inds)
 
 
+def test_selection_with_explicit_zero_pop_size():
+    """An explicit request for zero individuals must not silently fall back
+    to the default population size."""
+    population = get_population()
+    requirements = GPAlgorithmParameters(selection_types=[SelectionTypesEnum.tournament], pop_size=4)
+    selection = Selection(requirements)
+    assert selection(population, pop_size=0) == []
+
+
 def test_individuals_selection_equality_individuals():
     num_of_inds = 4
     one_ind = get_population()[0]
@@ -56,3 +71,13 @@ def test_individuals_selection_equality_individuals():
     selected_individuals_ref = [str(ind) for ind in selected_individuals]
     assert (len(selected_individuals) == num_of_inds and
             len(set(selected_individuals_ref)) == 1)
+
+
+def test_custom_selection():
+    num_of_inds = 3
+    population = get_population()
+    requirements = GPAlgorithmParameters(selection_types=[custom_selection], pop_size=num_of_inds)
+    selection = Selection(requirements)
+    selected_individuals = selection(population)
+    assert (all([ind in population for ind in selected_individuals]) and
+            len(selected_individuals) == num_of_inds)

@@ -26,7 +26,8 @@ def equivalent_subtree(graph_first: Any, graph_second: Any, with_primary_nodes: 
                                                            recursive_ids=all_recursive_ids)
             pairs_list.extend(equivalent_pairs)
 
-    pairs_list = list(set(pairs_list))
+    pairs_list = sorted(list(dict.fromkeys(pairs_list)),
+                        key=lambda pair: (pair[0].descriptive_id, pair[1].descriptive_id))
     if with_primary_nodes:
         return pairs_list
     # remove nodes with no children
@@ -129,7 +130,7 @@ def are_subtrees_the_same(match_set: List[Tuple[Any, Any]],
         return False
 
     for node, node2 in itertools.product(node_first.nodes_from, node_second.nodes_from):
-        if (node, node2) or (node2, node) in match_set:
+        if (node, node2) in match_set or (node2, node) in match_set:
             matched.append((node, node2))
     if len(matched) >= len(node_first.nodes_from):
         return True

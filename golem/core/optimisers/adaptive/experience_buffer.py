@@ -4,6 +4,7 @@ from typing import List, Iterable, Tuple, Optional
 import numpy as np
 
 from golem.core.optimisers.adaptive.common_types import ObsType, ActType, TrajectoryStep, GraphTrajectory
+from golem.core.optimisers.adaptive.utils import get_callable_name
 from golem.core.optimisers.opt_history_objects.individual import Individual
 from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 
@@ -97,7 +98,7 @@ class ExperienceBuffer:
 
     def collect_experience(self, obs: Individual, action: ActType, reward: float):
         self._individuals.append(obs)
-        self._actions.append(action)
+        self._actions.append(get_callable_name(action))
         self._rewards.append(reward)
 
     def retrieve_experience(self, as_graphs: bool = True) -> Tuple[List[ObsType], List[ActType], List[float]]:
@@ -124,7 +125,10 @@ class ExperienceBuffer:
         """Splits buffer in 2 parts, useful for train/validation split."""
         mask_train = np.full_like(self._individuals, False, dtype=bool)
         num_train = int(len(self._individuals) * ratio)
-        mask_train[-num_train:] = True
+        # NB: guard against num_train == 0 - the slice [-0:] covers the whole
+        # array and would invert the split for tiny buffers
+        if num_train > 0:
+            mask_train[-num_train:] = True
         if shuffle:
             np.random.default_rng().shuffle(mask_train)
         buffer_train = ExperienceBuffer(inds=np.array(self._individuals)[mask_train].tolist(),

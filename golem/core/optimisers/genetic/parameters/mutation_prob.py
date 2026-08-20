@@ -9,7 +9,7 @@ class AdaptiveMutationProb(AdaptiveParameter[float]):
     def __init__(self, default_prob: float = 0.5):
         self._current_std = 0.
         self._max_std = 0.
-        self._min_proba = 0.05
+        self._min_proba = 0.1
         self._default_prob = default_prob
 
     @property

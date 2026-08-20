@@ -52,11 +52,6 @@ You can tune all parameters of graph nodes simultaneously using ``SimultaneousTu
 .. note::
    ``IOptTuner`` implements deterministic algorithm.
 
-   For now ``IOptTuner`` can not be constrained by time, so constrain execution by number of iterations.
-
-   Also ``IOptTuner`` can optimise only `continuous` and `discrete` parameters but not `categorical` ones.
-   `Categorical` parameters will be ignored while tuning.
-
    ``IOptTuner`` is implemented using `IOpt library`_. See the `documentation`_ (in Russian) to learn more about
    the optimisation algorithm.
 
