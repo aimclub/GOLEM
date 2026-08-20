@@ -1,9 +1,9 @@
 import os.path
-import _pickle as pickle
 import random
 import re
-from functools import partial
-from typing import Union, Sequence, Optional, Callable
+from typing import Union, Sequence, Optional
+
+import dill as pickle
 
 from mabwiser.mab import MAB, LearningPolicy
 from scipy.special import softmax
@@ -85,7 +85,7 @@ class MultiArmedBanditAgent(OperatorAgent):
         if not path_to_save.endswith('.pkl'):
             os.makedirs(path_to_save, exist_ok=True)
             mabs_num = [int(name.split('_')[0]) for name in os.listdir(path_to_save)
-                        if re.fullmatch(r'\d_mab.pkl', name)]
+                        if re.fullmatch(r'\d+_mab\.pkl', name)]
             if not mabs_num:
                 max_saved_mab = 0
             else:
