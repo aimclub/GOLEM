@@ -51,6 +51,15 @@ def test_individuals_selection_random_individuals():
             len(selected_individuals) == num_of_inds)
 
 
+def test_selection_with_explicit_zero_pop_size():
+    """An explicit request for zero individuals must not silently fall back
+    to the default population size."""
+    population = get_population()
+    requirements = GPAlgorithmParameters(selection_types=[SelectionTypesEnum.tournament], pop_size=4)
+    selection = Selection(requirements)
+    assert selection(population, pop_size=0) == []
+
+
 def test_individuals_selection_equality_individuals():
     num_of_inds = 4
     one_ind = get_population()[0]

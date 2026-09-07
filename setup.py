@@ -20,7 +20,7 @@ SHORT_DESCRIPTION = 'Framework for Graph Optimization and Learning by Evolutiona
 
 README = Path(HERE, 'README_en.rst').read_text(encoding='utf-8')
 URL = 'https://github.com/aimclub/GOLEM'
-REQUIRES_PYTHON = '>=3.8'
+REQUIRES_PYTHON = '>=3.10'
 LICENSE = 'BSD 3-Clause'
 
 
@@ -59,8 +59,10 @@ setuptools.setup(
     },
     classifiers=[
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10'
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14'
     ],
 )

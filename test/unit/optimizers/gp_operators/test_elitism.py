@@ -30,6 +30,29 @@ def test_keep_n_best_elitism(set_up):
     assert len(population) == len(new_population)
 
 
+def test_keep_n_best_elitism_with_oversized_archive():
+    """Elites must not fill the whole next generation: an archive of size >= pop_size
+    would otherwise return the same individuals forever, freezing evolution."""
+    adapter = DirectAdapter()
+    graphs = [graph_first(), graph_second(), graph_third(), graph_fourth(), graph_fifth()]
+
+    def make_population(n):
+        # DirectAdapter deep-copies on adapt, so reusing source graphs is safe
+        population = [Individual(adapter.adapt(graphs[i % len(graphs)])) for i in range(n)]
+        for ind in population:
+            ind.set_evaluation_result(get_objective(ind.graph))
+        return population
+
+    new_population = make_population(4)
+    elitism = Elitism(GPAlgorithmParameters(elitism_type=ElitismTypesEnum.keep_n_best))
+    for archive_size in (4, 6):
+        archive = make_population(archive_size)
+        final_population = elitism.keep_n_best_elitism(archive, new_population)
+        assert len(final_population) <= len(new_population)
+        assert any(ind in new_population for ind in final_population), \
+            'at least one new individual must survive elitism'
+
+
 def test_replace_worst(set_up):
     best_individuals, population = set_up
     elitism = Elitism(GPAlgorithmParameters(elitism_type=ElitismTypesEnum.replace_worst))
