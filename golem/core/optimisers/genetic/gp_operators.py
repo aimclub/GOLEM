@@ -130,7 +130,7 @@ def are_subtrees_the_same(match_set: List[Tuple[Any, Any]],
         return False
 
     for node, node2 in itertools.product(node_first.nodes_from, node_second.nodes_from):
-        if (node, node2) or (node2, node) in match_set:
+        if (node, node2) in match_set or (node2, node) in match_set:
             matched.append((node, node2))
     if len(matched) >= len(node_first.nodes_from):
         return True

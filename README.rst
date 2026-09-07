@@ -196,14 +196,14 @@ GOLEM можно установить с помощью ``pip``:
 
 .. |pypi| image:: https://img.shields.io/pypi/v/thegolem.svg
    :alt: PyPI Package Version
-   :target: https://img.shields.io/pypi/v/thegolem
+   :target: https://pypi.org/project/thegolem/
 
-.. |python| image:: https://img.shields.io/pypi/pyversions/thegolem.svg
+.. |python| image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue
    :alt: Supported Python Versions
-   :target: https://img.shields.io/pypi/pyversions/thegolem
+   :target: https://pypi.org/project/thegolem/
 
 .. |license| image:: https://img.shields.io/github/license/aimclub/GOLEM
-   :alt: Supported Python Versions
+   :alt: License
    :target: https://github.com/aimclub/GOLEM/blob/main/LICENSE.md
 
 .. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/thegolem?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads

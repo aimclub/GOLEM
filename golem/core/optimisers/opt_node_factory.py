@@ -34,6 +34,18 @@ class OptNodeFactory(ABC):
         """
         pass
 
+    def get_final_node(self) -> Optional[OptNode]:
+        """
+        Returns a node fit to be the final (sink) node of the graph.
+
+        Domains often constrain what a final node may be - e.g. a pipeline
+        must end with a model, not a preprocessing step. Mutations that place
+        a new node in the sink position use this method, so domain factories
+        can propose only valid candidates instead of relying on the verifier
+        to reject the rest. The default keeps the old behaviour.
+        """
+        return self.get_node(is_primary=False)
+
     @abstractmethod
     def get_all_available_operations(self) -> List[str]:
         """

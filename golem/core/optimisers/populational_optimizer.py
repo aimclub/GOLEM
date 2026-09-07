@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from copy import deepcopy
 from random import choice
 from typing import Any, Optional, Sequence, Dict
 
@@ -72,7 +73,8 @@ class PopulationalOptimizer(GraphOptimizer):
                          self.generations.stagnation_iter_count >= max_stagnation_length),
                 'Optimisation finished: Early stopping iterations criteria was satisfied'
             ).add_condition(
-                lambda: self.generations.stagnation_time_duration >= max_stagnation_time,
+                lambda: (max_stagnation_time is not None and
+                         self.generations.stagnation_time_duration >= max_stagnation_time),
                 'Optimisation finished: Early stopping timeout criteria was satisfied'
             )
         # in how many generations structural diversity check should be performed
@@ -130,12 +132,15 @@ class PopulationalOptimizer(GraphOptimizer):
         """ Extends population to specified `target_pop_size`. """
         n = target_pop_size - len(pop)
         extended_population = list(pop)
-        extended_population.extend([Individual(graph=choice(pop).graph) for _ in range(n)])
+        # Each individual must own its graph: sharing one mutable graph object between
+        # several individuals lets an in-place change to any of them corrupt the rest.
+        extended_population.extend([Individual(graph=deepcopy(choice(pop).graph)) for _ in range(n)])
         return extended_population
 
     def _update_population(self, next_population: PopulationT, label: Optional[str] = None,
-                           metadata: Optional[Dict[str, Any]] = None):
-        self.generations.append(next_population)
+                           metadata: Optional[Dict[str, Any]] = None,
+                           evolutionary_step: bool = True):
+        self.generations.append(next_population, evolutionary_step)
         if self.requirements.keep_history:
             self._log_to_history(next_population, label, metadata)
         self._iteration_callback(next_population, self)
