@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import partial
 from typing import Tuple, Optional
 
@@ -92,7 +93,7 @@ class SimultaneousTuner(HyperoptTuner):
                                                                                         node_id=node_id,
                                                                                         node=node)
             parameters_dict.update(tunable_node_params)
-            initial_parameters.update(initial_parameters)
+            initial_parameters.update(initial_node_params)
 
         return parameters_dict, initial_parameters
 
@@ -115,8 +116,7 @@ class SimultaneousTuner(HyperoptTuner):
             parameters_dict = {**parameters_dict, **unchangeable_parameters}
 
         # Set hyperparameters for every node
-        graph = self.set_arg_graph(graph, parameters_dict)
+        graph = self.set_arg_graph(deepcopy(graph), parameters_dict)
 
-        metric_value = self.get_metric_value(graph=graph)
-
+        metric_value = self.evaluate_graph(graph=graph)
         return metric_value

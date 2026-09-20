@@ -1,7 +1,7 @@
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import List, Dict, Generic, Tuple, Any, Optional
+from typing import Callable, List, Dict, Generic, Tuple, Any, Optional
 
 import numpy as np
 from iOpt.output_system.listeners.console_outputers import ConsoleOutputListener
@@ -51,9 +51,11 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
     def __init__(self, graph: DomainGraphForTune,
                  objective_evaluate: ObjectiveEvaluate,
                  problem_parameters: IOptProblemParameters,
-                 objectives_number: int = 1):
+                 objectives_number: int = 1,
+                 evaluate_graph: Optional[Callable] = None):
         super().__init__()
         self.objective_evaluate = objective_evaluate
+        self.evaluate_graph = evaluate_graph
         self.graph = graph
 
         self.number_of_objectives = objectives_number
@@ -72,9 +74,19 @@ class GolemProblem(Problem, Generic[DomainGraphForTune]):
 
     def calculate(self, point: Point, function_value: FunctionValue) -> FunctionValue:
         new_parameters = self.get_parameters_dict_from_iopt_point(point)
-        BaseTuner.set_arg_graph(self.graph, new_parameters)
-        graph_fitness = self.objective_evaluate(self.graph)
-        metric_value = graph_fitness.value if graph_fitness.valid else self._default_metric_value
+        new_graph = BaseTuner.set_arg_graph(deepcopy(self.graph), new_parameters)
+
+        if self.evaluate_graph is not None:
+            metric_value = self.evaluate_graph(new_graph)
+        else:
+            # Fallback for standalone use of GolemProblem without a BaseTuner.
+            graph_fitness = self.objective_evaluate(new_graph)
+            metric_value = graph_fitness.value if graph_fitness.valid else self._default_metric_value
+
+        # iOpt expects a scalar value for a single-objective problem.
+        if isinstance(metric_value, (list, tuple, np.ndarray)):
+            metric_value = metric_value[0]
+
         function_value.value = metric_value
         return function_value
 
@@ -147,7 +159,8 @@ class IOptTuner(BaseTuner):
 
         has_parameters_to_optimize = (len(problem_parameters.discrete_parameters_names) > 0 or
                                       len(problem_parameters.float_parameters_names) > 0)
-        self.objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
+        init_metric = self._fitness_to_metric_value(self.init_individual.fitness)
+        self.objectives_number = len(ensure_wrapped_in_sequence(init_metric))
         is_multi_objective = self.objectives_number > 1
 
         if self._check_if_tuning_possible(graph, has_parameters_to_optimize, supports_multi_objective=True):
@@ -155,7 +168,13 @@ class IOptTuner(BaseTuner):
                 initial_point = Point(**initial_parameters)
                 self.solver_parameters.start_point = initial_point
 
-            problem = GolemProblem(graph, self.objective_evaluate, problem_parameters, self.objectives_number)
+            problem = GolemProblem(
+                graph=graph,
+                objective_evaluate=self.objective_evaluate,
+                problem_parameters=problem_parameters,
+                objectives_number=self.objectives_number,
+                evaluate_graph=self.evaluate_graph,
+            )
             solver = Solver(problem, parameters=self.solver_parameters)
 
             if show_progress:

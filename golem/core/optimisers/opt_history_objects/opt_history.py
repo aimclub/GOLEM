@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from enum import Enum
 import io
 import itertools
 import os
@@ -20,6 +21,9 @@ if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
     from golem.core.optimisers.opt_history_objects.individual import Individual
 
+class OptHistoryLabels(str, Enum):
+    tuning_start = 'tuning_start'
+    tuning_results = 'tuning_results'
 
 class OptHistory:
     """
