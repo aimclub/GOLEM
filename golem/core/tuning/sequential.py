@@ -38,8 +38,9 @@ class SequentialTuner(HyperoptTuner):
                          early_stopping_rounds, timeout,
                          n_jobs,
                          deviation,
-                         history,
-                         algo, **kwargs)
+                         algo=algo,
+                         history=history,
+                         **kwargs)
 
         self.inverse_node_order = inverse_node_order
 

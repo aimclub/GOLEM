@@ -5,6 +5,7 @@ import pytest
 from hyperopt import hp
 
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory, OptHistoryLabels
 from golem.core.tuning.iopt_tuner import IOptTuner
 from golem.core.tuning.optuna_tuner import OptunaTuner
 from golem.core.tuning.search_space import SearchSpace
@@ -157,3 +158,20 @@ def test_hyperopt_returns_native_types(search_space, tuner_cls):
         for param, val in node.parameters.items():
             assert val.__class__.__module__ != 'numpy', (f'The parameter "{param}" should not be a numpy type. '
                                                          f'Got "{type(val)}".')
+
+
+@pytest.mark.parametrize('tuner_cls', [OptunaTuner, SimultaneousTuner, SequentialTuner])
+def test_tuner_records_individuals_in_history(search_space, tuner_cls):
+    objective = MockObjectiveEvaluate(Objective({'sum_metric': ParamsSumMetric.get_value}))
+    history = OptHistory()
+    tuner = tuner_cls(objective, search_space, MockAdapter(), iterations=2, history=history)
+
+    tuner.tune(deepcopy(mock_graph_with_params()), show_progress=False)
+
+    assert history.generations[0].label == OptHistoryLabels.tuning_start
+    assert history.generations[-1].label == OptHistoryLabels.tuning_results
+    assert tuner.init_individual is history.generations[0][0]
+    assert tuner.obtained_individual is history.generations[-1][0]
+    assert all(ind.parent_operator.parent_individuals == (tuner.init_individual,)
+               for generation in history.generations[1:]
+               for ind in generation)
