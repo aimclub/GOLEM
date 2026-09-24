@@ -10,6 +10,8 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 
+import numpy as np
+
 from golem.core.log import default_log
 from golem.core.optimisers.objective.objective import ObjectiveInfo
 from golem.core.optimisers.opt_history_objects.generation import Generation
@@ -204,7 +206,9 @@ class OptHistory:
             num_metrics = len(self.generations[0][0].fitness.values)
             for objective_num in range(num_metrics):
                 # history of specific objective for each generation
-                objective_history = [[ind.fitness.values[objective_num] for ind in generation]
+                objective_history = [[ind.fitness.values[objective_num]
+                                      if objective_num < len(ind.fitness.values) else None
+                                      for ind in generation]
                                      for generation in self.generations]
                 historical_fitness.append(objective_history)
         else:

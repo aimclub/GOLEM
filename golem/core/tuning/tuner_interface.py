@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from copy import deepcopy
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TypeVar, Generic, Optional, Union, Sequence
 
 import numpy as np
@@ -127,8 +127,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
         init_fitness = self.objective_evaluate(self.init_graph)
 
         # Root individual: no parent, since this is what tuning starts from.
-        self.init_individual = self._create_individual(self.init_graph, init_fitness, parent=None)
-        self._add_to_history([self.init_individual], OptHistoryLabels.tuning_start)
+        if self.history is not None:
+            self.init_individual = self._create_individual(self.init_graph, init_fitness, parent=None)
+            self._add_to_history([self.init_individual], OptHistoryLabels.tuning_start)
 
         self.init_metric = self._fitness_to_metric_value(init_fitness)
 
@@ -172,6 +173,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.log.info(f'{prefix_init_phrase} is None. Initial metric is {abs(init_metric):.3f}')
             final_graph = self.init_graph
             final_metric = self.init_metric
+            self.obtained_metric = final_metric
         elif self.obtained_metric <= init_metric:
             self.log.info(f'{prefix_tuned_phrase} {abs(self.obtained_metric):.3f} equal or '
                           f'better than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
@@ -267,6 +269,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
         return Individual(
             graph=deepcopy(graph),
             parent_operator=parent_operator,
+            metadata={'evaluation_time_iso': datetime.now().isoformat()},
             fitness=fitness
         )
 
@@ -334,9 +337,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         fitness = self.objective_evaluate(graph)
 
-        individual = self._create_individual(graph, fitness, parent=self.init_individual)
-
-        self._add_to_history([individual])
+        if self.history is not None:
+            individual = self._create_individual(graph, fitness, parent=self.init_individual)
+            self._add_to_history([individual])
 
         self.evaluations_count += 1
 

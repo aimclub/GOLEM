@@ -25,7 +25,7 @@ class OptunaTuner(BaseTuner):
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
                  deviation: float = 0.05,
-                history: Optional[OptHistory] = None, **kwargs):
+                 history: Optional[OptHistory] = None, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,

@@ -159,8 +159,7 @@ class IOptTuner(BaseTuner):
 
         has_parameters_to_optimize = (len(problem_parameters.discrete_parameters_names) > 0 or
                                       len(problem_parameters.float_parameters_names) > 0)
-        init_metric = self._fitness_to_metric_value(self.init_individual.fitness)
-        self.objectives_number = len(ensure_wrapped_in_sequence(init_metric))
+        self.objectives_number = len(ensure_wrapped_in_sequence(self.init_metric))
         is_multi_objective = self.objectives_number > 1
 
         if self._check_if_tuning_possible(graph, has_parameters_to_optimize, supports_multi_objective=True):
