@@ -146,10 +146,13 @@ def get_best_fitness_per_generation(fitnesses: Sequence[Sequence[Union[float, Se
     best_metric = np.inf  # Assuming metric minimization
     best_metrics = []
 
-    for gen_num, gen_fitnesses in enumerate(fitnesses[metric_id]):
-        target_metric = min(ensure_wrapped_in_sequence(gen_fitnesses))
-        if target_metric <= best_metric:
-            best_metric = target_metric
+    for gen_fitnesses in fitnesses[metric_id]:
+        available_metrics = [metric for metric in ensure_wrapped_in_sequence(gen_fitnesses) 
+                             if metric is not None]
+        if available_metrics:
+            target_metric = min(available_metrics)
+            if target_metric <= best_metric:
+                best_metric = target_metric
         best_metrics.append(best_metric)
 
     return best_metrics

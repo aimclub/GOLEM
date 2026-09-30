@@ -10,6 +10,7 @@ from optuna.trial import FrozenTrial
 from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.tuning.search_space import SearchSpace, get_node_operation_parameter_label
 from golem.core.tuning.tuner_interface import BaseTuner, DomainGraphForTune
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
@@ -23,7 +24,8 @@ class OptunaTuner(BaseTuner):
                  early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 deviation: float = 0.05, **kwargs):
+                 deviation: float = 0.05,
+                 history: Optional[OptHistory] = None, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -31,7 +33,8 @@ class OptunaTuner(BaseTuner):
                          early_stopping_rounds,
                          timeout,
                          n_jobs,
-                         deviation, **kwargs)
+                         deviation,
+                         history, **kwargs)
         self.study = None
 
     def _tune(self, graph: DomainGraphForTune, show_progress: bool = True) -> \
@@ -65,7 +68,7 @@ class OptunaTuner(BaseTuner):
 
             if not is_multi_objective:
                 best_parameters = self.study.best_trials[0].params
-                tuned_graphs = self.set_arg_graph(graph, best_parameters)
+                tuned_graphs = self.set_arg_graph(deepcopy(graph), best_parameters)
                 self.was_tuned = True
             else:
                 tuned_graphs = []
@@ -80,8 +83,8 @@ class OptunaTuner(BaseTuner):
 
     def objective(self, trial: Trial, graph: OptGraph) -> Union[float, Sequence[float, ]]:
         new_parameters = self._get_parameters_from_trial(graph, trial)
-        new_graph = BaseTuner.set_arg_graph(graph, new_parameters)
-        metric_value = self.get_metric_value(new_graph)
+        new_graph = BaseTuner.set_arg_graph(deepcopy(graph), new_parameters)
+        metric_value = self.evaluate_graph(new_graph)
         return metric_value
 
     def _get_parameters_from_trial(self, graph: OptGraph, trial: Trial) -> dict:

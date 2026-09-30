@@ -104,23 +104,53 @@ def plot_fitness_line_per_time(axis: plt.Axes, generations, label: Optional[str]
     return best_individuals
 
 
-def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Optional[str] = None) \
-        -> Dict[int, Individual]:
-    best_fitnesses, best_generations, best_individuals = find_best_running_fitness(generations, metric_id=0)
-    axis.step(best_generations, best_fitnesses, where='post', label=label)
+def plot_fitness_line_per_generations(axis: plt.Axes, generations, label: Optional[str] = None,
+                                      raw_fitness: bool = False) -> Dict[int, Individual]:
+    if raw_fitness:
+        best_fitnesses, best_generations, best_individuals = find_best_fitness_per_generation(
+            generations, metric_id=0)
+        axis.plot(best_generations, best_fitnesses, marker='o', label=label)
+    else:
+        best_fitnesses, best_generations, best_individuals = find_best_running_fitness(
+            generations, metric_id=0)
+        axis.step(best_generations, best_fitnesses, where='post', label=label)
     axis.set_xticks(range(len(generations)))
     axis.locator_params(nbins=10)
     return best_individuals
 
 
+def mark_generation_labels(axis: plt.Axes, generations) -> None:
+    """Mark named generations, making transitions between optimisation phases visible."""
+    for generation_num, generation in enumerate(generations):
+        label = getattr(generation, 'label', '')
+        label = getattr(label, 'value', label)
+        if not label:
+            continue
+        axis.axvline(generation_num, color='grey', linestyle='--', linewidth=0.8, alpha=0.6)
+        axis.annotate(str(label),
+                      xy=(generation_num, 1),
+                      xycoords=('data', 'axes fraction'),
+                      xytext=(3, -3),
+                      textcoords='offset points',
+                      rotation=90,
+                      va='top',
+                      ha='left',
+                      fontsize='x-small',
+                      color='dimgray')
+
+
 class FitnessLine(HistoryVisualization):
     def visualize(self, save_path: Optional[Union[os.PathLike, str]] = None, dpi: Optional[int] = None,
-                  per_time: Optional[bool] = None):
+                  per_time: Optional[bool] = None, raw_fitness: bool = False,
+                  show_generation_labels: bool = False):
         """ Visualizes the best fitness values during the evolution in the form of line.
         :param save_path: path to save the visualization. If set, then the image will be saved,
             and if not, it will be displayed.
         :param dpi: DPI of the output figure.
         :param per_time: defines whether to show time grid if it is available in history.
+        :param raw_fitness: plot the best value in each generation instead of the running best.
+          This is useful when a history contains distinct phases, such as composition and tuning.
+        :param show_generation_labels: mark named generations on the plot.
         """
         save_path = save_path or self.get_predefined_value('save_path')
         dpi = dpi or self.get_predefined_value('dpi')
@@ -132,7 +162,9 @@ class FitnessLine(HistoryVisualization):
             plot_fitness_line_per_time(ax, self.history.generations)
         else:
             xlabel = 'Generation'
-            plot_fitness_line_per_generations(ax, self.history.generations)
+            plot_fitness_line_per_generations(ax, self.history.generations, raw_fitness=raw_fitness)
+            if show_generation_labels:
+                mark_generation_labels(ax, self.history.generations)
         setup_fitness_plot(ax, xlabel)
         show_or_save_figure(fig, save_path, dpi)
 
@@ -260,4 +292,30 @@ def find_best_running_fitness(generations: Sequence[Sequence[Individual]],
         best_metrics.append(abs(best_metric))
         best_generations.append(len(generations) - 1)
 
+    return best_metrics, best_generations, best_individuals
+
+
+def find_best_fitness_per_generation(generations: Sequence[Sequence[Individual]],
+                                     metric_id: int = 0,
+                                     ) -> Tuple[List[float], List[int], Dict[int, Individual]]:
+    """Return the best native individual in every non-empty generation.
+
+    Unlike :func:`find_best_running_fitness`, this does not carry a previous optimum
+    forward. Consequently, a new optimisation phase with a different fitness range
+    remains visible instead of being hidden behind an earlier best value.
+    """
+    best_individuals = {}
+    for gen_num, generation in enumerate(generations):
+        native_individuals = [individual for individual in generation
+                              if individual.native_generation == gen_num]
+        valid_individuals = [individual for individual in native_individuals
+                             if len(individual.fitness.values) > metric_id
+                             and individual.fitness.values[metric_id] is not None]
+        if valid_individuals:
+            best_individuals[gen_num] = min(
+                valid_individuals, key=lambda individual: individual.fitness.values[metric_id])
+
+    best_generations = list(best_individuals)
+    best_metrics = [abs(best_individuals[gen_num].fitness.values[metric_id])
+                    for gen_num in best_generations]
     return best_metrics, best_generations, best_individuals

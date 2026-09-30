@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import timedelta
 from functools import partial
 from typing import Callable, Optional
@@ -8,6 +9,7 @@ from golem.core.adapter import BaseOptimizationAdapter
 from golem.core.constants import MIN_TIME_FOR_TUNING_IN_SEC
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory
 from golem.core.tuning.hyperopt_tuner import HyperoptTuner, get_node_parameters_for_hyperopt
 from golem.core.tuning.search_space import SearchSpace
 from golem.core.tuning.tuner_interface import DomainGraphForTune
@@ -27,7 +29,8 @@ class SequentialTuner(HyperoptTuner):
                  n_jobs: int = -1,
                  deviation: float = 0.05,
                  algo: Callable = tpe.suggest,
-                 inverse_node_order: bool = False, **kwargs):
+                 inverse_node_order: bool = False,
+                 history: Optional[OptHistory] = None, **kwargs):
         super().__init__(objective_evaluate,
                          search_space,
                          adapter,
@@ -35,7 +38,9 @@ class SequentialTuner(HyperoptTuner):
                          early_stopping_rounds, timeout,
                          n_jobs,
                          deviation,
-                         algo, **kwargs)
+                         algo=algo,
+                         history=history,
+                         **kwargs)
 
         self.inverse_node_order = inverse_node_order
 
@@ -185,7 +190,7 @@ class SequentialTuner(HyperoptTuner):
         if is_best_trial_with_init_params:
             best_params = {**best_params, **init_params}
         # Set best params for this node in the graph
-        graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=best_params)
+        graph = self.set_arg_node(graph=deepcopy(graph), node_id=node_id, node_params=best_params)
         return graph, trials.best_trial['result']['loss']
 
     def _objective(self,
@@ -210,5 +215,5 @@ class SequentialTuner(HyperoptTuner):
         # Set hyperparameters for node
         graph = self.set_arg_node(graph=graph, node_id=node_id, node_params=node_params)
 
-        metric_value = self.get_metric_value(graph=graph)
+        metric_value = self.evaluate_graph(graph=graph)
         return metric_value

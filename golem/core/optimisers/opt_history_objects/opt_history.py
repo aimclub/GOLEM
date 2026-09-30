@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import csv
+from enum import Enum
 import io
 import itertools
+import json
 import os
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
+
+import numpy as np
 
 from golem.core.log import default_log
 from golem.core.optimisers.objective.objective import ObjectiveInfo
@@ -19,6 +23,11 @@ from golem.visualisation.opt_viz import OptHistoryVisualizer
 if TYPE_CHECKING:
     from golem.core.dag.graph import Graph
     from golem.core.optimisers.opt_history_objects.individual import Individual
+
+
+class OptHistoryLabels(str, Enum):
+    tuning_start = 'tuning_start'
+    tuning_results = 'tuning_results'
 
 
 class OptHistory:
@@ -115,6 +124,69 @@ class OptHistory:
         history_to_save = lighten_history(self) if is_save_light else self
         return default_save(obj=history_to_save, json_file_path=json_file_path)
 
+    def to_readable_dict(self) -> Dict[str, Any]:
+        """Return a portable history view with explicit structure and parameters.
+
+        Unlike :meth:`save`, this representation is intended for inspection and
+        reporting, not for restoring an ``OptHistory`` instance.
+        """
+        return {
+            'schema_version': 1,
+            'generations': [
+                {
+                    'generation': generation.generation_num,
+                    'label': getattr(generation.label, 'value', generation.label),
+                    'metadata': generation.metadata,
+                    'individuals': [self._individual_to_readable_dict(individual)
+                                    for individual in generation],
+                }
+                for generation in self.generations
+            ],
+        }
+
+    def save_readable(self, json_file_path: Union[str, os.PathLike] = None) -> Optional[str]:
+        """Save the human-readable history representation as JSON.
+
+        Returns the JSON string when ``json_file_path`` is omitted, consistently
+        with :meth:`save`.
+        """
+        payload = self.to_readable_dict()
+        if json_file_path is None:
+            return json.dumps(payload, indent=2, default=str)
+        with open(json_file_path, mode='w', encoding='utf-8') as json_file:
+            json.dump(payload, json_file, indent=2, default=str)
+        return None
+
+    @staticmethod
+    def _individual_to_readable_dict(individual: Individual) -> Dict[str, Any]:
+        graph = individual.graph
+        nodes = graph.nodes
+        return {
+            'uid': individual.uid,
+            'fitness': list(individual.fitness.values),
+            'parent_uids': [parent.uid for parent in individual.parents],
+            'structure': {
+                'depth': graph.depth,
+                'length': graph.length,
+                'nodes': [
+                    {
+                        'uid': str(node.uid),
+                        'operation': node.name,
+                        'parent_uids': [str(parent.uid) for parent in node.nodes_from],
+                    }
+                    for node in nodes
+                ],
+            },
+            'hyperparameters': [
+                {
+                    'node_uid': str(node.uid),
+                    'operation': node.name,
+                    'parameters': getattr(node, 'parameters', {}),
+                }
+                for node in nodes
+            ],
+        }
+
     @staticmethod
     def load(json_str_or_file_path: Union[str, os.PathLike] = None) -> OptHistory:
         return default_load(json_str_or_file_path)
@@ -134,7 +206,9 @@ class OptHistory:
             num_metrics = len(self.generations[0][0].fitness.values)
             for objective_num in range(num_metrics):
                 # history of specific objective for each generation
-                objective_history = [[ind.fitness.values[objective_num] for ind in generation]
+                objective_history = [[ind.fitness.values[objective_num]
+                                      if objective_num < len(ind.fitness.values) else None
+                                      for ind in generation]
                                      for generation in self.generations]
                 historical_fitness.append(objective_history)
         else:

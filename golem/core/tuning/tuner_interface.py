@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from copy import deepcopy
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TypeVar, Generic, Optional, Union, Sequence
 
 import numpy as np
@@ -11,8 +11,12 @@ from golem.core.constants import MAX_TUNING_METRIC_VALUE, MIN_TIME_FOR_TUNING_IN
 from golem.core.dag.graph_utils import graph_structure
 from golem.core.log import default_log
 from golem.core.optimisers.fitness import SingleObjFitness, MultiObjFitness
+from golem.core.optimisers.fitness.fitness import Fitness
 from golem.core.optimisers.graph import OptGraph
 from golem.core.optimisers.objective import ObjectiveEvaluate, ObjectiveFunction
+from golem.core.optimisers.opt_history_objects.individual import Individual
+from golem.core.optimisers.opt_history_objects.opt_history import OptHistory, OptHistoryLabels
+from golem.core.optimisers.opt_history_objects.parent_operator import ParentOperator
 from golem.core.optimisers.timer import Timer
 from golem.core.tuning.search_space import SearchSpace, convert_parameters
 from golem.utilities.data_structures import ensure_wrapped_in_sequence
@@ -35,6 +39,11 @@ class BaseTuner(Generic[DomainGraphForTune]):
       deviation: required improvement (in percent) of a metric to return tuned graph.
         By default, ``deviation=0.05``, which means that tuned graph will be returned
         if it's metric will be at least 0.05% better than the initial.
+      history: optional ``OptHistory``. When given, every graph evaluated during tuning
+        (via `evaluate_graph`) is recorded into it as its own generation, each individual
+        carrying a `ParentOperator(type_='tuning', ...)` that points back at the individual
+        tuning started from (`OptHistoryLabels.tuning_start`). The graph(s) tuning finally
+        returns are additionally recorded under `OptHistoryLabels.tuning_results`.
     """
 
     def __init__(self, objective_evaluate: ObjectiveFunction,
@@ -44,7 +53,9 @@ class BaseTuner(Generic[DomainGraphForTune]):
                  early_stopping_rounds: Optional[int] = None,
                  timeout: timedelta = timedelta(minutes=5),
                  n_jobs: int = -1,
-                 deviation: float = 0.05, **kwargs):
+                 deviation: float = 0.05,
+                 history: OptHistory = None,
+                 **kwargs):
         self.iterations = iterations
         self.adapter = adapter or IdentityAdapter()
         self.search_space = search_space
@@ -66,6 +77,11 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.log = default_log(self)
         self.objectives_number = 1
 
+        self.history = history
+        self.evaluations_count = 0
+        self.init_individual: Optional[Individual] = None
+        self.obtained_individual: Optional[Individual] = None
+
     def tune(self, graph: DomainGraphForTune, **kwargs) -> Union[DomainGraphForTune, Sequence[DomainGraphForTune]]:
         """
         Function for hyperparameters tuning on the graph
@@ -79,6 +95,8 @@ class BaseTuner(Generic[DomainGraphForTune]):
         """
         graph = self.adapter.adapt(graph)
         self.was_tuned = False
+        self.evaluations_count = 0
+        self.obtained_individual = None
         with self.timer:
 
             # Check source metrics for data
@@ -106,8 +124,15 @@ class BaseTuner(Generic[DomainGraphForTune]):
 
         # Train graph
         self.init_graph = deepcopy(graph)
+        init_fitness = self.objective_evaluate(self.init_graph)
 
-        self.init_metric = self.get_metric_value(graph=self.init_graph)
+        # Root individual: no parent, since this is what tuning starts from.
+        if self.history is not None:
+            self.init_individual = self._create_individual(self.init_graph, init_fitness, parent=None)
+            self._add_to_history([self.init_individual], OptHistoryLabels.tuning_start)
+
+        self.init_metric = self._fitness_to_metric_value(init_fitness)
+
         self.log.message(f'Initial graph: {graph_structure(self.init_graph)} \n'
                          f'Initial metric: '
                          f'{list(map(lambda x: round(abs(x), 3), ensure_wrapped_in_sequence(self.init_metric)))}')
@@ -124,9 +149,13 @@ class BaseTuner(Generic[DomainGraphForTune]):
         self.log.info('Hyperparameters optimization finished')
 
         if multi_obj:
-            return self._multi_obj_final_check(tuned_graphs)
+            final_graphs = self._multi_obj_final_check(tuned_graphs)
+            self._record_tuning_results(final_graphs, self.obtained_metric)
+            return final_graphs
         else:
-            return self._single_obj_final_check(tuned_graphs)
+            final_graph = self._single_obj_final_check(tuned_graphs)
+            self._record_tuning_results([final_graph], [self.obtained_metric])
+            return final_graph
 
     def _single_obj_final_check(self, tuned_graph: OptGraph):
         self.obtained_metric = self.get_metric_value(graph=tuned_graph)
@@ -144,6 +173,7 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.log.info(f'{prefix_init_phrase} is None. Initial metric is {abs(init_metric):.3f}')
             final_graph = self.init_graph
             final_metric = self.init_metric
+            self.obtained_metric = final_metric
         elif self.obtained_metric <= init_metric:
             self.log.info(f'{prefix_tuned_phrase} {abs(self.obtained_metric):.3f} equal or '
                           f'better than initial (+ {self.deviation}% deviation) {abs(init_metric):.3f}')
@@ -184,6 +214,99 @@ class BaseTuner(Generic[DomainGraphForTune]):
             self.obtained_metric = [self.init_metric]
         return final_graphs
 
+    def _fitness_to_metric_value(self, graph_fitness: Fitness) -> Union[float, Sequence[float]]:
+        if isinstance(graph_fitness, SingleObjFitness):
+            if not graph_fitness.valid:
+                return self._default_metric_value
+
+            return graph_fitness.value
+
+        if isinstance(graph_fitness, MultiObjFitness):
+            return tuple(
+                self._default_metric_value if value is None else value
+                for value in graph_fitness.values
+            )
+
+        raise ValueError(
+            f'Objective evaluation must be a Fitness instance, '
+            f'not {graph_fitness}.'
+        )
+
+    def _metric_to_fitness(self, metric: Union[float, Sequence[float], None]) -> Fitness:
+        """ Inverse of `_fitness_to_metric_value`: wraps a metric value (as produced by
+        `get_metric_value`/stored in `self.obtained_metric`) back into a `Fitness`, so it
+        can be attached to an `Individual` recorded under `OptHistoryLabels.tuning_results`.
+        `final_check` only has the scalar metric at that point, not the original `Fitness`
+        object, so this (rather than reusing `_fitness_to_metric_value`) is what's needed there.
+        """
+        if metric is None:
+            return SingleObjFitness() if self.objectives_number == 1 else MultiObjFitness()
+        if self.objectives_number > 1 or isinstance(metric, (list, tuple)):
+            return MultiObjFitness(metric)
+        return SingleObjFitness(metric)
+
+    def _create_individual(self, graph: OptGraph, fitness: Fitness,
+                           parent: Optional[Individual] = None) -> Individual:
+        """
+        Args:
+          graph: graph the individual wraps.
+          fitness: its evaluated fitness.
+          parent: the individual this graph was derived from by tuning (i.e. same structure,
+            different hyperparameters). Pass ``None`` only for the very first, root individual
+            (see `init_check`) — every individual produced *during* tuning must reference the
+            individual it started from, or the recorded `ParentOperator` carries no lineage
+            and genealogy-based visualizations (e.g. FEDOT.Web) will show it as a disconnected
+            root instead of linking it to what it was tuned from.
+        """
+        parent_individuals = [parent] if parent is not None else []
+
+        parent_operator = ParentOperator(
+            type_='tuning',
+            operators=self.__class__.__name__,
+            parent_individuals=parent_individuals
+        )
+
+        return Individual(
+            graph=deepcopy(graph),
+            parent_operator=parent_operator,
+            metadata={'evaluation_time_iso': datetime.now().isoformat()},
+            fitness=fitness
+        )
+
+    def _add_to_history(
+            self,
+            individuals: Sequence[Individual],
+            label: Optional[str] = None
+    ):
+        if self.history is None:
+            return
+
+        label = label or f'tuning_iteration_{self.evaluations_count}'
+
+        self.history.add_to_history(
+            individuals=individuals,
+            generation_label=label,
+            generation_metadata={
+                'tuner': self.__class__.__name__
+            }
+        )
+
+    def _record_tuning_results(self, graphs: Sequence[OptGraph], metrics: Sequence) -> None:
+        """ Records the graph(s) `tune()` is about to return under `OptHistoryLabels.tuning_results`,
+        linked back to `self.init_individual`, so the actual outcome of tuning is unambiguously
+        marked — as opposed to the (possibly many) intermediate candidates recorded by
+        `evaluate_graph` under generic `tuning_iteration_N` labels.
+        """
+        if self.history is None or self.init_individual is None:
+            return
+
+        result_individuals = [
+            self._create_individual(graph, self._metric_to_fitness(metric), parent=self.init_individual)
+            for graph, metric in zip(graphs, metrics)
+        ]
+        self.obtained_individual = result_individuals[0] if len(result_individuals) == 1 else result_individuals
+        self._add_to_history(result_individuals, OptHistoryLabels.tuning_results)
+
     def get_metric_value(self, graph: OptGraph) -> Union[float, Sequence[float]]:
         """
         Method calculates metric for algorithm validation
@@ -208,6 +331,19 @@ class BaseTuner(Generic[DomainGraphForTune]):
                 if value is None:
                     metric_values[e] = self._default_metric_value
             return metric_values
+
+    def evaluate_graph(self, graph: OptGraph) -> Union[float, Sequence[float]]:
+        """Evaluate a graph and save its state to tuning history."""
+
+        fitness = self.objective_evaluate(graph)
+
+        if self.history is not None:
+            individual = self._create_individual(graph, fitness, parent=self.init_individual)
+            self._add_to_history([individual])
+
+        self.evaluations_count += 1
+
+        return self._fitness_to_metric_value(fitness)
 
     @staticmethod
     def set_arg_graph(graph: OptGraph, parameters: dict) -> OptGraph:
