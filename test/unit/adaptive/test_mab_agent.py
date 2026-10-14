@@ -43,3 +43,16 @@ def test_load_mab():
     assert loaded_mab._path_to_save == mab._path_to_save
 
     os.remove(path_to_load)
+
+
+def test_save_mab_file_numbering(tmp_path):
+    """ Tests that the next saved file gets max existing number + 1,
+    including numbers with more than one digit, and that files
+    with non-numeric prefixes are ignored rather than breaking the save. """
+    for name in ['0_mab.pkl', '2_mab.pkl', '10_mab.pkl', '_mab.pkl', 'other.txt']:
+        (tmp_path / name).touch()
+
+    mab = MultiArmedBanditAgent(actions=[0, 1, 2], n_jobs=1)
+    mab.save(path_to_save=str(tmp_path))
+
+    assert '11_mab.pkl' in os.listdir(tmp_path)

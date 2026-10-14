@@ -1,3 +1,4 @@
+import os
 import random
 from importlib.util import find_spec
 
@@ -8,7 +9,10 @@ from golem.core.adapter.nx_adapter import BanditNetworkxAdapter
 from golem.core.optimisers.adaptive.context_agents import ContextAgentTypeEnum
 from golem.core.optimisers.adaptive.mab_agents.contextual_mab_agent import ContextualMultiArmedBanditAgent
 from golem.core.optimisers.adaptive.mab_agents.neural_contextual_mab_agent import NeuralContextualMultiArmedBanditAgent
+from golem.core.optimisers.adaptive.experience_buffer import ExperienceBuffer
 from golem.core.optimisers.genetic.operators.base_mutations import MutationTypesEnum
+from golem.core.optimisers.graph import OptGraph, OptNode
+from golem.core.optimisers.opt_history_objects.individual import Individual
 
 adapter = BanditNetworkxAdapter()
 available_operations = ['1', '2', '3', '4', '5']
@@ -56,3 +60,18 @@ def test_contextual_mab_agents(context_agent, context_size):
     assert cmab_agent.get_context(large_graph).shape[1] == context_size
     assert neural_cmab_agent.get_context(small_graph).shape[1] == context_size
     assert neural_cmab_agent.get_context(large_graph).shape[1] == context_size
+
+
+def test_contextual_mab_saves_state_on_partial_fit(tmp_path):
+    """ Contextual MAB agent with a specified path_to_save must save its state
+    after each partial_fit, so that it can be restored later. """
+    cmab_agent = ContextualMultiArmedBanditAgent(actions=[0, 1, 2],
+                                                 available_operations=available_operations,
+                                                 context_agent_type=ContextAgentTypeEnum.nodes_num,
+                                                 path_to_save=str(tmp_path))
+
+    experience = ExperienceBuffer()
+    experience.collect_experience(Individual(OptGraph(OptNode('1'))), action=1, reward=0.5)
+    cmab_agent.partial_fit(experience)
+
+    assert any(name.endswith('_mab.pkl') for name in os.listdir(tmp_path))
