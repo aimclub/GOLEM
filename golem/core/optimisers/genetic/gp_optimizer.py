@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import choice
-from typing import Sequence, Union, Any
+from typing import Any, Optional, Sequence, Union
 
 from golem.core.constants import MAX_GRAPH_GEN_ATTEMPTS
 from golem.core.dag.graph import Graph
@@ -34,10 +34,17 @@ class EvoGraphOptimizer(PopulationalOptimizer):
                  requirements: GraphRequirements,
                  graph_generation_params: GraphGenerationParams,
                  graph_optimizer_params: GPAlgorithmParameters,
+                 use_saved_state: bool = False,
+                 saved_state_path: Optional[str] = None,
+                 saved_state_file: Optional[str] = None,
                  **custom_optimizer_params
                  ):
-        super().__init__(objective, initial_graphs, requirements,
-                         graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
+        super().__init__(objective, initial_graphs, requirements, graph_generation_params,
+                         graph_optimizer_params, use_saved_state, saved_state_path, saved_state_file,
+                         **custom_optimizer_params)
+        if self._is_restored_from_saved_state:
+            # all the operators and adaptive parameters are contained in the restored state
+            return
         # Define genetic operators
         self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
         self.selection = Selection(graph_optimizer_params)
