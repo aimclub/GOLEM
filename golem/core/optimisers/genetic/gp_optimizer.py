@@ -39,7 +39,7 @@ class EvoGraphOptimizer(PopulationalOptimizer):
         super().__init__(objective, initial_graphs, requirements,
                          graph_generation_params, graph_optimizer_params, **custom_optimizer_params)
         # Define genetic operators
-        self.regularization = Regularization(graph_optimizer_params, graph_generation_params)
+        self.regularization = Regularization(graph_optimizer_params, graph_generation_params, requirements)
         self.selection = Selection(graph_optimizer_params)
         self.crossover = Crossover(graph_optimizer_params, requirements, graph_generation_params)
         self.mutation = Mutation(graph_optimizer_params, requirements, graph_generation_params)
